@@ -27,7 +27,9 @@ serve_agent() {
   scripts/wait_server.sh 8001 900
 }
 eval_ckpt() {
-  rid=$1; arm=$2; tf=$3; ck=$4
+  # `local` matters: without it the domain loop clobbers the caller's draw variable $d,
+  # which is how stage 5 of pipeline_v1.sh ended up addressing runs/static_airline_dev.
+  local rid=$1 arm=$2 tf=$3 ck=$4 d
   for d in $DOMAINS; do
     if [ -f runs/$rid/$d/status.json ] && grep -q '"completed"' runs/$rid/$d/status.json; then log "$rid/$d done"; continue; fi
     log "running $rid/$d"
