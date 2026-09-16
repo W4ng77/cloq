@@ -149,6 +149,9 @@ def main():
     for p in [out_dir / "occupancy_last.json", out_dir / "occupancy_obs.json"]:
         if p.exists():
             results[p.stem] = json.load(open(p))
+    fs = out_dir / "failure_states.json"
+    if fs.exists():
+        d = json.load(open(fs)); d.pop("per_context", None); results["failure_states"] = d
     (out_dir / "results.json").write_text(json.dumps(results, indent=2))
     write_markdown(results, split, out_dir)
     try:
@@ -228,6 +231,14 @@ def write_markdown(results: dict, split: dict, out_dir: Path) -> None:
                 continue
             L.append(f"| {a} | {_fmt(v['gap_short'])} (n={v['n_short']}) | {_fmt(v['gap_long'])} (n={v['n_long']}) | "
                      f"{_fmt(v['gap_long_minus_short'])} | [{_fmt(v['ci_lo'])}, {_fmt(v['ci_hi'])}] | {_fmt(v['p_amplification_le_0'])} |")
+        L.append("")
+    fs = results.get("failure_states")
+    if fs and "share_of_q_tokens" in fs:
+        L += ["## Where the CLOQ Q0 states come from (plan section 19)", "",
+              f"{fs['n_q_contexts']} Q0 contexts, {fs['q_tokens']} tokens. Categories overlap by construction.", "",
+              "| category | share of Q0 tokens | contexts |", "|---|---|---|"]
+        for k, v in fs["share_of_q_tokens"].items():
+            L.append(f"| {k} | {_fmt(v)} | {fs['n_contexts'][k]} |")
         L.append("")
     for key in ["occupancy_last", "occupancy_obs"]:
         if key in results:

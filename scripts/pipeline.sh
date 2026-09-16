@@ -80,6 +80,7 @@ CUDA_VISIBLE_DEVICES=1 python -m cloq.occupancy extract --runs bf16 static_eval 
 python -m cloq.occupancy analyze --arm-runs static=static_eval fp_traj=fp_traj_eval cloq=cloq_eval --calib static=manifests/calib_static.json fp_traj=manifests/calib_fp_traj.json cloq=manifests/calib_cloq.json --rep last 2>&1 | tail -3 || log "WARN occupancy analyze(last) failed"
 python -m cloq.occupancy analyze --arm-runs static=static_eval fp_traj=fp_traj_eval cloq=cloq_eval --calib static=manifests/calib_static.json fp_traj=manifests/calib_fp_traj.json cloq=manifests/calib_cloq.json --rep obs 2>&1 | tail -3 || log "WARN occupancy analyze(obs) failed"
 # ---------------- integrity + report
+python -m cloq.failure_states 2>&1 | tail -20 || log "WARN failure_states failed"
 python -m cloq.integrity --arm-runs static=static_eval fp_traj=fp_traj_eval cloq=cloq_eval --calib static=manifests/calib_static.json fp_traj=manifests/calib_fp_traj.json cloq=manifests/calib_cloq.json 2>&1 | tail -20 || true
 python -m cloq.report --arm-runs static=static_eval fp_traj=fp_traj_eval cloq=cloq_eval || log "WARN report failed"
 log "PIPELINE DONE"
