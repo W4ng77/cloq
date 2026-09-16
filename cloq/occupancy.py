@@ -198,7 +198,7 @@ def analyze(bf16_run: str, arm_runs: dict[str, str], calibs: dict[str, Path], do
                     ts = tstar.get(v["task_id"])
                     if ts is None:
                         pre.append(dist); continue
-                    rel = v["decision_idx"] - ts
+                    rel = v["decision_idx"] - ts  # ts = t_context: rel < 0 means the context still matched BF16
                     curve[rel].append(dist)
                     (pre if rel < 0 else post).append(dist)
                 arm_res["pre_post_divergence"][sname] = {

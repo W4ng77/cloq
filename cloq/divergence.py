@@ -80,11 +80,18 @@ def analyze_task(fp: list[dict], q: list[dict]) -> dict:
         # identical while aligned but different length -> divergence at the end of the shorter one
         t_star = n if t_star is None else t_star
         t_tool = n if t_tool is None else t_tool
-    t_align = t_render if t_render is not None else t_star
+    # Alignment point for the occupancy analysis: the first decision whose *context* differs from
+    # BF16. Before it the quantized agent is literally reading BF16 states, so only from this index
+    # on are the visited states off-nominal. (t_render, one earlier, is the decision that caused it.)
+    t_context = first_prompt_diff
+    if t_context is None and len(q) != len(fp):
+        t_context = n
+    t_align = t_context if t_context is not None else t_star
     return {
         "H_fp": H, "H_q": len(q), "t_star": t_star, "diverged": t_star is not None,
         "t_star_norm": (t_star / H) if (t_star is not None and H > 0) else None,
         "t_tool": t_tool, "t_tool_norm": (t_tool / H) if (t_tool is not None and H > 0) else None,
+        "t_context": t_context, "t_context_norm": (t_context / H) if (t_context is not None and H > 0) else None,
         "tool_diverged": t_tool is not None,
         "t_render": t_render, "t_render_norm": (t_render / H) if (t_render is not None and H > 0) else None,
         "t_raw": t_raw, "t_align": t_align,
