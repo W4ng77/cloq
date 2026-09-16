@@ -129,7 +129,9 @@ def main():
     occ = r.get("occupancy_last")
     if occ:
         L += ["", "## Occupancy: distance from visited states to each calibration buffer", "",
-              "Cosine support distance in the frozen BF16 final-layer representation at the action boundary.", "",
+              "Cosine support distance in the frozen BF16 final-layer representation at the action boundary.",
+              "The `bf16_rep` row is an independent re-run of BF16 itself: it is the empirical null for the MMD",
+              "column, and it never diverges from BF16, so it has no post-divergence states.", "",
               "| domain | arm | Q to static | Q to fp_traj | Q to cloq | pre-divergence | post-divergence | MMD(FP,Q) | MMD null |",
               "|---|---|---|---|---|---|---|---|---|"]
         for domain, d in occ.get("domains", {}).items():
