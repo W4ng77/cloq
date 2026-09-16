@@ -19,7 +19,12 @@ import numpy as np
 from cloq import config as C
 from cloq.metrics import load_decisions, read_jsonl
 
-UNSTABLE = {"infrastructure_error", "unexpected_error", "agent_error", "user_error", "timeout", "context_window_exceeded"}
+# Environment stability (plan section 6), decided from the BF16 pilot ONLY and before any
+# quantized run: a task is usable iff its BF16 episode ended through normal conversation
+# termination. Episodes that hit the step cap (the 4B user simulator sometimes never emits
+# ###STOP### and loops politely) or the tool-error cap have no well-defined task horizon and
+# their states are dominated by a degenerate loop, so they cannot serve the horizon analysis.
+STABLE_TERMINATIONS = {"user_stop", "agent_stop"}
 
 
 def characterize(run_dir: Path) -> list[dict]:
@@ -39,7 +44,7 @@ def characterize(run_dir: Path) -> list[dict]:
             "bf16_db_match": t.get("db_match"),
             "bf16_reward_ignore_basis": t.get("reward"),
             "termination_reason": t.get("termination_reason"),
-            "stable": t.get("termination_reason") not in UNSTABLE,
+            "stable": t.get("termination_reason") in STABLE_TERMINATIONS,
             "horizon": n_dec[tid],
             "n_tool_calls": agent_tool_calls,
             "n_messages": t.get("n_messages"),
@@ -127,6 +132,9 @@ def main():
         n_eval = args.n_eval or tgt[domain]["evaluation"]
         split = stratified_split(rows, n_cal, n_eval, args.seed + sum(map(ord, domain)))
         split["characterization"] = rows
+        from collections import Counter
+        split["termination_counts"] = dict(Counter(r["termination_reason"] for r in rows))
+        split["stability_rule"] = sorted(STABLE_TERMINATIONS)
         manifest["domains"][domain] = split
         print(domain, "usable", split["n_usable"], "cal", len(split["calibration"]), "eval", len(split["evaluation"]), "quartile edges", split["horizon_quartile_edges"], "excluded", split["excluded_unstable"])
     out.parent.mkdir(parents=True, exist_ok=True)

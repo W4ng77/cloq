@@ -161,7 +161,7 @@
       }
     },
     "ratio_rule": "40/60 if fewer usable tasks",
-    "selection_rule": "BF16-only pilot; exclude tasks whose BF16 run ended in infrastructure/unexpected error; stratify by BF16 horizon (number of agent decision steps) quartile; within-quartile random with seed 2024; calibration and evaluation task IDs disjoint",
+    "selection_rule": "BF16-only pilot; a task is usable iff its BF16 episode terminated normally (user_stop or agent_stop) -- episodes hitting the step cap or the tool-error cap have no well-defined horizon; stratify usable tasks by BF16 horizon (number of agent decision steps) quartile; within-quartile random with seed 2024; calibration and evaluation task IDs disjoint; if fewer usable tasks than the target, keep the 40/60 ratio.",
     "horizon_definition": "number of BF16 agent decision points (LLM calls) in the BF16 trajectory",
     "target_note": "airline: all 50 tasks (20/30). retail: all 114 tasks at the plan's 40/60 ratio (46/68) instead of the 20/30 target, decided 2026-09-15 before any quantized run to increase held-out power; usable = stable BF16 run."
   },

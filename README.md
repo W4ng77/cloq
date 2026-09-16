@@ -48,3 +48,26 @@ litellm 1.82.6, tau2 1.0.1 (editable). `VLLM_USE_FLASHINFER_SAMPLER=0` because t
 * retail uses all 114 tasks at the plan's 40/60 ratio (46/68) rather than 20/30, for held-out power; airline 20/30.
 * Context budget 8192 tokens as in the plan. System prompt + tool schema alone are ≈4.8k tokens, so roughly a third
   of decisions in longer tasks are truncated (recorded per decision).
+* Task usability (frozen before any quantized run): a task enters the pool only if its BF16 episode terminated
+  normally (`user_stop` / `agent_stop`). Episodes that hit the 200-step cap (the 4B user simulator sometimes never
+  emits `###STOP###` and keeps exchanging pleasantries) or the tool-error cap have no well-defined horizon.
+
+## Determinism and the noise floor
+
+Verified on this box, 2026-09-15:
+
+* **Within one vLLM launch** with `VLLM_BATCH_INVARIANT=1`, greedy output is bit-identical regardless of batch
+  composition and concurrency (74/74 decisions across two runs of the same tasks with different batching).
+* **Across launches** of the *same* weights and config it is not: long free-text generations start to differ after
+  a few hundred tokens, while short tool calls were unaffected in a 22-state check. Changing `--max-model-len`
+  also changes outputs.
+
+Consequences, baked into the scripts:
+
+1. The user-simulator server is started once and never restarted during an experiment.
+2. Each arm is evaluated within a single agent-server launch.
+3. `scripts/bf16_replicate.sh` re-runs the BF16 arm from a fresh launch on the same held-out tasks. Its
+   closed-loop, first-divergence and open-loop numbers are the **noise floor** that any quantization effect must
+   exceed. Open-loop text agreement in particular is dominated by this noise (BF16 vs itself across launches gives
+   ≈0.67 full-action agreement, while tool-name and full tool-call agreement stay at 1.00), which is why the
+   tool-call metrics are the primary open-loop readout and full-text agreement is reported only alongside the control.
