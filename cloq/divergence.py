@@ -48,6 +48,7 @@ def analyze_task(fp: list[dict], q: list[dict]) -> dict:
     H = len(fp)
     n = min(len(fp), len(q))
     t_star = None
+    t_tool = None
     t_raw = None
     first_prompt_diff = None
     for i in range(n):
@@ -56,23 +57,35 @@ def analyze_task(fp: list[dict], q: list[dict]) -> dict:
         a_ids, b_ids = fp[i].get("completion_token_ids"), q[i].get("completion_token_ids")
         if t_raw is None and a_ids is not None and b_ids is not None and a_ids != b_ids:
             t_raw = i
-        if t_star is None:
-            a = normalize_action(fp[i]["content"], fp[i]["tool_calls"])
-            b = normalize_action(q[i]["content"], q[i]["tool_calls"])
-            if a != b:
-                t_star = i
+        a = normalize_action(fp[i]["content"], fp[i]["tool_calls"])
+        b = normalize_action(q[i]["content"], q[i]["tool_calls"])
+        if t_star is None and a != b:
+            t_star = i
+        # Behavioural divergence: ignore differences that are only a rewording of a message to
+        # the user. Counts only a tool call vs a message, or two different tool calls. Free text
+        # drifts between two launches of the *same* BF16 weights (see README), so t_star alone
+        # cannot separate a quantization effect from that noise floor.
+        if t_tool is None:
+            fk = "tool" if fp[i]["tool_calls"] else "text"
+            qk = "tool" if q[i]["tool_calls"] else "text"
+            if fk != qk or (fk == "tool" and a != b):
+                t_tool = i
     if first_prompt_diff is not None:
         t_render = max(0, first_prompt_diff - 1)
     elif len(q) != len(fp):
         t_render = n - 1 if n > 0 else 0
     else:
         t_render = None
-    if t_star is None and len(q) != len(fp):
-        t_star = n  # identical while aligned, different length -> divergence at the end of the shorter one
+    if len(q) != len(fp):
+        # identical while aligned but different length -> divergence at the end of the shorter one
+        t_star = n if t_star is None else t_star
+        t_tool = n if t_tool is None else t_tool
     t_align = t_render if t_render is not None else t_star
     return {
         "H_fp": H, "H_q": len(q), "t_star": t_star, "diverged": t_star is not None,
         "t_star_norm": (t_star / H) if (t_star is not None and H > 0) else None,
+        "t_tool": t_tool, "t_tool_norm": (t_tool / H) if (t_tool is not None and H > 0) else None,
+        "tool_diverged": t_tool is not None,
         "t_render": t_render, "t_render_norm": (t_render / H) if (t_render is not None and H > 0) else None,
         "t_raw": t_raw, "t_align": t_align,
         "first_prompt_diff": first_prompt_diff,
@@ -99,11 +112,11 @@ def run(bf16_run: str, arm_run: str, domain: str, eval_ids: list[str], out_path:
             "q_termination": tq[tid].get("termination_reason"),
         })
         rows.append(r)
-    div = [r for r in rows if r["diverged"]]
-    tn = [r["t_star_norm"] for r in div if r["t_star_norm"] is not None]
-    early = [r for r in div if r["t_star_norm"] is not None and r["t_star_norm"] < 0.5]
-    late = [r for r in div if r["t_star_norm"] is not None and r["t_star_norm"] >= 0.5]
-    nodiv = [r for r in rows if not r["diverged"]]
+    div = [r for r in rows if r["tool_diverged"]]
+    tn = [r["t_tool_norm"] for r in div if r["t_tool_norm"] is not None]
+    early = [r for r in div if r["t_tool_norm"] is not None and r["t_tool_norm"] < 0.5]
+    late = [r for r in div if r["t_tool_norm"] is not None and r["t_tool_norm"] >= 0.5]
+    nodiv = [r for r in rows if not r["tool_diverged"]]
 
     def sr(rs):
         v = [bool(r["q_db_match"]) for r in rs if r["q_db_match"] is not None]
@@ -111,10 +124,13 @@ def run(bf16_run: str, arm_run: str, domain: str, eval_ids: list[str], out_path:
 
     summ = {
         "arm_run": arm_run, "domain": domain, "n_tasks": len(rows),
+        "divergence_metric": "t_tool (tool-call behaviour); t_star (any action string, incl. rewording) reported alongside",
         "frac_any_divergence": len(div) / len(rows) if rows else None,
-        "median_t_star": float(np.median([r["t_star"] for r in div])) if div else None,
+        "median_t_star": float(np.median([r["t_tool"] for r in div])) if div else None,
         "median_t_star_norm": float(np.median(tn)) if tn else None,
         "mean_t_star_norm": float(np.mean(tn)) if tn else None,
+        "frac_any_action_divergence": (sum(1 for r in rows if r["diverged"]) / len(rows)) if rows else None,
+        "median_t_action_norm": float(np.median([r["t_star_norm"] for r in rows if r["t_star_norm"] is not None])) if any(r["t_star_norm"] is not None for r in rows) else None,
         "frac_any_render_divergence": (sum(1 for r in rows if r["t_render"] is not None) / len(rows)) if rows else None,
         "median_t_render_norm": float(np.median([r["t_render_norm"] for r in rows if r["t_render_norm"] is not None])) if any(r["t_render_norm"] is not None for r in rows) else None,
         "success_given_early_div": sr(early), "n_early": len(early),

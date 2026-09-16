@@ -167,13 +167,22 @@ def write_markdown(results: dict, split: dict, out_dir: Path) -> None:
         L.append("")
         L.append("Spearman(horizon, failure): " + ", ".join(f"{a}={_fmt(v)}" for a, v in h["spearman_horizon_vs_failure"].items()))
         if d["openloop"]:
-            L += ["", "### Open-loop fidelity on BF16 held-out states", "", "| arm | states | tool-name agr. | full tool-call agr. | full action agr. | field F1 | NLL/token |", "|---|---|---|---|---|---|---|"]
+            L += ["", "### Open-loop fidelity on BF16 held-out states", "",
+              "Replay of each stored BF16 context without executing the result. Full-action agreement includes free-text",
+              "rewording and is therefore bounded by the launch-noise floor; the tool-call columns are the primary readout.", "",
+              "| arm | states | tool-name agr. | full tool-call agr. | full action agr. | field F1 | NLL/token |", "|---|---|---|---|---|---|---|"]
             for a, o in d["openloop"].items():
                 L.append(f"| {a} | {o['n_states']} | {_fmt(o['tool_name_agreement'])} | {_fmt(o['full_tool_call_agreement'])} | {_fmt(o['full_action_agreement'])} | {_fmt(o['field_f1_given_name'])} | {_fmt(o['nll_per_token_mean'])} |")
         if d["divergence"]:
-            L += ["", "### First divergence", "", "| arm | any div. | median t* | median t*/H | SR early div | SR late div | SR no div |", "|---|---|---|---|---|---|---|"]
+            L += ["", "### First divergence (t* = first decision whose tool-call behaviour differs from BF16)", "",
+                  "Free-text rewording is excluded: it also differs between two launches of the same BF16 weights.",
+                  "The last column is the fraction of tasks whose action string differs at all, wording included.", "",
+                  "| arm | tool-div frac | median t* | median t*/H | SR early div | SR late div | SR no div | any-action div |",
+                  "|---|---|---|---|---|---|---|---|"]
             for a, v in d["divergence"].items():
-                L.append(f"| {a} | {_fmt(v['frac_any_divergence'])} | {_fmt(v['median_t_star'])} | {_fmt(v['median_t_star_norm'])} | {_fmt(v['success_given_early_div'])} (n={v['n_early']}) | {_fmt(v['success_given_late_div'])} (n={v['n_late']}) | {_fmt(v['success_given_no_div'])} (n={v['n_nodiv']}) |")
+                L.append(f"| {a} | {_fmt(v['frac_any_divergence'])} | {_fmt(v['median_t_star'])} | {_fmt(v['median_t_star_norm'])} | "
+                         f"{_fmt(v['success_given_early_div'])} (n={v['n_early']}) | {_fmt(v['success_given_late_div'])} (n={v['n_late']}) | "
+                         f"{_fmt(v['success_given_no_div'])} (n={v['n_nodiv']}) | {_fmt(v.get('frac_any_action_divergence'))} |")
         L += ["", "### Secondary closed-loop statistics", "", "| arm | decisions | tool calls | tool err | parser err | premature | repeated | truncated ctx |", "|---|---|---|---|---|---|---|---|"]
         for a, s in d["secondary"].items():
             L.append(f"| {a} | {_fmt(s['mean_decisions'])} | {_fmt(s['mean_tool_calls'])} | {_fmt(s['tool_error_rate'])} | {_fmt(s['parser_error_rate'])} | {_fmt(s['premature_rate'])} | {_fmt(s['repeated_tool_call_rate'])} | {_fmt(s['truncated_context_rate'])} |")
