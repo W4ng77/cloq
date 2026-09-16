@@ -52,6 +52,24 @@ litellm 1.82.6, tau2 1.0.1 (editable). `VLLM_USE_FLASHINFER_SAMPLER=0` because t
   normally (`user_stop` / `agent_stop`). Episodes that hit the 200-step cap (the 4B user simulator sometimes never
   emits `###STOP###` and keeps exchanging pleasantries) or the tool-error cap have no well-defined horizon.
 
+## Scoring runs that do not finish
+
+tau2 short-circuits `evaluate_simulation` when a run did not end through normal conversation
+termination (`user_stop` / `agent_stop`): it returns reward 0.0 and leaves `db_check` empty.
+Treating that empty check as a missing value would silently drop exactly the held-out tasks where a
+quantized agent loops to the step cap, inflating its score, so `cloq.metrics.resolved_db_match`
+records those runs as `db_match = False` (which is what tau2's own reward of 0.0 means). The BF16
+reference is unaffected: the task-usability rule above keeps only tasks whose BF16 episode ended
+normally, so every held-out task has a real BF16 database check.
+
+Two failure modes show up on the quantized arms and are reported, not hidden:
+
+* **step cap** -- the agent and the simulated user exchange pleasantries until the 200-step cap.
+* **infrastructure error** -- the same loop occasionally grows the (never-truncated) user-simulator
+  context past its 32768-token window, the server returns 400, and tau2 exhausts its retries. Counted
+  as a failure because the agent's own looping causes it; the per-arm count is in `metrics.json`
+  under `termination_reasons` and must be checked before reading any result.
+
 ## Determinism and the noise floor
 
 Verified on this box, 2026-09-15:
