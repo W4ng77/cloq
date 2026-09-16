@@ -62,6 +62,12 @@ records those runs as `db_match = False` (which is what tau2's own reward of 0.0
 reference is unaffected: the task-usability rule above keeps only tasks whose BF16 episode ended
 normally, so every held-out task has a real BF16 database check.
 
+One further recorded quirk: in about 1 decision in 6000, a tool-call argument contains a non-ASCII
+character (an arrow, say). litellm ships `arguments` as a JSON string with `\uXXXX` escapes while vLLM
+re-renders it decoded, so the server prompt and the local rendering differ by a few tokens. The decision
+record always stores the *server's* token ids, so every replay uses the true context; only the local
+sha256 (used identically by all arms) differs. `cloq.integrity` reports the rate per run.
+
 Two failure modes show up on the quantized arms and are reported, not hidden:
 
 * **step cap** -- the agent and the simulated user exchange pleasantries until the 200-step cap.
