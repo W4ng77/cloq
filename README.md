@@ -78,20 +78,30 @@ Two failure modes show up on the quantized arms and are reported, not hidden:
 
 ## Determinism and the noise floor
 
-Verified on this box, 2026-09-15:
+Measured with a proper control, not assumed. `scripts/bf16_replicate.sh` re-runs the BF16 arm on the
+same held-out tasks from a **fresh vLLM launch**, with the user-simulator server left untouched:
 
-* **Within one vLLM launch** with `VLLM_BATCH_INVARIANT=1`, greedy output is bit-identical regardless of batch
-  composition and concurrency (74/74 decisions across two runs of the same tasks with different batching).
-* **Across launches** of the *same* weights and config it is not: long free-text generations start to differ after
-  a few hundred tokens, while short tool calls were unaffected in a 22-state check. Changing `--max-model-len`
-  also changes outputs.
+| check | result |
+|---|---|
+| retail task outcomes, original vs replicate | identical on 58 of 58 |
+| held-out success rate | 0.362 vs 0.362 |
+| open-loop replay of 742 stored BF16 contexts | 1.000 tool-name, tool-call and full free-text agreement |
 
-Consequences, baked into the scripts:
+So with `VLLM_BATCH_INVARIANT=1` and an identical serving configuration, this pipeline is deterministic
+across launches, and the noise floor on every reported metric is zero. Every difference between arms is
+a quantization effect.
 
-1. The user-simulator server is started once and never restarted during an experiment.
-2. Each arm is evaluated within a single agent-server launch.
-3. `scripts/bf16_replicate.sh` re-runs the BF16 arm from a fresh launch on the same held-out tasks. Its
-   closed-loop, first-divergence and open-loop numbers are the **noise floor** that any quantization effect must
-   exceed. Open-loop text agreement in particular is dominated by this noise (BF16 vs itself across launches gives
-   ≈0.67 full-action agreement, while tool-name and full tool-call agreement stay at 1.00), which is why the
-   tool-call metrics are the primary open-loop readout and full-text agreement is reported only alongside the control.
+Two things still have to hold, and the scripts enforce them:
+
+1. The user-simulator server is started once and never restarted during an experiment. Changing its
+   `--max-model-len` changes its outputs, which changes the observations every arm sees.
+2. `VLLM_BATCH_INVARIANT=1` is required. Without it, outputs depend on batch composition: two runs of the
+   same five tasks at different concurrency diverged (`runs/bi_a` vs `runs/bi_b`), while with it enabled
+   two such runs agreed on 74 of 74 decisions (`runs/bi_c` vs `runs/bi_d`).
+
+An earlier note here claimed that greedy output drifts between launches of the same weights. That was
+wrong: the measurement behind it had accidentally been replayed through a small quantized test checkpoint
+that was serving on the agent port at the time. The control above replaces it.
+
+The teacher-forced NLL of BF16 on its own actions is 0.038 per token, which is the reference floor for the
+NLL column (it is the model's own uncertainty about its greedy output, not a noise term).

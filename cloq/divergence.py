@@ -61,10 +61,11 @@ def analyze_task(fp: list[dict], q: list[dict]) -> dict:
         b = normalize_action(q[i]["content"], q[i]["tool_calls"])
         if t_star is None and a != b:
             t_star = i
-        # Behavioural divergence: ignore differences that are only a rewording of a message to
-        # the user. Counts only a tool call vs a message, or two different tool calls. Free text
-        # drifts between two launches of the *same* BF16 weights (see README), so t_star alone
-        # cannot separate a quantization effect from that noise floor.
+        # Behavioural divergence: ignore differences that are only a rewording of a message to the
+        # user. Counts only a tool call vs a message, or two different tool calls. Under a plain
+        # action-string comparison every task "diverges" at decision 0, because the quantized model
+        # rewords its very first reply; that is a real quantization effect but not a behavioural one,
+        # and it hides where the agent actually starts acting differently.
         if t_tool is None:
             fk = "tool" if fp[i]["tool_calls"] else "text"
             qk = "tool" if q[i]["tool_calls"] else "text"
