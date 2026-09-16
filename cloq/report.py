@@ -14,7 +14,7 @@ from pathlib import Path
 import numpy as np
 
 from cloq import config as C
-from cloq.metrics import paired_bootstrap, read_jsonl, spearman
+from cloq.metrics import bootstrap_gap_difference, paired_bootstrap, read_jsonl, spearman
 
 ANALYSIS = C.PROJECT_ROOT / "analysis"
 
@@ -56,7 +56,15 @@ def horizon_table(split: dict, domain: str, bf16: dict, arms: dict[str, dict], m
         ids = [t for t in bf16 if t in d]
         fail = [float(not d[t][metric]) for t in ids]
         corr[a] = spearman([hmap[t] for t in ids], fail)
-    return {"buckets": res, "spearman_horizon_vs_failure": corr}
+    amp = {}
+    for a, d in arms.items():
+        ids = [t for t in bf16 if t in d]
+        amp[a] = bootstrap_gap_difference(
+            {t: float(bool(bf16[t][metric])) for t in ids},
+            {t: float(bool(d[t][metric])) for t in ids},
+            {t: hmap[t] for t in ids if t in hmap},
+        )
+    return {"buckets": res, "spearman_horizon_vs_failure": corr, "median_split_amplification": amp}
 
 
 def main():
@@ -129,6 +137,15 @@ def main():
             if metric in pooled.get(arm, {}):
                 cs[f"bf16 - {arm}"] = paired_bootstrap(pooled["bf16"][metric], pooled[arm][metric], n_boot=nboot)
         results["pooled"][metric] = {"means": {arm: float(np.mean(list(pooled[arm][metric].values()))) for arm in pooled if metric in pooled[arm]}, "contrasts": cs}
+    # pooled horizon amplification (db_match), across domains
+    hpool = {}
+    for domain in domains:
+        for t, v in split["domains"][domain]["horizon_by_task"].items():
+            hpool[f"{domain}/{t}"] = v
+    results["pooled"]["horizon_amplification_db_match"] = {
+        arm: bootstrap_gap_difference(pooled["bf16"]["db_match"], pooled[arm]["db_match"], hpool)
+        for arm in arm_runs if "db_match" in pooled.get(arm, {})
+    }
     for p in [out_dir / "occupancy_last.json", out_dir / "occupancy_obs.json"]:
         if p.exists():
             results[p.stem] = json.load(open(p))
@@ -166,6 +183,16 @@ def write_markdown(results: dict, split: dict, out_dir: Path) -> None:
             L.append(f"| {q} | {row['n']} | {_fmt(row['bf16'])} | " + " | ".join(f"{_fmt(row.get(a))} ({_fmt(row.get('delta_' + a))})" for a in results["arms"]) + " |")
         L.append("")
         L.append("Spearman(horizon, failure): " + ", ".join(f"{a}={_fmt(v)}" for a, v in h["spearman_horizon_vs_failure"].items()))
+        amp = h.get("median_split_amplification") or {}
+        if amp:
+            L += ["", "Horizon amplification, tasks split at the median BF16 horizon "
+                  "(gap = BF16 - arm; a positive interval excluding zero means the gap grows with horizon):", "",
+                  "| arm | gap short | gap long | long - short | 95% CI |", "|---|---|---|---|---|"]
+            for a, v in amp.items():
+                if "gap_long" not in v:
+                    continue
+                L.append(f"| {a} | {_fmt(v['gap_short'])} (n={v['n_short']}) | {_fmt(v['gap_long'])} (n={v['n_long']}) | "
+                         f"{_fmt(v['gap_long_minus_short'])} | [{_fmt(v['ci_lo'])}, {_fmt(v['ci_hi'])}] |")
         if d["openloop"]:
             L += ["", "### Open-loop fidelity on BF16 held-out states", "",
               "Replay of each stored BF16 context without executing the result. Full-action agreement includes free-text",
@@ -192,6 +219,15 @@ def write_markdown(results: dict, split: dict, out_dir: Path) -> None:
         L += [f"### {metric}", "", "means: " + ", ".join(f"{a}={_fmt(v)}" for a, v in p["means"].items()), "", "| contrast | diff | 95% CI | n |", "|---|---|---|---|"]
         for name, c in p["contrasts"].items():
             L.append(f"| {name} | {_fmt(c.get('diff'))} | [{_fmt(c.get('ci_lo'))}, {_fmt(c.get('ci_hi'))}] | {c.get('n')} |")
+        L.append("")
+    amp = results["pooled"].get("horizon_amplification_db_match") or {}
+    if amp:
+        L += ["### Pooled horizon amplification (db_match)", "", "| arm | gap short | gap long | long - short | 95% CI | P(<=0) |", "|---|---|---|---|---|---|"]
+        for a, v in amp.items():
+            if "gap_long" not in v:
+                continue
+            L.append(f"| {a} | {_fmt(v['gap_short'])} (n={v['n_short']}) | {_fmt(v['gap_long'])} (n={v['n_long']}) | "
+                     f"{_fmt(v['gap_long_minus_short'])} | [{_fmt(v['ci_lo'])}, {_fmt(v['ci_hi'])}] | {_fmt(v['p_amplification_le_0'])} |")
         L.append("")
     for key in ["occupancy_last", "occupancy_obs"]:
         if key in results:

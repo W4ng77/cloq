@@ -207,6 +207,43 @@ def paired_bootstrap(a: dict[str, float], b: dict[str, float], n_boot: int = 100
     }
 
 
+def bootstrap_gap_difference(
+    bf16: dict[str, float], arm: dict[str, float], horizon: dict[str, float],
+    n_boot: int = 10000, seed: int = 0, ci: float = 0.95,
+) -> dict:
+    """Direct test of horizon amplification (plan section 14).
+
+    Splits the held-out tasks at the median BF16 horizon and bootstraps
+        (BF16 - arm) on long tasks  -  (BF16 - arm) on short tasks,
+    resampling task ids within each half. A positive interval excluding zero means the
+    quantization gap grows with task horizon.
+    """
+    ids = sorted(set(bf16) & set(arm) & set(horizon))
+    if len(ids) < 8:
+        return {"n": len(ids)}
+    h = np.array([horizon[i] for i in ids], dtype=float)
+    d = np.array([bf16[i] - arm[i] for i in ids], dtype=float)
+    med = float(np.median(h))
+    long_i = np.where(h > med)[0]
+    short_i = np.where(h <= med)[0]
+    if len(long_i) < 3 or len(short_i) < 3:
+        return {"n": len(ids), "note": "degenerate horizon split"}
+    rng = np.random.default_rng(seed)
+    bl = d[long_i][rng.integers(0, len(long_i), size=(n_boot, len(long_i)))].mean(axis=1)
+    bs = d[short_i][rng.integers(0, len(short_i), size=(n_boot, len(short_i)))].mean(axis=1)
+    diff = bl - bs
+    lo, hi = np.quantile(diff, [(1 - ci) / 2, 1 - (1 - ci) / 2])
+    return {
+        "n": len(ids), "median_horizon": med,
+        "n_short": int(len(short_i)), "n_long": int(len(long_i)),
+        "gap_short": float(d[short_i].mean()), "gap_long": float(d[long_i].mean()),
+        "gap_long_minus_short": float(d[long_i].mean() - d[short_i].mean()),
+        "ci_lo": float(lo), "ci_hi": float(hi),
+        "p_amplification_le_0": float((diff <= 0).mean()),
+        "n_boot": n_boot,
+    }
+
+
 def spearman(x: Iterable[float], y: Iterable[float]) -> float | None:
     from scipy.stats import spearmanr
 
