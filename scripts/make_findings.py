@@ -80,13 +80,29 @@ def main():
 
     # open loop vs closed loop
     L += ["", "## Open-loop fidelity versus closed-loop success", "",
-          "Replay of stored BF16 held-out contexts without executing the result.", "",
+          "Replay of stored BF16 held-out contexts without executing the result. Note that open-loop",
+          "fidelity is nearly identical across the two domains while closed-loop degradation is not,",
+          "so action fidelity on nominal states does not predict closed-loop success.", "",
           "| arm | domain | tool-name agr. | full tool-call agr. | NLL/token | closed-loop success |",
           "|---|---|---|---|---|---|"]
     for domain, d in r["domains"].items():
         for a, o in (d.get("openloop") or {}).items():
             L.append(f"| {a} | {domain} | {fmt(o.get('tool_name_agreement'))} | {fmt(o.get('full_tool_call_agreement'))} | "
                      f"{fmt(o.get('nll_per_token_mean'),4)} | {fmt(d['summary']['db_match'].get(a))} |")
+
+    sub = (r.get("pooled") or {}).get("long_horizon_subset_db_match")
+    if sub:
+        L += [f"", f"## Long-horizon subset (BF16 horizon above {sub['median_horizon']:.0f}; "
+              f"n={sub['n_long']} of {sub['n_long']+sub['n_short']})", "",
+              "These are the tasks on which quantization degradation exists at all. Averaging over every",
+              "held-out task dilutes a method effect with short tasks that have no gap to close.", "",
+              "| arm | short tasks | long tasks |", "|---|---|---|"]
+        for a, v in sub["means"].items():
+            L.append(f"| {a} | {fmt(v['short'])} | {fmt(v['long'])} |")
+        L += ["", "| contrast on long tasks | difference | 95% CI | P(>0) |", "|---|---|---|---|"]
+        for name, c in sub["contrasts"].items():
+            L.append(f"| {name} | {fmt(c.get('diff'))} | [{fmt(c.get('ci_lo'))}, {fmt(c.get('ci_hi'))}] | "
+                     f"{fmt(1 - c.get('p_diff_le_0', 1))} |")
 
     # horizon
     amp = (r.get("pooled") or {}).get("horizon_amplification_db_match") or {}

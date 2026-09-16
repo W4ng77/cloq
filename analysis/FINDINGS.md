@@ -1,6 +1,6 @@
 # CLOQ v0 findings
 
-Generated 2026-09-16T11:28:26+00:00 from `analysis/results.json`.
+Generated 2026-09-16T11:29:09+00:00 from `analysis/results.json`.
 Model Qwen/Qwen3-4B-Instruct-2507 at revision `cdbee75f17c0`, tau2-bench text mode, GPTQ W4 group 128,
 calibration budget 64000 tokens per arm within 1%.
 
@@ -38,7 +38,9 @@ Paired task-level bootstrap, 10,000 replicates:
 
 ## Open-loop fidelity versus closed-loop success
 
-Replay of stored BF16 held-out contexts without executing the result.
+Replay of stored BF16 held-out contexts without executing the result. Note that open-loop
+fidelity is nearly identical across the two domains while closed-loop degradation is not,
+so action fidelity on nominal states does not predict closed-loop success.
 
 | arm | domain | tool-name agr. | full tool-call agr. | NLL/token | closed-loop success |
 |---|---|---|---|---|---|
@@ -48,6 +50,26 @@ Replay of stored BF16 held-out contexts without executing the result.
 | static | airline | 0.893 | 0.828 | 0.0937 | 0.407 |
 | fp_traj | airline | 0.893 | 0.828 | 0.0897 | 0.333 |
 | cloq | airline | 0.905 | 0.828 | 0.0842 | 0.444 |
+
+## Long-horizon subset (BF16 horizon above 11; n=37 of 85)
+
+These are the tasks on which quantization degradation exists at all. Averaging over every
+held-out task dilutes a method effect with short tasks that have no gap to close.
+
+| arm | short tasks | long tasks |
+|---|---|---|
+| bf16 | 0.438 | 0.297 |
+| static | 0.438 | 0.108 |
+| fp_traj | 0.521 | 0.135 |
+| cloq | 0.458 | 0.189 |
+
+| contrast on long tasks | difference | 95% CI | P(>0) |
+|---|---|---|---|
+| cloq - static | 0.081 | [-0.027, 0.189] | 0.881 |
+| cloq - fp_traj | 0.054 | [-0.054, 0.162] | 0.781 |
+| fp_traj - static | 0.027 | [-0.081, 0.162] | 0.588 |
+| bf16 - cloq | 0.108 | [-0.081, 0.297] | 0.830 |
+| bf16 - static | 0.189 | [0.027, 0.351] | 0.983 |
 
 ## Horizon amplification (pooled, tasks split at the median BF16 horizon)
 
