@@ -1,16 +1,16 @@
 # CLOQ v0 findings
 
-Generated 2026-09-16T12:42:13+00:00 from `analysis/results.json`.
+Generated 2026-09-16T13:48:54+00:00 from `analysis/results.json`.
 Model Qwen/Qwen3-4B-Instruct-2507 at revision `cdbee75f17c0`, tau2-bench text mode, GPTQ W4 group 128,
 calibration budget 64000 tokens per arm within 1%.
 
 ## Headline: closed-loop task success (database end-state match)
 
-| domain | n | bf16 | static | fp_traj | cloq | bf16_rep |
-|---|---|---|---|---|---|---|
-| retail | 58 | 0.362 | 0.241 | 0.362 | 0.293 | 0.362 |
-| airline | 27 | 0.407 | 0.407 | 0.333 | 0.444 | 0.407 |
-| pooled | 85 | 0.376 | 0.294 | 0.353 | 0.341 | 0.376 |
+| domain | n | bf16 | static | fp_traj | cloq | rtn | bf16_rep |
+|---|---|---|---|---|---|---|---|
+| retail | 58 | 0.362 | 0.241 | 0.362 | 0.293 | 0.259 | 0.362 |
+| airline | 27 | 0.407 | 0.407 | 0.333 | 0.444 | 0.296 | 0.407 |
+| pooled | 85 | 0.376 | 0.294 | 0.353 | 0.341 | 0.271 | 0.376 |
 
 Paired task-level bootstrap, 10,000 replicates:
 
@@ -22,6 +22,7 @@ Paired task-level bootstrap, 10,000 replicates:
 | bf16 - static | 0.082 | [-0.024, 0.188] |
 | bf16 - fp_traj | 0.024 | [-0.094, 0.129] |
 | bf16 - cloq | 0.035 | [-0.082, 0.153] |
+| bf16 - rtn | 0.106 | [0.000, 0.212] |
 | bf16 - bf16_rep | 0.000 | [0.000, 0.000] |
 
 ## Agent behaviour
@@ -32,11 +33,13 @@ Paired task-level bootstrap, 10,000 replicates:
 | static | retail | 0.224 | 30.4 | 0.380 | 0.0000 |
 | fp_traj | retail | 0.121 | 23.6 | 0.255 | 0.0000 |
 | cloq | retail | 0.086 | 20.6 | 0.080 | 0.0000 |
+| rtn | retail | 0.069 | 19.1 | 0.101 | 0.0000 |
 | bf16_rep | retail | 0.000 | 12.8 | 0.129 | 0.0000 |
 | bf16 | airline | 0.000 | 11.3 | 0.065 | 0.0000 |
 | static | airline | 0.074 | 17.6 | 0.091 | 0.0000 |
 | fp_traj | airline | 0.037 | 14.4 | 0.085 | 0.0000 |
 | cloq | airline | 0.037 | 16.0 | 0.037 | 0.0000 |
+| rtn | airline | 0.037 | 13.7 | 0.097 | 0.0000 |
 | bf16_rep | airline | 0.000 | 11.3 | 0.065 | 0.0000 |
 
 ## Open-loop fidelity versus closed-loop success
@@ -50,10 +53,12 @@ so action fidelity on nominal states does not predict closed-loop success.
 | static | retail | 0.859 | 0.806 | 0.0929 | 0.241 |
 | fp_traj | retail | 0.908 | 0.851 | 0.0745 | 0.362 |
 | cloq | retail | 0.896 | 0.836 | 0.0743 | 0.293 |
+| rtn | retail | 0.754 | 0.707 | 0.1539 | 0.259 |
 | bf16_rep | retail | 1.000 | 1.000 | 0.0379 | 0.362 |
 | static | airline | 0.893 | 0.828 | 0.0937 | 0.407 |
 | fp_traj | airline | 0.893 | 0.828 | 0.0897 | 0.333 |
 | cloq | airline | 0.905 | 0.828 | 0.0842 | 0.444 |
+| rtn | airline | 0.763 | 0.692 | 0.1661 | 0.296 |
 | bf16_rep | airline | 1.000 | 1.000 | 0.0400 | 0.407 |
 
 ## Long-horizon subset (BF16 horizon above 11; n=37 of 85)
@@ -67,6 +72,7 @@ held-out task dilutes a method effect with short tasks that have no gap to close
 | static | 0.438 | 0.108 |
 | fp_traj | 0.521 | 0.135 |
 | cloq | 0.458 | 0.189 |
+| rtn | 0.396 | 0.108 |
 | bf16_rep | 0.438 | 0.297 |
 
 | contrast on long tasks | difference | 95% CI | P(>0) |
@@ -84,6 +90,7 @@ held-out task dilutes a method effect with short tasks that have no gap to close
 | static | 0.000 (n=48) | 0.189 (n=37) | 0.189 | [-0.017, 0.399] | 0.039 |
 | fp_traj | -0.083 (n=48) | 0.162 (n=37) | 0.245 | [0.015, 0.470] | 0.019 |
 | cloq | -0.021 (n=48) | 0.108 (n=37) | 0.129 | [-0.117, 0.374] | 0.156 |
+| rtn | 0.042 (n=48) | 0.189 (n=37) | 0.148 | [-0.052, 0.351] | 0.080 |
 | bf16_rep | 0.000 (n=48) | 0.000 (n=37) | 0.000 | [0.000, 0.000] | 1.000 |
 
 ## First divergence in tool-call behaviour
@@ -93,10 +100,12 @@ held-out task dilutes a method effect with short tasks that have no gap to close
 | static | retail | 0.931 | 0.369 | 0.182 | 0.286 | 0.500 |
 | fp_traj | retail | 0.948 | 0.400 | 0.265 | 0.429 | 1.000 |
 | cloq | retail | 0.897 | 0.283 | 0.250 | 0.333 | 0.500 |
+| rtn | retail | 1.000 | 0.215 | 0.239 | 0.333 | n/a |
 | bf16_rep | retail | 0.000 | n/a | n/a | n/a | 0.362 |
 | static | airline | 1.000 | 0.222 | 0.421 | 0.375 | n/a |
 | fp_traj | airline | 0.963 | 0.232 | 0.176 | 0.556 | 1.000 |
 | cloq | airline | 0.963 | 0.225 | 0.400 | 0.455 | 1.000 |
+| rtn | airline | 0.926 | 0.133 | 0.238 | 0.500 | 0.500 |
 | bf16_rep | airline | 0.000 | n/a | n/a | n/a | 0.407 |
 
 ## Occupancy: distance from visited states to each calibration buffer
@@ -111,11 +120,13 @@ column, and it never diverges from BF16, so it has no post-divergence states.
 | retail | static | 0.298 | 0.281 | 0.083 | 0.058 | 0.299 | 0.2105 | -0.0000 |
 | retail | fp_traj | 0.255 | 0.236 | 0.082 | 0.062 | 0.253 | 0.1226 | -0.0000 |
 | retail | cloq | 0.234 | 0.211 | 0.088 | 0.057 | 0.226 | 0.0896 | -0.0000 |
+| retail | rtn | 0.233 | 0.209 | 0.108 | 0.057 | 0.219 | 0.0811 | -0.0000 |
 | retail | bf16_rep | 0.137 | 0.108 | 0.102 | 0.108 | n/a | -0.0017 | -0.0000 |
 | airline | BF16 states | 0.132 | 0.101 | 0.101 | | | | |
 | airline | static | 0.236 | 0.218 | 0.077 | 0.060 | 0.246 | 0.1124 | -0.0006 |
 | airline | fp_traj | 0.135 | 0.107 | 0.103 | 0.064 | 0.118 | 0.0023 | -0.0006 |
 | airline | cloq | 0.201 | 0.179 | 0.078 | 0.063 | 0.202 | 0.0541 | -0.0006 |
+| airline | rtn | 0.202 | 0.177 | 0.092 | 0.057 | 0.203 | 0.0497 | -0.0006 |
 | airline | bf16_rep | 0.132 | 0.101 | 0.101 | 0.101 | n/a | -0.0040 | -0.0006 |
 
 ## Composition of the CLOQ on-policy half (plan section 19)

@@ -2,11 +2,11 @@
 
 ## retail (n_eval = 58)
 
-| metric | bf16 | static | fp_traj | cloq | bf16_rep |
-|---|---|---|---|---|---|
-| db_match | 0.362 | 0.241 | 0.362 | 0.293 | 0.362 |
-| task_success | 0.310 | 0.207 | 0.310 | 0.259 | 0.310 |
-| reward | 0.207 | 0.158 | 0.190 | 0.190 | 0.207 |
+| metric | bf16 | static | fp_traj | cloq | rtn | bf16_rep |
+|---|---|---|---|---|---|---|
+| db_match | 0.362 | 0.241 | 0.362 | 0.293 | 0.259 | 0.362 |
+| task_success | 0.310 | 0.207 | 0.310 | 0.259 | 0.207 | 0.310 |
+| reward | 0.207 | 0.158 | 0.190 | 0.190 | 0.086 | 0.207 |
 
 ### Paired bootstrap contrasts (db_match)
 
@@ -18,6 +18,7 @@
 | bf16 - static | 0.121 | [0.000, 0.241] | 58 |
 | bf16 - fp_traj | 0.000 | [-0.121, 0.121] | 58 |
 | bf16 - cloq | 0.069 | [-0.069, 0.207] | 58 |
+| bf16 - rtn | 0.103 | [-0.034, 0.241] | 58 |
 | bf16 - bf16_rep | 0.000 | [0.000, 0.000] | 58 |
 
 ### Paired bootstrap contrasts (task_success, local judge)
@@ -30,18 +31,19 @@
 | bf16 - static | 0.103 | [-0.017, 0.224] | 58 |
 | bf16 - fp_traj | 0.000 | [-0.138, 0.138] | 58 |
 | bf16 - cloq | 0.052 | [-0.086, 0.190] | 58 |
+| bf16 - rtn | 0.103 | [-0.034, 0.241] | 58 |
 | bf16 - bf16_rep | 0.000 | [0.000, 0.000] | 58 |
 
 ### Horizon amplification (db_match; BF16 horizon quartile)
 
-| quartile | n | bf16 | static (Δ) | fp_traj (Δ) | cloq (Δ) | bf16_rep (Δ) |
-|---|---|---|---|---|---|---|
-| Q1 | 11 | 0.455 | 0.545 (-0.091) | 0.727 (-0.273) | 0.364 (0.091) | 0.455 (0.000) |
-| Q2 | 16 | 0.562 | 0.312 (0.250) | 0.500 (0.062) | 0.500 (0.062) | 0.562 (0.000) |
-| Q3 | 17 | 0.294 | 0.176 (0.118) | 0.235 (0.059) | 0.235 (0.059) | 0.294 (0.000) |
-| Q4 | 14 | 0.143 | 0.000 (0.143) | 0.071 (0.071) | 0.071 (0.071) | 0.143 (0.000) |
+| quartile | n | bf16 | static (Δ) | fp_traj (Δ) | cloq (Δ) | rtn (Δ) | bf16_rep (Δ) |
+|---|---|---|---|---|---|---|---|
+| Q1 | 11 | 0.455 | 0.545 (-0.091) | 0.727 (-0.273) | 0.364 (0.091) | 0.455 (0.000) | 0.455 (0.000) |
+| Q2 | 16 | 0.562 | 0.312 (0.250) | 0.500 (0.062) | 0.500 (0.062) | 0.312 (0.250) | 0.562 (0.000) |
+| Q3 | 17 | 0.294 | 0.176 (0.118) | 0.235 (0.059) | 0.235 (0.059) | 0.294 (0.000) | 0.294 (0.000) |
+| Q4 | 14 | 0.143 | 0.000 (0.143) | 0.071 (0.071) | 0.071 (0.071) | 0.000 (0.143) | 0.143 (0.000) |
 
-Spearman(horizon, failure): static=0.401, fp_traj=0.464, cloq=0.293, bf16_rep=0.311
+Spearman(horizon, failure): static=0.401, fp_traj=0.464, cloq=0.293, rtn=0.348, bf16_rep=0.311
 
 Horizon amplification, tasks split at the median BF16 horizon (gap = BF16 - arm; a positive interval excluding zero means the gap grows with horizon):
 
@@ -50,6 +52,7 @@ Horizon amplification, tasks split at the median BF16 horizon (gap = BF16 - arm;
 | static | 0.091 (n=33) | 0.160 (n=25) | 0.069 | [-0.171, 0.310] |
 | fp_traj | -0.061 (n=33) | 0.080 (n=25) | 0.141 | [-0.130, 0.401] |
 | cloq | 0.061 (n=33) | 0.080 (n=25) | 0.019 | [-0.272, 0.302] |
+| rtn | 0.061 (n=33) | 0.160 (n=25) | 0.099 | [-0.161, 0.361] |
 | bf16_rep | 0.000 (n=33) | 0.000 (n=25) | 0.000 | [0.000, 0.000] |
 
 ### Open-loop fidelity on BF16 held-out states
@@ -62,6 +65,7 @@ rewording and is therefore bounded by the launch-noise floor; the tool-call colu
 | static | 742 | 0.859 | 0.806 | 0.480 | 0.957 | 0.093 |
 | fp_traj | 742 | 0.908 | 0.851 | 0.505 | 0.952 | 0.075 |
 | cloq | 742 | 0.896 | 0.836 | 0.500 | 0.951 | 0.074 |
+| rtn | 742 | 0.754 | 0.707 | 0.410 | 0.956 | 0.154 |
 | bf16_rep | 742 | 1.000 | 1.000 | 1.000 | 1.000 | 0.038 |
 
 ### First divergence (t* = first decision whose tool-call behaviour differs from BF16)
@@ -74,6 +78,7 @@ The last column is the fraction of tasks whose action string differs at all, wor
 | static | 0.931 | 4.000 | 0.369 | 0.182 (n=33) | 0.286 (n=21) | 0.500 (n=4) | 1.000 |
 | fp_traj | 0.948 | 4.000 | 0.400 | 0.265 (n=34) | 0.429 (n=21) | 1.000 (n=3) | 1.000 |
 | cloq | 0.897 | 3.500 | 0.283 | 0.250 (n=40) | 0.333 (n=12) | 0.500 (n=6) | 1.000 |
+| rtn | 1.000 | 2.000 | 0.215 | 0.239 (n=46) | 0.333 (n=12) | n/a (n=0) | 1.000 |
 | bf16_rep | 0.000 | n/a | n/a | n/a (n=0) | n/a (n=0) | 0.362 (n=58) | 0.000 |
 
 ### Secondary closed-loop statistics
@@ -84,15 +89,16 @@ The last column is the fraction of tasks whose action string differs at all, wor
 | static | 30.397 | 9.310 | 0.113 | 0.000 | 0.224 | 0.380 | 0.672 |
 | fp_traj | 23.638 | 8.379 | 0.109 | 0.000 | 0.121 | 0.255 | 0.575 |
 | cloq | 20.603 | 6.879 | 0.193 | 0.000 | 0.086 | 0.080 | 0.470 |
+| rtn | 19.121 | 6.310 | 0.199 | 0.000 | 0.069 | 0.101 | 0.421 |
 | bf16_rep | 12.793 | 6.948 | 0.132 | 0.000 | 0.000 | 0.129 | 0.286 |
 
 ## airline (n_eval = 27)
 
-| metric | bf16 | static | fp_traj | cloq | bf16_rep |
-|---|---|---|---|---|---|
-| db_match | 0.407 | 0.407 | 0.333 | 0.444 | 0.407 |
-| task_success | 0.370 | 0.333 | 0.222 | 0.333 | 0.370 |
-| reward | 0.333 | 0.296 | 0.222 | 0.333 | 0.333 |
+| metric | bf16 | static | fp_traj | cloq | rtn | bf16_rep |
+|---|---|---|---|---|---|---|
+| db_match | 0.407 | 0.407 | 0.333 | 0.444 | 0.296 | 0.407 |
+| task_success | 0.370 | 0.333 | 0.222 | 0.333 | 0.222 | 0.370 |
+| reward | 0.333 | 0.296 | 0.222 | 0.333 | 0.148 | 0.333 |
 
 ### Paired bootstrap contrasts (db_match)
 
@@ -104,6 +110,7 @@ The last column is the fraction of tasks whose action string differs at all, wor
 | bf16 - static | 0.000 | [-0.222, 0.185] | 27 |
 | bf16 - fp_traj | 0.074 | [-0.148, 0.296] | 27 |
 | bf16 - cloq | -0.037 | [-0.259, 0.185] | 27 |
+| bf16 - rtn | 0.111 | [-0.037, 0.259] | 27 |
 | bf16 - bf16_rep | 0.000 | [0.000, 0.000] | 27 |
 
 ### Paired bootstrap contrasts (task_success, local judge)
@@ -116,18 +123,19 @@ The last column is the fraction of tasks whose action string differs at all, wor
 | bf16 - static | 0.037 | [-0.148, 0.222] | 27 |
 | bf16 - fp_traj | 0.148 | [-0.074, 0.370] | 27 |
 | bf16 - cloq | 0.037 | [-0.185, 0.259] | 27 |
+| bf16 - rtn | 0.148 | [0.000, 0.333] | 27 |
 | bf16 - bf16_rep | 0.000 | [0.000, 0.000] | 27 |
 
 ### Horizon amplification (db_match; BF16 horizon quartile)
 
-| quartile | n | bf16 | static (Δ) | fp_traj (Δ) | cloq (Δ) | bf16_rep (Δ) |
-|---|---|---|---|---|---|---|
-| Q1 | 4 | 0.500 | 1.000 (-0.500) | 1.000 (-0.500) | 1.000 (-0.500) | 0.500 (0.000) |
-| Q2 | 8 | 0.125 | 0.250 (-0.125) | 0.250 (-0.125) | 0.250 (-0.125) | 0.125 (0.000) |
-| Q3 | 7 | 0.714 | 0.429 (0.286) | 0.143 (0.571) | 0.571 (0.143) | 0.714 (0.000) |
-| Q4 | 8 | 0.375 | 0.250 (0.125) | 0.250 (0.125) | 0.250 (0.125) | 0.375 (0.000) |
+| quartile | n | bf16 | static (Δ) | fp_traj (Δ) | cloq (Δ) | rtn (Δ) | bf16_rep (Δ) |
+|---|---|---|---|---|---|---|---|
+| Q1 | 4 | 0.500 | 1.000 (-0.500) | 1.000 (-0.500) | 1.000 (-0.500) | 0.500 (0.000) | 0.500 (0.000) |
+| Q2 | 8 | 0.125 | 0.250 (-0.125) | 0.250 (-0.125) | 0.250 (-0.125) | 0.250 (-0.125) | 0.125 (0.000) |
+| Q3 | 7 | 0.714 | 0.429 (0.286) | 0.143 (0.571) | 0.571 (0.143) | 0.286 (0.429) | 0.714 (0.000) |
+| Q4 | 8 | 0.375 | 0.250 (0.125) | 0.250 (0.125) | 0.250 (0.125) | 0.250 (0.125) | 0.375 (0.000) |
 
-Spearman(horizon, failure): static=0.330, fp_traj=0.420, cloq=0.327, bf16_rep=-0.073
+Spearman(horizon, failure): static=0.330, fp_traj=0.420, cloq=0.327, rtn=0.110, bf16_rep=-0.073
 
 Horizon amplification, tasks split at the median BF16 horizon (gap = BF16 - arm; a positive interval excluding zero means the gap grows with horizon):
 
@@ -136,6 +144,7 @@ Horizon amplification, tasks split at the median BF16 horizon (gap = BF16 - arm;
 | static | -0.214 (n=14) | 0.231 (n=13) | 0.445 | [0.071, 0.824] |
 | fp_traj | -0.143 (n=14) | 0.308 (n=13) | 0.451 | [0.011, 0.890] |
 | cloq | -0.214 (n=14) | 0.154 (n=13) | 0.368 | [-0.022, 0.808] |
+| rtn | 0.000 (n=14) | 0.231 (n=13) | 0.231 | [-0.066, 0.533] |
 | bf16_rep | 0.000 (n=14) | 0.000 (n=13) | 0.000 | [0.000, 0.000] |
 
 ### Open-loop fidelity on BF16 held-out states
@@ -148,6 +157,7 @@ rewording and is therefore bounded by the launch-noise floor; the tool-call colu
 | static | 304 | 0.893 | 0.828 | 0.490 | 0.960 | 0.094 |
 | fp_traj | 304 | 0.893 | 0.828 | 0.490 | 0.958 | 0.090 |
 | cloq | 304 | 0.905 | 0.828 | 0.490 | 0.954 | 0.084 |
+| rtn | 304 | 0.763 | 0.692 | 0.411 | 0.953 | 0.166 |
 | bf16_rep | 304 | 1.000 | 1.000 | 1.000 | 1.000 | 0.040 |
 
 ### First divergence (t* = first decision whose tool-call behaviour differs from BF16)
@@ -160,6 +170,7 @@ The last column is the fraction of tasks whose action string differs at all, wor
 | static | 1.000 | 2.000 | 0.222 | 0.421 (n=19) | 0.375 (n=8) | n/a (n=0) | 1.000 |
 | fp_traj | 0.963 | 2.500 | 0.232 | 0.176 (n=17) | 0.556 (n=9) | 1.000 (n=1) | 1.000 |
 | cloq | 0.963 | 2.500 | 0.225 | 0.400 (n=15) | 0.455 (n=11) | 1.000 (n=1) | 1.000 |
+| rtn | 0.926 | 2.000 | 0.133 | 0.238 (n=21) | 0.500 (n=4) | 0.500 (n=2) | 1.000 |
 | bf16_rep | 0.000 | n/a | n/a | n/a (n=0) | n/a (n=0) | 0.407 (n=27) | 0.000 |
 
 ### Secondary closed-loop statistics
@@ -170,13 +181,14 @@ The last column is the fraction of tasks whose action string differs at all, wor
 | static | 17.630 | 6.074 | 0.098 | 0.000 | 0.074 | 0.091 | 0.511 |
 | fp_traj | 14.444 | 6.556 | 0.068 | 0.000 | 0.037 | 0.085 | 0.395 |
 | cloq | 16.000 | 8.000 | 0.056 | 0.000 | 0.037 | 0.037 | 0.394 |
+| rtn | 13.667 | 5.370 | 0.131 | 0.000 | 0.037 | 0.097 | 0.320 |
 | bf16_rep | 11.259 | 6.259 | 0.112 | 0.000 | 0.000 | 0.065 | 0.197 |
 
 ## Pooled (db_match is definitionally identical across domains)
 
 ### db_match
 
-means: static=0.294, fp_traj=0.353, cloq=0.341, bf16_rep=0.376, bf16=0.376
+means: static=0.294, fp_traj=0.353, cloq=0.341, rtn=0.271, bf16_rep=0.376, bf16=0.376
 
 | contrast | diff | 95% CI | n |
 |---|---|---|---|
@@ -186,11 +198,12 @@ means: static=0.294, fp_traj=0.353, cloq=0.341, bf16_rep=0.376, bf16=0.376
 | bf16 - static | 0.082 | [-0.024, 0.188] | 85 |
 | bf16 - fp_traj | 0.024 | [-0.094, 0.129] | 85 |
 | bf16 - cloq | 0.035 | [-0.082, 0.153] | 85 |
+| bf16 - rtn | 0.106 | [0.000, 0.212] | 85 |
 | bf16 - bf16_rep | 0.000 | [0.000, 0.000] | 85 |
 
 ### task_success
 
-means: static=0.247, fp_traj=0.282, cloq=0.282, bf16_rep=0.329, bf16=0.329
+means: static=0.247, fp_traj=0.282, cloq=0.282, rtn=0.212, bf16_rep=0.329, bf16=0.329
 
 | contrast | diff | 95% CI | n |
 |---|---|---|---|
@@ -200,11 +213,12 @@ means: static=0.247, fp_traj=0.282, cloq=0.282, bf16_rep=0.329, bf16=0.329
 | bf16 - static | 0.082 | [-0.012, 0.188] | 85 |
 | bf16 - fp_traj | 0.047 | [-0.071, 0.165] | 85 |
 | bf16 - cloq | 0.047 | [-0.071, 0.165] | 85 |
+| bf16 - rtn | 0.118 | [0.012, 0.224] | 85 |
 | bf16 - bf16_rep | 0.000 | [0.000, 0.000] | 85 |
 
 ### long_horizon_subset_db_match
 
-means: bf16={'short': 0.4375, 'long': 0.2972972972972973}, static={'short': 0.4375, 'long': 0.10810810810810811}, fp_traj={'short': 0.5208333333333334, 'long': 0.13513513513513514}, cloq={'short': 0.4583333333333333, 'long': 0.1891891891891892}, bf16_rep={'short': 0.4375, 'long': 0.2972972972972973}
+means: bf16={'short': 0.4375, 'long': 0.2972972972972973}, static={'short': 0.4375, 'long': 0.10810810810810811}, fp_traj={'short': 0.5208333333333334, 'long': 0.13513513513513514}, cloq={'short': 0.4583333333333333, 'long': 0.1891891891891892}, rtn={'short': 0.3958333333333333, 'long': 0.10810810810810811}, bf16_rep={'short': 0.4375, 'long': 0.2972972972972973}
 
 | contrast | diff | 95% CI | n |
 |---|---|---|---|
@@ -225,6 +239,7 @@ dilutes a method effect with short tasks that have no gap to close.
 | static | 0.438 | 0.108 |
 | fp_traj | 0.521 | 0.135 |
 | cloq | 0.458 | 0.189 |
+| rtn | 0.396 | 0.108 |
 | bf16_rep | 0.438 | 0.297 |
 
 | contrast on long tasks | diff | 95% CI | P(>0) |
@@ -242,6 +257,7 @@ dilutes a method effect with short tasks that have no gap to close.
 | static | 0.000 (n=48) | 0.189 (n=37) | 0.189 | [-0.017, 0.399] | 0.039 |
 | fp_traj | -0.083 (n=48) | 0.162 (n=37) | 0.245 | [0.015, 0.470] | 0.019 |
 | cloq | -0.021 (n=48) | 0.108 (n=37) | 0.129 | [-0.117, 0.374] | 0.156 |
+| rtn | 0.042 (n=48) | 0.189 (n=37) | 0.148 | [-0.052, 0.351] | 0.080 |
 | bf16_rep | 0.000 (n=48) | 0.000 (n=37) | 0.000 | [0.000, 0.000] | 1.000 |
 
 ## Where the CLOQ Q0 states come from (plan section 19)
@@ -269,6 +285,7 @@ FP states -> support: static=0.137, fp_traj=0.108, cloq=0.102
 | static | 0.298 | 0.281 | 0.083 | 0.058 (n=101) | 0.299 (n=1302) | 0.211 | -0.000 |
 | fp_traj | 0.255 | 0.236 | 0.082 | 0.062 (n=105) | 0.253 (n=1043) | 0.123 | -0.000 |
 | cloq | 0.234 | 0.211 | 0.088 | 0.057 (n=93) | 0.226 (n=973) | 0.090 | -0.000 |
+| rtn | 0.233 | 0.209 | 0.108 | 0.057 (n=67) | 0.219 (n=1008) | 0.081 | -0.000 |
 | bf16_rep | 0.137 | 0.108 | 0.102 | 0.108 (n=732) | n/a (n=0) | -0.002 | -0.000 |
 
 ### airline
@@ -280,6 +297,7 @@ FP states -> support: static=0.132, fp_traj=0.101, cloq=0.101
 | static | 0.236 | 0.218 | 0.077 | 0.060 (n=63) | 0.246 (n=364) | 0.112 | -0.001 |
 | fp_traj | 0.135 | 0.107 | 0.103 | 0.064 (n=63) | 0.118 (n=254) | 0.002 | -0.001 |
 | cloq | 0.201 | 0.179 | 0.078 | 0.063 (n=71) | 0.202 (n=361) | 0.054 | -0.001 |
+| rtn | 0.202 | 0.177 | 0.092 | 0.057 (n=60) | 0.203 (n=283) | 0.050 | -0.001 |
 | bf16_rep | 0.132 | 0.101 | 0.101 | 0.101 (n=304) | n/a (n=0) | -0.004 | -0.001 |
 
 ## Occupancy (occupancy_obs)
