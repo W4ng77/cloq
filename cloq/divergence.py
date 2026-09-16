@@ -22,7 +22,7 @@ from pathlib import Path
 import numpy as np
 
 from cloq import config as C
-from cloq.metrics import load_decisions, normalize_action, read_jsonl
+from cloq.metrics import load_decisions, normalize_action, read_jsonl, resolved_db_match
 
 
 def load_decisions_by_task(run_id: str, domain: str, task_ids: set[str]) -> dict[str, list[dict]]:
@@ -94,7 +94,7 @@ def run(bf16_run: str, arm_run: str, domain: str, eval_ids: list[str], out_path:
             continue
         r = analyze_task(fp[tid], q[tid])
         r.update({
-            "task_id": tid, "fp_db_match": tfp[tid].get("db_match"), "q_db_match": tq[tid].get("db_match"),
+            "task_id": tid, "fp_db_match": resolved_db_match(tfp[tid]), "q_db_match": resolved_db_match(tq[tid]),
             "fp_reward": tfp[tid].get("reward"), "q_reward": tq[tid].get("reward"),
             "q_termination": tq[tid].get("termination_reason"),
         })

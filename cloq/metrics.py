@@ -82,6 +82,26 @@ def load_decisions(run_dir: Path, final_only: bool = True) -> list[dict]:
     return sorted(out, key=lambda d: (d["task_id"], d["decision_idx"]))
 
 
+NORMAL_TERMINATIONS = ("user_stop", "agent_stop")
+
+
+def resolved_db_match(traj: dict) -> bool | None:
+    """DB end-state match with premature termination scored as a failure.
+
+    tau2 short-circuits `evaluate_simulation` when a run did not end through normal
+    conversation termination: it returns reward 0.0 and leaves `db_check` empty. Treating
+    that empty check as a missing value would silently drop exactly those held-out tasks on
+    which a quantized agent loops or errors out, inflating its score, so a premature run is
+    recorded as db_match=False (which is what tau2's own reward of 0.0 means).
+    """
+    db = traj.get("db_match")
+    if db is not None:
+        return bool(db)
+    if traj.get("termination_reason") not in NORMAL_TERMINATIONS:
+        return False
+    return None
+
+
 def per_task_stats(traj: dict, decisions: list[dict]) -> dict:
     msgs = traj["messages"]
     agent_msgs = [m for m in msgs if m.get("role") == "assistant"]
@@ -100,7 +120,8 @@ def per_task_stats(traj: dict, decisions: list[dict]) -> dict:
     return {
         "task_id": traj["task_id"],
         "reward": traj.get("reward"),
-        "db_match": traj.get("db_match"),
+        "db_match": resolved_db_match(traj),
+        "db_match_raw": traj.get("db_match"),
         "communicate_all": traj.get("communicate_all"),
         "action_all": traj.get("action_all"),
         "termination_reason": traj.get("termination_reason"),
@@ -116,7 +137,7 @@ def per_task_stats(traj: dict, decisions: list[dict]) -> dict:
         "max_prompt_tokens": max(prompt_lens) if prompt_lens else None,
         "mean_prompt_tokens": float(np.mean(prompt_lens)) if prompt_lens else None,
         "n_attempts": (decisions[0].get("n_attempts") if decisions else None),
-        "premature": traj.get("termination_reason") in ("max_steps", "too_many_errors", "agent_error", "user_error", "unexpected_error", "infrastructure_error", "context_window_exceeded"),
+        "premature": traj.get("termination_reason") not in NORMAL_TERMINATIONS,
     }
 
 

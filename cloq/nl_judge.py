@@ -118,9 +118,11 @@ def judge_run(run_dir: Path, user_base: str, concurrency: int = 8) -> dict:
         r = by_id[t["task_id"]]
         crit = t["task"].get("evaluation_criteria") or {}
         basis = crit.get("reward_basis") or []
-        ok = True
+        from cloq.metrics import resolved_db_match
+
+        ok = t.get("termination_reason") in ("user_stop", "agent_stop")
         if "DB" in basis:
-            ok = ok and bool(t.get("db_match"))
+            ok = ok and bool(resolved_db_match(t))
         if "COMMUNICATE" in basis:
             ok = ok and bool(t.get("communicate_all") if t.get("communicate_all") is not None else True)
         if "ACTION" in basis:
