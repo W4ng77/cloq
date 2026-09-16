@@ -8,12 +8,15 @@ export CUDA_VISIBLE_DEVICES=$GPU
 export VLLM_LOGGING_LEVEL=${VLLM_LOGGING_LEVEL:-INFO}
 # FlashInfer JIT needs a CUDA-13 nvcc which this box lacks; greedy decoding does not need its sampler.
 export VLLM_USE_FLASHINFER_SAMPLER=0
+# Batch-invariant kernels so greedy outputs do not depend on batch composition (CLOQ_BATCH_INVARIANT=0 disables).
+export VLLM_BATCH_INVARIANT=${CLOQ_BATCH_INVARIANT:-1}
+mkdir -p /home/xinyu/cloq/logs; echo $$ > /home/xinyu/cloq/logs/vllm_port${PORT}.pid
 exec vllm serve "$MODEL" \
   --served-model-name "$NAME" \
   --port "$PORT" --host 127.0.0.1 \
   --dtype bfloat16 \
   --max-model-len "$MAXLEN" \
-  --gpu-memory-utilization 0.92 \
+  --gpu-memory-utilization "${GPU_UTIL:-0.92}" \
   --generation-config vllm \
   --seed 0 \
   --enable-auto-tool-choice --tool-call-parser hermes \
