@@ -188,6 +188,38 @@ means: static=0.247, fp_traj=0.282, cloq=0.282, bf16=0.329
 | bf16 - fp_traj | 0.047 | [-0.071, 0.165] | 85 |
 | bf16 - cloq | 0.047 | [-0.071, 0.165] | 85 |
 
+### long_horizon_subset_db_match
+
+means: bf16={'short': 0.4375, 'long': 0.2972972972972973}, static={'short': 0.4375, 'long': 0.10810810810810811}, fp_traj={'short': 0.5208333333333334, 'long': 0.13513513513513514}, cloq={'short': 0.4583333333333333, 'long': 0.1891891891891892}
+
+| contrast | diff | 95% CI | n |
+|---|---|---|---|
+| cloq - static | 0.081 | [-0.027, 0.189] | 37 |
+| cloq - fp_traj | 0.054 | [-0.054, 0.162] | 37 |
+| fp_traj - static | 0.027 | [-0.081, 0.162] | 37 |
+| bf16 - cloq | 0.108 | [-0.081, 0.297] | 37 |
+| bf16 - static | 0.189 | [0.027, 0.351] | 37 |
+
+### Long-horizon subset (BF16 horizon > 11; n=37 of 85)
+
+The tasks on which quantization degradation exists at all. Averaging over every held-out task
+dilutes a method effect with short tasks that have no gap to close.
+
+| arm | short tasks | long tasks |
+|---|---|---|
+| bf16 | 0.438 | 0.297 |
+| static | 0.438 | 0.108 |
+| fp_traj | 0.521 | 0.135 |
+| cloq | 0.458 | 0.189 |
+
+| contrast on long tasks | diff | 95% CI | P(>0) |
+|---|---|---|---|
+| cloq - static | 0.081 | [-0.027, 0.189] | 0.881 |
+| cloq - fp_traj | 0.054 | [-0.054, 0.162] | 0.781 |
+| fp_traj - static | 0.027 | [-0.081, 0.162] | 0.588 |
+| bf16 - cloq | 0.108 | [-0.081, 0.297] | 0.830 |
+| bf16 - static | 0.189 | [0.027, 0.351] | 0.983 |
+
 ### Pooled horizon amplification (db_match)
 
 | arm | gap short | gap long | long - short | 95% CI | P(<=0) |

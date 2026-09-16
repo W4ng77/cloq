@@ -156,8 +156,30 @@ def main():
     # pooled horizon amplification (db_match), across domains
     hpool = {}
     for domain in domains:
+        ev = set(split["domains"][domain]["evaluation"])
         for t, v in split["domains"][domain]["horizon_by_task"].items():
-            hpool[f"{domain}/{t}"] = v
+            if t in ev:
+                hpool[f"{domain}/{t}"] = v
+    # Long-horizon subset: the tasks on which the phenomenon exists at all. Averaging over every
+    # held-out task dilutes any method effect with short tasks that have no gap to close.
+    ids = sorted(set(pooled["bf16"].get("db_match", {})) & set(hpool))
+    if ids:
+        med = float(np.median([hpool[i] for i in ids]))
+        longs = [i for i in ids if hpool[i] > med]
+        shorts = [i for i in ids if hpool[i] <= med]
+        subset = {"median_horizon": med, "n_short": len(shorts), "n_long": len(longs), "means": {}, "contrasts": {}}
+        for arm in ["bf16"] + list(arm_runs):
+            v = pooled.get(arm, {}).get("db_match", {})
+            subset["means"][arm] = {
+                "short": float(np.mean([v[i] for i in shorts if i in v])) if shorts else None,
+                "long": float(np.mean([v[i] for i in longs if i in v])) if longs else None,
+            }
+        for x, y in [("cloq", "static"), ("cloq", "fp_traj"), ("fp_traj", "static"), ("bf16", "cloq"), ("bf16", "static")]:
+            vx, vy = pooled.get(x, {}).get("db_match", {}), pooled.get(y, {}).get("db_match", {})
+            if vx and vy:
+                subset["contrasts"][f"{x} - {y}"] = paired_bootstrap(
+                    {i: vx[i] for i in longs if i in vx}, {i: vy[i] for i in longs if i in vy}, n_boot=nboot)
+        results["pooled"]["long_horizon_subset_db_match"] = subset
     results["pooled"]["horizon_amplification_db_match"] = {
         arm: bootstrap_gap_difference(pooled["bf16"]["db_match"], pooled[arm]["db_match"], hpool)
         for arm in arm_runs if "db_match" in pooled.get(arm, {})
@@ -240,6 +262,18 @@ def write_markdown(results: dict, split: dict, out_dir: Path) -> None:
         L += [f"### {metric}", "", "means: " + ", ".join(f"{a}={_fmt(v)}" for a, v in p["means"].items()), "", "| contrast | diff | 95% CI | n |", "|---|---|---|---|"]
         for name, c in p["contrasts"].items():
             L.append(f"| {name} | {_fmt(c.get('diff'))} | [{_fmt(c.get('ci_lo'))}, {_fmt(c.get('ci_hi'))}] | {c.get('n')} |")
+        L.append("")
+    sub = results["pooled"].get("long_horizon_subset_db_match")
+    if sub:
+        L += [f"### Long-horizon subset (BF16 horizon > {sub['median_horizon']:.0f}; n={sub['n_long']} of {sub['n_long']+sub['n_short']})", "",
+              "The tasks on which quantization degradation exists at all. Averaging over every held-out task",
+              "dilutes a method effect with short tasks that have no gap to close.", "",
+              "| arm | short tasks | long tasks |", "|---|---|---|"]
+        for a, v in sub["means"].items():
+            L.append(f"| {a} | {_fmt(v['short'])} | {_fmt(v['long'])} |")
+        L += ["", "| contrast on long tasks | diff | 95% CI | P(>0) |", "|---|---|---|---|"]
+        for name, c in sub["contrasts"].items():
+            L.append(f"| {name} | {_fmt(c.get('diff'))} | [{_fmt(c.get('ci_lo'))}, {_fmt(c.get('ci_hi'))}] | {_fmt(1 - c.get('p_diff_le_0', 1))} |")
         L.append("")
     amp = results["pooled"].get("horizon_amplification_db_match") or {}
     if amp:

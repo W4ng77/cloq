@@ -1,6 +1,6 @@
 # CLOQ v0 findings
 
-Generated 2026-09-16T11:27:02+00:00 from `analysis/results.json`.
+Generated 2026-09-16T11:28:26+00:00 from `analysis/results.json`.
 Model Qwen/Qwen3-4B-Instruct-2507 at revision `cdbee75f17c0`, tau2-bench text mode, GPTQ W4 group 128,
 calibration budget 64000 tokens per arm within 1%.
 
