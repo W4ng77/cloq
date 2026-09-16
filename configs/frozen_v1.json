@@ -1,0 +1,64 @@
+{
+  "protocol_version": "v1",
+  "frozen_at": "2026-09-16",
+  "plan_file": "/home/xinyu/cloq/analysis/CLOQ_v1_2x4080_full_experiment_plan.md",
+  "inherits": "configs/frozen_v0.json",
+
+  "changes_from_v0": [
+    "Calibration budget is now 64000 GPTQ activation rows, not 64000 raw input tokens.",
+    "Exactly one calibration state per calibration task (N_state = number of calibration tasks).",
+    "Three calibration draws per arm; no draw may be dropped.",
+    "Four arms: static, fp_traj, cloq_all, cloq_novel.",
+    "The v0 evaluation set (85 tasks) is now development data, not final test data."
+  ],
+
+  "calibration": {
+    "budget_rows": 64000,
+    "n_state": 57,
+    "n_state_note": "39 retail + 18 airline calibration tasks from manifests/task_split_v0.json. Plan section 2 sets N_state to the exact size of the frozen calibration pool when it is not 40.",
+    "rows_per_context_base": 1122,
+    "rows_per_context_fill": "64000 - 1122*57 = 46 contexts receive one extra row (1123), chosen by ascending (domain, task_id); total is exactly 64000",
+    "row_sampling": "uniform without replacement over the valid non-padding token positions of the stored deployment context, drawn once per context with the draw seed and reused at every quantized layer",
+    "deficit_rule": "a context with fewer valid positions than its quota contributes all of them; the shortfall is redistributed deterministically to the remaining contexts in ascending (domain, task_id) order, never duplicating a row",
+    "one_state_per_task": true,
+    "depth_stratification": "fp_traj balances normalized decision depth globally at 25% per quartile across the 57 chosen states",
+    "draws": {"c1": 20260729, "c2": 20260730, "c3": 20260731},
+    "quantization_seed": 0
+  },
+
+  "arms": {
+    "static": "initial decision state x0 of every calibration task; identical states in all draws, so only the row subsample varies",
+    "fp_traj": "one BF16 trajectory state per calibration task, globally depth-balanced, keeping successful, failed and partial trajectories",
+    "cloq_all": "calibration tasks split evenly into an FP half and a Q half, stratified by domain and BF16 horizon quartile; FP-half tasks contribute their BF16 state, Q-half tasks contribute a uniformly depth-sampled Q0 state",
+    "cloq_novel": "same draw, same FP/Q task split and same FP-half states as cloq_all; each Q-half task contributes its highest-novelty post-divergence Q0 state, falling back to the highest-novelty state of the whole trajectory when the task never diverges"
+  },
+
+  "novelty": {
+    "definition": "nu(x) = min over z in the draw-matched fp_traj calibration support of (1 - cosine(phi(x), phi(z)))",
+    "representation": "frozen BF16 final-layer hidden state at the action-generation boundary (the last prompt token), identical to the v0 primary occupancy representation",
+    "support": "the 57 fp_traj states of the same draw",
+    "post_divergence_rule": "a Q0 decision is post-divergence when its index is at or after the first decision whose context differs from the paired BF16 trajectory (t_context in cloq.divergence)"
+  },
+
+  "evaluation": {
+    "dev_set": "manifests/eval_tasks_v0.json (58 retail + 27 airline), reclassified as development data",
+    "final_test": "PENDING: retail and airline hold no unused eligible tasks, so a fresh set must come from an untouched tau2 domain (telecom) or a second benchmark; decided before Stage 6 and never after seeing v1 dev results",
+    "long_horizon_threshold": 11,
+    "long_horizon_note": "frozen from v0 (BF16 horizon > 11); must not move after seeing v1 results",
+    "bootstrap": {"replicates": 10000, "scheme": "crossed: resample calibration draw, then resample tasks within draw stratified by domain"}
+  },
+
+  "method_selection_rule": {
+    "select_cloq_novel_if": [
+      "mean long-task success across the three draws exceeds cloq_all",
+      "and pooled mean success is not worse than cloq_all by more than 0.02 absolute"
+    ],
+    "tie_rule": "if the long-task means differ by less than 0.01 absolute, choose the simpler cloq_all",
+    "frozen_before_running": true
+  },
+
+  "excluded_from_v1": [
+    "Fisher weighting", "action-KL weighting", "Q-only calibration",
+    "success-only trajectory filtering", "extra bit widths", "second model", "second quantizer"
+  ]
+}

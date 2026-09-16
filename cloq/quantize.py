@@ -59,10 +59,17 @@ def load_bf16_model(device: str = "cuda"):
     return model
 
 
-def load_calib_sequences(manifest_path: Path) -> tuple[list[list[int]], dict]:
+def load_calib_sequences(manifest_path: Path) -> tuple[list[list[int]], list[list[int]] | None, dict]:
+    """Return (sequences, per-sequence activation-row indices or None, manifest)."""
     man = json.load(open(manifest_path))
     seqs = [c["prompt_token_ids"] for c in man["contexts"]]
-    return seqs, man
+    rows = None
+    if all("row_idx" in c for c in man["contexts"]):
+        rows = [c["row_idx"] for c in man["contexts"]]
+        for ix, sq in zip(rows, seqs):
+            assert len(set(ix)) == len(ix), "row indices must be unique within a context"
+            assert max(ix) < len(sq) and min(ix) >= 0, "row index out of range for its context"
+    return seqs, rows, man
 
 
 @torch.no_grad()
@@ -110,11 +117,28 @@ def quantize_model(
     actorder: bool,
     sym: bool,
     device: str = "cuda",
+    row_idx: list[list[int]] | None = None,
 ) -> dict:
+    """Streaming layer-wise GPTQ.
+
+    `row_idx[i]` optionally restricts sequence i to a fixed set of token positions when the
+    Hessian is accumulated (protocol v1: each calibration context contributes an exact quota of
+    activation rows, drawn once and reused at every quantized layer). The forward pass always
+    runs over the full sequence, so the hidden states that reach later layers are unchanged;
+    only which rows enter the Gram matrix is restricted.
+    """
     layers = model.model.layers
     inputs = capture_layer0_inputs(model, seqs, device)
     n_tokens = sum(len(s) for s in seqs)
-    logger.info(f"captured {len(inputs)} sequences, {n_tokens} tokens")
+    idx_t = None
+    if row_idx is not None:
+        assert len(row_idx) == len(seqs), "row_idx must have one entry per sequence"
+        idx_t = [torch.as_tensor(ix, dtype=torch.long, device=device) for ix in row_idx]
+        n_rows = sum(len(ix) for ix in row_idx)
+        logger.info(f"captured {len(inputs)} sequences, {n_tokens} tokens, {n_rows} activation rows")
+    else:
+        n_rows = n_tokens
+        logger.info(f"captured {len(inputs)} sequences, {n_tokens} tokens (all rows)")
     stats = {}
     t_start = time.time()
     for li, layer in enumerate(layers):
@@ -123,14 +147,19 @@ def quantize_model(
         for group in SEQUENTIAL_GROUPS:
             helpers = {name: GPTQLinear(_get_module(layer, name)) for name in group}
             handles = []
+            seq_pos = {"i": 0}
             for name, h in helpers.items():
                 mod = _get_module(layer, name)
 
                 def hook(m, inp, out, _h=h):
-                    _h.add_batch(inp[0])
+                    x = inp[0]
+                    if idx_t is not None:
+                        x = x.index_select(-2, idx_t[seq_pos["i"]])
+                    _h.add_batch(x)
 
                 handles.append(mod.register_forward_hook(hook))
-            for hidden, kw in inputs:
+            for si, (hidden, kw) in enumerate(inputs):
+                seq_pos["i"] = si
                 layer(hidden, **kw)
             for hd in handles:
                 hd.remove()
@@ -153,7 +182,8 @@ def quantize_model(
     del inputs
     gc.collect()
     torch.cuda.empty_cache()
-    return {"per_layer": stats, "n_sequences": len(seqs), "n_tokens": n_tokens, "seconds": time.time() - t_start}
+    return {"per_layer": stats, "n_sequences": len(seqs), "n_tokens": n_tokens,
+            "n_activation_rows": n_rows, "seconds": time.time() - t_start}
 
 
 @torch.no_grad()
@@ -214,12 +244,13 @@ def main():
     if args.rtn:
         meta["stats"] = rtn_model(model, args.wbits, q["group_size"], q["sym"])
     else:
-        seqs, man = load_calib_sequences(Path(args.calib))
+        seqs, rows, man = load_calib_sequences(Path(args.calib))
         meta["calibration"] = {k: v for k, v in man.items() if k != "contexts"}
         meta["calibration"]["manifest_sha256"] = _sha256_file(Path(args.calib))
         meta["stats"] = quantize_model(
             model, seqs, wbits=args.wbits, groupsize=q["group_size"], percdamp=q["percdamp"],
             blocksize=q["blocksize"], actorder=q["act_order"], sym=q["sym"], device=args.device,
+            row_idx=rows,
         )
     meta["seconds_total"] = time.time() - t0
     save_checkpoint(model, out, meta)
