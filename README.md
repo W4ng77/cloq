@@ -81,11 +81,14 @@ Two failure modes show up on the quantized arms and are reported, not hidden:
 Measured with a proper control, not assumed. `scripts/bf16_replicate.sh` re-runs the BF16 arm on the
 same held-out tasks from a **fresh vLLM launch**, with the user-simulator server left untouched:
 
-| check | result |
-|---|---|
-| retail task outcomes, original vs replicate | identical on 58 of 58 |
-| held-out success rate | 0.362 vs 0.362 |
-| open-loop replay of 742 stored BF16 contexts | 1.000 tool-name, tool-call and full free-text agreement |
+| check | retail | airline |
+|---|---|---|
+| held-out success, original vs replicate | 0.362 vs 0.362 | 0.407 vs 0.407 |
+| task outcomes identical | 58 of 58 | 27 of 27 |
+| premature terminations | 0 | 0 |
+| open-loop replay of stored BF16 contexts | 1.000 over 742 states | 1.000 over 304 states |
+
+Agreement is 1.000 on tool names, complete tool calls **and** full free text.
 
 So with `VLLM_BATCH_INVARIANT=1` and an identical serving configuration, this pipeline is deterministic
 across launches, and the noise floor on every reported metric is zero. Every difference between arms is
@@ -103,5 +106,6 @@ An earlier note here claimed that greedy output drifts between launches of the s
 wrong: the measurement behind it had accidentally been replayed through a small quantized test checkpoint
 that was serving on the agent port at the time. The control above replaces it.
 
-The teacher-forced NLL of BF16 on its own actions is 0.038 per token, which is the reference floor for the
-NLL column (it is the model's own uncertainty about its greedy output, not a noise term).
+The teacher-forced NLL of BF16 on its own actions is 0.038 per token on retail and 0.040 on airline. That is
+the reference floor for the NLL column: it is the model's own uncertainty about its greedy output, not a
+noise term. The quantized arms sit at 0.074 to 0.094.
