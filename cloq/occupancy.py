@@ -58,8 +58,14 @@ def extract(run_ids: list[str], domains: list[str], device: str = "cuda", batch_
 
     from cloq.context_policy import get_tokenizer
 
+    import os
+
     tok = get_tokenizer()
-    model = AutoModelForCausalLM.from_pretrained(C.MODEL_ID, revision=C.MODEL_REVISION, dtype=torch.bfloat16, attn_implementation="sdpa").to(device).eval()
+    rep_model = os.environ.get("CLOQ_REP_MODEL")  # test hook only; the protocol extractor is the frozen BF16 model
+    if rep_model:
+        model = AutoModelForCausalLM.from_pretrained(rep_model, dtype=torch.float32 if device == "cpu" else torch.bfloat16, attn_implementation="sdpa").to(device).eval()
+    else:
+        model = AutoModelForCausalLM.from_pretrained(C.MODEL_ID, revision=C.MODEL_REVISION, dtype=torch.bfloat16, attn_implementation="sdpa").to(device).eval()
     for run_id in run_ids:
         for domain in domains:
             run_dir = C.RUNS_DIR / run_id / domain
@@ -169,7 +175,7 @@ def analyze(bf16_run: str, arm_runs: dict[str, str], calibs: dict[str, Path], do
             q_states = {sha: v for sha, v in q.items() if v["task_id"] in ids}
             Xq = np.stack([v[rep] for v in q_states.values()])
             div = json.load(open(C.RUNS_DIR / run_id / domain / "divergence.json"))
-            tstar = {r["task_id"]: r["t_star"] for r in div["per_task"]}
+            tstar = {r["task_id"]: r.get("t_align", r["t_star"]) for r in div["per_task"]}
             arm_res = {"n_q_states": len(Xq), "q_to_support": {}, "pre_post_divergence": {}, "aligned_curve": {}}
             for sname, S in supports.items():
                 d = support_distance(Xq, S)

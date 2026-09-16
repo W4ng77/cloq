@@ -40,25 +40,43 @@ def load_traj(run_id: str, domain: str) -> dict[str, dict]:
 
 
 def analyze_task(fp: list[dict], q: list[dict]) -> dict:
+    """t_star  : first decision whose *normalised* action differs (plan definition).
+    t_render : first decision whose rendered output differs = (first prompt difference) - 1,
+               because the deterministic simulator answers identical rendered messages identically;
+               after t_render the two trajectories' contexts are no longer aligned (occupancy alignment).
+    t_raw    : first decision whose generated token ids differ (only when ids were recorded)."""
     H = len(fp)
+    n = min(len(fp), len(q))
     t_star = None
+    t_raw = None
     first_prompt_diff = None
-    for i in range(min(len(fp), len(q))):
+    for i in range(n):
         if first_prompt_diff is None and fp[i]["prompt_sha256"] != q[i]["prompt_sha256"]:
             first_prompt_diff = i
-        a = normalize_action(fp[i]["content"], fp[i]["tool_calls"])
-        b = normalize_action(q[i]["content"], q[i]["tool_calls"])
-        if a != b:
-            t_star = i
-            break
+        a_ids, b_ids = fp[i].get("completion_token_ids"), q[i].get("completion_token_ids")
+        if t_raw is None and a_ids is not None and b_ids is not None and a_ids != b_ids:
+            t_raw = i
+        if t_star is None:
+            a = normalize_action(fp[i]["content"], fp[i]["tool_calls"])
+            b = normalize_action(q[i]["content"], q[i]["tool_calls"])
+            if a != b:
+                t_star = i
+    if first_prompt_diff is not None:
+        t_render = max(0, first_prompt_diff - 1)
+    elif len(q) != len(fp):
+        t_render = n - 1 if n > 0 else 0
+    else:
+        t_render = None
     if t_star is None and len(q) != len(fp):
-        # identical while aligned but different length -> divergence at the end of the shorter one
-        t_star = min(len(fp), len(q))
+        t_star = n  # identical while aligned, different length -> divergence at the end of the shorter one
+    t_align = t_render if t_render is not None else t_star
     return {
         "H_fp": H, "H_q": len(q), "t_star": t_star, "diverged": t_star is not None,
         "t_star_norm": (t_star / H) if (t_star is not None and H > 0) else None,
+        "t_render": t_render, "t_render_norm": (t_render / H) if (t_render is not None and H > 0) else None,
+        "t_raw": t_raw, "t_align": t_align,
         "first_prompt_diff": first_prompt_diff,
-        "prompt_consistent": (first_prompt_diff is None) or (t_star is not None and first_prompt_diff > t_star),
+        "prompt_consistent": (first_prompt_diff is None) or (first_prompt_diff >= 1 and (t_star is None or t_star >= first_prompt_diff - 1)),
         "t_star_kind_fp": (("tool" if fp[t_star]["tool_calls"] else "text") if (t_star is not None and t_star < len(fp)) else None),
         "t_star_kind_q": (("tool" if q[t_star]["tool_calls"] else "text") if (t_star is not None and t_star < len(q)) else None),
     }
@@ -97,6 +115,8 @@ def run(bf16_run: str, arm_run: str, domain: str, eval_ids: list[str], out_path:
         "median_t_star": float(np.median([r["t_star"] for r in div])) if div else None,
         "median_t_star_norm": float(np.median(tn)) if tn else None,
         "mean_t_star_norm": float(np.mean(tn)) if tn else None,
+        "frac_any_render_divergence": (sum(1 for r in rows if r["t_render"] is not None) / len(rows)) if rows else None,
+        "median_t_render_norm": float(np.median([r["t_render_norm"] for r in rows if r["t_render_norm"] is not None])) if any(r["t_render_norm"] is not None for r in rows) else None,
         "success_given_early_div": sr(early), "n_early": len(early),
         "success_given_late_div": sr(late), "n_late": len(late),
         "success_given_no_div": sr(nodiv), "n_nodiv": len(nodiv),

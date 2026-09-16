@@ -6,7 +6,7 @@ source ~/miniconda3/etc/profile.d/conda.sh && conda activate cloq
 MODEL=Qwen/Qwen3-4B-Instruct-2507; REV=cdbee75f17c01a7cc42f958dc650907174af0554
 SCR=/tmp/claude-1003/-home-xinyu/822446b5-66f6-44be-b2ea-c6f351322b3f/scratchpad
 scripts/stop_vllm.sh 8000; scripts/stop_vllm.sh 8001; sleep 3
-(GPU_UTIL=0.78 nohup scripts/serve_vllm.sh 0 8000 $MODEL user 32768 --revision $REV > logs/vllm_user.log 2>&1 &)
+(GPU_UTIL=0.9 nohup scripts/serve_vllm.sh 0 8000 $MODEL user 32768 --revision $REV > logs/vllm_user.log 2>&1 &)
 (nohup scripts/serve_vllm.sh 1 8001 ckpts/test_mini_w4 agent 9216 > logs/vllm_agent_qtest.log 2>&1 &)
 scripts/wait_server.sh 8000 900; scripts/wait_server.sh 8001 900
 grep -E "GPU KV cache size" logs/vllm_user.log logs/vllm_agent_qtest.log | cut -c1-160

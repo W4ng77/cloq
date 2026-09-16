@@ -65,10 +65,11 @@ def main():
     ap.add_argument("--arm-runs", nargs="+", required=True)
     ap.add_argument("--split", default=str(C.MANIFEST_DIR / "task_split_v0.json"))
     ap.add_argument("--out", default=str(ANALYSIS))
+    ap.add_argument("--domains", nargs="+", default=None)
     a = ap.parse_args()
     arm_runs = dict(kv.split("=", 1) for kv in a.arm_runs)
     split = json.load(open(a.split))
-    domains = list(split["domains"].keys())
+    domains = a.domains or list(split["domains"].keys())
     out_dir = Path(a.out); out_dir.mkdir(parents=True, exist_ok=True)
     nboot = int(C.FROZEN["analysis"]["bootstrap_replicates"])
 
@@ -128,7 +129,7 @@ def main():
             if metric in pooled.get(arm, {}):
                 cs[f"bf16 - {arm}"] = paired_bootstrap(pooled["bf16"][metric], pooled[arm][metric], n_boot=nboot)
         results["pooled"][metric] = {"means": {arm: float(np.mean(list(pooled[arm][metric].values()))) for arm in pooled if metric in pooled[arm]}, "contrasts": cs}
-    for p in [ANALYSIS / "occupancy_last.json", ANALYSIS / "occupancy_obs.json"]:
+    for p in [out_dir / "occupancy_last.json", out_dir / "occupancy_obs.json"]:
         if p.exists():
             results[p.stem] = json.load(open(p))
     (out_dir / "results.json").write_text(json.dumps(results, indent=2))

@@ -39,7 +39,7 @@ def _complete(api_base: str, prompt_ids: list[int], max_tokens: int, model: str 
         "model": model, "prompt": prompt_ids, "max_tokens": max_tokens,
         "temperature": 0.0, "top_p": 1.0, "top_k": -1, "seed": 0,
         "repetition_penalty": 1.0, "presence_penalty": 0.0, "frequency_penalty": 0.0,
-        "return_token_ids": True, "skip_special_tokens": False,
+        "return_token_ids": True, "skip_special_tokens": True,
     }
     r = requests.post(api_base + "/completions", json=body, timeout=900)
     r.raise_for_status()
@@ -70,12 +70,46 @@ def parse_action(text: str) -> tuple[str | None, list[dict] | None]:
     return content, (calls or None)
 
 
-def strip_pad(ids: list[int], tok) -> list[int]:
-    """Keep the action's end-of-turn token (<|im_end|>) in the NLL; drop only padding."""
-    pad = {tok.pad_token_id}
-    while ids and ids[-1] in pad and ids[-1] != tok.convert_tokens_to_ids("<|im_end|>"):
-        ids = ids[:-1]
+def action_token_ids(d: dict, tok) -> list[int]:
+    """Canonical action tokens of a stored decision: the chat-template rendering of the
+    assistant message (content + tool calls) followed by <|im_end|>, i.e. exactly the tokens
+    that the next prompt will contain. Independent of how litellm reports generated ids."""
+    msgs = list(d["messages"])
+    tool_calls = None
+    if d.get("tool_calls"):
+        tool_calls = [{"id": tc.get("id", ""), "name": tc["name"], "type": "function",
+                       "function": {"name": tc["name"], "arguments": json.dumps(tc.get("arguments") or {})}} for tc in d["tool_calls"]]
+    assistant = {"role": "assistant", "content": d.get("content"), "tool_calls": tool_calls}
+    tools = _TOOLS_CACHE.get(d.get("tools_sha256"))
+    full = tok.apply_chat_template(msgs + [assistant], tools=tools, add_generation_prompt=False, tokenize=True)
+    if isinstance(full, dict) or hasattr(full, "input_ids"):
+        full = full["input_ids"]
+    full = list(full)
+    prompt = d["prompt_token_ids"]
+    if full[: len(prompt)] == prompt:
+        ids = full[len(prompt):]
+    else:  # boundary tokenisation differs: fall back to tokenising the rendered suffix text
+        text = tok.apply_chat_template(msgs + [assistant], tools=tools, add_generation_prompt=False, tokenize=False)
+        ptext = tok.apply_chat_template(msgs, tools=tools, add_generation_prompt=True, tokenize=False)
+        assert text.startswith(ptext), "template rendering mismatch"
+        ids = tok(text[len(ptext):], add_special_tokens=False)["input_ids"]
+    nl = tok("\n", add_special_tokens=False)["input_ids"]
+    if len(nl) == 1 and ids and ids[-1] == nl[0]:
+        ids = ids[:-1]  # template appends '\n' after <|im_end|>
     return ids
+
+
+_TOOLS_CACHE: dict = {}
+
+
+def register_tools_for_domain(domain: str) -> None:
+    """Load the tau2 tool schemas so the template renders the same <tools> block as at run time."""
+    from tau2.registry import registry
+    from cloq.context_policy import canonical_json, sha256_text
+
+    env = registry.get_env_constructor(domain)()
+    schema = [t.openai_schema for t in env.get_tools()]
+    _TOOLS_CACHE[sha256_text(canonical_json(schema))] = schema
 
 
 def arg_metrics(fp_calls: list[dict] | None, q_calls: list[dict] | None) -> dict:
@@ -110,8 +144,9 @@ def replay_state(d: dict, api_base: str, tok, max_tokens: int) -> dict:
     q_content, q_calls = parse_action(q_text)
     q_kind = "tool" if q_calls else "text"
     q_norm = normalize_action(q_content, q_calls)
-    # 2) teacher-forced NLL of the BF16 completion
-    fp_ids = strip_pad(list(d["completion_token_ids"] or []), tok)
+    # 2) teacher-forced NLL of the BF16 action (canonical rendering; exact generated ids kept for reference)
+    fp_ids = action_token_ids(d, tok)
+    gen_ids = list(d.get("completion_token_ids") or [])
     nll = None; n_action_tokens = len(fp_ids)
     if fp_ids:
         full = prompt_ids + fp_ids
@@ -136,6 +171,7 @@ def replay_state(d: dict, api_base: str, tok, max_tokens: int) -> dict:
         "text_exact_match": (fp_norm == q_norm) if fp_kind == "text" else None,
         "exact_args": am["exact_args"], "field_f1": am["field_f1"],
         "nll": nll, "n_action_tokens": n_action_tokens, "nll_per_token": (nll / n_action_tokens) if (nll is not None and n_action_tokens) else None,
+        "rendered_equals_generated": (fp_ids == gen_ids) if gen_ids else None,
         "q_text": q_text[:2000], "q_finish_reason": ch.get("finish_reason"),
         "fp_norm": fp_norm[:500], "q_norm": q_norm[:500],
     }
@@ -143,6 +179,7 @@ def replay_state(d: dict, api_base: str, tok, max_tokens: int) -> dict:
 
 def run(bf16_run: str, arm: str, arm_run: str, domain: str, eval_ids: list[str], api_base: str, out_path: Path, concurrency: int = 8) -> dict:
     tok = get_tokenizer()
+    register_tools_for_domain(domain)
     decs = [d for d in load_decisions(C.RUNS_DIR / bf16_run / domain) if d["task_id"] in set(eval_ids)]
     logger.info(f"{domain}: replaying {len(decs)} BF16 states through arm={arm}")
     max_tokens = C.AGENT_MAX_TOKENS

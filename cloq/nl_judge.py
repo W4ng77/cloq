@@ -53,13 +53,34 @@ def _judge_one(traj: dict, judge_model: str, judge_args: dict) -> dict:
     def fake_generate(model, messages, call_name=None, **kwargs):
         captured["messages"] = messages
         resp = generate(model=judge_model, messages=messages, call_name="nl_assertions_eval", **judge_args)
-        # Robust JSON extraction (small models wrap JSON in code fences).
+        # Robust JSON extraction + shape normalisation (small models wrap JSON in code
+        # fences and often return one flat object instead of {"results": [...]}).
         content = resp.content or ""
-        try:
-            json.loads(content)
-        except Exception:
-            resp.content = extract_json_from_llm_response(content)
         captured["raw"] = content
+        obj = None
+        for cand in (content, extract_json_from_llm_response(content)):
+            try:
+                obj = json.loads(cand); break
+            except Exception:
+                continue
+        results = None
+        if isinstance(obj, dict) and isinstance(obj.get("results"), list):
+            results = obj["results"]
+        elif isinstance(obj, dict) and "metExpectation" in obj:
+            results = [obj]
+        elif isinstance(obj, list):
+            results = [x for x in obj if isinstance(x, dict)]
+        if results is not None:
+            norm = []
+            for i, x in enumerate(results):
+                met = x.get("metExpectation", x.get("met", False))
+                if isinstance(met, str):
+                    met = met.strip().lower() in ("true", "yes")
+                norm.append({"expectedOutcome": x.get("expectedOutcome", nl[i] if i < len(nl) else ""),
+                             "reasoning": str(x.get("reasoning", "")), "metExpectation": bool(met)})
+            resp.content = json.dumps({"results": norm})
+        else:
+            resp.content = json.dumps({"results": []})
         return resp
 
     orig = E.generate

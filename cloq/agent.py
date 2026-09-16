@@ -115,7 +115,7 @@ class CLOQAgent(LLMAgent[LLMAgentState]):
         raw = assistant_message.raw_data or {}
         prompt_ids = raw.get("prompt_token_ids")
         choice0 = (raw.get("choices") or [{}])[0]
-        completion_ids = choice0.get("token_ids")
+        completion_ids = choice0.get("token_ids") or (choice0.get("provider_specific_fields") or {}).get("token_ids")
         finish_reason = choice0.get("finish_reason")
         raw_message = choice0.get("message") or {}
         local_ids = render_prompt_ids(kept_lm, self.tools_schema)

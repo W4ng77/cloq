@@ -11,7 +11,7 @@ log() { echo "[$(date '+%F %T')] $*"; }
 
 serve_user() {
   if scripts/wait_server.sh 8000 5 >/dev/null 2>&1; then log "user server already up"; return; fi
-  (GPU_UTIL=0.78 nohup scripts/serve_vllm.sh 0 8000 $MODEL user 32768 --revision $REV > logs/vllm_user.log 2>&1 &)
+  (GPU_UTIL=0.9 nohup scripts/serve_vllm.sh 0 8000 $MODEL user 32768 --revision $REV > logs/vllm_user.log 2>&1 &)
   scripts/wait_server.sh 8000 900
 }
 serve_agent() {  # serve_agent <model_path_or_id> <logname> [extra]
