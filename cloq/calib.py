@@ -62,94 +62,105 @@ def load_states(run_id: str, domains: list[str], task_ids_by_domain: dict[str, l
     return states
 
 
-def sample_budget(states: list[dict], budget: int, rng: np.random.Generator, stratify: bool, tol: float) -> list[dict]:
-    """Sample without replacement until the token budget is reached within tolerance."""
-    chosen = []
-    total = 0
-    if stratify:
-        pools = {q: [s for s in states if s["depth_quartile"] == q] for q in range(4)}
-        for q in range(4):
-            rng.shuffle(pools[q])
-        per_q = budget / 4
-        used = {q: 0 for q in range(4)}
-        # round-robin over quartiles so each gets ~25% of tokens
-        active = True
-        while active:
-            active = False
-            for q in range(4):
-                if used[q] >= per_q or not pools[q]:
-                    continue
-                s = pools[q].pop()
-                if total + s["n_tokens"] > budget * (1 + tol):
-                    continue
-                chosen.append(s); total += s["n_tokens"]; used[q] += s["n_tokens"]; active = True
-    else:
-        pool = list(states)
-        rng.shuffle(pool)
-        while pool:
-            s = pool.pop()
-            if total + s["n_tokens"] > budget * (1 + tol):
-                continue
-            chosen.append(s); total += s["n_tokens"]
-            if total >= budget * (1 - tol):
-                break
-    return chosen
-
-
-def _top_up(chosen: list[dict], candidates: list[dict], budget: int, tol: float, rng: np.random.Generator) -> list[dict]:
-    """If under budget - tol, greedily add the remaining candidates that fit."""
-    total = sum(s["n_tokens"] for s in chosen)
-    have = {(s["prompt_sha256"]) for s in chosen}
-    rest = [s for s in candidates if s["prompt_sha256"] not in have]
-    rng.shuffle(rest)
-    rest.sort(key=lambda s: -s["n_tokens"])
-    for s in rest:
-        if total >= budget * (1 - tol):
+def _initial_pick(pool: list[dict], target: int, rng: np.random.Generator) -> list[dict]:
+    """Uniform random draw without replacement until the running total first reaches target."""
+    order = list(pool)
+    rng.shuffle(order)
+    chosen, total = [], 0
+    for s in order:
+        if total >= target:
             break
-        if total + s["n_tokens"] <= budget * (1 + tol):
-            chosen.append(s); total += s["n_tokens"]; have.add(s["prompt_sha256"])
+        chosen.append(s)
+        total += s["n_tokens"]
     return chosen
 
 
-def _fit_window(chosen: list[dict], candidates: list[dict], budget: int, tol: float, rng: np.random.Generator) -> list[dict]:
-    """Contexts are ~5k tokens, the window is ±1% of the budget: greedy filling can miss it.
-    Search single swaps (chosen <-> unchosen, same depth quartile) that land inside the window,
-    then removals/additions. Returns the first feasible solution (deterministic given rng order)."""
-    lo, hi = budget * (1 - tol), budget * (1 + tol)
-    total = sum(s["n_tokens"] for s in chosen)
-    if lo <= total <= hi:
-        return chosen
-    have = {s["prompt_sha256"] for s in chosen}
-    rest = [s for s in candidates if s["prompt_sha256"] not in have]
-    rng.shuffle(rest)
-    # 1) single swap
-    for i, c in enumerate(chosen):
-        for u in rest:
-            if u["depth_quartile"] != c["depth_quartile"]:
-                continue
-            t = total - c["n_tokens"] + u["n_tokens"]
-            if lo <= t <= hi:
-                return chosen[:i] + [u] + chosen[i + 1:]
-    # 2) removal / addition
-    for i, c in enumerate(chosen):
-        if lo <= total - c["n_tokens"] <= hi:
-            return chosen[:i] + chosen[i + 1:]
-    for u in rest:
-        if lo <= total + u["n_tokens"] <= hi:
-            return chosen + [u]
-    # 3) two-element swap (bounded search)
-    for i, c in enumerate(chosen):
-        for j, c2 in enumerate(chosen):
-            if j <= i:
-                continue
-            for u in rest[:400]:
-                for u2 in rest[:400]:
-                    if u is u2:
-                        continue
-                    t = total - c["n_tokens"] - c2["n_tokens"] + u["n_tokens"] + u2["n_tokens"]
-                    if lo <= t <= hi:
-                        return [x for k, x in enumerate(chosen) if k not in (i, j)] + [u, u2]
-    return chosen
+def _refine_stratum(cur: list[dict], pool: list[dict], used: set, target: float, rng, max_iter: int = 4000) -> int:
+    """Hill-climb same-stratum swaps/add/remove so this stratum's token sum approaches `target`."""
+    total = sum(x["n_tokens"] for x in cur)
+    for _ in range(max_iter):
+        need = target - total
+        if abs(need) < 1:
+            break
+        avail = [x for x in pool if x["prompt_sha256"] not in used]
+        moved = False
+        if avail and cur:
+            i = int(rng.integers(len(cur))); j = int(rng.integers(len(avail)))
+            delta = avail[j]["n_tokens"] - cur[i]["n_tokens"]
+            if abs(need - delta) < abs(need):
+                used.discard(cur[i]["prompt_sha256"]); used.add(avail[j]["prompt_sha256"])
+                cur[i] = avail[j]; total += delta; moved = True
+        if not moved:
+            if need > 0 and avail:
+                j = int(rng.integers(len(avail))); x = avail[j]
+                if abs(need - x["n_tokens"]) < abs(need):
+                    cur.append(x); used.add(x["prompt_sha256"]); total += x["n_tokens"]; moved = True
+            elif need < 0 and len(cur) > 1:
+                i = int(rng.integers(len(cur))); x = cur[i]
+                if abs(need + x["n_tokens"]) < abs(need):
+                    cur.pop(i); used.discard(x["prompt_sha256"]); total -= x["n_tokens"]; moved = True
+        if not moved:
+            break
+    return total
+
+
+def select_to_budget(
+    pools: dict[int, list[dict]],
+    target: int,
+    tol: float,
+    rng: np.random.Generator,
+    max_iter: int = 50000,
+) -> tuple[list[dict], dict]:
+    """Choose contexts whose total token count lands inside [target*(1-tol), target*(1+tol)],
+    giving every stratum an equal share of the budget.
+
+    `pools` maps a stratum key (depth quartile, or 0 for an unstratified arm) to its candidates.
+    Stage 1 draws uniformly at random inside each stratum up to its share of the budget.
+    Stage 2 refines each stratum independently towards that share.
+    Stage 3 trades context lengths (swaps only, so the per-stratum context counts and therefore
+    the depth composition are preserved) until the *total* is inside the window.
+
+    A greedy fill cannot hit the window here: contexts are ~5-8k tokens, so the budget is only
+    8-13 contexts wide and one extra context overshoots the entire window.
+    """
+    lo, hi = target * (1 - tol), target * (1 + tol)
+    keys = sorted(pools)
+    share = target / len(keys)
+    chosen = {k: _initial_pick(pools[k], share, rng) for k in keys}
+    used = {k: {x["prompt_sha256"] for x in chosen[k]} for k in keys}
+    for k in keys:
+        _refine_stratum(chosen[k], pools[k], used[k], share, rng)
+    total = sum(x["n_tokens"] for k in keys for x in chosen[k])
+    n_swaps = 0
+    for _ in range(max_iter):
+        if lo <= total <= hi:
+            break
+        need = target - total
+        k = keys[int(rng.integers(len(keys)))]
+        cur = chosen[k]
+        avail = [x for x in pools[k] if x["prompt_sha256"] not in used[k]]
+        if not (avail and cur):
+            continue
+        i = int(rng.integers(len(cur))); j = int(rng.integers(len(avail)))
+        delta = avail[j]["n_tokens"] - cur[i]["n_tokens"]
+        if abs(need - delta) < abs(need):
+            used[k].discard(cur[i]["prompt_sha256"]); used[k].add(avail[j]["prompt_sha256"])
+            cur[i] = avail[j]; total += delta; n_swaps += 1
+    out = [x for k in keys for x in chosen[k]]
+    info = {
+        "global_swaps": n_swaps,
+        "reached_window": bool(lo <= total <= hi),
+        "total_tokens": total,
+        "tokens_per_stratum": {str(k): sum(x["n_tokens"] for x in chosen[k]) for k in keys},
+        "contexts_per_stratum": {str(k): len(chosen[k]) for k in keys},
+        "target_share_per_stratum": round(share, 1),
+    }
+    return out, info
+
+
+def _by_quartile(states: list[dict]) -> dict[int, list[dict]]:
+    pools = {q: [s for s in states if s["depth_quartile"] == q] for q in range(4)}
+    return {q: v for q, v in pools.items() if v}
 
 
 def build(arm: str, split: dict, fp_run: str, q_run: str | None, seed: int) -> dict:
@@ -162,46 +173,29 @@ def build(arm: str, split: dict, fp_run: str, q_run: str | None, seed: int) -> d
     fp_states = load_states(fp_run, domains, cal_ids, "fp")
     notes = []
     if arm == "static":
-        init = [s for s in fp_states if s["decision_idx"] == 0]
-        # one unique initial prompt per task
-        seen = set(); uniq = []
-        for s in init:
-            if s["prompt_sha256"] not in seen:
-                seen.add(s["prompt_sha256"]); uniq.append(s)
-        chosen = sample_budget(uniq, budget, rng, stratify=False, tol=tol)
-        chosen = _top_up(chosen, uniq, budget, tol, rng)
-        chosen = _fit_window(chosen, uniq, budget, tol, rng)
-        total = sum(s["n_tokens"] for s in chosen)
-        rep = 0
-        if total < budget * (1 - tol):
-            # not enough unique initial states: cycle with repetition (recorded)
-            order = list(uniq); rng.shuffle(order); k = 0
-            while total < budget * (1 - tol) and k < 10 * len(order):
-                s = order[k % len(order)]
-                if total + s["n_tokens"] <= budget * (1 + tol):
-                    chosen.append({**s, "repeat_index": k // len(order) + 1}); total += s["n_tokens"]; rep += 1
-                k += 1
-        notes.append(f"{len(uniq)} unique initial states available; {len(chosen)} contexts used; {rep} repeated")
+        init = [x for x in fp_states if x["decision_idx"] == 0]
+        seen, uniq = set(), []
+        for x in init:
+            if x["prompt_sha256"] not in seen:
+                seen.add(x["prompt_sha256"])
+                uniq.append(x)
+        chosen, info = select_to_budget({0: uniq}, budget, tol, rng)
+        notes.append(f"{len(uniq)} unique initial states available; {len(chosen)} used; {info}")
     elif arm == "fp_traj":
-        chosen = sample_budget(fp_states, budget, rng, stratify=True, tol=tol)
-        chosen = _top_up(chosen, fp_states, budget, tol, rng)
-        chosen = _fit_window(chosen, fp_states, budget, tol, rng)
+        chosen, info = select_to_budget(_by_quartile(fp_states), budget, tol, rng)
+        notes.append(f"fp_traj: {info}")
     elif arm in ("cloq", "q_only"):
         assert q_run, "--q-run required"
         q_states = load_states(q_run, domains, cal_ids, "q0")
         if arm == "cloq":
             half = budget // 2
-            fp_part = sample_budget(fp_states, half, rng, stratify=True, tol=tol)
-            fp_part = _top_up(fp_part, fp_states, half, tol, rng)
-            fp_part = _fit_window(fp_part, fp_states, half, tol, rng)
-            q_part = sample_budget(q_states, budget - half, rng, stratify=True, tol=tol)
-            q_part = _top_up(q_part, q_states, budget - half, tol, rng)
-            q_part = _fit_window(q_part, q_states, budget - half, tol, rng)
+            fp_part, i1 = select_to_budget(_by_quartile(fp_states), half, tol, rng)
+            q_part, i2 = select_to_budget(_by_quartile(q_states), budget - half, tol, rng)
             chosen = fp_part + q_part
+            notes.append(f"cloq fp half: {i1}; q0 half: {i2}")
         else:
-            chosen = sample_budget(q_states, budget, rng, stratify=True, tol=tol)
-            chosen = _top_up(chosen, q_states, budget, tol, rng)
-            chosen = _fit_window(chosen, q_states, budget, tol, rng)
+            chosen, info = select_to_budget(_by_quartile(q_states), budget, tol, rng)
+            notes.append(f"q_only: {info}")
     else:
         raise ValueError(arm)
 
