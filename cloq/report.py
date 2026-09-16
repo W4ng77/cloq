@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -111,11 +111,27 @@ def main():
                 cs[f"bf16 - {arm}"] = paired_bootstrap(series["bf16"], series[arm], n_boot=nboot)
             dres["contrasts"][metric] = cs
             dres["horizon"][metric] = horizon_table(split, domain, bf16, arms, metric)
-        # secondary closed-loop stats
+        # Secondary closed-loop stats, always restricted to the frozen held-out tasks. The BF16 run
+        # covers every task in the domain, so reading its run-level metrics would mix in the
+        # calibration and excluded tasks and make the reference look worse than it is.
         sec = {}
+        ev_set = set(eval_ids)
         for arm, run in {"bf16": a.bf16_run, **arm_runs}.items():
             m = json.load(open(C.RUNS_DIR / run / domain / "metrics.json"))
-            sec[arm] = {k: m.get(k) for k in ["mean_decisions", "mean_tool_calls", "tool_error_rate", "parser_error_rate", "premature_rate", "repeated_tool_call_rate", "truncated_context_rate", "termination_reasons"]}
+            rows = [r for r in m["per_task"] if r["task_id"] in ev_set]
+            n_tool = sum(r["n_tool_calls"] for r in rows)
+            n_dec = sum(r["n_decisions"] for r in rows)
+            sec[arm] = {
+                "n_tasks": len(rows),
+                "mean_decisions": float(np.mean([r["n_decisions"] for r in rows])) if rows else None,
+                "mean_tool_calls": float(np.mean([r["n_tool_calls"] for r in rows])) if rows else None,
+                "tool_error_rate": (sum(r["n_tool_errors"] for r in rows) / n_tool) if n_tool else None,
+                "parser_error_rate": (sum(r["n_parser_errors"] for r in rows) / n_dec) if n_dec else None,
+                "premature_rate": float(np.mean([r["premature"] for r in rows])) if rows else None,
+                "repeated_tool_call_rate": (sum(r["n_repeated_tool_calls"] for r in rows) / n_tool) if n_tool else None,
+                "truncated_context_rate": (sum(r["n_truncated_contexts"] for r in rows) / n_dec) if n_dec else None,
+                "termination_reasons": dict(Counter(r["termination_reason"] for r in rows)),
+            }
         dres["secondary"] = sec
         for arm, run in arm_runs.items():
             p = C.RUNS_DIR / run / domain / "openloop.summary.json"
