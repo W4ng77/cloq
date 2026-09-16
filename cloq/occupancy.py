@@ -83,7 +83,11 @@ def extract(run_ids: list[str], domains: list[str], device: str = "cuda", batch_
                     last.append(h[-1].cpu().numpy())
                     obs.append(h[s:e].mean(0).cpu().numpy())
                     keys.append(f"{d['task_id']}|{d['decision_idx']}|{d['prompt_sha256']}")
-            np.savez_compressed(out, keys=np.array(keys), last=np.stack(last).astype(np.float32), obs=np.stack(obs).astype(np.float32))
+            np.savez_compressed(
+                out, keys=np.array(keys),
+                last=np.stack(last).astype(np.float32), obs=np.stack(obs).astype(np.float32),
+                extractor=np.array([rep_model or f"{C.MODEL_ID}@{C.MODEL_REVISION}"]),
+            )
             print("wrote", out, len(keys))
 
 
@@ -93,7 +97,15 @@ def extract(run_ids: list[str], domains: list[str], device: str = "cuda", batch_
 
 
 def _load_reps(run_id: str, domain: str) -> dict[str, dict[str, np.ndarray]]:
-    z = np.load(C.RUNS_DIR / run_id / domain / "reps.npz")
+    path = C.RUNS_DIR / run_id / domain / "reps.npz"
+    z = np.load(path)
+    expected = f"{C.MODEL_ID}@{C.MODEL_REVISION}"
+    got = str(z["extractor"][0]) if "extractor" in z else "<unrecorded>"
+    if got != expected:
+        raise ValueError(
+            f"{path} was written by representation extractor {got!r}, not the frozen {expected!r}. "
+            "Delete it and re-run `python -m cloq.occupancy extract`."
+        )
     out = {}
     for k, a, b in zip(z["keys"], z["last"], z["obs"]):
         tid, idx, sha = str(k).split("|")
