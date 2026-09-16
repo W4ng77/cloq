@@ -11,7 +11,7 @@ log() { echo "[$(date '+%F %T')] $*"; }
 
 serve_user() {
   if scripts/wait_server.sh 8000 5 >/dev/null 2>&1; then log "user server already up"; return; fi
-  (GPU_UTIL=0.78 nohup scripts/serve_vllm.sh 0 8000 $MODEL user 16384 --revision $REV > logs/vllm_user.log 2>&1 &)
+  (GPU_UTIL=0.78 nohup scripts/serve_vllm.sh 0 8000 $MODEL user 32768 --revision $REV > logs/vllm_user.log 2>&1 &)
   scripts/wait_server.sh 8000 900
 }
 serve_agent() {  # serve_agent <model_path_or_id> <logname> [extra]
@@ -29,7 +29,7 @@ run_arm() {  # run_arm <run_id> <arm> <task_file|ALL> <checkpoint|->
     else python -m cloq.run_arm --run-id $rid --arm $arm --domain $d --task-file $tf ${ck:+--checkpoint $ck} 2>&1 | grep -vE "^INFO|Using data directory|DEBUG|isn't mapped" | tail -25; fi
   done
 }
-judge() { for d in $DOMAINS; do [ -f runs/$1/$d/task_success.json ] || python -m cloq.nl_judge --run-dir runs/$1/$d 2>&1 | tail -2; done; }
+judge() { for d in $DOMAINS; do [ -f runs/$1/$d/task_success.json ] || python -m cloq.nl_judge --run-dir runs/$1/$d 2>&1 | tail -2 || log "WARN judge failed for $1/$d"; done; }
 build_ckpt() {  # build_ckpt <calib_manifest> <out>
   [ -f $2/quantization.json ] && { log "$2 exists"; return; }
   scripts/stop_vllm.sh 8001 >/dev/null; sleep 2
@@ -38,8 +38,8 @@ build_ckpt() {  # build_ckpt <calib_manifest> <out>
 }
 openloop_div() {  # <arm> <run_id>
   for d in $DOMAINS; do
-    [ -f runs/$2/$d/openloop.summary.json ] || python -m cloq.openloop --arm $1 --arm-run $2 --domain $d 2>&1 | tail -2
-    [ -f runs/$2/$d/divergence.json ] || python -m cloq.divergence --arm-run $2 --domain $d 2>&1 | tail -3
+    [ -f runs/$2/$d/openloop.summary.json ] || python -m cloq.openloop --arm $1 --arm-run $2 --domain $d 2>&1 | tail -2 || log "WARN openloop failed for $2/$d"
+    [ -f runs/$2/$d/divergence.json ] || python -m cloq.divergence --arm-run $2 --domain $d 2>&1 | tail -3 || log "WARN divergence failed for $2/$d"
   done
 }
 
@@ -76,10 +76,10 @@ openloop_div cloq cloq_eval
 judge cloq_eval
 # ---------------- Phase 8: occupancy analysis (HF BF16 extractor on GPU1; agent server stopped)
 scripts/stop_vllm.sh 8001 >/dev/null; sleep 2
-CUDA_VISIBLE_DEVICES=1 python -m cloq.occupancy extract --runs bf16 static_eval fp_traj_eval cloq_eval q0_fp_traj 2>&1 | tail -12
-python -m cloq.occupancy analyze --arm-runs static=static_eval fp_traj=fp_traj_eval cloq=cloq_eval --calib static=manifests/calib_static.json fp_traj=manifests/calib_fp_traj.json cloq=manifests/calib_cloq.json --rep last 2>&1 | tail -3
-python -m cloq.occupancy analyze --arm-runs static=static_eval fp_traj=fp_traj_eval cloq=cloq_eval --calib static=manifests/calib_static.json fp_traj=manifests/calib_fp_traj.json cloq=manifests/calib_cloq.json --rep obs 2>&1 | tail -3
+CUDA_VISIBLE_DEVICES=1 python -m cloq.occupancy extract --runs bf16 static_eval fp_traj_eval cloq_eval q0_fp_traj 2>&1 | tail -12 || log "WARN occupancy extract failed"
+python -m cloq.occupancy analyze --arm-runs static=static_eval fp_traj=fp_traj_eval cloq=cloq_eval --calib static=manifests/calib_static.json fp_traj=manifests/calib_fp_traj.json cloq=manifests/calib_cloq.json --rep last 2>&1 | tail -3 || log "WARN occupancy analyze(last) failed"
+python -m cloq.occupancy analyze --arm-runs static=static_eval fp_traj=fp_traj_eval cloq=cloq_eval --calib static=manifests/calib_static.json fp_traj=manifests/calib_fp_traj.json cloq=manifests/calib_cloq.json --rep obs 2>&1 | tail -3 || log "WARN occupancy analyze(obs) failed"
 # ---------------- integrity + report
 python -m cloq.integrity --arm-runs static=static_eval fp_traj=fp_traj_eval cloq=cloq_eval --calib static=manifests/calib_static.json fp_traj=manifests/calib_fp_traj.json cloq=manifests/calib_cloq.json 2>&1 | tail -20 || true
-python -m cloq.report --arm-runs static=static_eval fp_traj=fp_traj_eval cloq=cloq_eval
+python -m cloq.report --arm-runs static=static_eval fp_traj=fp_traj_eval cloq=cloq_eval || log "WARN report failed"
 log "PIPELINE DONE"

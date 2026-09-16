@@ -32,7 +32,7 @@ from pathlib import Path
 import numpy as np
 
 from cloq import config as C
-from cloq.metrics import read_jsonl
+from cloq.metrics import load_decisions, read_jsonl
 
 
 def load_states(run_id: str, domains: list[str], task_ids_by_domain: dict[str, list[str]], source: str) -> list[dict]:
@@ -42,7 +42,7 @@ def load_states(run_id: str, domains: list[str], task_ids_by_domain: dict[str, l
         st = json.load(open(run_dir / "status.json"))
         assert st["status"] == "completed", f"{run_dir} not completed"
         allowed = set(task_ids_by_domain[domain])
-        decs = [d for d in read_jsonl(run_dir / "decisions.jsonl") if d["task_id"] in allowed]
+        decs = [d for d in load_decisions(run_dir) if d["task_id"] in allowed]
         by_task = defaultdict(list)
         for d in decs:
             by_task[d["task_id"]].append(d)
@@ -111,6 +111,47 @@ def _top_up(chosen: list[dict], candidates: list[dict], budget: int, tol: float,
     return chosen
 
 
+def _fit_window(chosen: list[dict], candidates: list[dict], budget: int, tol: float, rng: np.random.Generator) -> list[dict]:
+    """Contexts are ~5k tokens, the window is ±1% of the budget: greedy filling can miss it.
+    Search single swaps (chosen <-> unchosen, same depth quartile) that land inside the window,
+    then removals/additions. Returns the first feasible solution (deterministic given rng order)."""
+    lo, hi = budget * (1 - tol), budget * (1 + tol)
+    total = sum(s["n_tokens"] for s in chosen)
+    if lo <= total <= hi:
+        return chosen
+    have = {s["prompt_sha256"] for s in chosen}
+    rest = [s for s in candidates if s["prompt_sha256"] not in have]
+    rng.shuffle(rest)
+    # 1) single swap
+    for i, c in enumerate(chosen):
+        for u in rest:
+            if u["depth_quartile"] != c["depth_quartile"]:
+                continue
+            t = total - c["n_tokens"] + u["n_tokens"]
+            if lo <= t <= hi:
+                return chosen[:i] + [u] + chosen[i + 1:]
+    # 2) removal / addition
+    for i, c in enumerate(chosen):
+        if lo <= total - c["n_tokens"] <= hi:
+            return chosen[:i] + chosen[i + 1:]
+    for u in rest:
+        if lo <= total + u["n_tokens"] <= hi:
+            return chosen + [u]
+    # 3) two-element swap (bounded search)
+    for i, c in enumerate(chosen):
+        for j, c2 in enumerate(chosen):
+            if j <= i:
+                continue
+            for u in rest[:400]:
+                for u2 in rest[:400]:
+                    if u is u2:
+                        continue
+                    t = total - c["n_tokens"] - c2["n_tokens"] + u["n_tokens"] + u2["n_tokens"]
+                    if lo <= t <= hi:
+                        return [x for k, x in enumerate(chosen) if k not in (i, j)] + [u, u2]
+    return chosen
+
+
 def build(arm: str, split: dict, fp_run: str, q_run: str | None, seed: int) -> dict:
     cal = C.FROZEN["calibration"]
     budget = int(cal["token_budget"]); tol = float(cal["token_budget_tolerance"])
@@ -122,25 +163,29 @@ def build(arm: str, split: dict, fp_run: str, q_run: str | None, seed: int) -> d
     notes = []
     if arm == "static":
         init = [s for s in fp_states if s["decision_idx"] == 0]
-        # dedupe identical initial prompts (same task -> same prompt)
+        # one unique initial prompt per task
         seen = set(); uniq = []
         for s in init:
             if s["prompt_sha256"] not in seen:
                 seen.add(s["prompt_sha256"]); uniq.append(s)
-        chosen = []
-        total = 0
-        k = 0
-        order = list(uniq); rng.shuffle(order)
-        # cycle through initial states (with repetition) until budget reached
-        while total < budget * (1 - tol):
-            s = order[k % len(order)]
-            if total + s["n_tokens"] > budget * (1 + tol):
-                break
-            chosen.append({**s, "repeat_index": k // len(order)}); total += s["n_tokens"]; k += 1
-        notes.append(f"{len(uniq)} unique initial states; {len(chosen)} contexts with repetition (multiplicity up to {k // len(order) + 1})")
+        chosen = sample_budget(uniq, budget, rng, stratify=False, tol=tol)
+        chosen = _top_up(chosen, uniq, budget, tol, rng)
+        chosen = _fit_window(chosen, uniq, budget, tol, rng)
+        total = sum(s["n_tokens"] for s in chosen)
+        rep = 0
+        if total < budget * (1 - tol):
+            # not enough unique initial states: cycle with repetition (recorded)
+            order = list(uniq); rng.shuffle(order); k = 0
+            while total < budget * (1 - tol) and k < 10 * len(order):
+                s = order[k % len(order)]
+                if total + s["n_tokens"] <= budget * (1 + tol):
+                    chosen.append({**s, "repeat_index": k // len(order) + 1}); total += s["n_tokens"]; rep += 1
+                k += 1
+        notes.append(f"{len(uniq)} unique initial states available; {len(chosen)} contexts used; {rep} repeated")
     elif arm == "fp_traj":
         chosen = sample_budget(fp_states, budget, rng, stratify=True, tol=tol)
         chosen = _top_up(chosen, fp_states, budget, tol, rng)
+        chosen = _fit_window(chosen, fp_states, budget, tol, rng)
     elif arm in ("cloq", "q_only"):
         assert q_run, "--q-run required"
         q_states = load_states(q_run, domains, cal_ids, "q0")
@@ -148,12 +193,15 @@ def build(arm: str, split: dict, fp_run: str, q_run: str | None, seed: int) -> d
             half = budget // 2
             fp_part = sample_budget(fp_states, half, rng, stratify=True, tol=tol)
             fp_part = _top_up(fp_part, fp_states, half, tol, rng)
+            fp_part = _fit_window(fp_part, fp_states, half, tol, rng)
             q_part = sample_budget(q_states, budget - half, rng, stratify=True, tol=tol)
             q_part = _top_up(q_part, q_states, budget - half, tol, rng)
+            q_part = _fit_window(q_part, q_states, budget - half, tol, rng)
             chosen = fp_part + q_part
         else:
             chosen = sample_budget(q_states, budget, rng, stratify=True, tol=tol)
             chosen = _top_up(chosen, q_states, budget, tol, rng)
+            chosen = _fit_window(chosen, q_states, budget, tol, rng)
     else:
         raise ValueError(arm)
 

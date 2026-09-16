@@ -27,7 +27,7 @@ from pathlib import Path
 import numpy as np
 
 from cloq import config as C
-from cloq.metrics import read_jsonl
+from cloq.metrics import load_decisions, read_jsonl
 
 
 # ----------------------------------------------------------------------------
@@ -66,7 +66,7 @@ def extract(run_ids: list[str], domains: list[str], device: str = "cuda", batch_
             out = run_dir / "reps.npz"
             if out.exists() or not (run_dir / "decisions.jsonl").exists():
                 print("skip", run_dir); continue
-            decs = read_jsonl(run_dir / "decisions.jsonl")
+            decs = load_decisions(run_dir)
             keys, last, obs = [], [], []
             with torch.no_grad():
                 for d in decs:

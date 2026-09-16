@@ -22,12 +22,12 @@ from pathlib import Path
 import numpy as np
 
 from cloq import config as C
-from cloq.metrics import normalize_action, read_jsonl
+from cloq.metrics import load_decisions, normalize_action, read_jsonl
 
 
-def load_decisions(run_id: str, domain: str, task_ids: set[str]) -> dict[str, list[dict]]:
+def load_decisions_by_task(run_id: str, domain: str, task_ids: set[str]) -> dict[str, list[dict]]:
     by = defaultdict(list)
-    for d in read_jsonl(C.RUNS_DIR / run_id / domain / "decisions.jsonl"):
+    for d in load_decisions(C.RUNS_DIR / run_id / domain):
         if d["task_id"] in task_ids:
             by[d["task_id"]].append(d)
     for v in by.values():
@@ -66,8 +66,8 @@ def analyze_task(fp: list[dict], q: list[dict]) -> dict:
 
 def run(bf16_run: str, arm_run: str, domain: str, eval_ids: list[str], out_path: Path) -> dict:
     ids = set(eval_ids)
-    fp = load_decisions(bf16_run, domain, ids)
-    q = load_decisions(arm_run, domain, ids)
+    fp = load_decisions_by_task(bf16_run, domain, ids)
+    q = load_decisions_by_task(arm_run, domain, ids)
     tfp = load_traj(bf16_run, domain)
     tq = load_traj(arm_run, domain)
     rows = []

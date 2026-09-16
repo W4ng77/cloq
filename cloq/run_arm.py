@@ -167,7 +167,8 @@ def main():
         save_to=f"{args.run_id}_{args.domain}",
         task_ids=[t.id for t in tasks],
         task_split_name="base",
-        max_retries=3,
+        max_retries=1,
+        auto_resume=True,
         retry_delay=2.0,
     )
 

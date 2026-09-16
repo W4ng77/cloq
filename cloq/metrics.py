@@ -64,6 +64,24 @@ def read_jsonl(path: Path) -> list[dict]:
     return out
 
 
+def load_decisions(run_dir: Path, final_only: bool = True) -> list[dict]:
+    """Decision records of a run. tau2 retries a task after an exception, and every
+    attempt logs its own trajectory_id; with final_only we keep, per task, only the
+    records of the last trajectory_id seen (the attempt that produced the SimulationRun)."""
+    recs = read_jsonl(Path(run_dir) / "decisions.jsonl")
+    if not final_only:
+        return recs
+    last: dict[str, str] = {}
+    attempts: dict[str, set] = {}
+    for d in recs:
+        last[d["task_id"]] = d["trajectory_id"]
+        attempts.setdefault(d["task_id"], set()).add(d["trajectory_id"])
+    out = [d for d in recs if d["trajectory_id"] == last[d["task_id"]]]
+    for d in out:
+        d["n_attempts"] = len(attempts[d["task_id"]])
+    return sorted(out, key=lambda d: (d["task_id"], d["decision_idx"]))
+
+
 def per_task_stats(traj: dict, decisions: list[dict]) -> dict:
     msgs = traj["messages"]
     agent_msgs = [m for m in msgs if m.get("role") == "assistant"]
@@ -97,6 +115,7 @@ def per_task_stats(traj: dict, decisions: list[dict]) -> dict:
         "n_consecutive_repeats": loops,
         "max_prompt_tokens": max(prompt_lens) if prompt_lens else None,
         "mean_prompt_tokens": float(np.mean(prompt_lens)) if prompt_lens else None,
+        "n_attempts": (decisions[0].get("n_attempts") if decisions else None),
         "premature": traj.get("termination_reason") in ("max_steps", "too_many_errors", "agent_error", "user_error", "unexpected_error", "infrastructure_error", "context_window_exceeded"),
     }
 
@@ -104,7 +123,7 @@ def per_task_stats(traj: dict, decisions: list[dict]) -> dict:
 def summarize_run(run_dir: Path) -> dict:
     run_dir = Path(run_dir)
     trajs = read_jsonl(run_dir / "trajectory.jsonl")
-    decs = read_jsonl(run_dir / "decisions.jsonl") if (run_dir / "decisions.jsonl").exists() else []
+    decs = load_decisions(run_dir) if (run_dir / "decisions.jsonl").exists() else []
     by_task: dict[str, list[dict]] = {}
     for d in decs:
         by_task.setdefault(d["task_id"], []).append(d)

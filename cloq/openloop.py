@@ -30,7 +30,7 @@ from loguru import logger
 
 from cloq import config as C
 from cloq.context_policy import get_tokenizer
-from cloq.metrics import normalize_action, normalize_tool_call, read_jsonl
+from cloq.metrics import load_decisions, normalize_action, normalize_tool_call, read_jsonl
 
 
 def _complete(api_base: str, prompt_ids: list[int], max_tokens: int, model: str = C.AGENT_SERVED_NAME) -> dict:
@@ -70,9 +70,10 @@ def parse_action(text: str) -> tuple[str | None, list[dict] | None]:
     return content, (calls or None)
 
 
-def strip_eos(ids: list[int], tok) -> list[int]:
-    eos = {tok.convert_tokens_to_ids("<|im_end|>"), tok.eos_token_id, tok.pad_token_id}
-    while ids and ids[-1] in eos:
+def strip_pad(ids: list[int], tok) -> list[int]:
+    """Keep the action's end-of-turn token (<|im_end|>) in the NLL; drop only padding."""
+    pad = {tok.pad_token_id}
+    while ids and ids[-1] in pad and ids[-1] != tok.convert_tokens_to_ids("<|im_end|>"):
         ids = ids[:-1]
     return ids
 
@@ -110,7 +111,7 @@ def replay_state(d: dict, api_base: str, tok, max_tokens: int) -> dict:
     q_kind = "tool" if q_calls else "text"
     q_norm = normalize_action(q_content, q_calls)
     # 2) teacher-forced NLL of the BF16 completion
-    fp_ids = strip_eos(list(d["completion_token_ids"] or []), tok)
+    fp_ids = strip_pad(list(d["completion_token_ids"] or []), tok)
     nll = None; n_action_tokens = len(fp_ids)
     if fp_ids:
         full = prompt_ids + fp_ids
@@ -142,7 +143,7 @@ def replay_state(d: dict, api_base: str, tok, max_tokens: int) -> dict:
 
 def run(bf16_run: str, arm: str, arm_run: str, domain: str, eval_ids: list[str], api_base: str, out_path: Path, concurrency: int = 8) -> dict:
     tok = get_tokenizer()
-    decs = [d for d in read_jsonl(C.RUNS_DIR / bf16_run / domain / "decisions.jsonl") if d["task_id"] in set(eval_ids)]
+    decs = [d for d in load_decisions(C.RUNS_DIR / bf16_run / domain) if d["task_id"] in set(eval_ids)]
     logger.info(f"{domain}: replaying {len(decs)} BF16 states through arm={arm}")
     max_tokens = C.AGENT_MAX_TOKENS
     t0 = time.time()

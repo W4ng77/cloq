@@ -17,14 +17,14 @@ from pathlib import Path
 import numpy as np
 
 from cloq import config as C
-from cloq.metrics import read_jsonl
+from cloq.metrics import load_decisions, read_jsonl
 
 UNSTABLE = {"infrastructure_error", "unexpected_error", "agent_error", "user_error", "timeout", "context_window_exceeded"}
 
 
 def characterize(run_dir: Path) -> list[dict]:
     trajs = read_jsonl(run_dir / "trajectory.jsonl")
-    decs = read_jsonl(run_dir / "decisions.jsonl")
+    decs = load_decisions(run_dir)
     n_dec = defaultdict(int)
     n_trunc = defaultdict(int)
     for d in decs:
