@@ -21,7 +21,10 @@ from cloq.metrics import resolved_db_match
 
 V1 = json.load(open(C.PROJECT_ROOT / "configs" / "frozen_v1.json"))
 DRAWS = sorted(V1["calibration"]["draws"])
-ARMS = ["static", "fp_traj", "cloq_all", "cloq_novel"]
+# Amendment 1/1a control arms are appended after the four pre-registered arms so the original
+# tables and the section-16 selection rule are unchanged; they are skipped while their runs
+# do not exist.
+ARMS = ["static", "fp_traj", "cloq_all", "cloq_novel", "cloq_matched_random", "cloq_matched_alt"]
 LONG_H = int(V1["evaluation"]["long_horizon_threshold"])
 ANALYSIS = C.PROJECT_ROOT / "analysis" / "v1"
 
@@ -131,7 +134,12 @@ def main():
 
     contrasts = {}
     pairs = [("fp_traj", "static"), ("cloq_all", "fp_traj"), ("cloq_novel", "fp_traj"),
-             ("cloq_novel", "cloq_all"), ("cloq_novel", "static"), ("cloq_all", "static")]
+             ("cloq_novel", "cloq_all"), ("cloq_novel", "static"), ("cloq_all", "static"),
+             # Amendment 1: does the novelty score add anything once depth is held fixed?
+             ("cloq_novel", "cloq_matched_random"), ("cloq_novel", "cloq_matched_alt"),
+             # do late / post-divergence states help at all, independent of novelty?
+             ("cloq_matched_random", "cloq_all"), ("cloq_matched_alt", "cloq_all"),
+             ("cloq_matched_random", "fp_traj")]
     for x, y in pairs:
         if x not in data or y not in data:
             continue
@@ -183,6 +191,25 @@ def main():
         p, lg = c["pooled"], c["long"]
         L.append(f"| {name} | {f(p.get('diff'))} | [{f(p.get('ci_lo'))}, {f(p.get('ci_hi'))}] | "
                  f"{f(lg.get('diff'))} | [{f(lg.get('ci_lo'))}, {f(lg.get('ci_hi'))}] | {lg.get('all_draws_positive')} |")
+    audit_rows = []
+    for arm in ("cloq_matched_random", "cloq_matched_alt"):
+        for dr in DRAWS:
+            mp = C.MANIFEST_DIR / "v1" / f"calib_{arm}_{dr}.json"
+            if arm in data and mp.exists():
+                au = json.load(open(mp)).get("match_audit")
+                if au:
+                    audit_rows.append((arm, dr, au))
+    if audit_rows:
+        L += ["", "## Amendment 1 match audit", "",
+              "Reported whether or not the control wins. A high collision rate or a small novelty",
+              "separation means `cloq_novel - cloq_matched_*` is underpowered, and a null there is",
+              "inconclusive rather than evidence that novelty does not matter.", "",
+              "| arm | draw | same state as novel | novelty (novel) | novelty (control) | separation |",
+              "|---|---|---|---|---|---|"]
+        for arm, dr, au in audit_rows:
+            L.append(f"| {arm} | {dr} | {au['n_identical_to_novel']}/{au['n_q_states']} | "
+                     f"{f(au['mean_novelty_novel'])} | {f(au['mean_novelty_matched'])} | "
+                     f"{f(au['novelty_separation'])} |")
     if sel:
         L += ["", "## Pre-registered method selection (plan section 16)", "",
               f"Selected: **{sel['selected']}**. {sel['reason']}.", "",
