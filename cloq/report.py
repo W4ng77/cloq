@@ -219,6 +219,8 @@ def write_markdown(results: dict, split: dict, out_dir: Path) -> None:
         L.append("")
     L += ["## Pooled (db_match is definitionally identical across domains)", ""]
     for metric, p in results["pooled"].items():
+        if not isinstance(p, dict) or "means" not in p:
+            continue  # e.g. horizon_amplification_db_match, rendered in its own section below
         L += [f"### {metric}", "", "means: " + ", ".join(f"{a}={_fmt(v)}" for a, v in p["means"].items()), "", "| contrast | diff | 95% CI | n |", "|---|---|---|---|"]
         for name, c in p["contrasts"].items():
             L.append(f"| {name} | {_fmt(c.get('diff'))} | [{_fmt(c.get('ci_lo'))}, {_fmt(c.get('ci_hi'))}] | {c.get('n')} |")
