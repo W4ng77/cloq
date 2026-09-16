@@ -218,6 +218,89 @@ def select_q_novel(q_states: list[dict], q_half: set, novelty: dict, rng: np.ran
     return sorted(out, key=_task_key)
 
 
+def select_q_matched_random(q_states: list[dict], q_half: set, novelty: dict,
+                            novel_contexts: list[dict], rng: np.random.Generator,
+                            exclude_novel_pick: bool = False) -> list[dict]:
+    """Amendment 1: per Q-half task, a RANDOM state matched to CLOQ-Novel's nuisance axes.
+
+    CLOQ-Novel changes novelty and trajectory depth together, so a CLOQ-Novel win is
+    confounded with simply calibrating on later, deeper, more truncated contexts. This arm
+    holds depth quartile, truncation status and post-divergence status at CLOQ-Novel's values
+    and randomises only which state inside that stratum is taken, so that
+
+        CLOQ-Novel - CLOQ-MatchedRandom
+
+    isolates the novelty score itself.
+
+    Candidates come from the same universe CLOQ-Novel drew from: states of the task that carry
+    a stored novelty entry. Tiers are tried in order and the first non-empty one is sampled
+    uniformly; CLOQ-Novel's own pick is deliberately left in the pool (see the amendment).
+    """
+    tasks = by_task(q_states)
+    nov = novelty["per_state"]
+    target = {(c["domain"], c["task_id"]): c for c in novel_contexts if c.get("q_selection", "").startswith("novel")}
+    out = []
+    for k in sorted(q_half, key=lambda k: (k[0], int(k[1]) if str(k[1]).isdigit() else 10**9, str(k[1]))):
+        pool = tasks.get(k)
+        tgt = target.get(k)
+        if not pool or tgt is None:
+            continue
+        # same universe as CLOQ-Novel: states with a stored representation / novelty entry
+        cands = []
+        for st in pool:
+            e = nov.get(f"{st['domain']}|{st['task_id']}|{st['decision_idx']}")
+            if e is None:
+                continue
+            st = dict(st)
+            st["novelty"] = float(e["novelty"])
+            st["post_divergence"] = bool(e["post_divergence"])
+            cands.append(st)
+        if not cands:
+            continue
+        q = int(tgt["depth_quartile"])
+        t = bool(tgt.get("truncated", False))
+        p = bool(tgt.get("post_divergence", False))
+
+        def nearest(pool_):
+            if not pool_:
+                return []
+            dmin = min(abs(x["depth_quartile"] - q) for x in pool_)
+            best = [x for x in pool_ if abs(x["depth_quartile"] - q) == dmin]
+            # ties on distance break toward the lower quartile
+            qmin = min(x["depth_quartile"] for x in best)
+            return [x for x in best if x["depth_quartile"] == qmin]
+
+        post = [x for x in cands if x["post_divergence"] == p]
+        tiers = [
+            [x for x in post if x["depth_quartile"] == q and bool(x["truncated"]) == t],
+            [x for x in post if x["depth_quartile"] == q],
+            nearest(post),
+            [x for x in cands if x["depth_quartile"] == q],
+            nearest(cands),
+        ]
+        if exclude_novel_pick:
+            # Amendment 1a: descend to the first tier that offers a state other than
+            # CLOQ-Novel's own, and draw from that tier with CLOQ-Novel's state removed.
+            ti = int(tgt["decision_idx"])
+            alt = [(i + 1, [x for x in tp if x["decision_idx"] != ti]) for i, tp in enumerate(tiers)]
+            hit = next(((i, tp) for i, tp in alt if tp), None)
+            if hit is None:
+                # the task offers no alternative anywhere; keep CLOQ-Novel's state
+                tier_idx, chosen_pool = next((i + 1, tp) for i, tp in enumerate(tiers) if tp)
+            else:
+                tier_idx, chosen_pool = hit
+        else:
+            tier_idx, chosen_pool = next((i + 1, tp) for i, tp in enumerate(tiers) if tp)
+        st = dict(chosen_pool[int(rng.integers(len(chosen_pool)))])
+        st["q_selection"] = "matched_alt" if exclude_novel_pick else "matched_random"
+        st["matched_tier"] = tier_idx
+        st["matched_pool_size"] = len(chosen_pool)
+        st["identical_to_novel"] = bool(st["decision_idx"] == int(tgt["decision_idx"]))
+        st["novel_novelty"] = float(tgt.get("novelty")) if tgt.get("novelty") is not None else None
+        out.append(st)
+    return sorted(out, key=_task_key)
+
+
 # ---------------------------------------------------------------------------
 # manifest
 # ---------------------------------------------------------------------------
@@ -225,10 +308,12 @@ def select_q_novel(q_states: list[dict], q_half: set, novelty: dict, rng: np.ran
 CTX_FIELDS = ["source", "run_id", "domain", "task_id", "trajectory_id", "decision_idx", "n_decisions",
               "depth", "depth_quartile", "n_tokens", "prompt_sha256", "prompt_token_ids",
               "parser_error", "finish_reason", "target_quartile", "quartile_fallback",
-              "q_selection", "novelty", "post_divergence"]
+              "q_selection", "novelty", "post_divergence", "truncated",
+              "matched_tier", "matched_pool_size", "identical_to_novel", "novel_novelty"]
 
 
-def build(arm: str, draw: str, split: dict, fp_run: str, q_run: str | None, novelty_path: Path | None) -> dict:
+def build(arm: str, draw: str, split: dict, fp_run: str, q_run: str | None, novelty_path: Path | None,
+          novel_calib: Path | None = None) -> dict:
     seed = int(DRAWS[draw])
     rng = np.random.default_rng(seed)
     domains = list(split["domains"].keys())
@@ -242,7 +327,7 @@ def build(arm: str, draw: str, split: dict, fp_run: str, q_run: str | None, nove
         notes.append("initial states are draw-independent; only the activation-row subsample varies")
     elif arm == "fp_traj":
         chosen = select_one_per_task_depth_balanced(fp_states, rng)
-    elif arm in ("cloq_all", "cloq_novel"):
+    elif arm in ("cloq_all", "cloq_novel", "cloq_matched_random", "cloq_matched_alt"):
         assert q_run, "--q-run required"
         q_states = load_states(q_run, domains, cal_ids, "q0")
         # The split RNG is consumed before any arm-specific randomness so that cloq_all and
@@ -253,11 +338,32 @@ def build(arm: str, draw: str, split: dict, fp_run: str, q_run: str | None, nove
         fp_part = select_one_per_task_depth_balanced(fp_pool, np.random.default_rng([seed, 0xF9]))
         if arm == "cloq_all":
             q_part = select_q_uniform_depth(q_states, q_half, np.random.default_rng([seed, 0xA11]))
-        else:
+        elif arm == "cloq_novel":
             assert novelty_path, "--novelty required for cloq_novel"
             nov = json.load(open(novelty_path))
             assert nov["draw"] == draw, f"novelty manifest is for draw {nov['draw']}, not {draw}"
             q_part = select_q_novel(q_states, q_half, nov, np.random.default_rng([seed, 0xA12]))
+        else:
+            # Amendment 1: depth/truncation-matched random control for CLOQ-Novel.
+            assert novelty_path, f"--novelty required for {arm}"
+            assert novel_calib, f"--novel-calib required for {arm}"
+            nov = json.load(open(novelty_path))
+            assert nov["draw"] == draw, f"novelty manifest is for draw {nov['draw']}, not {draw}"
+            novel_man = json.load(open(novel_calib))
+            assert novel_man["arm"] == "cloq_novel" and novel_man["draw"] == draw, \
+                f"{novel_calib} is not the cloq_novel manifest for draw {draw}"
+            # the FP half must be bit-identical to CLOQ-Novel's
+            novel_fp = sorted((c["domain"], c["task_id"], c["decision_idx"])
+                              for c in novel_man["contexts"] if c["source"] != "q0")
+            mine_fp = sorted((c["domain"], c["task_id"], c["decision_idx"]) for c in fp_part)
+            assert novel_fp == mine_fp, "FP half differs from CLOQ-Novel; the control would be invalid"
+            excl = arm == "cloq_matched_alt"
+            q_part = select_q_matched_random(
+                q_states, q_half, nov, novel_man["contexts"],
+                np.random.default_rng([seed, 0xA14 if excl else 0xA13]), exclude_novel_pick=excl)
+            notes.append("Amendment 1 control: Q half matched to cloq_novel on depth quartile, "
+                         "truncation and post-divergence, randomised within the stratum"
+                         + (" (Amendment 1a: cloq_novel's own state excluded)" if excl else ""))
         chosen = sorted(fp_part + q_part, key=_task_key)
         notes.append(f"FP half {len(fp_half)} tasks, Q half {len(q_half)} tasks; "
                      f"{len(fp_part)} FP states + {len(q_part)} Q states")
@@ -283,7 +389,7 @@ def build(arm: str, draw: str, split: dict, fp_run: str, q_run: str | None, nove
         c["n_rows"] = q
         c["row_idx"] = ix
         contexts.append(c)
-    return {
+    man = {
         "protocol": "v1", "arm": arm, "draw": draw, "draw_seed": seed,
         "budget_rows": BUDGET_ROWS, "total_rows": int(sum(quota)),
         "rows_within_budget": int(sum(quota)) == BUDGET_ROWS,
@@ -296,23 +402,43 @@ def build(arm: str, draw: str, split: dict, fp_run: str, q_run: str | None, nove
         "fp_run": fp_run, "q_run": q_run, "novelty": str(novelty_path) if novelty_path else None,
         "notes": notes, "contexts": contexts,
     }
+    if arm in ("cloq_matched_random", "cloq_matched_alt"):
+        qsel = [c for c in contexts if c.get("q_selection") in ("matched_random", "matched_alt")]
+        nvl = [c["novelty"] for c in qsel if c.get("novelty") is not None]
+        tgt = [c["novel_novelty"] for c in qsel if c.get("novel_novelty") is not None]
+        man["match_audit"] = {
+            "n_q_states": len(qsel),
+            "n_identical_to_novel": int(sum(bool(c.get("identical_to_novel")) for c in qsel)),
+            "tier_histogram": {t: sum(1 for c in qsel if c.get("matched_tier") == t) for t in range(1, 6)},
+            "median_pool_size": float(np.median([c["matched_pool_size"] for c in qsel])) if qsel else None,
+            "mean_novelty_matched": float(np.mean(nvl)) if nvl else None,
+            "mean_novelty_novel": float(np.mean(tgt)) if tgt else None,
+            "novelty_separation": float(np.mean(tgt) - np.mean(nvl)) if nvl and tgt else None,
+            "q_truncated_share": float(np.mean([bool(c.get("truncated")) for c in qsel])) if qsel else None,
+        }
+        man["novel_calib"] = str(novel_calib)
+    return man
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--arm", required=True, choices=["static", "fp_traj", "cloq_all", "cloq_novel"])
+    ap.add_argument("--arm", required=True,
+                    choices=["static", "fp_traj", "cloq_all", "cloq_novel",
+                             "cloq_matched_random", "cloq_matched_alt"])
     ap.add_argument("--draw", required=True, choices=sorted(DRAWS))
     ap.add_argument("--split", default=str(C.MANIFEST_DIR / "task_split_v0.json"))
     ap.add_argument("--fp-run", default="bf16")
     ap.add_argument("--q-run", default=None)
     ap.add_argument("--novelty", default=None)
+    ap.add_argument("--novel-calib", default=None, help="frozen cloq_novel manifest (cloq_matched_random)")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     out = Path(a.out)
     if out.exists():
         raise SystemExit(f"{out} exists (frozen); refusing to overwrite")
     split = json.load(open(a.split))
-    man = build(a.arm, a.draw, split, a.fp_run, a.q_run, Path(a.novelty) if a.novelty else None)
+    man = build(a.arm, a.draw, split, a.fp_run, a.q_run, Path(a.novelty) if a.novelty else None,
+                Path(a.novel_calib) if a.novel_calib else None)
     man["split_file_sha256"] = hashlib.sha256(open(a.split, "rb").read()).hexdigest()
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(man))

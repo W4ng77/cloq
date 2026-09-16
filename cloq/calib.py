@@ -58,6 +58,7 @@ def load_states(run_id: str, domains: list[str], task_ids_by_domain: dict[str, l
                     "n_tokens": len(d["prompt_token_ids"]), "prompt_sha256": d["prompt_sha256"],
                     "prompt_token_ids": d["prompt_token_ids"],
                     "parser_error": d.get("parser_error", False), "finish_reason": d.get("finish_reason"),
+                    "truncated": bool((d.get("context") or {}).get("truncated", False)),
                 })
     return states
 
