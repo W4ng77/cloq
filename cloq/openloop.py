@@ -112,6 +112,26 @@ def register_tools_for_domain(domain: str) -> None:
     _TOOLS_CACHE[sha256_text(canonical_json(schema))] = schema
 
 
+def _as_arg_dict(x) -> tuple[dict, bool]:
+    """Tool-call arguments as a dict. Returns (dict, well_formed).
+
+    An already-a-dict input is returned unchanged, so this is behaviour-identical on every
+    input that did not previously crash.
+    """
+    if isinstance(x, dict):
+        return x, True
+    if x is None:
+        return {}, True
+    if isinstance(x, str):
+        try:
+            d = json.loads(x)
+            if isinstance(d, dict):
+                return d, True
+        except Exception:
+            pass
+    return {}, False
+
+
 def arg_metrics(fp_calls: list[dict] | None, q_calls: list[dict] | None) -> dict:
     """Argument-level accuracy for the first tool call when names match."""
     if not fp_calls or not q_calls:
@@ -120,7 +140,13 @@ def arg_metrics(fp_calls: list[dict] | None, q_calls: list[dict] | None) -> dict
     name_match = f["name"] == q["name"]
     if not name_match:
         return {"name_match": False, "exact_args": None, "field_f1": None}
-    fa, qa = f.get("arguments") or {}, q.get("arguments") or {}
+    fa, ok_f = _as_arg_dict(f.get("arguments"))
+    qa, ok_q = _as_arg_dict(q.get("arguments"))
+    if not (ok_f and ok_q):
+        # A quantized model sometimes emits the argument blob as a bare string instead of an
+        # object. That is a failure to reproduce the BF16 action, not a reason to lose the whole
+        # domain's summary, so it scores as a mismatch and is flagged.
+        return {"name_match": True, "exact_args": False, "field_f1": 0.0, "malformed_arguments": True}
     exact = normalize_tool_call(f["name"], fa) == normalize_tool_call(q["name"], qa)
     fk = {(k, json.dumps(v, sort_keys=True)) for k, v in fa.items()}
     qk = {(k, json.dumps(v, sort_keys=True)) for k, v in qa.items()}
