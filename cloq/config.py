@@ -23,7 +23,8 @@ FROZEN = load_frozen()
 
 MODEL_ID = FROZEN["model"]["hf_id"]
 MODEL_REVISION = FROZEN["model"]["revision"]
-MAX_PROMPT_TOKENS = int(FROZEN["context_policy"]["max_prompt_tokens"])
+# CLOQ_MAX_PROMPT_TOKENS overrides the frozen limit for the context-length control runs only.
+MAX_PROMPT_TOKENS = int(os.environ.get("CLOQ_MAX_PROMPT_TOKENS", FROZEN["context_policy"]["max_prompt_tokens"]))
 AGENT_MAX_TOKENS = int(FROZEN["generation_agent"]["max_tokens"])
 USER_MAX_TOKENS = int(FROZEN["generation_user"]["max_tokens"])
 
