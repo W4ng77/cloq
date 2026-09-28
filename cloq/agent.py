@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import threading
 import time
+import os
 import uuid
 from pathlib import Path
 from typing import Optional
@@ -86,6 +87,13 @@ class CLOQAgent(LLMAgent[LLMAgentState]):
         self.tools_schema = [t.openai_schema for t in self.tools]
         self.tools_sha = sha256_text(canonical_json(self.tools_schema))
         self.system_sha = sha256_text(self.system_prompt)
+
+    @property
+    def system_prompt(self) -> str:
+        # CLOQ_PROMPT_NONCE appends a neutral session-id line: the perturbation null (re-roll without weight change).
+        base = super().system_prompt
+        nonce = os.environ.get("CLOQ_PROMPT_NONCE")
+        return f"{base}\nSession ID: {nonce}\n" if nonce else base
 
     def _generate_next_message(self, message, state: LLMAgentState) -> AssistantMessage:
         if isinstance(message, UserMessage) and message.is_audio:

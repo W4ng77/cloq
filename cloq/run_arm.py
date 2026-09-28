@@ -59,6 +59,8 @@ def environment_json(agent_base: str, user_base: str) -> dict:
         "agent_api_base": agent_base,
         "user_api_base": user_base,
         "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
+        "prompt_nonce": os.environ.get("CLOQ_PROMPT_NONCE"),
+        "max_prompt_tokens": C.MAX_PROMPT_TOKENS,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
