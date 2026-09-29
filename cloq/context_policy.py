@@ -35,18 +35,60 @@ def get_tokenizer():
     return _TOK
 
 
+def template_view(messages: list[dict]) -> list[dict]:
+    """The message list as the vLLM server hands it to the chat template.
+
+    vLLM's chat preprocessing (entrypoints/chat_utils.py) drops an assistant message's `tool_calls` when it is
+    None or empty and parses JSON-string tool-call `arguments` into dicts before rendering; tau2's
+    to_litellm_messages emits `tool_calls: None` on text turns and JSON-string arguments. Templates that test
+    key presence (Llama-3.1: `'tool_calls' in message` then `tool_calls|length`) crash on the raw form and
+    render arguments double-encoded, so local rendering (context policy token counts, logged prompt ids) must
+    see the same view as the server. For templates that test truthiness and accept string or dict arguments
+    (Qwen3/hermes) the rendered prompt is unchanged. Returns new dicts; the input is never modified.
+    """
+    out = []
+    for m in messages:
+        if m.get("role") != "assistant" or "tool_calls" not in m:
+            out.append(m)
+            continue
+        tcs = m.get("tool_calls")
+        if not tcs:
+            out.append({k: v for k, v in m.items() if k != "tool_calls"})
+            continue
+        if not isinstance(tcs, list):
+            out.append(m)
+            continue
+        new_tcs = []
+        for tc in tcs:
+            fn = tc.get("function") if isinstance(tc, dict) else None
+            if isinstance(fn, dict) and not isinstance(fn.get("arguments"), dict):
+                args = fn.get("arguments")
+                parsed = {}
+                if isinstance(args, str) and args:
+                    try:
+                        parsed = json.loads(args)
+                    except json.JSONDecodeError:
+                        parsed = {}
+                elif args:
+                    parsed = args
+                tc = {**tc, "function": {**fn, "arguments": parsed if isinstance(parsed, dict) else {}}}
+            new_tcs.append(tc)
+        out.append({**m, "tool_calls": new_tcs})
+    return out
+
+
 def render_prompt(messages: list[dict], tools: Optional[list[dict]]) -> str:
     """Render exactly what the chat template produces for a generation request."""
     tok = get_tokenizer()
     return tok.apply_chat_template(
-        messages, tools=tools or None, add_generation_prompt=True, tokenize=False, **CHAT_TEMPLATE_KWARGS
+        template_view(messages), tools=tools or None, add_generation_prompt=True, tokenize=False, **CHAT_TEMPLATE_KWARGS
     )
 
 
 def render_prompt_ids(messages: list[dict], tools: Optional[list[dict]]) -> list[int]:
     tok = get_tokenizer()
     out = tok.apply_chat_template(
-        messages, tools=tools or None, add_generation_prompt=True, tokenize=True, **CHAT_TEMPLATE_KWARGS
+        template_view(messages), tools=tools or None, add_generation_prompt=True, tokenize=True, **CHAT_TEMPLATE_KWARGS
     )
     if isinstance(out, dict) or hasattr(out, "input_ids"):
         out = out["input_ids"]

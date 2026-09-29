@@ -49,11 +49,13 @@
   "note": "fallback for l8 (Llama-3.1-8B gated); multimodal checkpoint, needs a dedicated serving path"
  },
  "l8": {
-  "hf_id": "unsloth/Llama-3.1-8B-Instruct",
-  "revision": "4699cc75b550f9c6f3173fb80f4703b62d946aa5",
+  "hf_id": "meta-llama/Llama-3.1-8B-Instruct",
+  "revision": "0e9e39f249a16976918f6564b8830bc894c89659",
   "gpus": 1,
   "parser": "llama3_json",
-  "chat_template_kwargs": {},
-  "note": "second family; ungated mirror of meta-llama/Llama-3.1-8B-Instruct, safetensors sha256 identical to the meta repo (checked 2026-09-28)"
+  "chat_template_kwargs": {
+   "tools_in_user_message": false
+  },
+  "note": "second family; official meta repo (safetensors sha256 identical to the unsloth mirror used for a6k2_smoke_l8, checked 2026-09-28). tools_in_user_message=false: tau2's first non-system turn is the agent greeting, which the default template (tools in first user message) re-labels as a user turn carrying the tool list (W9)"
  }
 }

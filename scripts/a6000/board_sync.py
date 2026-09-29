@@ -30,8 +30,8 @@ def iso(t: float) -> str:
 
 
 def cell_of(run_id: str) -> tuple[str, str] | None:
-    m = re.match(r"a6000_([a-z0-9]+)_(.+)$", run_id)
-    if not m or run_id.startswith("a6000_det_"):
+    m = re.match(r"a6k2_([a-z0-9]+)_(.+)$", run_id)  # current matrix only; a6000_* = legacy numerics flavour (W3)
+    if not m or "_det_" in run_id:
         return None
     model, rest = m.groups()
     if rest == "bf16_cal":
