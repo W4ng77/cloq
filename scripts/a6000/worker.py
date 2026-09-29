@@ -121,6 +121,15 @@ def check_canary(port: int, model: str, role: str, name: str = "agent") -> str:
     return h
 
 
+
+def user_base():
+    """Simulator URL: queue/USER_BASE.<node> (read at task start; moves a node's new tasks to another node's simulator
+    without restarting its runner), else $CLOQ_USER_BASE, else the node's own simulator."""
+    f = WORK / "queue" / f"USER_BASE.{socket.gethostname().split('.')[0]}"
+    if f.exists() and f.read_text().strip():
+        return f.read_text().strip()
+    return os.environ.get("CLOQ_USER_BASE", "http://127.0.0.1:8000/v1")
+
 def stop_server(proc, gpus):
     if proc is None:
         return
@@ -240,7 +249,7 @@ def run_eval(task, args, st: Status):
         if path.startswith(str(scratch)):  # weights are on the GPU now; free the RAM disk
             for f in Path(path).glob("*.safetensors"):
                 f.unlink()
-        ubase = os.environ.get("CLOQ_USER_BASE", "http://127.0.0.1:8000/v1")
+        ubase = user_base()
         t1 = time.time()
         while True:  # the simulator may live on another node and still be starting
             try:
@@ -277,7 +286,7 @@ def run_eval(task, args, st: Status):
                     e.pop("CLOQ_PROMPT_NONCE", None)
                 cmd = [sys.executable, "-m", "cloq.run_arm", "--run-id", r["run_id"], "--arm", task["arm"], "--domain", d,
                        "--task-file", str(ROOT / r["task_file"]), "--agent-base", f"http://127.0.0.1:{args.port}/v1",
-                       "--user-base", os.environ.get("CLOQ_USER_BASE", "http://127.0.0.1:8000/v1"), "--checkpoint", json.dumps(task["ckpt"])]
+                       "--user-base", user_base(), "--checkpoint", json.dumps(task["ckpt"])]
                 running.append(((r["run_id"], d), subprocess.Popen(cmd, cwd=ROOT, env=e, stdout=log, stderr=subprocess.STDOUT)))
             time.sleep(10)
             for item in list(running):
