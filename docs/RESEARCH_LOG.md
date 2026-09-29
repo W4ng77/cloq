@@ -52,6 +52,15 @@ found") and passes JSON arrays as strings (11/38). The template ablation gives t
 - Consequence: l8's high retail tool-error rate belongs to the model, not to the harness. Treat l8 as a
   low-capability family (floor effects on db_match) when reading its perturbation nulls.
 
+## W11 · Heavy-perturbation cells are GPU sinks; closed-loop k=3 deferred on q32/l8 (2026-09-29 04:55 PDT)
+**TL;DR** From 01:22 to 04:53 only ~18 tasks finished. The reason: 7 slots were occupied for 5–6 h by k≥2 Gaussian and
+redo cells, whose agents loop to max_steps with ~30k-token contexts. The batch-invariant kernels then run at ~50–80
+generated tok/s and ~2k prefill tok/s per server. These were not hung (logs and metrics advance). Closed-loop gauss3 on
+q32 and l8 (4 tasks) is moved to `/data/ziyangs/cloq_work/queue/deferred/`: it is a control under the
+quantization-centred framing (PLAN_iter4) and costs roughly 6–10 GPU-h each. Their open-loop E3 cells stay queued (6 min each).
+- Evidence: `/data/ziyangs/cloq_work/logs/tasks/a6k2_q4_gauss3_s1_redo.log` (8 sims running 40–100 min each),
+  `.vllm.log` throughput lines; status snapshot in session.
+
 ## W10 · Context-window overflow is a task failure, not an outage (2026-09-29 03:00 PDT)
 **TL;DR** `a6k2_q8_gauss2_s2` failed the W6 guard with 2 infrastructure_error episodes. They were not outages: a
 heavily perturbed agent looped until the dialogue exceeded the simulator's 65,536-token window. That is the agent's own
