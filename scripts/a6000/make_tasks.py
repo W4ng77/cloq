@@ -82,6 +82,24 @@ def e3(m: str, prefix: str = "a6000", n: int = 400) -> list[dict]:
     return out
 
 
+def r1(m: str, prefix: str = "a6000") -> list[dict]:
+    """Review-1 (paper/perturbation-equivalence-closed-loop.review.md): sub-grid k (is there a floor below one grid
+    step?), k=2 (threshold shape), extra RTN-W4 nonces and gauss k=1 seeds (RTN-W4 vs matched-D noise, I3)."""
+    p = MODEL_PRIORITY[m] + 15
+    R = f"{prefix}_{m}"
+    t = []
+    for k in ("0.001", "0.003", "0.01", "2"):
+        for s in (1, 2):
+            t.append(eval_task(f"{m}_gauss{k}_s{s}", m, "gauss", {"kind": "gauss", "k": float(k), "seed": s},
+                               [run(f"{R}_gauss{k}_s{s}")], p))
+    for s in (3, 4, 5):
+        t.append(eval_task(f"{m}_gauss1_s{s}", m, "gauss", {"kind": "gauss", "k": 1.0, "seed": s},
+                           [run(f"{R}_gauss1_s{s}")], p))
+    t.append(eval_task(f"{m}_rtn_w4_x", m, "rtn", {"kind": "rtn", "wbits": 4},
+                       [run(f"{R}_rtn_w4_n{i + 1}", nonce=NONCES[i]) for i in (2, 3, 4)], p))
+    return t
+
+
 def determinism(m: str, rep: str, node: str, prefix: str = "a6000", tid: str = "") -> dict:
     """Same BF16 config, 20 tasks; two copies on different nodes must produce byte-identical decisions."""
     t = eval_task(f"{tid}det_{m}_{rep}", m, "bf16", {"kind": "bf16"}, [run(f"{prefix}_det_{m}_{rep}", DET)], -10)
@@ -93,7 +111,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("models", nargs="+")
     ap.add_argument("--retry", action="store_true")
-    ap.add_argument("--only", choices=["det", "matrix", "e5", "e3"], default=None)
+    ap.add_argument("--only", choices=["det", "matrix", "e5", "e3", "r1"], default=None)
     ap.add_argument("--prefix", default="a6000", help="run-id prefix; a6k2 = deterministic-Inductor rerun (W3)")
     a = ap.parse_args()
     for d in ("todo", "running", "done", "failed"):
@@ -110,6 +128,9 @@ def main():
         if a.only == "e3":
             tid = "" if a.prefix == "a6000" else a.prefix + "_"
             tasks += [dict(t, id=tid + t["id"], deps=[tid + d for d in t["deps"]]) for t in e3(m, a.prefix)]
+        if a.only == "r1":
+            tid = "" if a.prefix == "a6000" else a.prefix + "_"
+            tasks += [dict(t, id=tid + t["id"]) for t in r1(m, a.prefix)]
         if a.only == "e5":
             tid = "" if a.prefix == "a6000" else a.prefix + "_"
             tasks += [dict(t, id=tid + t["id"]) for t in e5(m, a.prefix)]
