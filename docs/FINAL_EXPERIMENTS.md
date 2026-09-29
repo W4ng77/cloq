@@ -17,7 +17,7 @@ nonces. Nulls are BF16 with nonces n1–n8 (nonce stratum, NULL_RULE.md).
 | M2 | **Quantization reallocates capability**: breaks robustly-solved tasks and fixes robustly-failed ones at 3–10× the null rate. The attractor model Δ = λ(c − p̄) explains "unchanged success" and predicts net damage at higher base rate | RTN W8/W4/W3, GPTQ W4 (2 calib draws)/W3, AWQ W4 × q4/q8/q14/q30a3/q32/l8 | 3–5 per cell (`*_qx` fresh-nonce draws) | q4/q8/q14 mostly done; q30a3/q32 core running; l8 queued | §4 headline, Fig 2 (λ, c per cell), Tab 1 |
 | M3 | **Equivalence verdicts**: which quantizers are ε-equivalent to their own model (exact permutation/conformal test in the nonce stratum, ε-inversion, Holm) vs single-run and Flat-Score-style verdicts | all cells in M2 + M4 + M5 | as M2 | test built (c01); final run on the frozen snapshot after the queue drains | §4, Tab 2 (verdict comparison, 40+ families) |
 | M4 | **Size vs structure (E17)**: isotropic Gaussian with RTN-W4's norm vs Gaussian with RTN's per-group RMS (gshape) vs RTN magnitudes with random signs (rtnsign) vs RTN | q4/q8/q14 | 3 each | q8 gshape, q14 rtnsign done; 4 running | §5, Fig 3 |
-| M5 | **Method families (breadth)**: NF4, MXFP4 (grid shape); QuaRot-rotated RTN/GPTQ W4 (error made isotropic by rotation) + rotated-BF16 control; official FP8 and AWQ checkpoints (X1); fake KV-cache INT4/INT3 (+Hadamard) | q4/q8/q14 (X1 on all 5 Qwen) | 3 each | agents implementing (W12, W13); X1 17/34 done | §5, Tab 3 |
+| M5 | **Method families (breadth)**: NF4, MXFP4 (grid shape); QuaRot-rotated RTN/GPTQ W4 (error made isotropic by rotation) + rotated-BF16 control; official FP8 and AWQ checkpoints (X1); fake KV-cache INT8 and INT4+Hadamard (closed loop); plain INT4/INT3 KV open-loop only | q4/q8/q14 (X1 on all 5 Qwen) | 3 each | agents implementing (W12, W13); X1 17/34 done | §5, Tab 3 |
 | M6 | **Where damage comes from**: the task/decision type of breaks (write vs read, argument errors, hallucinated IDs, premature stop, context overflow W10) and the fragile-task set (noise-mapped, AUC 0.75–0.83 for predicting quantizer breaks, not transferable across models) | existing runs | — | analyses r03/r07 (iter 3), to be re-run frozen | §6, Fig 4 |
 
 ## B. Ablations / robustness (body if space, else appendix)
@@ -52,6 +52,7 @@ nonces. Nulls are BF16 with nonces n1–n8 (nonce stratum, NULL_RULE.md).
 
 - LiveCodeBench code loop (branch `codeloop`): thin dynamic range (q4 0.20, q8 0.10), feedback changes only 5% of outcomes. Kept for the follow-up paper.
 - Real FP8 KV cache: unsupported on SM86; replaced by fake KV quant (M5).
+- Plain (unrotated) KV INT4/INT3 closed loop: validation shows 79%/90% token flips (model destroyed, `analysis/kvq/validate_q4.json`); cells moved to `queue/deferred/`, reported from the validation/open-loop numbers only.
 - W4A4 activation quantization: needs a vLLM forward change; listed under Limitations.
 - Closed-loop gauss k=3 on q32/l8, extra Llama Gaussian levels and d2, telecom on q30a3/q32: moved to `queue/deferred/` (W11 cost).
 - Mistral-Small-3.2 (multimodal checkpoint path), GLM-4-9B (no vLLM tool parser).
