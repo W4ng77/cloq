@@ -6,7 +6,7 @@ OUT=/data/ziyangs/cloq_work/gpumon/$(hostname -s).jsonl
 while true; do
   ts=$(date +%s)
   gpus=$(nvidia-smi --query-gpu=index,utilization.gpu,memory.used,power.draw,clocks.sm --format=csv,noheader,nounits 2>/dev/null \
-         | awk -F', ' '{printf "%s{\"i\":%s,\"util\":%s,\"mem\":%s,\"pw\":%s,\"clk\":%s}", (NR>1?",":""), $1,$2,$3,$4,$5}')
+         | grep -E "^[0-9]" | awk -F', ' '{printf "%s{\"i\":%s,\"util\":%s,\"mem\":%s,\"pw\":%s,\"clk\":%s}", (NR>1?",":""), $1,$2,$3,$4,$5}')
   srv=""
   for p in $(seq 8000 8010); do
     m=$(curl -s --max-time 2 localhost:$p/metrics) || continue
