@@ -53,11 +53,17 @@ def main():
                   f"{g['mem']/1024:4.1f} GB  {st.get('state','?'):8s} {task}")
             tot["gpus"] += 1
             tot["pw"] += avg_pw
-        f0 = {s["port"]: s for s in first["srv"]}
+        # token counters restart from 0 when a server restarts: sum the non-negative increments per port
+        inc = {}
+        for r0, r1 in zip(rows, rows[1:]):
+            prev = {x["port"]: x for x in r0["srv"]}
+            for x in r1["srv"]:
+                if x["port"] in prev:
+                    g, q = inc.get(x["port"], (0.0, 0.0))
+                    inc[x["port"]] = (g + max(0, x["gtok"] - prev[x["port"]]["gtok"]),
+                                      q + max(0, x["ptok"] - prev[x["port"]]["ptok"]))
         for s in last["srv"]:
-            s0 = f0.get(s["port"], s)
-            gen = (s["gtok"] - s0["gtok"]) / dt
-            pre = (s["ptok"] - s0["ptok"]) / dt
+            gen, pre = (v / dt for v in inc.get(s["port"], (0.0, 0.0)))
             role = "SIM " if s["port"] == 8000 else "agent"
             print(f"  :{s['port']} {role} run {s['run']:3.0f} wait {s['wait']:3.0f}  kv {100*s['kv']:3.0f}%  "
                   f"gen {gen:6.0f} tok/s  prefill {pre:7.0f} tok/s")
