@@ -214,6 +214,13 @@ def run_eval(task, args, st: Status):
                     raise RuntimeError(f"user simulator {ubase} unreachable")
                 st.set("setup", "waiting for user simulator")
                 time.sleep(15)
+        ol = task.get("openloop")
+        if ol:  # E3: open-loop logit shift on the BF16 reference contexts (scripts/a6000/openloop_d.py)
+            st.set("eval", "open-loop D")
+            cmd = [sys.executable, str(ROOT / "scripts/a6000/openloop_d.py"), "--port", str(args.port), "--n", str(ol.get("n", 400)),
+                   "--out", ol["out"]] + [x for r in ol["ref_runs"] for x in ("--ref-run", r)]
+            if subprocess.run(cmd, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT).returncode != 0:
+                raise RuntimeError("openloop_d failed")
         jobs = [(r, d) for r in task["runs"] for d in ("retail", "airline")]
         done, running = 0, []
         st.set("eval", f"{len(jobs)} run-domains", 0.0)
