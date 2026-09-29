@@ -155,6 +155,14 @@ def build_ckpt(task, env, gpus, scratch: Path, log) -> tuple[str, dict | None]:
     ck = task["ckpt"]
     if ck["kind"] == "bf16":
         return src, None
+    if ck["kind"] == "hf":  # X1: serve an official pre-quantized repo (pinned revision) instead of building one
+        path = snapshot(ck["hf_id"], ck["revision"])
+        if not Path(path, "config.json").exists():
+            raise RuntimeError(f"hf checkpoint {ck['hf_id']}@{ck['revision']} not in the HF cache")
+        qc = json.load(open(Path(path, "config.json"))).get("quantization_config") or {}
+        return path, {"method": "hf", "format": ck.get("format"), "hf_id": ck["hf_id"], "revision": ck["revision"],
+                      "source_model": m["hf_id"], "source_revision": m["revision"], "quantization_config": qc,
+                      "serve_extra": task.get("serve_extra", [])}
     out = scratch / f"ckpt_{task['id']}"
     if out.exists():
         shutil.rmtree(out)
@@ -181,13 +189,13 @@ def run_eval(task, args, st: Status):
     log = open(logdir / f"{task['id']}.log", "a")
     log.write(f"\n=== {time.ctime()} {socket.gethostname()} gpus={args.gpus} port={args.port}\n")
     log.flush()
-    st.set("quantize" if task["ckpt"]["kind"] in ("gptq", "awq") else "compress" if task["ckpt"]["kind"] != "bf16" else "setup",
+    st.set("quantize" if task["ckpt"]["kind"] in ("gptq", "awq") else "compress" if task["ckpt"]["kind"] not in ("bf16", "hf") else "setup",
            f"build {task['ckpt']['kind']}")
     path, qmeta = build_ckpt(task, env, gpus, scratch, log)
     st.set("setup", "starting vLLM")
     slog = open(logdir / f"{task['id']}.vllm.log", "a")
     server = subprocess.Popen([str(ROOT / "scripts/a6000/serve.sh"), args.gpus, str(args.port), path, "agent", str(AGENT_MAXLEN),
-                               *task.get("serve_extra", [])], env=env, stdout=slog, stderr=subprocess.STDOUT, start_new_session=True)
+                               *task.get("serve_extra", [])], env=dict(env, **task.get("serve_env", {})), stdout=slog, stderr=subprocess.STDOUT, start_new_session=True)
     try:
         t0 = time.time()
         while not healthy(args.port):

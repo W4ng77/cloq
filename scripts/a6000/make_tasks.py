@@ -100,6 +100,61 @@ def r1(m: str, prefix: str = "a6000") -> list[dict]:
     return t
 
 
+# X1 (docs/insights/PLAN_iter3.md): real deployed formats. Official repos pinned (downloaded 2026-09-28, docs/RESEARCH_LOG.md W7).
+X1_HF = {
+    ("q8", "awq"): ("Qwen/Qwen3-8B-AWQ", "4da05a8edb55c6046cce958586c33b61da07bb79"),
+    ("q14", "awq"): ("Qwen/Qwen3-14B-AWQ", "31c69efc29464b6bb0aee1398b5a7b50a99340c3"),
+    ("q32", "awq"): ("Qwen/Qwen3-32B-AWQ", "0499c3ac83fdef8810b907a23894ba91e95eddd8"),
+    ("q4", "fp8"): ("Qwen/Qwen3-4B-Instruct-2507-FP8", "8591804019c8b22094c3b5b4454e0edc05dffc98"),
+    ("q8", "fp8"): ("Qwen/Qwen3-8B-FP8", "220b46e3b2180893580a4454f21f22d3ebb187d3"),
+    ("q14", "fp8"): ("Qwen/Qwen3-14B-FP8", "9a283b4a5efbc09ce247e0ae5b02b744739e525a"),
+    ("q30a3", "fp8"): ("Qwen/Qwen3-30B-A3B-Instruct-2507-FP8", "5a5a776300a41aaa681dd7ff0106608ef2bc90db"),
+    ("q32", "fp8"): ("Qwen/Qwen3-32B-FP8", "aa55da1ecc13d006e8b8e4f54579b1ea8c3db2df"),
+}
+X1_HF_EXTRA = {"awq": {"serve_extra": ["--dtype", "float16"]}}
+# BF16 weights + a serving flag. Neither planned flag format runs here (W7), so none is generated:
+#  bnb: --quantization bitsandbytes was removed in vLLM 0.29;
+#  kv_fp8: on SM86 only FlashInfer takes an FP8 KV cache, and it is not batch-invariant (Triton attention needs SM89+).
+X1_FLAG: dict[str, list[str]] = {}
+X1_FLAG_MODELS = ("q8", "q14")
+
+
+def x1_cells(m: str) -> list[tuple[str, dict, list[str]]]:
+    """(format, ckpt, serve_extra) for model m."""
+    # AWQ runs in FP16 activations: the official configs say float16 (vLLM's default for them), and under
+    # VLLM_BATCH_INVARIANT vLLM serves AWQ via awq_dequantize + matmul, which only takes FP16 (bf16 crashed, W7).
+    out = [(f, {"kind": "hf", "format": f, "hf_id": h, "revision": r, **X1_HF_EXTRA.get(f, {})}, X1_HF_EXTRA.get(f, {}).get("serve_extra", []))
+           for (mm, f), (h, r) in X1_HF.items() if mm == m]
+    if m in X1_FLAG_MODELS:
+        out += [(f, {"kind": "bf16", "format": f, "serve_extra": x}, x) for f, x in X1_FLAG.items()]
+    return out
+
+
+def x1(m: str, prefix: str = "a6000", tid: str = "") -> list[dict]:
+    """X1: per deployed format, canonical + 2 nonces (one task), a cross-node det pair, and E3 open-loop D."""
+    p = MODEL_PRIORITY[m] + 30
+    R = f"{prefix}_{m}"
+    out = []
+    for f, ck, extra in x1_cells(m):
+        cell = f"x1_{f}"
+        arm = f"x1_{f}"
+        t = eval_task(f"{tid}{m}_{cell}", m, arm, ck,
+                      [run(f"{R}_{cell}")] + [run(f"{R}_{cell}_n{i + 1}", nonce=NONCES[i]) for i in range(2)], p)
+        for rep, node in (("a", "node005"), ("b", "node004")):
+            d = eval_task(f"{tid}det_{m}_{cell}_{rep}", m, arm, ck, [run(f"{prefix}_det_{m}_{cell}_{rep}", DET)], -6)
+            d["node"] = node
+            out.append(d)
+        ol = eval_task(f"{tid}{m}_ol_{cell}", m, arm, ck, [], MODEL_PRIORITY[m] + 100, deps=[f"{tid}{m}_bf16"])
+        ol["openloop"] = {"ref_runs": [f"{R}_bf16"], "n": 400, "out": f"analysis/openloop/{prefix}/{m}/{f}"}
+        for x in (t, ol) + tuple(out[-2:]):
+            if extra:
+                x["serve_extra"] = list(extra)
+            if f == "fp8":  # Humming FP8 kernel reads NVML index 0 (faulty card on node003): scripts/a6000/pyhooks
+                x["serve_env"] = {"CLOQ_PYHOOKS": "1"}
+        out += [t, ol]
+    return out
+
+
 def determinism(m: str, rep: str, node: str, prefix: str = "a6000", tid: str = "") -> dict:
     """Same BF16 config, 20 tasks; two copies on different nodes must produce byte-identical decisions."""
     t = eval_task(f"{tid}det_{m}_{rep}", m, "bf16", {"kind": "bf16"}, [run(f"{prefix}_det_{m}_{rep}", DET)], -10)
@@ -111,7 +166,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("models", nargs="+")
     ap.add_argument("--retry", action="store_true")
-    ap.add_argument("--only", choices=["det", "matrix", "e5", "e3", "r1"], default=None)
+    ap.add_argument("--only", choices=["det", "matrix", "e5", "e3", "r1", "x1"], default=None)
     ap.add_argument("--prefix", default="a6000", help="run-id prefix; a6k2 = deterministic-Inductor rerun (W3)")
     a = ap.parse_args()
     for d in ("todo", "running", "done", "failed"):
@@ -131,6 +186,8 @@ def main():
         if a.only == "r1":
             tid = "" if a.prefix == "a6000" else a.prefix + "_"
             tasks += [dict(t, id=tid + t["id"]) for t in r1(m, a.prefix)]
+        if a.only == "x1":
+            tasks += x1(m, a.prefix, "" if a.prefix == "a6000" else a.prefix + "_")
         if a.only == "e5":
             tid = "" if a.prefix == "a6000" else a.prefix + "_"
             tasks += [dict(t, id=tid + t["id"]) for t in e5(m, a.prefix)]
