@@ -163,7 +163,16 @@ def main():
         claimed = False
         if not stop:
             ready = done_ids()
-            for path, t in pending_tasks():
+            pend = pending_tasks()
+            # Anti-starvation for TP=2: while a runnable 2-GPU task waits, the upper agent NVLink pairs take only
+            # 2-GPU tasks (otherwise a freed card is always grabbed by a 1-GPU task and no pair ever becomes free).
+            tp2_wait = args.max_gpus_per_task >= 2 and any(
+                gpus_needed(t) == 2 and not (t.get("node") and t["node"] != NODE) and (not only or t.get("model") in only)
+                and all(d in ready for d in t.get("deps", [])) for _, t in pend)
+            pairs = sorted({str(int(g) & ~1) for g in all_gpus if g not in sim_gpus
+                            and str(int(g) ^ 1) in all_gpus and str(int(g) ^ 1) not in sim_gpus}, key=int)
+            reserved = {x for p0 in (pairs[1:] if len(pairs) > 1 else pairs) for x in (p0, str(int(p0) + 1))} if tp2_wait else set()
+            for path, t in pend:
                 if only and t.get("model") not in only:
                     continue
                 if t.get("node") and t["node"] != NODE:
@@ -182,6 +191,8 @@ def main():
                     continue
                 if need > 2:
                     continue
+                if need == 1 and not [g for g in free if g not in reserved]:
+                    continue
                 if need == 0 and any(True for w in workers.values() if w[1] == []):
                     continue  # one CPU task at a time per node
                 rp = Q / "running" / path.name
@@ -192,7 +203,7 @@ def main():
                 if need == 2:
                     gs = [pair, str(int(pair) + 1)]
                 else:  # single-GPU tasks prefer a card whose NVLink partner is busy, keeping pairs whole
-                    gs = sorted(free, key=lambda g: (str(int(g) ^ 1) in free, int(g)))[:need]
+                    gs = sorted([g for g in free if g not in reserved], key=lambda g: (str(int(g) ^ 1) in free, int(g)))[:need]
                 for g in gs:
                     free.remove(g)
                 port = 8001 + int(gs[0]) if gs else 0
