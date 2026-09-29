@@ -5,7 +5,7 @@ with LCB's public examples and hidden tests), pinned revision below. Only the re
 (test5.jsonl, test6.jsonl) are downloaded.
 
 Selection rule (recorded in the manifest): every problem with difficulty == "hard" in the v5 and v6 increments, i.e.
-contest dates 2024-09-28 .. 2025-04-05 (release_v6 minus release_v4). No filtering on model behaviour. Order = sha256 of
+contest dates 2024-09-22 .. 2025-04-06 (release_v6 minus release_v4), 154 problems (117 AtCoder stdin, 37 LeetCode functional). No filtering on model behaviour. Order = sha256 of
 question_id (a fixed pseudo-random order, so a prefix of the manifest is an unbiased subsample, e.g. the 20-problem
 smoke set). Problems are stored one JSON file per problem (hidden tests stay in LCB's compressed encoding) under
 CLOQ_CODE_DATA (default /data/ziyangs/cloq_work/data/lcb_code).
