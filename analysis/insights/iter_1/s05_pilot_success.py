@@ -54,8 +54,8 @@ for r in runs:
         d = S[r][t] - p_free[t]
         if not row["event"]:
             key = "no divergence"
-        elif row["type"] == "wording":
-            key = "wording"
+        elif row["type"] in ("wording", "format"):
+            key = row["type"]
         else:
             key = "action (args/behaviour)"
         cost[key].append(d)

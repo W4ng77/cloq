@@ -4,6 +4,9 @@ For each task, walk decisions 0,1,2,... while perturbed run P and its reference 
 and identical action. The first decision where the action differs is the trajectory's first divergence
 (its context is still identical, so the BF16 margin at the first differing token is well defined).
 Tasks where either run has not yet produced the next decision are right-censored (live runs).
+Round-2 fix (E4a): a decision with identical context but different raw completion tokens is a divergence event,
+typed "format" when the normalised action is unchanged; only a context mismatch *without* any agent-token
+difference (simulator-side) is still censored.
 
 Reported per config: Kaplan-Meier P(diverged by decision d), the type of the first divergence
 (wording = both text; args = same tool names, different arguments; behaviour = text<->tool or different
@@ -38,14 +41,19 @@ def first_divergence(ref, pert, nonce):
             if b[key] != p[key]:
                 rows.append({"task": f"{dom}/{t}", "event": 0, "idx": i, "ctx_mismatch_without_action_flip": True})
                 break
-            if b["action"] != p["action"]:
+            # E4a fix (iter 1, round 2): divergence = first decision whose raw completion tokens differ on an
+            # identical context. If the normalised action is equal, the event is typed "format" (it still changes
+            # the next context); previously this case surfaced one step later as a context mismatch and was censored.
+            if b["ids"] != p["ids"] or b["action"] != p["action"]:
                 a, c = b["ids"], p["ids"]
                 n = min(len(a), len(c))
                 j = next((k for k in range(n) if a[k] != c[k]), n)
                 mb = b["margins"]
                 flip_m = mb[j] if j < len(mb) else None
                 bk, pk = b["action"][0], p["action"][0]
-                if bk == pk == "text":
+                if b["action"] == p["action"]:
+                    typ = "format"
+                elif bk == pk == "text":
                     typ = "wording"
                 elif bk == pk == "tool" and [x[0] for x in b["action"][1]] == [x[0] for x in p["action"][1]]:
                     typ = "args"

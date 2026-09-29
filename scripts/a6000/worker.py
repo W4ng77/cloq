@@ -82,6 +82,45 @@ def gpu_pids(gpus: list[str]) -> list[int]:
         return []
 
 
+CANARY_TEXT = ("You are a careful assistant for an airline. Policy: verify identity before any change, never refund "
+               "without a reservation id, and summarise the customer's request before acting. ") * 40
+
+
+def canary(port: int, model: str, name: str = "agent") -> str:
+    """Hash of a fixed greedy completion *including exact logprobs*: any change in numerics flavour changes it."""
+    import hashlib
+    m = MODELS[model]
+    body = {"model": name, "temperature": 0.0, "max_tokens": 48, "seed": 0, "logprobs": True, "top_logprobs": 5,
+            "messages": [{"role": "system", "content": CANARY_TEXT},
+                         {"role": "user", "content": "My reservation is ABC123; I want to change my flight to Friday."}],
+            "return_token_ids": True}
+    if m.get("chat_template_kwargs"):
+        body["chat_template_kwargs"] = m["chat_template_kwargs"]
+    req = urllib.request.Request(f"http://127.0.0.1:{port}/v1/chat/completions", data=json.dumps(body).encode(),
+                                 headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=300) as r:
+        c = json.load(r)["choices"][0]
+    lp = [(t["token"], t["logprob"], [(a["token"], a["logprob"]) for a in t["top_logprobs"]]) for t in c["logprobs"]["content"]]
+    return hashlib.sha256(json.dumps([c.get("token_ids"), lp]).encode()).hexdigest()[:16]
+
+
+def check_canary(port: int, model: str, role: str, name: str = "agent") -> str:
+    """First server of (role, model) writes the reference; every later one must reproduce it exactly."""
+    h = canary(port, model, name)
+    ref = ROOT / "analysis/determinism" / f"canary_{role}_{model}.json"
+    ref.parent.mkdir(parents=True, exist_ok=True)
+    rec = {"hash": h, "host": socket.gethostname(), "job": os.environ.get("SLURM_JOB_ID"), "time": time.time()}
+    if not ref.exists():
+        ref.write_text(json.dumps(rec, indent=1))
+        return h
+    want = json.load(open(ref))["hash"]
+    with open(WORK / "logs/canary.log", "a") as f:
+        f.write(json.dumps({**rec, "role": role, "model": model, "ok": h == want}) + "\n")
+    if h != want:
+        raise RuntimeError(f"numerics canary mismatch for {role} {model} on {socket.gethostname()}: {h} != {want}")
+    return h
+
+
 def stop_server(proc, gpus):
     if proc is None:
         return
@@ -147,8 +186,8 @@ def run_eval(task, args, st: Status):
     path, qmeta = build_ckpt(task, env, gpus, scratch, log)
     st.set("setup", "starting vLLM")
     slog = open(logdir / f"{task['id']}.vllm.log", "a")
-    server = subprocess.Popen([str(ROOT / "scripts/a6000/serve.sh"), args.gpus, str(args.port), path, "agent", str(AGENT_MAXLEN)],
-                              env=env, stdout=slog, stderr=subprocess.STDOUT, start_new_session=True)
+    server = subprocess.Popen([str(ROOT / "scripts/a6000/serve.sh"), args.gpus, str(args.port), path, "agent", str(AGENT_MAXLEN),
+                               *task.get("serve_extra", [])], env=env, stdout=slog, stderr=subprocess.STDOUT, start_new_session=True)
     try:
         t0 = time.time()
         while not healthy(args.port):
@@ -157,6 +196,10 @@ def run_eval(task, args, st: Status):
             if time.time() - t0 > 1800:
                 raise RuntimeError("vLLM agent server did not come up in 30 min")
             time.sleep(5)
+        # BF16 servers of a model must be bit-identical on every node (quantized ckpts differ by design)
+        if task["ckpt"]["kind"] == "bf16" and not task.get("serve_extra"):  # eager etc. = different flavour by design
+            st.set("check", "numerics canary")
+            check_canary(args.port, task["model"], "agent")
         if path.startswith(str(scratch)):  # weights are on the GPU now; free the RAM disk
             for f in Path(path).glob("*.safetensors"):
                 f.unlink()
