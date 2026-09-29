@@ -1,6 +1,7 @@
 #!/bin/bash
 # Serve one BF16 model on this task's GPU(s) and run the code loop against it (inside a queue "cmd" task, which
-# sets CUDA_VISIBLE_DEVICES and CLOQ_TASK_PORT). The server gets the numerics canary of the tau2 campaign first.
+# sets CUDA_VISIBLE_DEVICES and CLOQ_TASK_PORT). Uses the live campaign serve.sh/env.sh (same numerics flavour as
+# the tau2 runs, incl. uncommitted combo-kernel pin) and checks the numerics canary of the tau2 campaign first.
 # usage: serve_and_run.sh <model code, e.g. q4> <run_id> [cloq_code.run_code args, e.g. --limit 20]
 set -euo pipefail
 WT=$(cd "$(dirname "$0")/../.." && pwd)
@@ -21,7 +22,7 @@ PY
 export CLOQ_TOP_LOGPROBS=5 CLOQ_MAX_PROMPT_TOKENS=32768 CLOQ_AGENT_PORT=$PORT
 export CLOQ_CODE_TMP=${CLOQ_CODE_TMP:-$TMPDIR}
 LOG=/data/ziyangs/cloq_work/logs/tasks/code_${RUN}.vllm.log
-setsid "$WT/scripts/a6000/serve.sh" "$CUDA_VISIBLE_DEVICES" "$PORT" "$SNAP" agent 33792 >"$LOG" 2>&1 &
+setsid /data/ziyangs/cloq/scripts/a6000/serve.sh "$CUDA_VISIBLE_DEVICES" "$PORT" "$SNAP" agent 33792 >"$LOG" 2>&1 &
 SPID=$!
 cleanup() { kill -TERM -$SPID 2>/dev/null || true; sleep 10; kill -KILL -$SPID 2>/dev/null || true; }
 trap cleanup EXIT
