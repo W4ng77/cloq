@@ -1,0 +1,57 @@
+{
+ "_snapshot": {
+  "id": "20260929T1937Z",
+  "path": "/data/ziyangs/cloq/analysis/insights/iter_3/out/snapshot_live_20260929T1937Z.json",
+  "tag": "live_20260929T1937Z"
+ },
+ "_declared": {
+  "P1": "pooled over models: checkpoint net-success variance within model x dose group (nonce variance removed) exceeds the independent-landing expectation (within-task permutation of checkpoint labels), one-sided",
+  "P2": "pooled over models: disposition-shift fingerprint (cosine same-checkpoint draw pair minus different-checkpoint same-dose-group pairs) > 0 (permutation of draw-B labels within model x dose group), one-sided",
+  "P3": "pooled over models: cross-fitted (draw A dispositions -> draw B net success) LOCO ridge prediction of dose-group-centred checkpoint net success, Spearman > 0 (permutation within model x dose group), one-sided",
+  "P4": "q4: open-loop act-vs-talk logprob contrast at the first decision token predicts the closed-loop tool_share shift across checkpoints beyond dose: partial Spearman given the open-loop flip rate > 0 (permutation of the closed-loop shift), one-sided. (Amended 2026-09-29 from raw Spearman to partial-given-flip-rate before any P4 statistic was computed; P1-P3 had been computed.)",
+  "F1": "pooled over models: tasks with a higher rate of near-tied first decision tokens (BF16 first-token margin < 1) are more fragile (break rate over perturbed draws on null-robust tasks), partial Spearman given n decisions > 0 (task permutation), one-sided"
+ },
+ "alpha": 0.05,
+ "family": [
+  {
+   "test": "P1",
+   "source": "analysis/insights/iter_4/out/p1_overdispersion_live_20260929T1937Z.json",
+   "estimate": 4.608,
+   "p": 0.0001999600079984003,
+   "p_holm": 0.001,
+   "verdict": "reject H0 (supported)"
+  },
+  {
+   "test": "P2",
+   "source": "analysis/insights/iter_4/out/p2_dispositions_live_20260929T1937Z.json",
+   "estimate": 0.4394,
+   "p": 0.0001999600079984003,
+   "p_holm": 0.001,
+   "verdict": "reject H0 (supported)"
+  },
+  {
+   "test": "P3",
+   "source": "analysis/insights/iter_4/out/p2_dispositions_live_20260929T1937Z.json",
+   "estimate": 0.117,
+   "p": 0.31584207896051975,
+   "p_holm": 0.6317,
+   "verdict": "not supported after Holm"
+  },
+  {
+   "test": "P4",
+   "source": "analysis/insights/iter_4/out/p4_openloop_forks_live_20260929T1937Z.json",
+   "estimate": 0.624,
+   "p": 0.0038498075096245186,
+   "p_holm": 0.0115,
+   "verdict": "reject H0 (supported)"
+  },
+  {
+   "test": "F1",
+   "source": "analysis/insights/iter_4/out/f1_fragile_forks_live_20260929T1937Z.json",
+   "estimate": -0.12,
+   "p": 0.8414079296035198,
+   "p_holm": 0.8414,
+   "verdict": "not supported after Holm"
+  }
+ ]
+}

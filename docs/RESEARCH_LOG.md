@@ -10,6 +10,20 @@ Newest first.
 
 ---
 
+## W18 — Iteration-4 disposition hypothesis: P1–P4, F1 (2026-09-29 13:30 PDT)
+**TL;DR** Tests "quantization shifts dispositions at near-tied policy forks; a checkpoint's fixed bias makes the net effect a coherent lottery" on gated snapshot 20260929T1937Z, with Holm over 5 declared tests.
+- **Supported.**
+  - **P2** Each checkpoint has a reproducible behavioural fingerprint across nonce draws: F 0.44, p_holm 0.001. tool_share is the most checkpoint-specific feature.
+  - **P1** Checkpoint net Δ is over-dispersed vs independent task landing: φ 4.6, p_holm 0.001. Excluding the W3 method gap: φ 2.3, p 0.017. Recalibration pairs: φ 4.7, p 0.013. The effect is carried by q4/q32; q8 and q30a3 show none. Prompt nonces are not coherent (φ_U 0.36–1.19).
+  - **P4** On q4, an open-loop act-vs-talk logprob contrast predicts the closed-loop tool-call shift beyond dose: partial ρ 0.62, p_holm 0.012. q8/q30a3 do not replicate (they have no RTN/GPTQ E3 cells).
+- **Not supported.**
+  - **P3** The fingerprint does not predict the sign of Δ: ρ 0.12, p 0.32.
+  - **F1** Near-tied BF16 first tokens do not mark fragile tasks: ρ −0.12.
+- **Exploratory.** Shift size tracks λ (ρ 0.67). Gaussian seeds show no lottery at any k.
+- **Proposed next (not queued).** E4-1 (E3 cells for existing checkpoints on the other models) and E4-2 (a fork-alternative open-loop spec with top-20 logprobs).
+
+Evidence: `docs/insights/iter_4_disposition.md`; `analysis/insights/iter_4/{common4,p1_overdispersion,p2_dispositions,p4_openloop_forks,f1_fragile_forks,p5_dose_scaling,h00_holm}.py`, `run_all.sh`; `analysis/insights/iter_4/out/*_live_20260929T1937Z.{json,log}` (Holm: `out/h00_holm_live_20260929T1937Z.json`); `analysis/insights/iter_3/out/snapshot_live_20260929T1937Z.json`.
+
 ## W17 — R3/R4 statistics for λ–c turnover: floor, hierarchical bootstrap, TOST/NI, Holm (2026-09-29 12:55 PDT)
 **TL;DR** Addresses review_storyline_v4 R3/R4 and W6/W7. Run on a fresh integrity-gated snapshot (20260929T1937Z) for q4/q8/q14/q30a3/q32 (l8: no runs), with a hierarchical paired bootstrap (tasks, null draws, checkpoints and draws resampled).
 - **Survives Holm.**
