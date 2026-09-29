@@ -24,6 +24,8 @@ Evidence: `analysis/insights/iter_3/out/r01_realloc_unfrozen.json`; `analysis/in
 
 **Addendum (AWQ calibration control, q4).** AWQ d2 (3 fresh-nonce runs) λ 0.23–0.26 vs d1 0.12–0.36 (mean 0.29): calibration draw does not matter. On q4, λ is method-independent (RTN 0.24, AWQ 0.25, GPTQ 0.25) while the attractor c differs (RTN 0.18, AWQ 0.36, GPTQ 0.45, p̄≈0.36), which by Δ = λ(c − p̄) is why RTN damages and GPTQ does not. Candidate insight: calibration-aware quantizers change *where* reallocated tasks land, not *how many* are reallocated. Caveat: q8 AWQ λ 0.39 vs RTN 0.19, so check across models on the frozen snapshot.
 
+**Addendum (new methods, q4, 3 fresh-nonce runs each).** λ / c: rot_bf16 0.12 (≈ serving null_K 0.09); RTN 0.24/0.18; rot_rtn 0.23/0.37; GPTQ 0.25/0.45; rot_gptq 0.23/0.49; MXFP4 0.22/0.42; NF4 0.37/0.45; rtnsr (1.41× RTN error) 0.35/0.12. Rotation, like calibration, leaves λ unchanged and moves c above p̄ (≈0.36), which removes RTN's net damage; stochastic rounding raises λ and lowers c. q8/q14 queued. Evidence: `analysis/insights/iter_3/out/r01_realloc_unfrozen.json`.
+
 ## W14 — KV-quant scheduling (2026-09-29)
 **TL;DR** Plain KV INT4/INT3 destroys q4 (token flip 79%/90% vs 4.3% with Hadamard rotation, 0.75% at INT8), so its closed-loop cells would loop to max_steps for hours (W11) and add nothing beyond gauss k=3. Deferred the 6 plain INT4/INT3 cells, added KV INT8 cells on q4/q8/q14 (fresh nonces q1–q3) as the free-zone deployed-analog point, and made the cross-node det pair INT4+rotation.
 Evidence: `analysis/kvq/validate_q4.json`; `queue/deferred/a6k2_{q4,q8,q14}_kvq_{int4,int3}.json`; `queue/todo/a6k2_{q4,q8,q14}_kvq_{int8,int4_rot}.json`, `a6k2_det_q4_kvq_int4_rot_{a,b}.json`.
