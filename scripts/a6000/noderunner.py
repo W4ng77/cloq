@@ -29,7 +29,7 @@ Q = WORK / "queue"
 STATUS = WORK / "status"
 MODELS = json.load(open(ROOT / "scripts/a6000/models.json"))
 sys.path.insert(0, str(ROOT / "scripts/a6000"))
-from worker import healthy, snapshot, stop_server  # noqa: E402
+from worker import check_canary, healthy, snapshot, stop_server  # noqa: E402
 
 NODE = socket.gethostname().split(".")[0]
 
@@ -110,7 +110,15 @@ def main():
                     set_status(g, {"state": "failed", "task": "user simulator", "detail": "did not start"})
                 sys.exit(1)
             time.sleep(5)
-        log(f"user simulator {args.sim_model} up on GPUs {sim_gpus}")
+        try:
+            h = check_canary(8000, args.sim_model, "sim", name="user")
+        except Exception as e:
+            log(f"user simulator canary FAILED: {e!r}")
+            for g in sim_gpus:
+                set_status(g, {"state": "failed", "task": "user simulator", "detail": "numerics canary mismatch"})
+            stop_server(sim, sim_gpus)
+            sys.exit(1)
+        log(f"user simulator {args.sim_model} up on GPUs {sim_gpus}, canary {h}")
         for g in sim_gpus:
             set_status(g, {"state": "user", "task": "user simulator", "model": args.sim_model, "detail": "port 8000"})
     for g in free:
@@ -167,6 +175,13 @@ def main():
                     continue
                 if need > len(free):
                     continue
+                # TP=2 only on an NVLink pair (0,1)(2,3)(4,5)(6,7): a cross-switch pair hangs in NCCL init
+                # (a6k2_q32_bf16_cal on node005 GPUs 5,6) and would use a different all-reduce path anyway.
+                pair = next((g for g in sorted(free, key=int) if int(g) % 2 == 0 and str(int(g) + 1) in free), None)
+                if need == 2 and pair is None:
+                    continue
+                if need > 2:
+                    continue
                 if need == 0 and any(True for w in workers.values() if w[1] == []):
                     continue  # one CPU task at a time per node
                 rp = Q / "running" / path.name
@@ -174,7 +189,12 @@ def main():
                     path.replace(rp)
                 except FileNotFoundError:
                     continue
-                gs = [free.pop(0) for _ in range(need)]
+                if need == 2:
+                    gs = [pair, str(int(pair) + 1)]
+                else:  # single-GPU tasks prefer a card whose NVLink partner is busy, keeping pairs whole
+                    gs = sorted(free, key=lambda g: (str(int(g) ^ 1) in free, int(g)))[:need]
+                for g in gs:
+                    free.remove(g)
                 port = 8001 + int(gs[0]) if gs else 0
                 cmd = [sys.executable, str(ROOT / "scripts/a6000/worker.py"), str(rp), "--gpus", ",".join(gs),
                        "--port", str(port), "--status-prefix", str(STATUS / NODE)]
