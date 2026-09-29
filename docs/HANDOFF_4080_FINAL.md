@@ -4,7 +4,7 @@
 
 ## 0. 交接状态
 - 本机 git 没有未提交改动（`git status` 为空），所以**没有创建 from-4080 分支**。本机最后提交的代码就是 master 上的代码。
-- Phase 0（多模型配置、margin 记录、通用压缩脚本）**没有开始**，cloq/ 与 scripts/ 里没有半成品。A6000_PLAN.md §4 Phase 0 的所有项均未实现。
+- Phase 0（多模型配置、margin 记录、通用压缩脚本）**没有开始**，cloq/ 与 scripts/ 里没有半成品。A6000_PLAN.md §4 Phase 0 本机一项都没实现；A6000 会话已在 3313d01 自行实现，以那边为准。
 - 本机为 COLING 新增的代码只有两处，均已在 master：
   - `cloq/config.py`：`CLOQ_MAX_PROMPT_TOKENS` 环境变量覆盖冻结的 8192 上限（不设时行为不变）。
   - `cloq/agent.py`：`CLOQ_PROMPT_NONCE` 环境变量在 system prompt 末尾追加 `Session ID: <nonce>`（扰动 null）；`cloq/run_arm.py` 把 `prompt_nonce` 与 `max_prompt_tokens` 写进 environment.json。
