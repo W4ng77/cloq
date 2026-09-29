@@ -160,6 +160,17 @@ def run_eval(task, args, st: Status):
         if path.startswith(str(scratch)):  # weights are on the GPU now; free the RAM disk
             for f in Path(path).glob("*.safetensors"):
                 f.unlink()
+        ubase = os.environ.get("CLOQ_USER_BASE", "http://127.0.0.1:8000/v1")
+        t1 = time.time()
+        while True:  # the simulator may live on another node and still be starting
+            try:
+                urllib.request.urlopen(ubase + "/models", timeout=5)
+                break
+            except Exception:
+                if time.time() - t1 > 2400:
+                    raise RuntimeError(f"user simulator {ubase} unreachable")
+                st.set("setup", "waiting for user simulator")
+                time.sleep(15)
         jobs = [(r, d) for r in task["runs"] for d in ("retail", "airline")]
         done, running = 0, []
         st.set("eval", f"{len(jobs)} run-domains", 0.0)
@@ -179,7 +190,7 @@ def run_eval(task, args, st: Status):
                     e.pop("CLOQ_PROMPT_NONCE", None)
                 cmd = [sys.executable, "-m", "cloq.run_arm", "--run-id", r["run_id"], "--arm", task["arm"], "--domain", d,
                        "--task-file", str(ROOT / r["task_file"]), "--agent-base", f"http://127.0.0.1:{args.port}/v1",
-                       "--user-base", "http://127.0.0.1:8000/v1", "--checkpoint", json.dumps(task["ckpt"])]
+                       "--user-base", os.environ.get("CLOQ_USER_BASE", "http://127.0.0.1:8000/v1"), "--checkpoint", json.dumps(task["ckpt"])]
                 running.append(((r["run_id"], d), subprocess.Popen(cmd, cwd=ROOT, env=e, stdout=log, stderr=subprocess.STDOUT)))
             time.sleep(10)
             for item in list(running):
@@ -204,7 +215,7 @@ def run_eval(task, args, st: Status):
             mp = ROOT / "runs" / r["run_id"] / d / "metrics.json"
             if mp.exists():
                 m = json.load(open(mp))
-                summ[f"{r['run_id']}/{d}"] = {k: m.get(k) for k in ("db_match_rate", "success_rate", "n_tasks", "mean_decisions")
+                summ[f"{r['run_id']}/{d}"] = {k: m.get(k) for k in ("db_match_rate", "reward_mean", "n_tasks", "mean_decisions", "premature_rate", "termination_reasons")
                                               if k in m}
     return summ
 

@@ -7,7 +7,7 @@ source /data/ziyangs/cloq/scripts/a6000/env.sh
 GPUS=$1; PORT=$2; MODEL=$3; NAME=$4; MAXLEN=$5; shift 5
 export CUDA_VISIBLE_DEVICES=$GPUS
 TP=$(awk -F, '{print NF}' <<<"$GPUS")
-exec vllm serve "$MODEL" --served-model-name "$NAME" --port "$PORT" --host 127.0.0.1 \
+exec vllm serve "$MODEL" --served-model-name "$NAME" --port "$PORT" --host "${CLOQ_SERVE_HOST:-127.0.0.1}" \
   --dtype bfloat16 --max-model-len "$MAXLEN" --gpu-memory-utilization "${GPU_UTIL:-0.90}" \
   --tensor-parallel-size "$TP" --generation-config vllm --seed 0 \
   --enable-auto-tool-choice --tool-call-parser "${CLOQ_TOOL_PARSER:-hermes}" --max-logprobs 20 "$@"

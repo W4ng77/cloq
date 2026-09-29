@@ -79,18 +79,23 @@ def main():
     ap.add_argument("--min-left", type=float, default=3 * 3600)
     ap.add_argument("--idle-exit", type=float, default=1800)
     ap.add_argument("--only-models", default="", help="comma list; claim only these models' tasks")
+    ap.add_argument("--max-gpus-per-task", type=int, default=8, help="skip tasks needing more GPUs (node003: no TP)")
     args = ap.parse_args()
     for d in ("todo", "running", "done", "failed"):
         (Q / d).mkdir(parents=True, exist_ok=True)
     STATUS.mkdir(parents=True, exist_ok=True)
+    all_gpus = [g for g in args.gpus.split(",") if g]
     sim_gpus = [g for g in args.sim_gpus.split(",") if g]
-    free = [g for g in args.gpus.split(",") if g not in sim_gpus]
+    if any(g not in all_gpus for g in sim_gpus):  # a requested simulator card failed the health probe
+        sim_gpus = all_gpus[:len(sim_gpus)]
+        log(f"simulator moved to healthy GPUs {sim_gpus}")
+    free = [g for g in all_gpus if g not in sim_gpus]
     only = set(filter(None, args.only_models.split(",")))
 
     sim = None
     if sim_gpus:
         m = MODELS[args.sim_model]
-        env = dict(os.environ, CLOQ_TOOL_PARSER=m["parser"])
+        env = dict(os.environ, CLOQ_TOOL_PARSER=m["parser"], CLOQ_SERVE_HOST="0.0.0.0")  # nodes without a simulator use it
         for g in sim_gpus:
             set_status(g, {"state": "setup", "task": "user simulator", "detail": f"starting {args.sim_model}"})
         slog = open(WORK / f"logs/sim_{NODE}_{os.environ.get('SLURM_JOB_ID', 'x')}.log", "a")
@@ -158,6 +163,8 @@ def main():
                 if not all(d in ready for d in t.get("deps", [])):
                     continue
                 need = gpus_needed(t)
+                if need > args.max_gpus_per_task:
+                    continue
                 if need > len(free):
                     continue
                 if need == 0 and any(True for w in workers.values() if w[1] == []):
