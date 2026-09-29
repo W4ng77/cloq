@@ -1,0 +1,231 @@
+{
+ "critic": {
+  "verdict": "这份备忘录基本忠实于证据包。§2.1 中每一条都能对应到审计过的数字（A1–A12 我逐条核对过，与各审计一致）；被证伪的说法都已撤回；方向也合理：从方法论文转向测量论文，同时把 P2/P4/P5 中有价值的部分吸收进来。问题集中在实验设计：几处核心设计分辨不了它要检验的假说，另有几处新颖性风险被低估。最严重的有四点。\n(1) E1 的决策门比较的是 null 与 W4 的「run 均值方差比」（阈值 0.7 和 0.3）。R=8 或 6 对 18 时，这个比值的抽样区间大约是 [0.3, 3]。审计已经说明，W4 的离散度本身就近似于 Bernoulli 噪声，所以这个门几乎一定落在「不确定」区间。\n(2) 计划只扰动 BF16，没有对同一个 W4 checkpoint 做 re-roll 复制。这样就无法直接估计真实 checkpoint SD（s_c），而 s_c 正是 Q7 功效模型、E3 设计和 C4 都依赖的关键参数。\n(3) RTN、W8-RTN、W3-RTN 各只有 1 个 checkpoint，而 E2 和 K-ladder 的门槛要求「W4-RTN 与 null 被 draw-as-unit 检验分开」。n=1 时这个检验做不了，是内部矛盾。\n(4) 所有 C1/C7 结论都来自非标准的 8k 截断 harness：42–72% 的决策上下文被截断，截断率与循环强相关（0.79 对 0.15）。论文要对「闭环 benchmark」下普遍结论，32k 对照却被门控在一个很可能不会触发的条件后面，外部效度会被审稿人直接攻击。\n新颖性方面有三点被低估：Flat Score 收紧错误预算后已经测出 16.7 个点的差距，备忘录没有把「更敏感的终点」纳入 MDE 梯度；Noise Floor Audit 没读过就断言它「没有指出」某件事；prompt 敏感性和 benchmark 信噪比方向的文献没有覆盖。\n此外有几处内部不一致：§1 把未审计的功效 0.23–0.26 当事实引用，与 §2.3 和 C4 自相矛盾；K-null 与 K-ladder 的条件和 §6 的决策门不一致。\n我还核对了仓库：cloq/config.py 硬编码读取 frozen_v0.json，而 frozen_v1.json 里没有 context_policy 或 generation 字段，所以「复制 frozen_v1.json 改 max_prompt_tokens」的做法实际不会生效。agent 和 simulator 都是 temperature 0（greedy），`--wbits` 参数确实已支持，openloop.py 确实是 prompt_logprobs=0。相关文件：/home/xinyu/cloq/cloq/config.py、/home/xinyu/cloq/configs/frozen_v0.json、/home/xinyu/cloq/configs/frozen_v1.json、/home/xinyu/cloq/cloq/openloop.py、/home/xinyu/cloq/HANDOFF.md（第 130 行）。",
+  "gaps": [
+   {
+    "issue": "E1 的核心决策门是 null 方差 ≥0.7 或 ≤0.3 倍 W4 方差（K-ladder 也用了这个比值），但它没有分辨力。null 家族只有 R=8 或 6 个 run，W4 是 18 个；方差比的 F 抽样区间大约是 [0.3, 3]。审计又显示，W4 checkpoint 均值的离散度本身与 Bernoulli(p_t) 噪声分不开（比值 1.39，p=0.13）。两个家族都会约等于二项 SD 0.037，这个门几乎必然落在「不确定」区间，C6 的 re-roll 与 damage 分解也就无从判定。",
+    "severity": "high",
+    "fix": "把 E1 的主估计量从「run 均值方差比」换成任务级的配对量，并在 PREREG 里写成公式。(a) damage：Δ = mean_t[p̂_t(null) − p̂_t(W4)]，按任务聚类做 CI。(b) re-roll：每个任务相对规范 BF16 结果的翻转率，null 与 W4 对比。(c) 规范 BF16 在 null 分布中所处的分位（直接检验 long 任务上的 0.297 是不是运气好的一次实现）。(d) 按 task-spec 定义的 long 子集和 ≥2 写子集做同样的 Δ。E0 按真实 R 和 T 用模拟算出每个估计量的功效，方差比只作描述性报告。"
+   },
+   {
+    "issue": "缺少对 W4 checkpoint 自身的 re-roll 复制。现在的 checkpoint 间真实 SD（s_c，sc0/sc_point/sc_upper 的取值依据）完全靠「每个 checkpoint 只有一次实现」加上 Bernoulli 模型间接推出，上界 0.054 或 0.082 宽到足以决定 E3 能不能做。E1 只扰动 BF16，所以 C4、E3 功效和 MDE 依赖的关键参数仍然没法直接测量。",
+    "severity": "high",
+    "fix": "在 E1 里对 3–4 个已有 W4 checkpoint（例如 Static c1、FP-Traj c1、CLOQ-Novel c1、RTN）也施加同一套 R-nonce 扰动，每个 R=3–4，约 12–16 个 run，按 W4 中位 2452 s 计约 8–11 h 墙钟。然后用「checkpoint × 扰动 × 任务」的嵌套 ANOVA 或 GLMM 直接估计 s_c 和任务内 re-roll 方差，再把这个估计值代回 E0 的功效重算和 E3 设计。这比 BF16 null 更直接地回答了「检查点差异是真的还是 re-roll」。"
+   },
+   {
+    "issue": "RTN 是确定性的：W4-RTN、W8-RTN、W3-RTN 各只有 1 个 checkpoint。E2 决策门和 K-ladder 却要求「W4-RTN 与 E1 null 被 draw-as-unit 检验分开」，n=1 时这个检验不存在。同理，A5 和 §1 用「RTN 落在 GPTQ 范围内」证明 benchmark 不敏感，靠的也是一次实现；而且 RTN 的 pooled 0.271 恰好等于 18 个 checkpoint 的最小值，long 0.108 也在底部，这与一个真实存在的约 0.06 效应同样相容。",
+    "severity": "high",
+    "fix": "每个 RTN rung 都用 R≥4 次 nonce re-roll 构造 run 级复制，推断单位改为 run，并说明这测的是 re-roll 方差，不含 draw 方差。或者加入 stochastic-rounding RTN 或不同 seed 的高斯 rung 作为多个免 calibration 的复制。A5 和 §1 的措辞改为「单次实现，位于 GPTQ 范围底端；是否可区分待 E2 检验」。"
+   },
+   {
+    "issue": "外部效度：C1、C7 和整条论文主线（闭环 benchmark 测不出压缩差异）都是在自定义的 8192-token 截断 harness 上测得的。τ² 标准设置不做这种截断；本 harness 中 42–72% 的量化决策被截断，量化 run 的截断率约为 BF16 的 2 倍，提前终止的 run 截断比例 0.79（正常 run 0.15）。审稿人会说「噪声或不敏感是 harness 截断历史造成的混沌」。E4 被门控在「long 子集出现量化效应且 p<0.1」之后，而按审计这个效应本身只有约 1.9 SE，门控大概率不打开，这个质疑就永远没有回答。",
+    "severity": "high",
+    "fix": "把一个小型 32k 对照改为无条件执行，并提前到 E1/E2 阶段。按 A10，32k 在 4080 上可行，约 5–8 h：BF16 null R=3、RTN、3 个 GPTQ checkpoint、再加一个 E2 rung，在 85 个 dev 任务上跑，报告 8k 与 32k 下 re-roll、damage 估计量的配对差。另一个选项是从 E2 起直接以 32k 作为主 harness，8k 作为历史对照。注意实现方式：config.py 硬编码读取 frozen_v0.json，frozen_v1.json 里没有 context_policy，要用 CLOQ_MAX_PROMPT_TOKENS 环境变量，或者新建一个 frozen_v2 并修改 CONFIG_PATH 的读取逻辑。"
+   },
+   {
+    "issue": "终点灵敏度没有进入 MDE 梯度。Flat Score 把错误预算收紧后，分差从 1.3 拉到了 16.7 个点，这正面冲击「闭环 benchmark 测不出」这个论点：真正分辨不出来的可能只是 db_match 这个二值终点。仓库里已经有 tau2 的 action_checks，也就是写操作级的部分匹配（A8 用过），但备忘录只拿 db_match 当唯一终点来算 MDE。",
+    "severity": "high",
+    "fix": "E2 对每个 rung 同时计算多个候选终点：db_match、写操作级 action_match 比例、失败模式率（漏写、参数错、循环、工具名幻觉）、Flat Score 式的收紧预算分数、pass^k 类可靠性指标，并比较每个终点的 MDE 和对 null 的分离度。论文结论从「闭环测不出」改成「哪个闭环终点、在多大规模上测得出」，这比单纯的否定结论更有影响力，也能正面回应 Flat Score。另外，把 Flat Score 的收紧预算分析放到我们的 null 分布下复算一遍，检验它报告的差距能否通过 perturbation null。"
+   },
+   {
+    "issue": "新颖性风险被低估。(a) Noise Floor Audit 的 URL 不在证据包里，备忘录没读过它，却断言它「没有指出确定性 serving 只是把轨迹噪声藏了起来」。它做的正是 prompt 扰动噪声审计，与 R-nonce/R-tool null 以及可占空白 #3 直接重叠，风险应评为高，不是中。(b) prompt 格式敏感性和多 prompt 评测（如 Sclar et al. 2023 FormatSpread、Mizrahi et al. 2024 multi-prompt evaluation）已经把「用无害 prompt 扰动构造评测分布」确立为方法。(c) benchmark 信噪比和决策可靠性方向（如 AI2 的 Signal and Noise, 2025）与「MDE / 灵敏度」贡献重叠。(d) agent 评测严谨性方向（Kapoor et al. AI Agents That Matter；Agentic Benchmark Checklist；HAL）没有引用。以上 (b)–(d) 都是本备忘录补充，需要核实。",
+    "severity": "medium",
+    "fix": "E0 加一项：读完 Noise Floor Audit 全文，逐条对照可占空白 #1–#5，没读之前删掉关于它「没做什么」的断言。补上 (b)–(d) 的 † 引用并逐条核对。把新颖性主张收窄到：压缩模型对参考模型的差值推断、draw 与 re-roll 的分离、用已知退化的梯度标定的 MDE。「prompt 扰动 null」本身不主张新颖。"
+   },
+   {
+    "issue": "整套 framing 默认 greedy 解码。「确定性 serving 藏起轨迹噪声」和「参考模型只有一次实现」只在 temperature 0 下成立：已核实 frozen_v0.json 中 agent 和 simulator 都是 temperature 0.0。审稿人会反问「用 temperature 采样加 pass^k 就行了」，而 τ-bench 的标准做法本来就是对参考模型采样。备忘录没有温度采样这一 null 家族，也没有讨论这个 thesis 在非 greedy 设置下是否仍然成立。",
+    "severity": "medium",
+    "fix": "在 E1 中加第三个 null 家族：BF16 在 temperature>0（例如 0.3 和 0.7，固定 seed，batch-invariant 下每个 seed 可复现）下 R≥4，同时对 2 个 W4 checkpoint 做同样采样。报告 greedy+nonce null 与 sampling null 给出的 re-roll/damage 是否一致，把「greedy 是特例还是一般情况」写进论文。可占空白 #3 的措辞限定为 greedy 协议。"
+   },
+   {
+    "issue": "E3（60 GPU-h，全部预算中最大的一项）的对比对象 Static vs FP-Traj 预计测不出。两者的 open-loop NLL 差只有 0.094 对 0.076，而 NLL 差大得多的 RTN（0.157）在闭环里都分不开。E2 本来就会给出以 NLL 计的 MDE，但 go/no-go 评审没有写明「E2 的 MDE 大于 Static–FP-Traj 的 NLL 差时，E3 改为什么」。按现在的写法，E3 很可能只能演示一次等价检验，而 TOST ±0.05 的 margin 也没有依据。",
+    "severity": "medium",
+    "fix": "在 PREREG 里写死规则：E2 标定的 80% 功效 NLL 比值如果大于 0.094/0.076≈1.24，E3 的主终点直接改为 TOST，或者把算力转给梯度上预测可检测的对比（例如 W3-GPTQ vs W4-GPTQ），或者转给 ≥2 写假说的确认性复验。TOST margin 由 E2 的 MDE 和一个实践意义阈值共同确定，不拍定 0.05。另外，E3 的量化耗时按 v1 实测（6 个 checkpoint 35 min，约 6 min/个）重算，40 个约 4 h，不是 1.5 h。"
+   },
+   {
+    "issue": "「≥2 个写操作」假说的复验功效不足，而且存在循环使用。E1 计划「用 null 家族在 57 个非 dev 任务上复验」，但 null 家族是 BF16，本身检验不了量化损失；57 个任务中按 34% 的比例估计只有约 19 个 ≥2 写任务，而且只有 1 个 RTN checkpoint。另外，§9.3 的预注册 long 定义里包含「写操作 ≥2」，而这个切分是看过 85 个 dev 任务后才选的；E3 又在包含这 85 个 dev 任务的 142 个任务上评测。",
+    "severity": "medium",
+    "fix": "在 E0 里先对这次复验做功效计算。确认性检验只在 57 个非 dev 任务上做，用多个免 calibration 的量化复制（高斯 seed、RTN re-roll），或者用只在 dev 任务上做 calibration 的 GPTQ checkpoint（反向 split）。功效不到 0.5 就明确标为探索性。E3 中涉及写操作的次要终点单独报告非 dev 子集。"
+   },
+   {
+    "issue": "user simulator 造成的伪影没有控制。open confound 明确记录了「simulator 不输出 stop token 会导致步数上限终止」，而量化失败中有 46/234 是 max_steps 循环（提前终止 52 例中的 46 例，同时也被列为主要失败类别之一）。备忘录把这些循环全部算作 agent 失败，没有区分是 agent 在重复还是 simulator 不停止。这会同时影响 damage 估计和 E2 梯度（高斯或 W3 rung 很可能循环更多）。",
+    "severity": "medium",
+    "fix": "E0 加一个 CPU 分析：对全部 max_steps 或 infra 循环 run，按重复的是 agent 轮还是 user 轮、user 是否输出 stop 分类，报告剔除 simulator 侧循环后的敏感性分析。PREREG 里把循环按归因分类记分，而不只是「重跑一次，仍循环记为失败」。E1b 要检查换一个 simulator 后循环率是否下降。"
+   },
+   {
+    "issue": "缺少权重空间的 re-roll 参照。R-nonce 和 R-tool 是输入扰动，量化是权重扰动。高斯噪声只放在 W4 和 RTN 两个保真度上，没有「NLL 几乎等于 BF16」的极小 α 权重噪声家族。用它可以检验「任何非零权重扰动都会 re-roll 并饱和」这个核心前提（P2 的「re-roll 在很小扰动下就饱和」），同时它也是天然的多复制、免 calibration 参照。",
+    "severity": "medium",
+    "fix": "在 E2 加一个 α_min 高斯 rung：NLL 增量不超过 W8 水平，R≥4 个 seed，在 142 个任务上跑。它与 BF16 prompt null 和 W8 放在一起，构成 re-roll 饱和曲线的左端点；K1 的判定也同时参考它的分叉率。"
+   },
+   {
+    "issue": "内部矛盾：§1 把「这种设计检测 5 个点效应的功效只有 0.23–0.26」写成「我们的审计数据显示」，但 §2.3 第 6 条和 C4 都承认 Q7 功效模拟没有审计，要写成 model-based。§1 还称「这些结论对整个压缩 agent 方向都适用」，与 §4.4 承认的范围（一个模型、一个 benchmark 家族、同模型 simulator）矛盾。",
+    "severity": "medium",
+    "fix": "§1 改为「按一个未经独立审计的生成模型估算，功效约为 0.23–0.26（E0 将复算）」，并删除「对整个方向都适用」，改为「在本设置下；外推待 E1b/E6 检验」。"
+   },
+   {
+    "issue": "止损条件与 §6 的决策门不一致。K-null 要求「两个 null 家族方向相反，且均值偏移都超过 0.05」，E1 决策门只要求「均值差超过 0.05」。K-ladder 多了「null 方差 ≤0.3×W4」这一条，E2 决策门里没有。K-E0 把「draw-as-unit 检验本身 miscalibrated」当作 C4 不成立，而这种情况实际打掉的是我们推荐的协议本身，不是 C4。另外 §6 E2 的 GPU 时估算里 W8 用的是 W4 的耗时，W3-GPTQ 可能直接崩到地板，都没有给出预检。",
+    "severity": "low",
+    "fix": "PREREG 前做一遍统一：每个门只用一个数值定义，§6 和 §9.2 互相引用而不是各写一遍。draw-as-unit miscalibration 单独设一个 kill（改用置换检验或 GLMM）。E2 开始前先对 W3-GPTQ 和 W3-RTN 在 20 个任务上做 pilot，确认没有落到地板（工具调用解析失败率、成功率 >0.05），否则把 W3 换成 W3.5 或 W4-g256 这类中间档。"
+   },
+   {
+    "issue": "仓库实现细节与计划不一致：计划写「所有新配置从 configs/frozen_v1.json 复制」，但 cloq/config.py 硬编码 CONFIG_PATH = configs/frozen_v0.json，frozen_v1.json 是只含 calibration 和 arms 等字段的 overlay，没有 generation_agent、generation_user、context_policy。R-nonce 和 R-tool 需要改 agent 的 system prompt 和工具 schema 注入代码；E7 要让 openloop.py 取 top-k logprobs，现在是 prompt_logprobs=0，只拿到 BF16 动作 token 的 NLL。这些工作量都没有算进 E0。",
+    "severity": "low",
+    "fix": "E0 加一项工程任务：引入 frozen_v2.json（继承 v0 和 v1，新增 perturbation、context 和采样字段），config.py 通过环境变量选择配置文件，并对 v0/v1 做回归测试（bf16_replicate.sh 必须 1.000 一致）。nonce 和工具顺序扰动做成参数化、写入 manifest 的注入点。"
+   },
+   {
+    "issue": "算力假设没有考虑与其他项目共用 2×4080。memory 记录里还有 FTC 待重跑的 37 个 arm 和 Prana 3D bench 等工作。另外有一个没用上的吞吐杠杆：现在 W4 是 fake-quant，以 BF16 权重服务，占 7.64 GiB；换成真 INT4 kernel（如 Marlin/GPTQ）后，一张卡可以放多个 agent server。不过这样数值会变，与 v1 不可比，batch invariance 也要重新验证。",
+    "severity": "low",
+    "fix": "在时间线里写明 GPU 独占窗口，并与其他项目协调。评估一次「真 INT4 serving」的确定性复验（bf16_replicate 式的双跑），通过的话只用于新的 E2/E3 家族，可以把 E3 的墙钟减半；不与 fake-quant 结果合并。"
+   }
+  ]
+ },
+ "scoreboard": [
+  {
+   "title": "Every Checkpoint Is a Re-Roll: A Measurement Protocol for Closed-Loop Evaluation of Compressed LLM Agents",
+   "mean": 7.875,
+   "by_lens": {
+    "NOVELTY AND POSITIONING against the verified literature: would expert reviewers call it already known, incremental, or genuinely new, and which claim is the defensible core?": 7,
+    "FEASIBILITY: can it be done on 2x RTX 4080 16GB (optionally 4x A100) with existing assets in 2-4 months at measured throughput; are GPU-hour estimates realistic; what is the critical path": 8.5,
+    "IMPACT: who in the community cares, whether it would change how people quantize or evaluate agents, whether it would be cited, whether the story is memorable, and whether it generalises beyond one 4B model and one benchmark.": 7.5,
+    "RIGOR AND RISK: falsifiability, confound handling (truncation, same-4B user simulator, draw variance, low base rate, small task counts), statistical power per the audited data analyses, and the likelihood of ending in another uninterpretable null.": 8.5
+   }
+  },
+  {
+   "title": "Worse, or Just Re-Rolled? Null Controls and Statistical Power for Closed-Loop Evaluation of Quantized LLM Agents",
+   "mean": 7,
+   "by_lens": {
+    "NOVELTY AND POSITIONING against the verified literature: would expert reviewers call it already known, incremental, or genuinely new, and which claim is the defensible core?": 6.5,
+    "FEASIBILITY: can it be done on 2x RTX 4080 16GB (optionally 4x A100) with existing assets in 2-4 months at measured throughput; are GPU-hour estimates realistic; what is the critical path": 8.5,
+    "IMPACT: who in the community cares, whether it would change how people quantize or evaluate agents, whether it would be cited, whether the story is memorable, and whether it generalises beyond one 4B model and one benchmark.": 6,
+    "RIGOR AND RISK: falsifiability, confound handling (truncation, same-4B user simulator, draw variance, low base rate, small task counts), statistical power per the audited data analyses, and the likelihood of ending in another uninterpretable null.": 7
+   }
+  },
+  {
+   "title": "Re-roll, Not Drift: Why Calibration Cannot Repair Quantized Agents in Closed Loop",
+   "mean": 6.75,
+   "by_lens": {
+    "NOVELTY AND POSITIONING against the verified literature: would expert reviewers call it already known, incremental, or genuinely new, and which claim is the defensible core?": 6,
+    "FEASIBILITY: can it be done on 2x RTX 4080 16GB (optionally 4x A100) with existing assets in 2-4 months at measured throughput; are GPU-hour estimates realistic; what is the critical path": 6.5,
+    "IMPACT: who in the community cares, whether it would change how people quantize or evaluate agents, whether it would be cited, whether the story is memorable, and whether it generalises beyond one 4B model and one benchmark.": 7,
+    "RIGOR AND RISK: falsifiability, confound handling (truncation, same-4B user simulator, draw variance, low base rate, small task counts), statistical power per the audited data analyses, and the likelihood of ending in another uninterpretable null.": 7.5
+   }
+  },
+  {
+   "title": "量化损伤在闭环里特殊吗？用等保真度扰动检验比较工具调用 LLM agent 与 VLA 机器人策略",
+   "mean": 5.833333333333333,
+   "by_lens": {
+    "FEASIBILITY: can it be done on 2x RTX 4080 16GB (optionally 4x A100) with existing assets in 2-4 months at measured throughput; are GPU-hour estimates realistic; what is the critical path": 4.5,
+    "IMPACT: who in the community cares, whether it would change how people quantize or evaluate agents, whether it would be cited, whether the story is memorable, and whether it generalises beyond one 4B model and one benchmark.": 6.5,
+    "RIGOR AND RISK: falsifiability, confound handling (truncation, same-4B user simulator, draw variance, low base rate, small task counts), statistical power per the audited data analyses, and the likelihood of ending in another uninterpretable null.": 6.5
+   }
+  },
+  {
+   "title": "Iso-fidelity perturbation test: is quantization damage special in closed loop? (tool-calling LLM agents vs VLA robot policies)",
+   "mean": 5.5,
+   "by_lens": {
+    "NOVELTY AND POSITIONING against the verified literature: would expert reviewers call it already known, incremental, or genuinely new, and which claim is the defensible core?": 5.5
+   }
+  },
+  {
+   "title": "Calibration 修不了\"近平局\"决策：闭环工具 agent 的逐决策 margin 门控升精度（配对、匹配随机对照、预注册）",
+   "mean": 4.75,
+   "by_lens": {
+    "NOVELTY AND POSITIONING against the verified literature: would expert reviewers call it already known, incremental, or genuinely new, and which claim is the defensible core?": 4,
+    "FEASIBILITY: can it be done on 2x RTX 4080 16GB (optionally 4x A100) with existing assets in 2-4 months at measured throughput; are GPU-hour estimates realistic; what is the critical path": 5,
+    "IMPACT: who in the community cares, whether it would change how people quantize or evaluate agents, whether it would be cited, whether the story is memorable, and whether it generalises beyond one 4B model and one benchmark.": 4.5,
+    "RIGOR AND RISK: falsifiability, confound handling (truncation, same-4B user simulator, draw variance, low base rate, small task counts), statistical power per the audited data analyses, and the likelihood of ending in another uninterpretable null.": 5.5
+   }
+  }
+ ],
+ "proposals": [
+  {
+   "angle": "EVALUATION SCIENCE. Verdict on the two candidate findings. (1) \"Calibration-draw variance dominates\" is strong, but it is labelled wrongly. The audited variance analysis shows the 18 v1 checkpoints are statistically close to exchangeable once each task's own success probability is known: variance ratio 1.39, permutation p=0.13; draw-seed p=0.90; split-half reliability of checkpoint rankings about 0.32. So the spread is closed-loop evaluation noise (trajectory re-roll), not proven calibration-draw effects. That relabelled version can carry a paper. (2) \"Coverage is not success\" cannot carry one. CLOQ-Novel's last place sits inside the arm-permutation null (p=0.36), and the five trajectory-calibrated arms are indistinguishable even in open loop (F=0.59, p=0.68). It should be demoted to \"no detectable effect.\" The paper is about what closed-loop agent benchmarks can and cannot detect about compressed models, and the protocol needed to make them detect it.",
+   "title": "Every Checkpoint Is a Re-Roll: A Measurement Protocol for Closed-Loop Evaluation of Compressed LLM Agents",
+   "thesis": "In a closed loop, a compressed agent acts like a perturbation that re-samples trajectories. With deterministic serving and one BF16 reference, benchmark differences at about 100 tasks are mostly re-roll noise that standard paired tests mistake for method effects. Valid claims need four things: a sampled reference distribution (a perturbation null), inference that treats the calibration draw as the unit, designs sized by power analysis, and a known-degradation sensitivity ladder. We provide all four and use them to overturn our own earlier positive result."
+  },
+  {
+   "angle": "MECHANISM: quantizing a closed-loop agent is mostly a trajectory re-roll plus a small, margin-localized damage term. Calibration cannot reach either part. Test this with perturbation-family controls, a margin-conditioned compounding model, and a decision-level fix derived from the mechanism.",
+   "title": "Re-roll, Not Drift: Why Calibration Cannot Repair Quantized Agents in Closed Loop",
+   "thesis": "In a closed loop, W4 quantization of a tool-using agent acts mainly as a perturbation-agnostic re-roll of the trajectory, which any nonzero perturbation of BF16 would also trigger. On top of that sits a small damage component, and it is concentrated at low-margin decisions (mostly write actions) whose identity is fixed by the state, not by the calibration set. Repairing calibration support therefore cannot move closed-loop success; decision-level, margin-gated interventions are the lever that can."
+  },
+  {
+   "angle": "一个真正可能有效的方法：不改 calibration，改为在决策层按 margin 门控，把精度临时升回 BF16。检验方式：以 checkpoint 为推断单位，做配对比较，并设一个按相同升精度率随机升精度的对照。",
+   "title": "Calibration 修不了\"近平局\"决策：闭环工具 agent 的逐决策 margin 门控升精度（配对、匹配随机对照、预注册）",
+   "thesis": "量化 agent 在 open-loop 下翻转的，是那批与 calibration arm 无关的近平局决策状态（BF16 NLL 与翻转率 rho=0.736，AUC 0.93，同 arm phi 0.548 对跨 arm 0.538）。所以能修复量化损伤的是运行时按 margin 把少量决策升回 BF16，而不是更好的 calibration 数据或 Hessian。这个说法只有在\"同一 checkpoint 内、与匹配升精度率的随机升精度对比\"的配对检验中胜出才成立。"
+  },
+  {
+   "angle": "跨域统一（CROSS-DOMAIN UNIFICATION）：把 tau2 文本工具 agent（CLOQ）和 VLA 机器人策略（GR00T-N1.5 / LIBERO，复用 aspq/QuantVLA 资产）放进同一个预注册测量框架里，检验两类闭环策略中压缩误差是否表现出同样的统计特征。前提条件是先在 tau2 上把这个框架跑通，VLA 分支只在通过门槛后才追加。",
+   "title": "量化损伤在闭环里特殊吗？用等保真度扰动检验比较工具调用 LLM agent 与 VLA 机器人策略",
+   "thesis": "待检验的假说：在闭环策略中（文本工具 agent 和 VLA 机器人策略都算），W4 PTQ checkpoint 对任务成功率的影响，在统计上与一个 open-loop 保真度相同的随机权重扰动无法区分；损伤集中在全精度策略本身 margin 就低的状态，和 calibration 配方无关。如果成立，calibration 集工程原则上修不好闭环损伤，评估也必须把 calibration draw 当作统计单位。"
+  },
+  {
+   "angle": "Impact-maximising pragmatist. Stop defending CLOQ as a method and publish what the data already supports: a measurement and methodology paper about evaluating compressed agents. Its core claim is that closed-loop PTQ comparisons on tau2-style benchmarks are dominated by \"re-roll\" noise at the task level. The paper ships the protocol, the null controls and the power calculator the field is missing. A negative result in a sub-area moving this fast gets cited as the reason other papers' claims should not be trusted. That is the fastest route to citations, and it needs about one week of 2x4080 time on top of data that already exists.",
+   "title": "Worse, or Just Re-Rolled? Null Controls and Statistical Power for Closed-Loop Evaluation of Quantized LLM Agents",
+   "thesis": "For a W4 GPTQ tool agent (Qwen3-4B, tau2 retail+airline), closed-loop task success acts like a task-conditioned coin flip. Calibration changes that clearly alter the checkpoint, and even RTN compared with GPTQ, cannot be told apart at standard benchmark sizes, because quantization mostly perturbs the same fragile low-margin states whatever the calibration. Credible agent-quantization claims therefore need deterministic serving, the calibration draw as the unit of analysis, a benign-perturbation null run on the BF16 model itself, and an explicit power or equivalence bound."
+  }
+ ],
+ "data": [
+  {
+   "key": "variance",
+   "summary": "The v1 claim that \"calibration-draw variance dominates the method\" mostly reflects closed-loop evaluation noise. Real differences in checkpoint quality are small. On the 85 dev tasks, the 18 v1 quantized checkpoints are nearly exchangeable once each task's difficulty is taken into account. Their pooled means vary with SD 0.044, against 0.037 expected if every checkpoint were an independent Bernoulli(p_t) draw on every task. The variance ratio is 1.39 under a column-permutation null (p=0.13) and 1.51 on long tasks (p=0.08). In a linear-probability variance decomposition, checkpoint identity explains 0.24% of outcome variance pooled and 1.0% on long tasks. Task difficulty explains 48% and 30%, and task-by-checkpoint \"coin-flip\" residual explains 52% and 69%. Checkpoint rankings are unreliable: split-half reliability is 0.33 pooled (Spearman-Brown). Arm labels explain nothing (permutation p=0.69 pooled, 0.37 long), and neither does the draw seed shared across arms (p=0.90 / 0.74). The FP-Traj long-task swing from 0.054 to 0.243 is about what the null predicts: the range of 18 draws with binomial SD 0.052 is about 0.19, and the observed range is 0.22. In contrast, per-checkpoint open-loop NLL on 1046 fixed BF16 states shows a very reliable arm effect. It is lower for all trajectory-calibrated arms than for Static (0.075-0.077 vs 0.094; ANOVA F=52, p=1e-7), but it has no correlation with closed-loop success (Pearson r=0.05 pooled, 0.04 long). The calibration strategy does change the checkpoint; closed-loop success on 85 tasks cannot see it.\n\nTwo things do stand out. First, BF16 is better than all 18 quantized checkpoints on long tasks: 0.297 vs a quantized mean of 0.176, p=0.019 with tasks held fixed. But a task-bootstrap CI for BF16 minus the quantized mean is [-0.018, 0.267], so this is weak evidence of horizon-specific quantization harm. Second, BF16 v0 and v1 are exactly reproducible: all 1046 dev decisions are identical after removing random tool-call IDs, so those runs are pooled-comparable.\n\nWith the current design (85 tasks, 3 draws per arm), a correctly calibrated test has about 23-26% power to detect a true +0.05 pooled improvement. For long tasks the power is 10-14%. The crossed bootstrap used in results_v1 is miscalibrated in both directions. The v0 +0.121 retail result (7 of 58 tasks) has a one-sided probability of 0.035 under the exchangeable null. It is a plausible false positive.",
+   "audit_overall": "I recomputed 5 of the analyst's claims from the raw run files with my own code: 3 confirmed and 2 partially confirmed. I found no data errors: my own db_match rebuild from trajectory.jsonl matches metrics.json with 0 mismatches, and the dev set (85 tasks), long subset (37) and final-attempt alignment are all correct. The only unmentioned item is 11 quantized cells that ended in infrastructure_error and are scored 0. They shift the means by at most 0.002, but they should be rerun.\n\n- **Core finding holds** (dispersion ratio 1.39 pooled, p=0.13; arm permutation p=0.68 pooled and 0.36 long; split-half reliability about 0.32-0.39; v0 retail +7 tasks at p=0.035 one-sided). With 85 tasks and 3 draws per arm, closed-loop success cannot rank checkpoints or arms at the 0.05 scale. The v0 and v1 method signals are what that noise would produce, so direction decisions should not rest on them.\n- **BF16 long-task advantage is fragile.** Its p=0.019 comes from the most favourable cutoff (BF16's own horizon > 11). Other cutoffs give p=0.04-0.22. A subset defined by the quantized models' horizons, not BF16's, gives +0.053 at p=0.19. Per task, BF16 beats the quantized mean on 11 tasks and falls below it on 12. Treat it as a hypothesis to pre-register and retest on new tasks, not as a result.\n- **The open-loop NLL effect is only Static vs the rest.** The 5 trajectory-calibrated arms (FP-Traj, CLOQ-All, CLOQ-Novel and the two matched controls) are indistinguishable in open loop too: F=0.59, p=0.68. The arm-permutation p is 0.0044, not 1e-7. So there is no evidence at any fidelity level that on-policy or novelty selection helps beyond BF16-trajectory calibration.\n- **RTN is the strongest evidence for an insensitive benchmark.** The RTN checkpoint's NLL is 1.7x Static's, yet its closed-loop score (0.271 pooled / 0.108 long) sits inside the v1 range of the 18 calibrated checkpoints.\n\nI did not verify the power simulation (Q7) or the GLMM and Beta-binomial fits. Scripts and outputs are in /tmp/claude-1003/-home-xinyu/822446b5-66f6-44be-b2ea-c6f351322b3f/scratchpad/impact/audit-variance/ (y.py, stats.py, ol.py, sel.py, more.py, infra.py, Y.npy).",
+   "audit_verdicts": [
+    "confirmed: Q1: The outcome matrix and per-checkpoint means. 18 v1 checkpoints x 85 dev tasks (37 long, i.e. BF16 horizon > 11). Quantized pooled mean 0.332 (SD 0.044, rang ...[truncated]",
+    "confirmed: Q2-Q4: Between-checkpoint dispersion is consistent with exchangeable Bernoulli(p_t) noise. Variance ratio 1.39 pooled (column-permutation p=0.13) and 1.51 long  ...[truncated]",
+    "partially: Q6b: BF16 beats all 18 quantized checkpoints on long tasks, 0.297 vs 0.176 (+0.122, P(>=)=0.019 with tasks held fixed; task bootstrap CI [-0.018, 0.267]; Wilcox ...[truncated]",
+    "partially: Q6c: Open-loop NLL on 1046 fixed BF16 states shows a very reliable arm effect (Static 0.094 vs 0.075-0.077 for the trajectory-calibrated arms; ANOVA F=52, p=1e- ...[truncated]",
+    "confirmed: Q5 + Q8: BF16 v0 and v1 are exactly reproducible (1046/1046 decisions identical), so they are poolable. The v0 retail FP-Traj > Static result (+0.121, 7 tasks)  ...[truncated]"
+   ]
+  },
+  {
+   "key": "mechanism",
+   "summary": "机制分析（CPU，只读 /home/xinyu/cloq；数据：18 个 v1 checkpoint × 85 个 dev 任务 = 1530 对，另有 1046 个 BF16 状态）。\n\n1）量化 agent 几乎总是立刻离开 BF16 轨迹，但起因是无害的改写，不是决策翻转。1031/1530 对的 context 在第 1 步就分叉了，原因是第 0 步的身份验证提问被换了措辞。user simulator 的下一句回复有 69% 因此不同（n=825）。最终 1466/1530（95.8%）对出现行为分叉。\n\n2）open-loop 下，低 margin 假说成立：翻转取决于状态本身，而且与 BF16 置信度（BF16 自身 NLL）强相关。工具状态的精确翻转率与 BF16 NLL/token 的 Spearman rho=0.736（n=572）。按 NLL/token 分五档，最高一档翻转率 55%，最低两档不到 1%。用 NLL 预测\"至少一半 checkpoint 翻转\"的 AUC=0.93。哪些状态会翻转与 calibration arm 无关：同 arm 内两两 phi=0.548，跨 arm phi=0.538。\n\n3）closed-loop 下，只有在与 BF16 完全相同的前缀上才等同于 open-loop（已验证 3085/3085 步一致）。在这段前缀里，分叉点确实落在低置信状态。但只有 19% 的行为分叉（277/1466）发生在完全相同的 BF16 状态上。把所有分叉都算上，分叉步的 BF16 置信度排名与随机无异（u=0.507，p=0.79）。另外 40% 的 closed-loop 分叉早于同一 checkpoint 的 open-loop 首次翻转。在 open-loop 下整条 BF16 路径从不行为翻转的 556 对中，仍有 501 对在 closed-loop 中分叉。第 1-9 步的 closed-loop 分叉风险是 open-loop 翻转率的 2-6 倍。所以主要机制是扰动在闭环里被放大，低 margin 翻转只是少数情况下的触发点。calibration 数据修不了这个问题，因为任何非零量化噪声都会引起改写。\n\n4）后果是任务级的\"重掷\"（re-roll）。85×18 成功矩阵的方差分解：任务 50.2%，checkpoint 0.8%（其中 arm 只占 0.17%），剩余 49% 是任务×checkpoint 的随机交换（churn）。在需要不超过 1 个写操作的任务上，量化就是纯重掷：BF16 成功而量化失败的比例 0.333，BF16 失败而量化成功的比例 0.280。在需要至少 2 个写操作的任务上，BF16 成功 6/29，高于全部 18 个 checkpoint（1-4 个）。这个差距的 CI 是 [-0.000, 0.253]，而且这个切分是看过数据之后才选的。\n\n5）\"长任务退化\"有一部分是选择偏差：如果按量化轨迹的中位长度而不是 BF16 自身长度来定义长任务，BF16 就不再突出。\n\n失败类型：漏写 32%，写操作参数错 27%，提前终止 22%（大多是 max_steps 循环），只多了写操作 18%。各 arm 之间分布无差别。分叉后的恢复率为 56%；影响恢复的主要是任务长度，与 arm 无关。",
+   "audit_overall": "审计结论：分析方的数值计算可信。我按原始 run 文件独立重算了 5 项核心结论，所有计数与统计量都在小数点后三位内复现，没有发现对齐错误、premature 误判或任务子集错误（premature 145 个全部记为 False；各 BF16 run 结果相同；18 个 openloop 文件都覆盖全部 1046 个状态；t_context/t_tool 与 divergence.json 1530/1530 一致）。问题出在解释上。\n\n1. 以下三点确认且稳健，可以作为项目转向的依据：\n   - arm 不重要：按 arm 做 ANOVA，p=0.68，arm 只占方差 0.17%。\n   - open-loop 翻转集中在 BF16 低置信状态：rho=0.736，按任务聚类的 CI [0.67, 0.77]；翻转哪些状态与 arm 无关。\n   - 失败以写操作错误为主（234 对，已用 tau2 action_checks 独立复现）。\n\n2. 以下两点只部分成立：\n   - \\\"长任务放大主要是选择偏差\\\"说过头了。改用量化中位长度定义后，BF16 仍然高于或等于 15/18 个 checkpoint，差距从 0.121 缩到约 0.05，并没有消失。\n   - \\\"至少 2 个写操作的任务上有系统损失\\\"是看过数据后才选的切分，任务级符号翻转检验 p=0.084，效应集中在约 6 个任务上。只能作为预注册复验的候选假说。\n\n3. 最需要纠正的是\\\"漂移放大是主要机制\\\"。计数没错，但数据只说明漂移是分叉的主要来源，不说明它是失败的主要来源：\n   - 同一任务内，第 0 步被改写与未被改写的对，量化成功率差 +0.03，CI [-0.03, 0.09]；只看 BF16 成功的任务，差 -0.03，CI [-0.14, 0.09]。\n   - 行为分叉中有 120/1466 只是长度不同。\n   - 17% 的第 1 步分叉来自工具调用，不是改写。\n   - closed-loop 与 open-loop 风险之比，用的是按步号对齐、实际上不可比的状态。\n\n   所以现有证据更支持\\\"量化是重掷，另有一个小的、可能集中在多写操作任务上的系统损失\\\"，而不是\\\"漂移导致退化\\\"。\n\n4. \\\"churn 49%\\\"就是任务内 Bernoulli 方差，按定义成立，没有额外信息。\n\n对项目方向的建议：\\\"按 margin 在决策层干预\\\"的依据（open-loop 翻转可由 BF16 置信度预测，且与 arm 无关）是扎实的。但要确立这是一个有影响力的发现，需要两个对照：\n- BF16 自身扰动（例如只改写第 0 步，或换 seed），用来把闭环 churn 与量化特有损失分开；\n- 更多任务或 seed，并预注册写操作数的切分。\n\n脚本与输出在 /tmp/claude-1003/-home-xinyu/822446b5-66f6-44be-b2ea-c6f351322b3f/scratchpad/impact/audit-mechanism/（load.py、c1.py 到 c5.py、c4b.py、c4_rows.json）。",
+   "audit_verdicts": [
+    "confirmed: Q6/Q7：calibration arm 基本不起作用。85×18 成功矩阵的方差分解为任务 50.2%、checkpoint 0.8%（arm 0.17%，draw 0.64%）、剩余 churn 49.0%。BF16 成功而量化失败 234/576，BF16 失败而量化成功 166/954，净损失每对 0.044 ...[truncated]",
+    "partially: Q6/Q7：系统性损失集中在至少需要 2 个写操作的任务上（BF16 6/29，18 个 checkpoint 为 1-4 个，CI [-0.000, 0.253]）。按 BF16 horizon>11 定义长任务时，BF16 11 个成功，高于全部 checkpoint（2-10 个）；改用量化轨迹中位长度定义后，B ...[truncated]",
+    "confirmed: Q3：open-loop 下，工具状态的翻转率（18 个 checkpoint 中 tool_exact_match 失败的比例）与 BF16 自身 NLL/token 的 Spearman rho=0.736（n=572）。按五分位分档，翻转率从 0.010 升到 0.554。翻转数的 overdispersion  ...[truncated]",
+    "partially: Q2/Q4：closed-loop 分叉主要是无害改写经 user simulator 放大的漂移。1031/1530 对在第 1 步 context 分叉，原因是第 0 步身份提问被改写。1466/1530 对有行为分叉，其中只有 277 对发生在与 BF16 完全相同的 context 上。open-loop 从不 ...[truncated]",
+    "confirmed: Q5：BF16 成功、量化失败的 234 对中，漏写 76，写操作参数错 64，提前终止 52（max_steps 46、基础设施错误 5、错误过多 1），只多了写操作 42。各 arm 之间分布无差别（chi2 7.66，dof 15，p=0.94）。"
+   ]
+  },
+  {
+   "key": "truncation",
+   "summary": "Context truncation does not explain where quantized agents first diverge. In 1424 of 1466 checkpoint-task pairs (97.1%; 94.7% on long tasks), the first tool-level divergence comes before the BF16 trajectory's truncation onset. The median divergence is at decision 4 and the median onset at decision 9. Before onset, the 8k and 32k prompts are byte-identical, so this link of the chain cannot change at a longer context. What truncation could still explain is the cascade after divergence: recovery versus failure. The existing data cannot separate that from horizon. Horizon and the BF16 truncated fraction correlate at r=0.82 (VIF 3.1). In the joint regression both partial effects are indistinguishable from 0 with wide CIs. Among long tasks, the gap does not grow with truncation: heavy 0.015 against light 0.274, permutation p=0.24. That comparison is confounded by a floor, because BF16 success on heavy-truncation tasks is only 0.133. A bigger caveat for the paper: the 8k horizon amplification itself (0.137, all 18 checkpoints) has a task-resampling 95% CI of [-0.038, 0.314]. It is marginal across tasks even before any context control. On hardware, HANDOFF.md is wrong that 16k/32k cannot run on a 16GB 4080. The logged KV pool is 42,816 tokens (5.88 GiB at 144 KiB/token). A 16k request (max-model-len 17408) needs 2.39 GiB and a 32k request (33792) needs 4.64 GiB, so both fit. The cost is concurrency (worst case 2.5x and 1.3x) and occasional preemption, not whether the run is possible. The user simulator already runs at 32768 with a 40,528-token pool. The minimal decisive control: BF16 plus 6 pre-registered GPTQ checkpoints plus RTN at 32k on the 85 dev tasks, estimated at 5-8 h wall. Its power is about 0.77 to tell full survival from full explanation of the 0.137 amplification when the task set is held fixed, and only about 0.33 for a halving. The single BF16 reference run is the variance floor.",
+   "audit_overall": "I checked five claims, and none was refuted. I wrote my own extraction and did not use the analyst's scripts. Truncation statistics, divergence-vs-onset counts, amplification point estimates, stratum gaps, the collinearity numbers and the KV memory arithmetic all reproduce to the reported digits. Every divergence.json is aligned to bf16_v1 (H_fp, H_q and q_db_match match 1530/1530). There are no None outcomes. The 145 premature quantized runs are all scored as failures; 11 of them are labelled infrastructure_error, but 9 of those 11 are really loops of 67-98 decisions.\n\nFour points change the reading of the results:\n(1) The invariance figure the 32k control needs is t_tool < min(BF16 onset, Q onset). That holds in 95.9% of pairs (1406/1466), not the 97.1% reported.\n(2) The 8k horizon amplification (A=0.137; my task-and-checkpoint CI is [-0.039, 0.315], P(A<=0)=0.064) is carried by airline: A=0.294 [-0.016, 0.599] on 27 tasks with 12 long. Retail, with 58 tasks, gives only A=0.063 [-0.128, 0.267]. Dropping premature runs instead of scoring them 0 raises A to 0.170, so the scoring rule is not what creates it.\n(3) The residual-truncation shares at 16k/32k (11.7% and 2.5%) come from the 8k trajectories and are optimistic. Premature quantized runs have a truncated fraction of 0.79 against 0.15 for normal runs, so truncation is closely tied to looping, a likely mediator.\n(4) I did not re-simulate the power analysis. Its arithmetic is internally consistent: 0.137/0.057 gives power ≈ Φ(0.76) = 0.78. But the proposed decision rule compares A_32k against the 18-checkpoint 8k value of 0.137. It should compare against A_8k on the same 6 checkpoints, as a paired difference. The underlying effect is also not established at the task level.\n\nDirection implication: the context-length control is feasible on the existing 4080s (confirmed from logs). Its target, horizon amplification, is itself only about 1.9 SE and domain-concentrated. Before spending GPU time on 32k, the project should firm up amplification with more tasks (all 164, e.g. with RTN) or with BF16 replicate seeds.\n\nScripts and outputs are in /tmp/claude-1003/-home-xinyu/822446b5-66f6-44be-b2ea-c6f351322b3f/scratchpad/impact/audit-truncation/ (extract.py, a1.py-a8.py, extract.pkl). Everything ran on CPU, and nothing under /home/xinyu/cloq was modified.",
+   "audit_verdicts": [
+    "confirmed: Q2: In 1424 of 1466 checkpoint-task pairs (97.1%; 94.7% on long tasks), the first tool-level divergence comes before BF16's truncation onset. Median t_tool is 4 ...[truncated]",
+    "confirmed: The 8k horizon amplification is 0.137 over all 18 v1 checkpoints (long gap 0.122 minus short gap -0.015). Its task-and-checkpoint bootstrap 95% CI is [-0.038, 0 ...[truncated]",
+    "confirmed: Q1: BF16's decision-level truncation rate is 0.260 (retail 0.286, airline 0.197). Quantized runs range 0.404-0.604, pooled 0.501 over 29,818 decisions, because  ...[truncated]",
+    "confirmed: Q3: Existing data cannot separate horizon from truncation. r(horizon, BF16 truncated fraction) = 0.824, VIF 3.11. Long-task gap by stratum: none 0.024 (n=7), li ...[truncated]",
+    "confirmed: Q4: HANDOFF.md is wrong that the 16k/32k control needs 80GB. KV is 144 KiB/token and the logged agent pool is 42,816 tokens (5.88 GiB). A 17,408 request needs 2 ...[truncated]"
+   ]
+  }
+ ],
+ "literature": {
+  "unique_papers": 74,
+  "verified": [
+   "low: Predict Before You Deploy: Offline Prediction of Quantization-Induced Task Degradation for World Action Models (Xu, Guo, Chen, Du, Shi, 2026) — arXiv:2609.19441",
+   "low: Damage Predicts Recovery: When Calibration Data Matters in Compressing Financial LLMs (Ye, Yu, Hazra, Wang, arXiv:2609.26241)",
+   "low: Self-calibration for Language Model Quantization and Pruning (Williams, Chrysostomou, Aletras; arXiv:2410.17170)",
+   "low: Train Where the Quantized Model Goes: On-Policy Distillation for Low-Bit Reasoning (Chen, Liu, Wang, Shao, Li, Wang, Qiu, Li, Liu, Cheng; arXiv:2609.26708, submitted 2026-09-22)",
+   "low: Flat Score, Amplified Failures: How the Error Budget Masks Damage in Quantized LLM Agents (Jang, Yang, Lim, Park, 2026)",
+   "low: Feedback in Imitation Learning: The Three Regimes of Covariate Shift (Spencer, Choudhury, Venkatraman, Ziebart, Bagnell; arXiv:2102.02872)",
+   "none: GKD: Generalized Knowledge Distillation for Auto-regressive Sequence Models (Agarwal et al., 2306.13649)",
+   "low: Anatomy of a Closed-Loop Collapse: A Causal Case Study of a Compressed VLA Policy (Fengze Jia, OSU, arXiv:2609.23048, submitted 2026-09-19)",
+   "low: A Closed-Loop Evaluation of Capability Loss and Recovery in Compressed Driving Policies (Irfan, Khatim, Arief; arXiv:2609.00718)",
+   "none: Beyond pass@1: A Reliability Science Framework for Long-Horizon LLM Agents (Khanal, Tao, Zhou, 2026)",
+   "none: Accuracy is Not All You Need (Dutta, Krishnan, Kwatra, Ramjee, 2024) — arXiv:2407.09141",
+   "low: Coverage-Based Calibration for Post-Training Quantization via Weighted Set Cover over Outlier Channels (COVERCAL)",
+   "medium: Beyond Activation Alignment: The Alignment-Diversity Tradeoff in Task-Aware LLM Quantization (TASA)",
+   "low: Does quantization affect models' performance on long-context tasks? (Mekala, Atmakuru, Song, Karpinska, Iyyer, EMNLP 2025, arXiv:2505.20276)",
+   "low: The Illusion of Diminishing Returns: Measuring Long Horizon Execution in LLMs (Sinha, Arun, Goel, Staab, Geiping; ICLR 2026)",
+   "low: Stop Comparing LLM Agents Without Disclosing the Harness (Zhang, Wang, Ge, Xu, Hamm, Reddy)",
+   "low: Noise Floor Audit for Agent Benchmarks (Chen, Qian, Wang, Peng, Xu, Wu, Sun, arXiv:2608.22331, Aug 2026)",
+   "medium: VLAQuantBench: Closed-Loop Evaluation of Post-Training Quantization for Vision-Language-Action Models (Xu, Jin, Chen, Wang, Sui, Shi, arXiv:2609.25376)",
+   "low: On the Impact of Calibration Data in Post-training Quantization and Pruning (Williams & Aletras, ACL 2024; arXiv:2311.09755)"
+  ]
+ },
+ "history_ok": true,
+ "portfolio_ok": true
+}

@@ -1,0 +1,127 @@
+=== Q5: failure taxonomy on tasks BF16 solves but a quantized checkpoint fails ===
+n failure pairs: 234 over 29 tasks; BF16-solved tasks: 32
+cat
+missing write                     60
+premature:max_steps               46
+wrong-args write +extra           45
+extra write only                  42
+wrong-args write                  19
+missing write +extra              16
+premature:infrastructure_error     5
+premature:too_many_errors          1
+
+by arm:
+coarse               extra_only  missing  premature  wrong_args
+arm                                                            
+cloq_all                      7       10         11          10
+cloq_matched_alt              8       12          9           9
+cloq_matched_random           7       11         10          12
+cloq_novel                    8       14          8          13
+fp_traj                       6       16         11           9
+static                        6       13          3          11
+chi2 arm x coarse cat: 7.66 dof 15 p=0.937 (pairs share tasks; descriptive)
+
+by domain:
+coarse   extra_only  missing  premature  wrong_args
+domain                                             
+airline          38       16         11          12
+retail            4       60         41          52
+BF16's own failures on dev (for reference): Counter({'wrong_args': 28, 'missing': 19, 'extra_only': 6})
+
+missing-write failures: Q called transfer_to_human_agents in 0.07 of them
+
+=== Q6: fragile vs robust tasks ===
+BF16-solved tasks: 32  distribution of #ckpts solving (0..18): [2, 0, 2, 0, 1, 1, 2, 0, 2, 3, 1, 1, 4, 1, 2, 3, 2, 3, 2]
+{'mid': 18, 'robust': 10, 'fragile': 4}
+            H  n_req_writes  n_req_actions  max_nlltok  max_nll  max_nlltok_tool  sum_tool_nlltok  n_lowconf_tool  exp_beh_flips  ol_survival
+group                                                                                                                                        
+fragile  14.5           2.0            2.0      0.0807  17.1091           0.0226           0.0244             1.0         1.5278       0.1528
+mid      10.0           1.0            1.5      0.1033  20.2717           0.0034           0.0041             0.0         1.0000       0.2454
+robust    8.5           0.5            2.0      0.1091  12.6687           0.0007           0.0014             0.0         0.3333       0.6667
+domain x group:
+group    fragile  mid  robust
+domain                       
+airline        0    7       4
+retail         4   11       6
+H                  AUC(fragile vs robust)=1.000 MW p=0.00561 | Spearman w/ failure rate (n=32) rho=0.711 p=5.08e-06 | partial|H rho=-0.071 p=0.706
+n_req_writes       AUC(fragile vs robust)=0.900 MW p=0.0211 | Spearman w/ failure rate (n=32) rho=0.436 p=0.0127 | partial|H rho=0.216 p=0.244
+n_req_actions      AUC(fragile vs robust)=0.475 MW p=0.943 | Spearman w/ failure rate (n=32) rho=-0.012 p=0.947 | partial|H rho=-0.154 p=0.408
+max_nlltok         AUC(fragile vs robust)=0.350 MW p=0.454 | Spearman w/ failure rate (n=32) rho=-0.117 p=0.525 | partial|H rho=-0.172 p=0.354
+max_nll            AUC(fragile vs robust)=0.600 MW p=0.635 | Spearman w/ failure rate (n=32) rho=0.316 p=0.0776 | partial|H rho=0.188 p=0.312
+max_nlltok_tool    AUC(fragile vs robust)=0.600 MW p=0.635 | Spearman w/ failure rate (n=32) rho=0.221 p=0.224 | partial|H rho=0.141 p=0.45
+sum_tool_nlltok    AUC(fragile vs robust)=0.600 MW p=0.635 | Spearman w/ failure rate (n=32) rho=0.176 p=0.335 | partial|H rho=0.060 p=0.748
+n_lowconf_tool     AUC(fragile vs robust)=0.787 MW p=0.0908 | Spearman w/ failure rate (n=32) rho=0.179 p=0.328 | partial|H rho=0.098 p=0.599
+exp_beh_flips      AUC(fragile vs robust)=0.788 MW p=0.118 | Spearman w/ failure rate (n=32) rho=0.291 p=0.107 | partial|H rho=0.130 p=0.487
+ol_survival        AUC(fragile vs robust)=0.725 MW p=0.227 | Spearman w/ failure rate (n=32) rho=-0.218 p=0.23 | partial|H rho=-0.170 p=0.36
+n fragile=4, robust=10
+AUC max_nlltok: bootstrap 95% CI [0.042, 0.708]
+AUC max_nlltok_tool: bootstrap 95% CI [0.286, 0.900]
+AUC H: bootstrap 95% CI [1.000, 1.000]
+AUC ol_survival: bootstrap 95% CI [0.422, 0.959]
+BF16-solved tasks: var(#ckpts solving)=28.93 vs binomial var=4.34 (overdispersion => task-determined)
+task-success phi between checkpoints: within-arm 0.472 (n=18) vs between-arm 0.477 (n=135)
+phi(ckpt success, BF16 success): mean 0.433
+
+=== Q7: recovery after a tool divergence ===
+BF16-solved, diverged (any t_tool)                      n= 533 tasks= 31 success=0.561 [0.453,0.667]
+BF16-solved, no tool divergence                         n=  43 tasks= 12 success=1.000 [1.000,1.000]
+BF16-failed, diverged (rescue rate)                     n= 933 tasks= 48 success=0.178 [0.112,0.247]
+BF16-solved, early divergence (t_tool/H<0.5)            n= 317 tasks= 28 success=0.495 [0.372,0.627]
+BF16-solved, late divergence (t_tool/H>=0.5)            n= 216 tasks= 28 success=0.657 [0.529,0.786]
+late - early recovery: 0.162, task-cluster 95% CI [-0.014, 0.329]
+               mean  size
+tn_bin                   
+(-0.01, 0.2]  0.500   164
+(0.2, 0.4]    0.496   123
+(0.4, 0.6]    0.617   120
+(0.6, 0.8]    0.615    78
+(0.8, 1.01]   0.708    48
+              mean  size
+long  early             
+False False  0.724   174
+      True   0.741   162
+True  False  0.381    42
+      True   0.239   155
+by arm (BF16-solved, diverged):
+                      mean  size
+arm                             
+cloq_all             0.573    89
+cloq_matched_alt     0.563    87
+cloq_matched_random  0.545    88
+cloq_novel           0.517    89
+fp_traj              0.528    89
+static               0.637    91
+by arm x early:
+early                False  True 
+arm                              
+cloq_all             0.647  0.527
+cloq_matched_alt     0.722  0.451
+cloq_matched_random  0.605  0.500
+cloq_novel           0.541  0.500
+fp_traj              0.676  0.423
+static               0.765  0.561
+recovery by (BF16 action, Q action) at t_tool:
+                                 mean  size
+ff               qf                        
+BF16 ended       Q text         0.538    26
+                 Q transfer     1.000     3
+BF16 read/lookup Q read/lookup  0.398   128
+                 Q text         0.610   154
+                 Q write        0.214    14
+BF16 text        Q ended        1.000    21
+                 Q read/lookup  0.677    65
+                 Q transfer     1.000     9
+                 Q write        0.300    20
+BF16 transfer    Q text         0.933    15
+                 Q transfer     1.000     6
+BF16 write       Q read/lookup  0.800     5
+                 Q text         0.512    41
+                 Q write        0.346    26
+recovery when divergence is on the exact BF16 state (t_tool<t_context) vs after rewording drift:
+                   mean  size
+tool_at_same_ctx             
+False             0.569   422
+True              0.532   111
+
+=== extra: after the first rewording (t_render=0), is the user simulator's next reply identical? ===
+user reply after step 0 identical to BF16's: 0.307 (n=825)

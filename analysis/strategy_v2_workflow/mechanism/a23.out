@@ -1,0 +1,148 @@
+=== Q2: divergence anatomy ===
+n rows 1530 tool_diverged 1466  no tool divergence 64
+t_context distribution: {1.0: 1031, 2.0: 98, 3.0: 130, 4.0: 80, 5.0: 91, 6.0: 28, 7.0: 46, 8.0: 21, 9.0: 1}
+t_tool on identical context (t_tool < t_context): 277 / 1466
+BF16 category at t_render (the decision that split the context):
+{'X:identity_q': 934, 'X:confirm_q': 240, 'T:read': 180, 'T:identity': 77, 'X:malformed_toolish': 34, 'X:refusal/policy': 33, 'T:write': 18, 'X:inform': 7, 'END': 4, 'X:closing': 3}
+
+BF16 action at t_tool:
+{'T:read': 510, 'T:identity': 257, 'T:write': 185, 'X:confirm_q': 166, 'X:identity_q': 115, 'END': 76, 'X:closing': 68, 'X:refusal/policy': 26, 'X:other_q': 24, 'T:transfer': 21, 'X:malformed_toolish': 17, 'X:inform': 1}
+Quantized action at t_tool:
+{'T:read': 493, 'X:confirm_q': 307, 'T:write': 190, 'T:identity': 177, 'X:identity_q': 88, 'END': 44, 'X:refusal/policy': 44, 'X:closing': 43, 'X:other_q': 38, 'T:transfer': 22, 'X:inform': 15, 'X:malformed_toolish': 3, 'T:calculate': 2}
+
+Top transitions:
+pair
+T:read -> T:read              227
+T:read -> X:confirm_q         145
+X:confirm_q -> T:read         116
+T:identity -> X:confirm_q     102
+X:identity_q -> T:identity     96
+T:write -> T:write             95
+T:identity -> X:identity_q     62
+T:write -> X:confirm_q         43
+X:confirm_q -> T:write         40
+T:identity -> T:read           39
+T:read -> T:identity           30
+T:read -> T:write              30
+T:write -> T:read              29
+X:closing -> END               26
+T:read -> X:refusal/policy     23
+T:read -> X:identity_q         21
+END -> X:closing               21
+T:read -> X:other_q            21
+X:refusal/policy -> T:read     20
+T:identity -> T:identity       18
+
+family transition (all 18 ckpts):
+qf                     Q confirm-question  Q ended  Q other text  Q read/lookup  Q transfer  Q write   All
+ff                                                                                                        
+BF16 confirm-question                   0        1             0            125           0       40   166
+BF16 ended                             16        0            34             12           6        8    76
+BF16 other text                         0       35             0            191           9       16   251
+BF16 read/lookup                      247        5           169            314           1       31   767
+BF16 transfer                           1        0            14              0           6        0    21
+BF16 write                             43        3            14             30           0       95   185
+All                                   307       44           231            672          22      190  1466
+
+both tool at t_tool: n 477  same tool name(s), different args: 249
+
+BF16 family at t_tool by arm (counts):
+ff                   BF16 confirm-question  BF16 ended  BF16 other text  BF16 read/lookup  BF16 transfer  BF16 write
+arm                                                                                                                 
+cloq_all                                25          15               43               131              6          25
+cloq_matched_alt                        27          14               34               133              3          34
+cloq_matched_random                     27           7               37               128              4          39
+cloq_novel                              31          15               40               128              3          27
+fp_traj                                 32          16               43               122              3          29
+static                                  24           9               54               125              2          31
+chi2 arm x BF16-family: chi2=20.53 dof=25 p=0.718 (obs not independent: same tasks)
+
+Q family at t_tool by arm:
+qf                   Q confirm-question  Q ended  Q other text  Q read/lookup  Q transfer  Q write
+arm                                                                                               
+cloq_all                             42        9            43            110           9       32
+cloq_matched_alt                     49        8            45            108           1       34
+cloq_matched_random                  54        9            39             96           5       39
+cloq_novel                           65        4            35            110           3       27
+fp_traj                              59        7            33            116           0       30
+static                               38        7            36            132           4       28
+chi2 arm x Q-family: chi2=38.72 dof=25 p=0.039
+permutation (arm labels shuffled within task x draw) chi2=20.53 p for arm x ff: 0.078
+permutation (arm labels shuffled within task x draw) chi2=38.72 p for arm x qf: 0.004
+
+median t_tool / H_fp by arm: {'cloq_all': 0.3, 'cloq_matched_alt': 0.308, 'cloq_matched_random': 0.312, 'cloq_novel': 0.3, 'fp_traj': 0.308, 'static': 0.3}
+
+Q context truncated at t_tool: 0.039 (n=1422); fraction of all Q decisions truncated (mean over runs): 0.207
+t_tool before first Q truncation: 0.961
+
+=== Q3: open-loop flip vs BF16 confidence ===
+/tmp/claude-1003/-home-xinyu/822446b5-66f6-44be-b2ea-c6f351322b3f/scratchpad/impact/mechanism/a23.py:80: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  S["flip_full"] = 1 - S[[f"fam__{c}" for c in CK]].astype(float).mean(1)
+/tmp/claude-1003/-home-xinyu/822446b5-66f6-44be-b2ea-c6f351322b3f/scratchpad/impact/mechanism/a23.py:81: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  S["flip_beh"] = S[[f"bflip__{c}" for c in CK]].astype(float).mean(1)
+/tmp/claude-1003/-home-xinyu/822446b5-66f6-44be-b2ea-c6f351322b3f/scratchpad/impact/mechanism/a23.py:82: Pandas4Warning: Starting with pandas version 4.0 all arguments of sum will be keyword-only.
+  S["n_beh"] = S[[f"bflip__{c}" for c in CK]].astype(int).sum(1)
+/tmp/claude-1003/-home-xinyu/822446b5-66f6-44be-b2ea-c6f351322b3f/scratchpad/impact/mechanism/a23.py:83: Pandas4Warning: Starting with pandas version 4.0 all arguments of sum will be keyword-only.
+  S["n_full"] = 18 - S[[f"fam__{c}" for c in CK]].astype(int).sum(1)
+/tmp/claude-1003/-home-xinyu/822446b5-66f6-44be-b2ea-c6f351322b3f/scratchpad/impact/mechanism/a23.py:84: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  S["q_nll_mean"] = S[[f"qnll__{c}" for c in CK]].mean(1)
+states: 1046 (tool 572, text 474); rendered!=generated excluded? no (n=16)
+mean full-action flip rate: tool 0.165 text 0.908 ; behavioural flip: tool 0.165 text 0.051
+Spearman tool_exact_flip vs BF16 nlltok: rho=0.736 p=1.9e-98 n=572
+Spearman tool_exact_flip vs BF16 nll: rho=0.753 p=1.2e-105 n=572
+Spearman text_exact_flip vs BF16 nlltok: rho=0.620 p=1.1e-51 n=474
+Spearman text_exact_flip vs BF16 nll: rho=0.739 p=6.2e-83 n=474
+Spearman text_beh_flip(text->tool) vs BF16 nlltok: rho=0.303 p=1.6e-11 n=474
+Spearman text_beh_flip(text->tool) vs BF16 nll: rho=0.238 p=1.5e-07 n=474
+Spearman all_beh_flip vs BF16 nlltok: rho=0.209 p=8.2e-12 n=1046
+Spearman all_beh_flip vs BF16 nll: rho=0.182 p=2.9e-09 n=1046
+partial Spearman (tool) flip_full vs nlltok | ntok: 0.750; flip vs ntok rho=0.081
+partial Spearman (text) flip_full vs nlltok | ntok: 0.480; flip vs ntok rho=0.671
+
+TOOL states: quintiles of BF16 NLL/token
+       n  nlltok_lo  nlltok_hi  flip_full  frac_all18_agree  frac_state_flips_in_ge9
+bin                                                                                 
+0    115     0.0000     0.0000     0.0097            0.8870                   0.0000
+1    114     0.0000     0.0000     0.0073            0.9386                   0.0000
+2    114     0.0000     0.0001     0.0351            0.8158                   0.0175
+3    114     0.0001     0.0055     0.2159            0.2368                   0.1491
+4    115     0.0055     0.6516     0.5541            0.0435                   0.5826
+
+TEXT states: quintiles of BF16 NLL/token
+      n  nlltok_lo  nlltok_hi  flip_full  flip_beh  frac_all18_agree  frac_state_flips_in_ge9
+bin                                                                                          
+0    95     0.0001     0.0291     0.6456    0.0064            0.0842                   0.6737
+1    95     0.0291     0.0484     0.9310    0.0310            0.0000                   0.9684
+2    94     0.0485     0.0711     0.9663    0.0408            0.0000                   0.9894
+3    95     0.0716     0.1025     0.9988    0.0906            0.0000                   1.0000
+4    95     0.1028     0.2108     0.9965    0.0865            0.0000                   1.0000
+
+TOOL deciles:
+      n      hi    flip
+bin                    
+0    58  0.0000  0.0172
+1    57  0.0000  0.0019
+2    57  0.0000  0.0078
+3    57  0.0000  0.0068
+4    57  0.0000  0.0205
+5    57  0.0001  0.0497
+6    57  0.0009  0.1715
+7    57  0.0055  0.2602
+8    57  0.0177  0.5078
+9    58  0.6516  0.5996
+AUC BF16 nlltok -> tool flips in >= 1/18: 0.898 (pos 238/572)
+AUC BF16 nlltok -> tool flips in >= 9/18: 0.927 (pos 86/572)
+AUC BF16 nlltok -> text-beh flips in >= 1/18: 0.707 (pos 107/474)
+AUC BF16 nlltok -> text-beh flips in >= 9/18: 0.700 (pos 12/474)
+
+--- flip-count distribution across 18 checkpoints (tool states, exact tool-call flip) ---
+count k:    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+observed:   [0.584, 0.063, 0.056, 0.04, 0.023, 0.028, 0.016, 0.021, 0.019, 0.017, 0.017, 0.017, 0.014, 0.005, 0.01, 0.016, 0.016, 0.01, 0.026]
+indep null: [0.039, 0.138, 0.236, 0.245, 0.18, 0.099, 0.042, 0.016, 0.004, 0.001, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+var of per-state count obs 25.07 vs null 2.48
+tool-state exact flips: mean phi within-arm pairs 0.548 (n=18) vs between-arm pairs 0.538 (n=135)
+all-state behavioural flips: phi within 0.513 (n=18) vs between 0.502 (n=135)
+tool exact-flip set Jaccard between checkpoints: mean 0.443 range [0.342, 0.562]; per-ckpt flip rate range [0.136, 0.191]
+per-arm open-loop tool exact flip rate: {'static': 0.1801, 'fp_traj': 0.1538, 'cloq_all': 0.1655, 'cloq_novel': 0.162, 'cloq_matched_random': 0.1573, 'cloq_matched_alt': 0.1702}
+
+logit(tool flip) ~ log BF16 nll/tok: coef 0.547, state-cluster bootstrap 95% CI [0.490, 0.612], n=10296 rows / 572 states

@@ -1,0 +1,13 @@
+all: tasks=85 BF16 success=0.376 mean Q success=0.332 (ckpt range 0.271-0.424); lost 234/576 (0.406) gained 166/954 (0.174); net loss per task-ckpt 0.044; gross churn 0.261
+   BF16 successes 32 vs quantized counts [23, 24, 24, 25, 25, 26, 27, 27, 27, 27, 28, 29, 31, 31, 31, 33, 34, 36]
+   corr(member, mean of other 18 members): BF16 0.609; quantized mean 0.670 range [0.539,0.770]
+long(H>11): tasks=37 BF16 success=0.297 mean Q success=0.176 (ckpt range 0.054-0.270); lost 144/198 (0.727) gained 63/468 (0.135); net loss per task-ckpt 0.122; gross churn 0.311
+   BF16 successes 11 vs quantized counts [2, 3, 3, 4, 5, 6, 6, 6, 6, 7, 7, 8, 8, 9, 9, 9, 9, 10]
+   corr(member, mean of other 18 members): BF16 0.286; quantized mean 0.521 range [0.316,0.689]
+short: tasks=48 BF16 success=0.438 mean Q success=0.453 (ckpt range 0.375-0.542); lost 90/378 (0.238) gained 103/486 (0.212); net loss per task-ckpt -0.015; gross churn 0.223
+   BF16 successes 21 vs quantized counts [18, 18, 19, 20, 20, 21, 21, 21, 22, 22, 22, 22, 23, 23, 23, 25, 25, 26]
+   corr(member, mean of other 18 members): BF16 0.767; quantized mean 0.679 range [0.516,0.835]
+BF16 - mean(18 Q) all: 0.044 task-bootstrap 95% CI [-0.038,0.126] n=85
+BF16 - mean(18 Q) long: 0.122 task-bootstrap 95% CI [-0.020,0.272] n=37
+variance decomposition of 85x18 success matrix: task 0.502, checkpoint 0.008, residual (task x ckpt churn) 0.490
+   of which between-arm 0.0017, within-arm between-draw 0.0064

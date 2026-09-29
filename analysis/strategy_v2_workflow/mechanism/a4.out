@@ -1,0 +1,37 @@
+
+######## BF16 confidence proxy = nll ########
+(a) t_render=t_context-1 [exact BF16 state], rank among all preceding steps: n=495 (ckpt,task) pairs over 63 tasks; mean rank u=0.924 (null 0.5) 95% task-cluster CI [0.881,0.958] z=21.24 p=3.8e-100; divergence step is the least-confident so far: 0.844 vs null 0.292 (diff CI [0.461,0.631])
+(a') t_render, rank among preceding steps of same kind: n=326 (ckpt,task) pairs over 56 tasks; mean rank u=0.928 (null 0.5) 95% task-cluster CI [0.859,0.983] z=13.47 p=2.2e-41; divergence step is the least-confident so far: 0.902 vs null 0.450 (diff CI [0.351,0.528])
+(b) t_tool exact-state subset (t_tool < t_context), all preceding: n=131 (ckpt,task) pairs over 39 tasks; mean rank u=0.758 (null 0.5) 95% task-cluster CI [0.661,0.849] z=5.23 p=1.7e-07; divergence step is the least-confident so far: 0.489 vs null 0.296 (diff CI [0.012,0.376])
+(b') t_tool exact-state subset (t_tool < t_context), same-kind preceding: n=118 (ckpt,task) pairs over 37 tasks; mean rank u=0.874 (null 0.5) 95% task-cluster CI [0.761,0.975] z=6.70 p=2.1e-11; divergence step is the least-confident so far: 0.805 vs null 0.382 (diff CI [0.217,0.600])
+(b) t_tool all (index-matched BF16 state; context may differ by rewording), all preceding: n=1244 (ckpt,task) pairs over 83 tasks; mean rank u=0.507 (null 0.5) 95% task-cluster CI [0.453,0.561] z=0.27 p=0.79; divergence step is the least-confident so far: 0.212 vs null 0.243 (diff CI [-0.086,0.028])
+(b') t_tool all (index-matched BF16 state; context may differ by rewording), same-kind preceding: n=1189 (ckpt,task) pairs over 82 tasks; mean rank u=0.606 (null 0.5) 95% task-cluster CI [0.535,0.671] z=3.07 p=0.0022; divergence step is the least-confident so far: 0.482 vs null 0.358 (diff CI [0.047,0.197])
+
+######## BF16 confidence proxy = nlltok ########
+(a) t_render=t_context-1 [exact BF16 state], rank among all preceding steps: n=495 (ckpt,task) pairs over 63 tasks; mean rank u=0.909 (null 0.5) 95% task-cluster CI [0.863,0.948] z=18.70 p=5.1e-78; divergence step is the least-confident so far: 0.806 vs null 0.292 (diff CI [0.415,0.604])
+(a') t_render, rank among preceding steps of same kind: n=326 (ckpt,task) pairs over 56 tasks; mean rank u=0.900 (null 0.5) 95% task-cluster CI [0.815,0.965] z=10.62 p=2.3e-26; divergence step is the least-confident so far: 0.868 vs null 0.450 (diff CI [0.311,0.504])
+(b) t_tool exact-state subset (t_tool < t_context), all preceding: n=131 (ckpt,task) pairs over 39 tasks; mean rank u=0.732 (null 0.5) 95% task-cluster CI [0.630,0.833] z=4.43 p=9.6e-06; divergence step is the least-confident so far: 0.427 vs null 0.296 (diff CI [-0.046,0.329])
+(b') t_tool exact-state subset (t_tool < t_context), same-kind preceding: n=118 (ckpt,task) pairs over 37 tasks; mean rank u=0.879 (null 0.5) 95% task-cluster CI [0.769,0.977] z=6.80 p=1.1e-11; divergence step is the least-confident so far: 0.805 vs null 0.382 (diff CI [0.216,0.598])
+(b) t_tool all (index-matched BF16 state; context may differ by rewording), all preceding: n=1244 (ckpt,task) pairs over 83 tasks; mean rank u=0.495 (null 0.5) 95% task-cluster CI [0.437,0.548] z=-0.19 p=0.85; divergence step is the least-confident so far: 0.211 vs null 0.243 (diff CI [-0.089,0.026])
+(b') t_tool all (index-matched BF16 state; context may differ by rewording), same-kind preceding: n=1189 (ckpt,task) pairs over 82 tasks; mean rank u=0.601 (null 0.5) 95% task-cluster CI [0.524,0.673] z=2.70 p=0.0068; divergence step is the least-confident so far: 0.516 vs null 0.358 (diff CI [0.075,0.235])
+
+######## (c) open-loop fragility (18-ckpt behavioural flip rate) at t_tool vs preceding steps ########
+(c) rank of open-loop behavioural flip rate at t_tool: n=1244 (ckpt,task) pairs over 83 tasks; mean rank u=0.695 (null 0.5) 95% task-cluster CI [0.646,0.740] z=8.16 p=3.3e-16; divergence step is the least-confident so far: 0.436 vs null 0.243 (diff CI [0.119,0.267])
+
+######## (d) first open-loop behavioural flip along BF16 path (same checkpoint) vs closed-loop t_tool ########
+pairs: 1530  open-loop flips somewhere: 974  closed-loop t_tool defined: 1466
+t_tool == first open-loop flip: 0.516 ; t_tool < f_ol (closed loop diverged EARLIER than open-loop predicts): 0.398 ; t_tool > f_ol: 0.086 (n=965)
+closed-loop behavioural divergence although the checkpoint never flips open-loop on this BF16 path: 501 / 556 pairs with no OL flip
+step-wise hazard: closed-loop P(t_tool = i | t_tool >= i) vs mean open-loop behavioural flip rate at BF16 state i, pooled over pairs
+ step  n_at_risk  closed_hazard  openloop_flip_rate
+    0       1530          0.095               0.095
+    1       1384          0.096               0.039
+    2       1251          0.188               0.123
+    3       1010          0.208               0.091
+    4        792          0.256               0.115
+    5        564          0.321               0.074
+    6        383          0.256               0.048
+    7        268          0.295               0.039
+    8        174          0.299               0.057
+    9         94          0.223               0.020
+   10         50          0.480               0.084
