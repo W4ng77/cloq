@@ -17,6 +17,8 @@ for d in ('running','failed','done','todo'):
         print(f"- `{t['id']}`{extra}")
     print()
 PY
+mkdir -p analysis/determinism
+git add docs/RESEARCH_LOG.md docs/insights analysis/insights analysis/determinism scripts/a6000 env/README_A6000.md 2>/dev/null
 git add -f docs/a6000/QUEUE.md $(ls runs/a6000_*/*/{metrics,status,config,environment,model,task_manifest}.json runs/a6000_*/quantization.json 2>/dev/null) >/dev/null 2>&1
 git diff --cached --quiet && { echo "nothing new"; exit 0; }
 git commit -q -m "A6000 progress $(date '+%F %H:%M'): $(ls /data/ziyangs/cloq_work/queue/done | wc -l) tasks done

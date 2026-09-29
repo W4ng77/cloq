@@ -202,6 +202,10 @@ def run_eval(task, args, st: Status):
                     if p.returncode != 0 or not ok:
                         raise RuntimeError(f"run {rid}/{d} failed rc={p.returncode}")
                     done += 1
+                    # storage: tau2_results.json (~4 MB/task) duplicates trajectory.jsonl once the run is complete
+                    tr = ROOT / "runs" / rid / d / "tau2_results.json"
+                    if tr.exists() and (ROOT / "runs" / rid / d / "trajectory.jsonl").stat().st_size > 0:
+                        tr.unlink()
                     st.set("eval", f"{done}/{len(jobs)} run-domains", done / len(jobs))
             if server.poll() is not None:
                 raise RuntimeError("vLLM agent server died during evaluation")
@@ -246,7 +250,16 @@ def main():
     st = Status(args.status_prefix, args.gpus.split(",") if args.gpus else [], task)
     t0 = time.time()
     try:
-        res = run_eval(task, args, st) if task["kind"] == "eval" else run_calib(task, args, st)
+        if task["kind"] == "cmd":  # ad-hoc GPU experiment on this worker's cards
+            st.set("check", task.get("title", "experiment"))
+            e = dict(os.environ, CUDA_VISIBLE_DEVICES=args.gpus, CLOQ_TASK_PORT=str(args.port))
+            logf = open(WORK / "logs/tasks" / f"{task['id']}.log", "a")
+            r = subprocess.run(["bash", "-c", task["cmd"]], cwd=ROOT, env=e, stdout=logf, stderr=subprocess.STDOUT)
+            if r.returncode != 0:
+                raise RuntimeError(f"cmd failed rc={r.returncode}")
+            res = {"cmd": "ok"}
+        else:
+            res = run_eval(task, args, st) if task["kind"] == "eval" else run_calib(task, args, st)
         task.update({"result": res, "finished": time.time(), "seconds": time.time() - t0, "host": socket.gethostname()})
         Path(args.task).write_text(json.dumps(task, indent=1))
         Path(args.task).replace(WORK / "queue/done" / Path(args.task).name)
