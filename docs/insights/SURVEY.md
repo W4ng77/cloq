@@ -1,13 +1,13 @@
 **TL;DR**
-- Each of I1–I4 is new or a sharper version of prior work; the closest competitor is Flat Score (https://arxiv.org/abs/2607.27275, τ²-bench, verbal margin account, TOST from one rerun).
-- The per-step margin → flip model is published (Du Eq. 14 at https://arxiv.org/abs/2609.26621; Integer Alibi, AUC 0.94) and must be cited as inherited.
-- Experiment-changing findings: null width is serving-dependent (Replay Gap); canonical prompts beat paraphrases on static benchmarks (threat to P4c); τ² single-run noise is 7–11 pt (tau2 issue #540).
+- Iteration 3 (quantization-centred; T9 and "Answers for iteration 3"). I5 and I7 are sharper versions of static flip/churn and open-vs-closed-loop results (Dutta https://arxiv.org/abs/2407.09141; Singh https://arxiv.org/abs/2608.15046). I6 is new at task level and contradicts margin accounts. I8 is partly anticipated by Flat Score's budget-exhaustion count.
+- Most important new paper: Kennedy & Kennedy 2026 (https://arxiv.org/abs/2609.33923). RTN error is spectrally flat, and isotropic Gaussian probes over-excite high-energy channels (29% vs 17%). That predicts our isotropic > RTN ≈ gshape ordering.
+- Experiment changes: add a channel-energy-share statistic, a valid stochastic-rounding control (AdaRound), and an AWQ calibration-seed control. Flat Score's ρ ≥ 0.94 is per tool-name, not per task.
 
 # SURVEY: living literature map for the CLOQ COLING paper
 
 Paper: *Perturbation Equivalence in Closed-Loop Agents: When Is a Compressed Agent Actually Worse?* (`docs/COLING_PLAN.md`).
 Base map: `analysis/coling/RELATED_WORK.md`. BibTeX: `analysis/coling/references.bib` plus `analysis/insights/references_new.bib`.
-Last update: 2026-09-29, iteration 2 conformal pass (T8); previously 2026-09-28, iteration 1, round 1. Insight ids follow `docs/insights/iter_1_candidates.md`.
+Last update: 2026-09-29, iteration 3 round 1 (T9; insight ids I5–I8 from `docs/insights/iter_3_candidates.md`). Previously: iteration 2 conformal pass (T8) and iteration 1 round 1 (I1–I4, `docs/insights/iter_1_candidates.md`).
 
 ## How to read the evidence tags
 
@@ -295,6 +295,142 @@ Use: `docs/insights/iter_2_conformal.md#3-novelty`.
 
 **Novelty statement.** No entry above treats a compressed checkpoint's closed-loop run as a draw to be ranked against a perturbation-null family (a conformal equivalence test). None gives conformal intervals from open-loop to closed-loop behaviour. The sweep was shallow, so re-sweep S-C9 and ACL Anthology 2026 before submission.
 
+### T9. Quantization reallocation, error size vs structure, fragile sets (iter 3)
+
+This pass ran on 2026-09-29, with about 30 web queries. Verification levels:
+- **[full]**: the full text or HTML was read;
+- **[abs]**: the abs page was read;
+- **[html-q]**: targeted questions were answered from the HTML.
+
+Tag `own-i3` = opened by the survey lead in this pass. Use: `docs/insights/iter_3_discussion.md#survey-round-1`.
+
+**T9a. Same accuracy, different items (flips, churn, solved-set drift).** Newest first.
+- **Before the Flip.** Saha et al. 2026, a NeurIPS 2026 workshop submission. https://arxiv.org/abs/2609.06922 [abs] (own-i3)
+  - LLaVA 4-bit changes only 265/9,000 VQA answers. The yes/no score gaps nevertheless shift toward the replacement output, more at 4-bit than at 8-bit.
+  - **Relation:** supports I5/I7. Hidden margin shift precedes flips; the setting is static.
+- **Illusion of Equivalency.** Rababah et al. 2026. https://arxiv.org/abs/2607.08734 [abs] (own-i3; already in T4)
+  - Uses "Correctness Agreement". Behaviour shifts "even when accuracy and perplexity are preserved", with a breakpoint at low bits.
+  - q/k projections are more sensitive than v/o.
+  - **Relation:** supports I5 on static tasks; no null.
+- **Smaller Models, Unexpected Costs (program repair).** Vallecillos-Ruiz et al., ICSME 2026. https://arxiv.org/abs/2606.27205 [html-q] (own-i3)
+  - Llama-8B quanto4 solves 58 vs 61 Defects4J bugs with only 29 overlapping. They introduce the Jaccard Consistency Rate.
+  - Methods: AQLM, AWQ, bitsandbytes, HQQ, Quanto, at 2–8 bits and on the KV cache. Drift is method- and family-dependent.
+  - Fixed seed, T = 0.1, no rerun null.
+  - **Relation:** the closest agent-adjacent precedent for I5. We extend it with the null and the attractor.
+- **Certifying Compressed LMs.** Singh 2026. https://arxiv.org/abs/2608.15046 [html-q] (own-i3; T4)
+  - Median churn / median |Δacc| = 5.40 over 1,707 cells. GPTQ vs AWQ on GSM8K: 9.1% right→wrong, 8.5% wrong→right.
+  - The calibration draw alone reverses the GPTQ–AWQ ranking in 5/8 cells.
+  - No cross-method item overlap and no rerun null.
+  - **Relation:** supports I5. Its calibration-seed result is a threat to our "AWQ > RTN" claim.
+- **Exploring the Trade-Offs (IJCAI 2025).** Lee et al. https://www.ijcai.org/proceedings/2025/0902.pdf [full] (own-i3)
+  - "hard tasks do not always experience the largest accuracy losses … quantization magnifies a model's inherent weaknesses".
+  - AWQ generally beats GPTQ; FP8 is the most robust.
+  - **Relation:** supports I6 c (model-specific), at dataset level.
+- **Accuracy Is Not All You Need.** Dutta et al., NeurIPS 2024. https://arxiv.org/abs/2407.09141 [html-q] (own-i3; T6)
+  - Flips at W4: AWQ 4.05–7.66%, GPTQ 4.26–8.26%, BnB-W4A4 5.65–10.90%, SmoothQuant-W8A8 up to 13.62%. GPTQ-W8A16 is lowest at 0.26–1.40%.
+  - Flips are balanced (wrong→right ≈ right→wrong).
+  - Mechanism: low top-margin answers flip, and "correct (incorrect) answers have higher (lower) top margin".
+  - KL ↔ flips Spearman 0.981 (MMLU). Perplexity misses this because token-probability losses and gains cancel.
+  - **Relation:** the main baseline for I5. I7 extends its KL↔flips amount result. **I6 d contradicts its margin mechanism at task level in closed loop.**
+- **Characterising Bias in Compressed Models.** Hooker et al. 2020. https://arxiv.org/abs/2010.03058 [abs] (own-i3)
+  - Compression Identified Exemplars (CIEs) are a small subset of examples with disproportionate error.
+  - **Relation:** precedent for fragile sets (I6).
+- **What Do Compressed DNNs Forget?** Hooker et al. 2019. https://arxiv.org/abs/1911.05248 [full] (own-i3, pdftotext)
+  - PIEs are defined as modal-label disagreement between populations of **30 independently trained** pruned and unpruned models, so the null there is init variation.
+  - "Compression cannibalizes performance on a small subset of classes to preserve a similar overall top-line accuracy". PIEs are atypical or noisy.
+  - Quantization (int8, float16) has far less disparate impact than pruning: 119 vs 637 significant classes.
+  - **No random-weight-noise control and no cross-architecture transfer test.**
+  - **Relation:** the anchor for I5/I6. Our null-population design is in its spirit, and I6 c (no cross-model transfer) contrasts with its "data-property" reading.
+- **Prediction churn.** Bhojanapalli et al. 2021. https://arxiv.org/abs/2102.03349 [abs] (own-i3)
+  - Two independently trained models disagree, and low-confidence predictions churn more.
+  - **Relation:** background; confidence-based, like Dutta.
+
+**T9b. Error size vs structure of quantization error.**
+- **Quantization Error Is Spectrally Flat.** Kennedy & Kennedy 2026. https://arxiv.org/abs/2609.33923 [html-q] (own-i3)
+  - RTN error has an effective dimensionality 0.93–0.96× the i.i.d. value over 1,683 tensors, invariant from 2 to 8 bits.
+  - One Gaussian probe gives an unbiased ‖error‖_F² estimate.
+  - Isotropic Gaussian probes **over-excite the few high-energy residual channels** (29% vs 17% of energy, Qwen3-8B). They therefore overestimate absolute output damage but preserve the ranking. The propagated probe tracks the GPTQ objective (ρ 0.81–0.83).
+  - **Relation: supports I5 and supplies its mechanism.** Isotropic noise > RTN at equal norm is a channel-energy effect, and gshape (per-group RMS) ≈ RTN follows. The paper covers output space and perplexity only; we show the behaviour-level consequence.
+- **The Structure of Quantization Damage.** Hu & Ramachandran 2026, a NeurIPS 2026 workshop submission. https://arxiv.org/abs/2609.01587 [html-q] (own-i3)
+  - Damage is diffuse: recovering 75% of the gap needs about half the layers.
+  - Granularity (per-row → g128) is worth +0.095 CORE; GPTQ and AWQ add only +0.020/+0.017 on top.
+  - AWQ is calibration-seed-stable (spread 0–2%), GPTQ is not (4–24%, App. F).
+  - **Relation:** supports "per-group scale is the sufficient statistic" (gshape ≈ RTN). The seed spread bears on I5 method comparisons.
+- **Quantization Degradation: A Signal–Noise Perspective.** Zhou et al. 2026. https://arxiv.org/abs/2608.08188 [abs] (own-i3; in S-mfd as a lead)
+  - Degradation depends on weight-error magnitude, task-signal strength and the *alignment* of the error with task-specific activations. Errors are attenuated, preserved or amplified across layers.
+  - **Relation:** the alignment term is a structure effect. It predicts task-specific fragility (I6), and it is the candidate reason AWQ ≠ RTN at equal perplexity.
+- **Stochastic Rounding Increases Small Singular Values.** Ma, Yu, Drineas 2026. https://arxiv.org/abs/2606.00312 [abs] (own-i3)
+  - Stochastic rounding lifts tail singular-value clusters, so random rounding differs spectrally from nearest rounding.
+  - **Relation:** theory for why rtnsign (random signs) ≠ RTN.
+- **Is (Selective) RTN All You Need?** Kogan 2025. https://arxiv.org/abs/2505.15909 [abs] (own-i3)
+  - RTN reaches accuracy similar to advanced methods, at lower cost.
+  - **Relation:** context for "method ≠ damage".
+- **Taming Sensitive Weights (NPFT).** Wang & Yang, CPAL 2025. https://arxiv.org/abs/2412.06858 [abs] (own-i3)
+  - Noise-perturbation fine-tuning lowers the Hessian trace on outliers, and RTN then matches GPTQ.
+  - **Relation:** noise as a quantization proxy.
+- **QuIP.** Chee et al. 2023. https://arxiv.org/abs/2307.13304 [abs] (own-i3)
+  - Quantization "benefits from *incoherent* weight and Hessian matrices". Random orthogonal pre/post-processing makes error noise-like.
+  - **Relation:** incoherence is the condition under which size-generic behaviour should hold.
+- **DiffQ.** Défossez, Adi, Synnaeve 2021. https://arxiv.org/abs/2104.09987 [abs] (own-i3)
+  - Independent pseudo-quantization (uniform) noise stands in for the quantizer during training.
+  - **Relation:** the classical additive-noise proxy in DNNs.
+- **AdaRound.** Nagel et al., ICML 2020. https://arxiv.org/abs/2004.10568 [full] (own-i3, pdftotext)
+  - The diagonal Hessian terms see only |Δw|, while the off-diagonal terms see the *sign*. Nearest rounding ignores them.
+  - ResNet18 layer 1 at 4-bit: nearest 52.29%; 100 stochastic roundings 52.06 ± 5.52% (48/100 beat nearest; best 63.06%); ceil or floor 0.10%.
+  - **Relation:** the anchor for "structure (sign correlation) matters at equal magnitude". Consistent with q14 rtnsign λ 0.175 > RTN 0.098. That comparison is provisional, from one seed and 2 nonces; the difference is ≈ 1.5 single-draw null SDs (`analysis/insights/iter_3/out/r08_size_generic_live.json` `null_single_draw_lam_sd`).
+  - Caveat: our rtnsign is off-grid (`cloq/compress.py:128-147`), so it is not a valid rounding.
+- **HAWQ.** Dong et al., ICCV 2019. https://arxiv.org/abs/1905.03696 [abs]
+  - The Hessian spectrum sets layer sensitivity.
+  - Together with **GPTQ** (Frantar et al., ICLR 2023, https://arxiv.org/abs/2210.17323 [abs]; second-order compensation) and **AWQ** (Lin et al., MLSys 2024, https://arxiv.org/abs/2306.00978 [abs]; protects the 1% activation-salient channels by per-channel scaling). (own-i3)
+  - **Relation:** Hessian or activation-weighted error, as opposed to ‖·‖_F. This is the reason matching on weight norm is a crude size variable.
+- **Statistical Theory of Quantization.** Widrow, Kollár, Liu, IEEE TIM 1996. https://isl.stanford.edu/~widrow/papers/j1996statisticaltheory.pdf [abs] (own-i3)
+  - Uniform quantization "can often be modeled by an additive noise that is uniformly distributed, uncorrelated with the input signal, and has a white spectrum", under stated conditions.
+  - **Relation:** the classical anchor for size-generic behaviour.
+- **Adversarial bound on "size-generic".**
+  - Egashira et al. 2024. https://arxiv.org/abs/2405.18137 [abs]: behaviour hidden in the full-precision model activates only after quantization, via PGD inside the quantization-equivalence region.
+  - **AGENTQ.** Liu & Yan, EMNLP 2026. https://arxiv.org/abs/2609.14060 [abs]: quantization-conditioned backdoors in *agents*, up to 100% post-quantization attack success (NF4, FP4, INT8). (own-i3)
+  - **Relation: competes with an unscoped I5.** Scope I5 to non-adversarial PTQ.
+- **Noise Injection Degrades Safety Guardrails.** Shahani et al. 2025. https://arxiv.org/abs/2505.13500 [abs] (own-i3)
+  - Gaussian noise (in activations) raises harmful output by up to 27%.
+  - **Relation:** a noise perturbation shifts behaviour classes; no quantization comparison.
+
+**T9c. Where compression damage lands, and the fragile set.**
+- **Perplexity Can Miss SAE Feature Damage.** Duan 2026, submitted to TMLR. https://arxiv.org/abs/2606.03002 [abs] (own-i3)
+  - RTN and matched-perplexity magnitude pruning damage overlapping SAE feature sets: Jaccard 0.79–0.86, damage Spearman 0.98.
+  - Survival is predictable from FP statistics (AUC 0.92–0.97; peak activation).
+  - **Relation:** supports I6 b (shared across perturbation types) at feature level. Contrasts with I6 d: task fate is *not* FP-predictable in closed loop.
+- **Hidden Language Consistency.** Shafique & Marchisio 2026. https://arxiv.org/abs/2608.08447 [abs] (own-i3)
+  - Quantization changes output-language consistency "independently of its effect on accuracy". GPTQ and AWQ beat AutoRound.
+  - **Relation:** method differences that do not appear in accuracy (question 3).
+- **Interpreting the Effects of Quantization.** Singh & Sajjad, AACL 2025. https://arxiv.org/abs/2508.16785 [abs] (own-i3)
+  - Calibration changes are minor, and internal changes are model- and task-dependent.
+  - **Relation:** consistent with I6 d; the confidence layer barely moves.
+- **Through a Compressed Lens.** Wang et al., TrustNLP @ ACL 2026. https://arxiv.org/abs/2505.13963 [abs] (own-i3)
+  - Quantization usually lowers factual recall but "occasionally … may even enhance" it; this is method-dependent.
+  - **Relation:** two-sided change, as in I5.
+- **Compressing LLMs: The Truth Is Rarely Pure.** Jaiswal et al., ICLR 2024. https://arxiv.org/abs/2310.01382 [abs] (own-i3)
+  - Perplexity hides knowledge loss (LLM-KICK); quantization is gentler than pruning.
+  - **Relation:** perplexity ≠ behaviour (question 3).
+- **Example-level anchors** (own-i3; all [abs]):
+  - Toneva et al., ICLR 2019, https://arxiv.org/abs/1812.05159: examples are forgotten at predictable rates.
+  - Baldock et al. 2021, https://arxiv.org/abs/2106.09647: example difficulty is consistent *across architectures*. **Counterpoint to I6 c.**
+  - Neyshabur et al. 2017, https://arxiv.org/abs/1706.08947: scale-normalised sharpness and margin, via PAC-Bayes. The precedent for the I6 "normalised margin" (S6-d); it is per-model, not per-example.
+
+**T9d. Quantized agents and open- vs closed-loop prediction (additions to T1 and T3).**
+- **Flat Score** (T1), re-read for units via [html-q]:
+  - The "failure set preserved" correlation is over **per-tool-name hallucination frequencies** (0.97, Gemma-4-31B telecom; 3/1,646 INT4 hallucinations are novel).
+  - Per task: "4-bit worse on 33, better on 26, tied on 55" (4 trials per task).
+  - Error-budget exhaustions: 5 (BF16) → 46 (INT4); no episode hits max_steps. No rerun null for any of these.
+- **Dynamic Mixed-Precision Routing.** Li et al. 2026. https://arxiv.org/abs/2602.02711 [abs] (own-i3)
+  - Multi-step LLM interaction shows "diverse sensitivities among interaction steps". Step-level routing between high- and low-precision models is learned with KL.
+  - **Relation:** step-level analogue of I6 critical decisions.
+- **Do Open-Loop Metrics Predict Closed-Loop Driving?** Wang et al. 2026. https://arxiv.org/abs/2605.00066 [abs] (own-i3)
+  - NAVSIM PDMS vs Bench2Drive: ρ = 0.90 with a reduced formula, "clear ranking inversions" and a "snowball effect".
+  - **Relation:** supports I7 (amount yes, fine ordering no).
+- **On Offline Evaluation of Vision-based Driving Models.** Codevilla et al., ECCV 2018. https://arxiv.org/abs/1809.04843 [abs] (own-i3)
+  - Offline error "is not necessarily correlated with driving quality". Models with identical prediction error drive very differently.
+  - **Relation:** the seminal anchor for I7.
+
 ## Answers for iteration 1
 
 Calls: **(a)** new; **(b)** sharper or more general version of prior work; **(c)** already shown with the same scope.
@@ -406,7 +542,102 @@ The framing-pass answers for P1–P3 and the criterion are superseded by I1–I4
 
 ---
 
+## Answers for iteration 3
+
+Calls: **(a)** new; **(b)** sharper or more general version; **(c)** already shown with the same scope.
+
+Provisional main-session facts used here (2026-09-29 09:30 PDT, not frozen):
+- λ at W4 is 0.05–0.15 vs a null of 0.02–0.05;
+- isotropic λ is 0.13–0.15;
+- q8 gshape 0.049 vs RTN 0.052;
+- q14 rtnsign 0.175 vs RTN 0.098;
+- AWQ 0.12–0.15 vs RTN 0.05–0.09 on q4/q8;
+- W3 costs q8 −17 pp and q14 −15 pp.
+
+evidence: queue records `/data/ziyangs/cloq_work/queue/done/a6k2_q8_gshape_w4.json` and `/data/ziyangs/cloq_work/queue/done/a6k2_q14_rtnsign_w4.json`; the λ values will live in `analysis/insights/iter_3/out/r08_size_generic_live.json` once re-run (E21).
+
+### I5: size-generic reallocation toward an attractor. **(b)**
+
+- **Closest prior work.** Dutta https://arxiv.org/abs/2407.09141: balanced flips at equal accuracy, margin-driven, static.
+  - Singh https://arxiv.org/abs/2608.15046: churn ≈ 5.4× net.
+  - Hooker https://arxiv.org/abs/1911.05248: "cannibalizes … a small subset … to preserve a similar overall top-line accuracy".
+  - Vallecillos-Ruiz https://arxiv.org/abs/2606.27205: program-repair solved-set drift.
+- **What we add.**
+  - Closed loop.
+  - Robust-task decomposition against a re-roll null, with misclassification correction.
+  - Δ = λ(c − p̄). Dutta's balance is c ≈ p̄, and the model predicts loss when c collapses (W3).
+  - Matched-size controls.
+- **S5-a.** No paper compares a quantizer's flip set with matched-norm isotropic noise *behaviourally*.
+  - At output level, Kennedy https://arxiv.org/abs/2609.33923 shows isotropic probes over-excite high-energy channels (29% vs 17%). That predicts "noise > RTN at equal ‖·‖_F", and gshape ≈ RTN confirms it. **Cite as the mechanism**; our result is its behavioural consequence.
+- **S5-b.** Flat Score's ρ is per tool-name hallucination frequency, not per task (T9d). It does not conflict with λ.
+- **S5-c.** No published mixture or shrink-to-attractor model of per-item success under weight perturbation was found. Bhojanapalli https://arxiv.org/abs/2102.03349 and Dutta give confidence-based accounts only. Call (a) for the model itself.
+- **Structure caveats.**
+  - AdaRound https://arxiv.org/abs/2004.10568: sign correlation matters at equal magnitude, consistent with rtnsign > RTN.
+  - Egashira https://arxiv.org/abs/2405.18137 and AGENTQ https://arxiv.org/abs/2609.14060: rounding structure can carry arbitrary behaviour adversarially.
+  - So "size-generic" must read "non-adversarial PTQ, at per-group energy granularity".
+
+### I6: latent (model, task) fragile set. **(a)** at task level for agents; **(b)** relative to PIEs
+
+- **Closest prior work.** Hooker PIEs/CIEs https://arxiv.org/abs/1911.05248, https://arxiv.org/abs/2010.03058: shared across compression levels; atypical examples; init-population null; no noise control; no cross-architecture test.
+  - Duan https://arxiv.org/abs/2606.03002: quant ↔ pruning share SAE-feature damage (Jaccard 0.79–0.86) *and* it is FP-predictable (AUC 0.92–0.97).
+- **S6-a.** No PIE-style work tests random weight noise. **Answered: no.**
+- **S6-b.** No cross-architecture transfer test was found. Baldock https://arxiv.org/abs/2106.09647 reports difficulty consistent across architectures, the opposite expectation to I6 c.
+- **S6-c.** Predicting which items a quantized model gets wrong from FP confidence:
+  - Dutta (qualitative: low top margin flips, no AUC);
+  - Integer Alibi https://arxiv.org/abs/2608.13756 (token-level AUC 0.942);
+  - Duan (feature-level AUC 0.92–0.97).
+  - At task level in closed loop, ours is AUC 0.43–0.60 (`analysis/insights/iter_3/out/r04_margin_predict_live.json`). **We contradict the extrapolation.**
+- **S6-d.** "Normalised margin" as sharpness or margin scaled by norm is in Neyshabur https://arxiv.org/abs/1706.08947, at the model level. No per-example weight-perturbation use was found, so it is (a) as a per-task score.
+
+### I7: open loop predicts how much, not which, not net. **(b)**
+
+- **Closest prior work.** Dutta: KL ↔ flips ρ = 0.981 (amount, static).
+  - Codevilla https://arxiv.org/abs/1809.04843: offline error is not correlated with driving quality.
+  - Wang https://arxiv.org/abs/2605.00066: ρ = 0.90 in aggregate, with ranking inversions.
+- **What we add.** The amount/identity/net split with Δ = λ(c − p̄).
+- **S7-a.** No agent or RL-compression paper predicts closed-loop *outcome churn* from open-loop divergence. **Answered: not found.**
+- **S7-b.** Saturation of per-token flips as a predictor: only Patodiya https://arxiv.org/abs/2609.04748 ("saturates at the coarsest settings", episode level). Still open.
+
+### I8: attractor collapse with loud control failures. **(b)**, partly anticipated
+
+- **Closest prior work.** Flat Score https://arxiv.org/abs/2607.27275: budget exhaustions 5 → 46 at INT4, no max_steps hits, tool-name hallucination up to 2.5×, no rerun null.
+  - Advani https://arxiv.org/abs/2606.09863: silent false success.
+  - Lian https://arxiv.org/abs/2606.25519: token inflation.
+- **S8-a.** Termination reasons against a same-model re-roll baseline: **not found.** Flat Score reports budget exhaustion without a null.
+- **S8-b.** The silent vs loud split is documented for agent reliability (Advani), but not as a function of perturbation size.
+- **What we add.** Loud failures are tied to c, and the silent share at W4 is measured against the null.
+
 ## Ideas from recent work
+
+Iteration 3 replaces the iteration-1 list. The old items 1–5 are archived at the end of this section: they are done, or they have moved to experiments E2, E5 and E17.
+
+1. **(Kennedy 2609.33923) Channel-energy share as the size variable.**
+   - For each checkpoint delta, measure the share of the propagated output perturbation in the top-k energy residual channels. Use one forward pass on E3 contexts, or a Gaussian-probe estimate as in the paper.
+   - Prediction: at equal ‖·‖_F it orders λ as isotropic > rtnsign > gshape ≈ RTN. With output KL it explains AWQ > RTN (q4/q8).
+   - Falsified if the ordering by energy share disagrees with the λ ordering on 2 of 3 models.
+   - evidence: https://arxiv.org/abs/2609.33923; `cloq/compress.py:128-152`.
+2. **(AdaRound 2004.10568, Ma et al. 2606.00312) Valid stochastic rounding.**
+   - Build W4 checkpoints on RTN's grid and scales with random up/down rounding (2 seeds), on q14 and q8.
+   - Prediction: mean λ ≈ RTN with a spread larger than the null pair SD, and the same fragile set F (I6 b).
+   - If λ(stochastic) ≈ rtnsign > RTN, sign correlation, not off-grid-ness, is what protects RTN.
+   - evidence: https://arxiv.org/abs/2004.10568 (Table 1); `analysis/insights/iter_3/out/r08_size_generic_live.json` `null_pair_lam_sd`.
+3. **(Singh 2608.15046; Hu & Ramachandran 2609.01587 App. F; Williams & Aletras 2311.09755) Calibration-seed control.**
+   - Build AWQ-W4 and GPTQ-W4 with a second calibration seed on q4/q8.
+   - Prediction from those papers: GPTQ λ moves more than AWQ λ. I6 predicts the fragile set F stays shared across seeds.
+   - If AWQ's λ moves by more than 0.05, the "AWQ reallocates more than RTN" claim is a calibration draw.
+   - evidence: https://arxiv.org/abs/2608.15046, https://arxiv.org/abs/2609.01587.
+4. **(Dutta 2407.09141, Tice 2412.01784) The attractor predicts the *sign* of Δ from p̄.**
+   - Where p̄ < c (weak model, hard domain or airline subset), the same perturbation should *raise* the score. Tice's noise-unmasks-sandbagging is the extreme case of a low p̄ and a higher c.
+   - Test: split tasks by domain or by null p̄ bins on existing cells, and check sign(Δ_bin) = sign(c − p̄_bin). 0 GPU-h.
+   - evidence: https://arxiv.org/abs/2407.09141, https://arxiv.org/abs/2412.01784; `analysis/insights/iter_3/out/r01_realloc_live.json`.
+5. **(Flat Score 2607.27275, Duan 2606.03002) "Amplify the existing failure".**
+   - Test whether I6 fragile tasks are those whose null draws already show error events (tool errors, hallucinated IDs, repeated calls) even while succeeding.
+   - Flat Score's account predicts that breaks concentrate there, with AUC > 0.7 from null-draw error-event counts. I6 d predicts that BF16-visible signals fail (≈ 0.5).
+   - 0 GPU-h on the existing trajectories.
+   - evidence: https://arxiv.org/abs/2607.27275; `analysis/insights/iter_3/out/r04_margin_predict_live.json`.
+
+<details><summary>Archived iteration-1 ideas</summary>
+
 
 1. **(Replay Gap) Format-dependent null width.** Measure rerun (control) divergence per serving path *and per quantized format*.
    - Prediction: AWQ/GPTQ reruns on one node give D ≡ 0 with no divergence, and non-batch-invariant paths saturate.
@@ -429,6 +660,8 @@ The framing-pass answers for P1–P3 and the criterion are superseded by I1–I4
    - Audit db_match for empty or terminated episodes in damage cells.
    - evidence: https://arxiv.org/abs/2607.27275; https://arxiv.org/abs/2507.02825 (S-enc §OE).
 
+</details>
+
 ## Open questions for survey
 
 - ~~Divergence saturation or hardware-matched divergence in agents?~~ Answered: I1-Q1.
@@ -440,7 +673,7 @@ The framing-pass answers for P1–P3 and the criterion are superseded by I1–I4
 - Full text of Patodiya 2609.04748: the "0/800 bit-identical reruns" wording is ambiguous (S-mfd §CC-C).
 - Full text of AgentDiff 2605.25981: first-divergence step statistics, for P1d.
 - Confidence-weighted compounding cost in agents: search ACL Anthology and OpenReview directly; lead 2606.02965 is unopened.
-- Pruning and distillation on agents: not yet swept.
+- Pruning and distillation on agents: not yet swept. (Iteration 3: only Duan 2606.03002, feature-level quant ↔ pruning overlap; still open for agents.)
 - Unread leads: 2602.18998, 2601.14888, 2510.18731, 2604.08782, 2608.14711, 2605.08137 (S-cae, end).
 - *(added by cloq-verify, iter 1; evidence `docs/insights/iter_1_verdicts.md`)* **V1-Q1 (I4, E5).** Has any agent-benchmark paper treated the *user simulator's* serving numerics as a perturbation? Legacy→a6k2 re-serving changed the simulator's first user message in 11/20 det tasks, the same tasks for q4 and q30a3 (`analysis/insights/iter_1/verify/out/v02_a6k2_det.json`).
 - **V1-Q2 (I1).** Any prior report of a per-decision divergence-hazard *floor* that is flat below a resolution scale (e.g. the bf16 log-prob grid, 0.125 nats) and rises only above it? (Patodiya's 3.5% per turn vs 36% per episode is the nearest; check Du 2609.26621 §5 and Islam 2604.13206.)
@@ -448,3 +681,18 @@ The framing-pass answers for P1–P3 and the criterion are superseded by I1–I4
 - **V1-Q4 (I2).** Agent self-correction after a wrong tool call: published recovery rates besides Flat Score's 55%? Our q4 shows tool-turn flip rates 0.2–0.9 (k=1, RTN-W4) with no measurable db_match loss.
 - **V1-Q5 (I1, I4; carried from candidates).** Divergence or benchmark-score change from a compiler/autotune-level numerics change (not batch or kernel swap) in multi-turn agents.
 - **V1-Q6 (I2; carried).** Agent-quantization work reporting decisions/turns per episode against a noise null; matched-output-KL quantizer comparisons in agents (I3-Q4 re-check before submission).
+- *(iteration 3)* ~~S5-a matched-norm isotropic noise vs a quantizer's flip set~~. No behavioural precedent. Kennedy 2609.33923 gives the output-level mechanism (see Answers for iteration 3, I5).
+- ~~S5-b Flat Score ρ unit~~. It is per tool-name hallucination frequency, not per task (T9d).
+- ~~S5-c shrink-to-attractor model~~. Not found. Confidence-based churn accounts only.
+- ~~S6-a PIEs vs random noise~~. Not tested in PIE work. ~~S6-b cross-architecture~~: not tested; Baldock is a counterpoint.
+- ~~S6-c FP confidence → quantized errors~~. Token-level and feature-level AUC 0.92–0.97; task-level ours 0.43–0.60.
+- ~~S6-d normalised margin~~. Neyshabur 2017, model level only.
+- ~~S7-a open-loop → closed-loop churn~~. Not found in agents or RL compression; the driving analogues are Codevilla 2018 and Wang 2605.00066.
+- S7-b: saturation of per-token flips as a predictor at 4 bits. Only Patodiya (episode level). **Open.**
+- ~~S8-a termination reasons vs re-roll~~. Not found (Flat Score: 5 → 46 budget exhaustions, no null). ~~S8-b silent vs loud~~: Advani (not perturbation-indexed).
+- **New (iteration 3).**
+  - Q9-1: Does any PTQ paper report per-item flips for **stochastic vs nearest rounding** in LLMs? AdaRound is CNN, one layer.
+  - Q9-2: Full text of Zhou 2608.08188. Does its "error–activation alignment" term give a per-task fragility score we can compute?
+  - Q9-3: Full text of Vallecillos-Ruiz 2606.27205. Is its program-repair loop multi-turn, and do they give per-method JCR numbers we should quote?
+  - Q9-4: Re-sweep before submission. Kennedy (2609.33923, 2 days old) and Before-the-Flip are very recent; check for follow-ups on isotropic vs quantization behaviour.
+

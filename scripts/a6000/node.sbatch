@@ -16,4 +16,5 @@ done
 GPUS=${GOOD#,}  # physical indices; serve.sh exposes only its own cards, so a bad card never reaches vLLM
 echo "node $(hostname) job $SLURM_JOB_ID gpus $GPUS cpus $SLURM_CPUS_PER_TASK end $(date -d @$CLOQ_JOB_END)"
 nvidia-smi --query-gpu=index,name,memory.used,memory.total,temperature.gpu --format=csv
+nohup scripts/a6000/gpumon.sh >/dev/null 2>&1 &  # per-node GPU + vLLM sampler (scripts/a6000/gputop.py reads it)
 exec python scripts/a6000/noderunner.py --gpus $GPUS "$@"
