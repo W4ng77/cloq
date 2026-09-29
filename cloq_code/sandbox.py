@@ -89,11 +89,16 @@ class TestResult:
 
 
 def extract_code(text: str | None) -> str | None:
-    """Last complete ```python (or bare ```) block; None if there is none (e.g. reply cut at max_tokens)."""
+    """Last complete ```python (or bare ```) block; None if there is none. A block left unclosed because the reply
+    hit max_tokens is "no code" (never executed), and the model is told so in the feedback."""
     if not text:
         return None
     blocks = re.findall(r"```[ \t]*(?:python3?|py)?[ \t]*\n(.*?)```", text, flags=re.S | re.I)
     return blocks[-1] if blocks else None
+
+
+def count_code_blocks(text: str | None) -> int:
+    return len(re.findall(r"```[ \t]*(?:python3?|py)?[ \t]*\n(.*?)```", text or "", flags=re.S | re.I))
 
 
 def _clean(s: str, n: int) -> str:

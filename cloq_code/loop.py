@@ -28,13 +28,17 @@ from cloq.context_policy import render_prompt, render_prompt_ids, sha256_text
 from cloq_code import sandbox as S
 
 MAX_TURNS_DEFAULT = 8
+# Pre-registered deviation (cloq_code.data.GEN_DEVIATION): replies may use 4096 tokens instead of the frozen 1024.
+MAX_TOKENS = int(os.environ.get("CLOQ_CODE_MAX_TOKENS", "4096"))
+MAX_MODEL_LEN = int(os.environ.get("CLOQ_CODE_MAX_MODEL_LEN", "33792"))  # the served --max-model-len
+PROMPT_LIMIT = min(C.MAX_PROMPT_TOKENS, MAX_MODEL_LEN - MAX_TOKENS)
 
 SYSTEM_BASE = ("You are an expert Python programmer. You will be given a question (problem specification) and will "
                "generate a correct Python program that matches the specification and passes all tests.")
 LOOP_RULES = ("You may submit up to {T} times. Each submission is run on the public example tests and you are shown "
               "the result; once all public example tests pass, your program is final and is judged on hidden tests. "
-              "Keep any reasoning brief (each reply is limited to {M} tokens) and always end your reply with the "
-              "complete program in a single ```python code block.")
+              "Keep any reasoning brief (each reply is limited to {M} tokens). Every reply must contain exactly one "
+              "fenced code block: the complete program, in ```python ... ```, at the end of the reply.")
 FMT_STARTER = "You will use the following starter code to write the solution to the problem and enclose your code within delimiters."
 FMT_STDIN = ("Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the "
              "sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, "
@@ -48,7 +52,7 @@ class InfraError(RuntimeError):
 
 
 def system_prompt(max_turns: int) -> str:
-    base = SYSTEM_BASE + "\n\n" + LOOP_RULES.format(T=max_turns, M=C.AGENT_MAX_TOKENS)
+    base = SYSTEM_BASE + "\n\n" + LOOP_RULES.format(T=max_turns, M=MAX_TOKENS)
     nonce = os.environ.get("CLOQ_PROMPT_NONCE")
     return f"{base}\nSession ID: {nonce}\n" if nonce else base
 
@@ -70,6 +74,7 @@ def request_body(messages: list[dict]) -> dict:
         if k in a:
             body[k] = a[k]
     body.update(a["extra_body"])
+    body["max_tokens"] = MAX_TOKENS
     return body
 
 
@@ -104,7 +109,7 @@ def run_episode(p: dict, api_base: str, run_meta: dict, max_turns: int = MAX_TUR
         for turn in range(max_turns):
             prompt_text = render_prompt(messages, None)
             local_ids = render_prompt_ids(messages, None)
-            if len(local_ids) > C.MAX_PROMPT_TOKENS:
+            if len(local_ids) > PROMPT_LIMIT:
                 termination = "context_limit"
                 break
             t0 = time.time()
@@ -138,6 +143,8 @@ def run_episode(p: dict, api_base: str, run_meta: dict, max_turns: int = MAX_TUR
                 "generation_seconds": dt,
                 **_token_margins(choice0.get("logprobs")),
                 "code_sha256": _sha(code) if code is not None else None,
+                "n_code_blocks": S.count_code_blocks(content),
+                "unclosed_code_block": code is None and finish == "length",
             }
             messages.append({"role": "assistant", "content": content})
             if code is None:

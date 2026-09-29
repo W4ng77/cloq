@@ -2,7 +2,7 @@
 
 usage:
   python -m cloq_code.run_code --run-id code_q4_bf16 --arm bf16 \
-      [--task-file manifests/code/lcb_hard_v5v6.json] [--limit 20 | --task-ids abc374_f ...] \
+      [--task-file manifests/code/lcb_mh_v5v6.json] [--limit 20 | --task-ids abc374_f ...] \
       [--agent-base http://127.0.0.1:8001/v1] [--max-turns 8] [--max-concurrency 8]
 
 Artifacts under runs/<run_id>/code/ (same names and record conventions as cloq.run_arm):
@@ -96,9 +96,10 @@ def summarize(run_dir: Path) -> dict:
         "turn1_success": t["turn1_success"], "n_decisions": t["n_turns"], "termination_reason": t["termination_reason"],
         "premature": t["termination_reason"] in ("infrastructure_error", "context_limit"),
         "final_public_passed": t["final_public_passed"], "duration": t["duration"], "platform": t["problem"]["platform"],
+        "difficulty": t["problem"]["difficulty"],
     } for t in trajs]
     return {
-        "benchmark": "cloq_code/lcb_hard_v5v6",
+        "benchmark": "cloq_code/" + json.load(open(run_dir / "task_manifest.json"))["task_file"].rsplit("/", 1)[-1].removesuffix(".json") if (run_dir / "task_manifest.json").exists() else "cloq_code",
         "n_tasks": n,
         "pass_rate": mean([t["success"] for t in trajs]),
         "reward_mean": mean([t["reward"] for t in trajs]),
@@ -123,6 +124,12 @@ def summarize(run_dir: Path) -> dict:
         "max_prompt_tokens": max((d.get("n_prompt_tokens") or 0 for d in decs), default=None),
         "prompt_ids_from_server_frac": (sum(1 for d in decs if d.get("prompt_ids_from_server")) / nd) if nd else None,
         "prompt_ids_match_local_frac": (sum(1 for d in decs if d.get("prompt_ids_match_local")) / nd) if nd else None,
+        "mean_completion_tokens": mean([d.get("n_completion_tokens") for d in decs]),
+        "unclosed_at_length_rate": (sum(1 for d in decs if d.get("unclosed_code_block")) / nd) if nd else None,
+        "multi_block_rate": (sum(1 for d in decs if (d.get("n_code_blocks") or 0) > 1) / nd) if nd else None,
+        "max_tokens": L.MAX_TOKENS, "generation_deviation": D.GEN_DEVIATION,
+        "pass_rate_by_difficulty": {x: mean([t["success"] for t in trajs if t["problem"]["difficulty"] == x])
+                                    for x in sorted({t["problem"]["difficulty"] for t in trajs})},
         "per_task": per_task,
     }
 
@@ -131,7 +138,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--run-id", required=True)
     ap.add_argument("--arm", required=True)
-    ap.add_argument("--task-file", default=str(C.PROJECT_ROOT / "manifests/code/lcb_hard_v5v6.json"))
+    ap.add_argument("--task-file", default=str(C.PROJECT_ROOT / "manifests/code/lcb_mh_v5v6.json"))
     ap.add_argument("--task-ids", nargs="*", default=None)
     ap.add_argument("--limit", type=int, default=None, help="first N problems of the manifest order")
     ap.add_argument("--agent-base", default=C.AGENT_API_BASE)
@@ -160,8 +167,9 @@ def main():
                    "python": S.PYTHON, "hashseed": 0, "random_seed": 0, "float_tol": 1e-6}
     (run_dir / "config.json").write_text(json.dumps({
         "run_id": args.run_id, "arm": args.arm, "domain": DOMAIN, "note": args.note, "checkpoint": args.checkpoint,
-        "frozen": C.FROZEN, "benchmark": "cloq_code: LiveCodeBench hard v5+v6, public-test feedback loop",
-        "max_turns": args.max_turns, "max_concurrency": args.max_concurrency, "sandbox": sandbox_cfg,
+        "frozen": C.FROZEN, "benchmark": "cloq_code: LiveCodeBench v5+v6 increments, public-test feedback loop",
+        "max_turns": args.max_turns, "max_tokens": L.MAX_TOKENS, "prompt_limit": L.PROMPT_LIMIT,
+        "generation_deviation": D.GEN_DEVIATION, "max_concurrency": args.max_concurrency, "sandbox": sandbox_cfg,
         "request_body_template": {k: v for k, v in L.request_body([]).items() if k != "messages"},
         "system_prompt": L.system_prompt(args.max_turns),
         "task_file": args.task_file, "selection_rule": man.get("selection_rule") if isinstance(man, dict) else None,
