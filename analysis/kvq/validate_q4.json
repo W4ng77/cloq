@@ -1,0 +1,208 @@
+{
+ "model": "q4",
+ "canary_ref": "c7343b60da095480",
+ "ref_run": "a6k2_q4_bf16",
+ "configs": {
+  "b16": {
+   "env": {
+    "CLOQ_KVQ_BITS": "16"
+   },
+   "startup_s": 60,
+   "hook_lines": [
+    "(APIServer pid=1503752) [cloq_kvq] pid=1503752 wrapped vllm.model_executor.layers.attention.attention.Attention.forward: bits=16 rot=0 which=kv cache_root=/tmp/cloq_49670/vllm_cache/kvq_b16_r0_kv",
+    "(EngineCore pid=1504633) [cloq_kvq] pid=1504633 wrapped vllm.model_executor.layers.attention.attention.Attention.forward: bits=16 rot=0 which=kv cache_root=/tmp/cloq_49670/vllm_cache/kvq_b16_r0_kv"
+   ],
+   "compile_lines": [
+    "re pid=1504633) INFO 09-29 11:20:34 [cuda.py:492] Using FLASH_ATTN attention backend out of potential backends: ['FLASH_ATTN', 'TRITON_ATTN', 'FLEX_ATTENTION'].",
+    ":43 [backends.py:1094] Using cache directory: /tmp/cloq_49670/vllm_cache/kvq_b16_r0_kv/torch_compile_cache/889b385181/rank_0_0/backbone for vLLM's torch.compile",
+    "(EngineCore pid=1504633) INFO 09-29 11:20:43 [backends.py:1155] Dynamo bytecode transform time: 7.35 s",
+    "(EngineCore pid=1504633) INFO 09-29 11:20:45 [backends.py:393] Compiling a graph for compile range (1, 2048) takes 1.34 s",
+    "(EngineCore pid=1504633) INFO 09-29 11:20:51 [model_runner.py:960] Graph capturing finished in 4 secs, took 0.40 GiB",
+    "(EngineCore pid=1504633) INFO 09-29 11:20:58 [model_runner.py:960] Graph capturing finished in 6 secs, took 0.25 GiB"
+   ],
+   "canary": "c7343b60da095480",
+   "canary_eq_bf16": true,
+   "det": {
+    "n": 8,
+    "batch_eq_alone": 8,
+    "prefixhit_eq_alone": 8,
+    "ids_only_batch_eq": 8,
+    "mean_len": 48.0
+   },
+   "openloop": {
+    "n_decisions": 150,
+    "n_tokens": 12288,
+    "abs_d_mean": 9.347221781548363e-06,
+    "abs_d_quantiles": {
+     "0.5": 2.3841855067985307e-07,
+     "0.9": 3.6000557884108275e-05,
+     "0.99": 4.8639520926401393e-05
+    },
+    "frac_tokens_shifted": 0.0,
+    "flip_rate": 0.0,
+    "decision_any_flip": 0.0
+   }
+  },
+  "int8": {
+   "env": {
+    "CLOQ_KVQ_BITS": "8"
+   },
+   "startup_s": 85,
+   "hook_lines": [
+    "(APIServer pid=1511250) [cloq_kvq] pid=1511250 wrapped vllm.model_executor.layers.attention.attention.Attention.forward: bits=8 rot=0 which=kv cache_root=/tmp/cloq_49670/vllm_cache/kvq_b8_r0_kv",
+    "(EngineCore pid=1511362) [cloq_kvq] pid=1511362 wrapped vllm.model_executor.layers.attention.attention.Attention.forward: bits=8 rot=0 which=kv cache_root=/tmp/cloq_49670/vllm_cache/kvq_b8_r0_kv"
+   ],
+   "compile_lines": [
+    "re pid=1511362) INFO 09-29 11:24:26 [cuda.py:492] Using FLASH_ATTN attention backend out of potential backends: ['FLASH_ATTN', 'TRITON_ATTN', 'FLEX_ATTENTION'].",
+    "4:36 [backends.py:1094] Using cache directory: /tmp/cloq_49670/vllm_cache/kvq_b8_r0_kv/torch_compile_cache/889b385181/rank_0_0/backbone for vLLM's torch.compile",
+    "(EngineCore pid=1511362) INFO 09-29 11:24:36 [backends.py:1155] Dynamo bytecode transform time: 8.15 s",
+    "(EngineCore pid=1511362) INFO 09-29 11:25:01 [backends.py:393] Compiling a graph for compile range (1, 2048) takes 24.40 s",
+    "(EngineCore pid=1511362) INFO 09-29 11:25:08 [model_runner.py:960] Graph capturing finished in 4 secs, took 0.40 GiB",
+    "(EngineCore pid=1511362) INFO 09-29 11:25:15 [model_runner.py:960] Graph capturing finished in 6 secs, took 0.25 GiB"
+   ],
+   "canary": "42f358a11e348a84",
+   "canary_eq_bf16": false,
+   "det": {
+    "n": 8,
+    "batch_eq_alone": 8,
+    "prefixhit_eq_alone": 8,
+    "ids_only_batch_eq": 8,
+    "mean_len": 48.0
+   },
+   "openloop": {
+    "n_decisions": 150,
+    "n_tokens": 12288,
+    "abs_d_mean": 0.01015230959144127,
+    "abs_d_quantiles": {
+     "0.5": 2.3841855067985307e-07,
+     "0.9": 0.0169667492491007,
+     "0.99": 0.1924315678420066
+    },
+    "frac_tokens_shifted": 0.18221028645833334,
+    "flip_rate": 0.007486979166666667,
+    "decision_any_flip": 0.2733333333333333
+   }
+  },
+  "int4": {
+   "env": {
+    "CLOQ_KVQ_BITS": "4"
+   },
+   "startup_s": 85,
+   "hook_lines": [
+    "(APIServer pid=1518776) [cloq_kvq] pid=1518776 wrapped vllm.model_executor.layers.attention.attention.Attention.forward: bits=4 rot=0 which=kv cache_root=/tmp/cloq_49670/vllm_cache/kvq_b4_r0_kv",
+    "(EngineCore pid=1519657) [cloq_kvq] pid=1519657 wrapped vllm.model_executor.layers.attention.attention.Attention.forward: bits=4 rot=0 which=kv cache_root=/tmp/cloq_49670/vllm_cache/kvq_b4_r0_kv"
+   ],
+   "compile_lines": [
+    "re pid=1519657) INFO 09-29 11:28:43 [cuda.py:492] Using FLASH_ATTN attention backend out of potential backends: ['FLASH_ATTN', 'TRITON_ATTN', 'FLEX_ATTENTION'].",
+    "8:53 [backends.py:1094] Using cache directory: /tmp/cloq_49670/vllm_cache/kvq_b4_r0_kv/torch_compile_cache/889b385181/rank_0_0/backbone for vLLM's torch.compile",
+    "(EngineCore pid=1519657) INFO 09-29 11:28:53 [backends.py:1155] Dynamo bytecode transform time: 8.35 s",
+    "(EngineCore pid=1519657) INFO 09-29 11:29:18 [backends.py:393] Compiling a graph for compile range (1, 2048) takes 24.49 s",
+    "(EngineCore pid=1519657) INFO 09-29 11:29:25 [model_runner.py:960] Graph capturing finished in 4 secs, took 0.40 GiB",
+    "(EngineCore pid=1519657) INFO 09-29 11:29:32 [model_runner.py:960] Graph capturing finished in 6 secs, took 0.25 GiB"
+   ],
+   "canary": "6a4fd420a83142f8",
+   "canary_eq_bf16": false,
+   "det": {
+    "n": 8,
+    "batch_eq_alone": 8,
+    "prefixhit_eq_alone": 8,
+    "ids_only_batch_eq": 8,
+    "mean_len": 64.0
+   },
+   "openloop": {
+    "n_decisions": 150,
+    "n_tokens": 12288,
+    "abs_d_mean": 4.9958875092139285,
+    "abs_d_quantiles": {
+     "0.5": 4.09588437614441,
+     "0.9": 10.33260517440796,
+     "0.99": 16.058218364715568
+    },
+    "frac_tokens_shifted": 0.9999186197916666,
+    "flip_rate": 0.7925618489583334,
+    "decision_any_flip": 1.0
+   }
+  },
+  "int3": {
+   "env": {
+    "CLOQ_KVQ_BITS": "3"
+   },
+   "startup_s": 85,
+   "hook_lines": [
+    "(APIServer pid=1527343) [cloq_kvq] pid=1527343 wrapped vllm.model_executor.layers.attention.attention.Attention.forward: bits=3 rot=0 which=kv cache_root=/tmp/cloq_49670/vllm_cache/kvq_b3_r0_kv",
+    "(EngineCore pid=1528241) [cloq_kvq] pid=1528241 wrapped vllm.model_executor.layers.attention.attention.Attention.forward: bits=3 rot=0 which=kv cache_root=/tmp/cloq_49670/vllm_cache/kvq_b3_r0_kv"
+   ],
+   "compile_lines": [
+    "re pid=1528241) INFO 09-29 11:33:13 [cuda.py:492] Using FLASH_ATTN attention backend out of potential backends: ['FLASH_ATTN', 'TRITON_ATTN', 'FLEX_ATTENTION'].",
+    "3:23 [backends.py:1094] Using cache directory: /tmp/cloq_49670/vllm_cache/kvq_b3_r0_kv/torch_compile_cache/889b385181/rank_0_0/backbone for vLLM's torch.compile",
+    "(EngineCore pid=1528241) INFO 09-29 11:33:23 [backends.py:1155] Dynamo bytecode transform time: 8.23 s",
+    "(EngineCore pid=1528241) INFO 09-29 11:33:48 [backends.py:393] Compiling a graph for compile range (1, 2048) takes 24.33 s",
+    "(EngineCore pid=1528241) INFO 09-29 11:33:55 [model_runner.py:960] Graph capturing finished in 4 secs, took 0.40 GiB",
+    "(EngineCore pid=1528241) INFO 09-29 11:34:02 [model_runner.py:960] Graph capturing finished in 6 secs, took 0.25 GiB"
+   ],
+   "canary": "5bb4bb08589c9cf4",
+   "canary_eq_bf16": false,
+   "det": {
+    "n": 8,
+    "batch_eq_alone": 8,
+    "prefixhit_eq_alone": 8,
+    "ids_only_batch_eq": 8,
+    "mean_len": 64.0
+   },
+   "openloop": {
+    "n_decisions": 150,
+    "n_tokens": 12288,
+    "abs_d_mean": 6.446494199744883,
+    "abs_d_quantiles": {
+     "0.5": 5.631594181060791,
+     "0.9": 11.996397876739502,
+     "0.99": 20.026791284667937
+    },
+    "frac_tokens_shifted": 1.0,
+    "flip_rate": 0.895751953125,
+    "decision_any_flip": 1.0
+   }
+  },
+  "int4_rot": {
+   "env": {
+    "CLOQ_KVQ_BITS": "4",
+    "CLOQ_KVQ_ROT": "1"
+   },
+   "startup_s": 135,
+   "hook_lines": [
+    "(APIServer pid=1535916) [cloq_kvq] pid=1535916 wrapped vllm.model_executor.layers.attention.attention.Attention.forward: bits=4 rot=1 which=kv cache_root=/tmp/cloq_49670/vllm_cache/kvq_b4_r1_kv",
+    "(EngineCore pid=1536875) [cloq_kvq] pid=1536875 wrapped vllm.model_executor.layers.attention.attention.Attention.forward: bits=4 rot=1 which=kv cache_root=/tmp/cloq_49670/vllm_cache/kvq_b4_r1_kv"
+   ],
+   "compile_lines": [
+    "re pid=1536875) INFO 09-29 11:37:44 [cuda.py:492] Using FLASH_ATTN attention backend out of potential backends: ['FLASH_ATTN', 'TRITON_ATTN', 'FLEX_ATTENTION'].",
+    "8:02 [backends.py:1094] Using cache directory: /tmp/cloq_49670/vllm_cache/kvq_b4_r1_kv/torch_compile_cache/889b385181/rank_0_0/backbone for vLLM's torch.compile",
+    "(EngineCore pid=1536875) INFO 09-29 11:38:02 [backends.py:1155] Dynamo bytecode transform time: 15.22 s",
+    "(EngineCore pid=1536875) INFO 09-29 11:39:05 [backends.py:393] Compiling a graph for compile range (1, 2048) takes 62.75 s",
+    "(EngineCore pid=1536875) INFO 09-29 11:39:13 [model_runner.py:960] Graph capturing finished in 5 secs, took 0.57 GiB",
+    "(EngineCore pid=1536875) INFO 09-29 11:39:21 [model_runner.py:960] Graph capturing finished in 7 secs, took 0.34 GiB"
+   ],
+   "canary": "f4e319a296f618ea",
+   "canary_eq_bf16": false,
+   "det": {
+    "n": 8,
+    "batch_eq_alone": 8,
+    "prefixhit_eq_alone": 8,
+    "ids_only_batch_eq": 8,
+    "mean_len": 50.625
+   },
+   "openloop": {
+    "n_decisions": 150,
+    "n_tokens": 12288,
+    "abs_d_mean": 0.11866580320531177,
+    "abs_d_quantiles": {
+     "0.5": 3.576278118089249e-07,
+     "0.9": 0.1492438100457192,
+     "0.99": 2.5667633426170324
+    },
+    "frac_tokens_shifted": 0.2709147135416667,
+    "flip_rate": 0.043294270833333336,
+    "decision_any_flip": 0.6533333333333333
+   }
+  }
+ }
+}

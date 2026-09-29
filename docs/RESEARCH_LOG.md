@@ -10,6 +10,43 @@ Newest first.
 
 ---
 
+## W13 · Fake KV-cache quantization (KVQ) in the live pipeline (2026-09-29 12:30 PDT)
+**TL;DR** Real FP8/INT KV caches cannot run on A6000 under our frozen numerics (W7), so KV quantization is faked:
+a sitecustomize hook wraps vLLM 0.29's `Attention.forward` (used by Qwen3, Qwen3-MoE and Llama) before model
+construction. It quantize-dequantizes K (after k_norm and RoPE) and V, i.e. exactly what is written to the paged cache.
+The scheme is per token, per KV head, one asymmetric INT-b group over head_dim. An optional QuaRot-KV variant applies a
+fixed Hadamard: q and k are rotated, V is quantized in the rotated basis and rotated back. Dynamo inlines the wrapper,
+so the ops are compiled by Inductor and replayed inside the CUDA graphs. They are row-local, so they stay batch-invariant.
+Validation on q4 (`analysis/kvq/validate_q4.json`):
+(a) bits=16 through the hook reproduces the BF16 canary `c7343b60da095480` exactly.
+(b)/(c) Open-loop |Δlogprob| on 150 BF16 reference decisions (12,288 tokens) is monotone in precision:
+
+| cell | mean \|Δlogprob\| | token flip rate |
+|---|---|---|
+| INT8 | 0.010 | 0.75% |
+| INT4 + Hadamard | 0.119 | 4.3% |
+| INT4 | 5.00 | 79% |
+| INT3 | 6.45 | 90% |
+
+(d) Under every config, 8 real agent prompts gave identical token ids and logprobs in three settings: alone,
+in one concurrent batch with 8 fillers, and again after a prefix-cache hit (8/8).
+**Plain per-token INT4/INT3 destroys Qwen3-4B.** The cause is K outlier channels: one group spans them and zeroes the
+rest. The Hadamard rotation largely rescues it, which is the QuaRot result. Expect `kvq_int4`/`kvq_int3` agents to loop
+to max_steps. Those cells are likely GPU sinks (W11); defer them if the queue backs up.
+- Code: `scripts/a6000/pyhooks/cloq_kvq.py` (the hook). `scripts/a6000/pyhooks/sitecustomize.py` installs it only when
+  `CLOQ_PYHOOKS=1` and `CLOQ_KVQ_BITS` is set. Other env: `CLOQ_KVQ_ROT`, `CLOQ_KVQ_WHICH`.
+- Compile-cache isolation: the hook moves `VLLM_CACHE_ROOT` to `<root>/kvq_b<b>_r<rot>_<which>`. vLLM keys its compile
+  and AOT caches by config and traced source, not by env, so without this a KVQ server and a BF16 server could share a
+  compiled graph.
+- Worker changes (`scripts/a6000/worker.py`): the BF16 canary is skipped when `serve_env` enables KVQ, and
+  `runs/<id>/quantization.json` records `kv_cache`.
+- Generator: `scripts/a6000/make_tasks.py --only kvq`. Arm `kvq`, ckpt bf16.
+- Validation: script `scripts/a6000/kvq_validate.py`; task `/data/ziyangs/cloq_work/queue/done/kvq_validate_q4.json`.
+  Server logs are in `/data/ziyangs/cloq_work/logs/kvq/`, open-loop outputs in `analysis/kvq/openloop_q4_*.json`.
+  The INT8 canary (`42f358a11e348a84`) differs from BF16, as intended.
+- Queued (priority −2): `a6k2_{q4,q8,q14}_kvq_{int4,int3,int4_rot}`, each 3 runs `_q1.._q3` with fresh nonces
+  6d1f0b3e/f07a5c21/4c8e1a7f. Det pair `a6k2_det_q4_kvq_int4_{a,b}` is pinned to node005/node004.
+
 ## V6 · Insight loop, iteration 1 (2026-09-29, in discussion)
 **TL;DR** Four candidates (I1–I4), repositioned against the literature. The per-step margin model is inherited
 from Du et al. 2026. Our claims are the closed-loop composition, saturation along δ, a later damage threshold, and

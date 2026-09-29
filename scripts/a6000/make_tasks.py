@@ -155,6 +155,62 @@ def x1(m: str, prefix: str = "a6000", tid: str = "") -> list[dict]:
     return out
 
 
+# W13: fake KV-cache quantization (BF16 weights; scripts/a6000/pyhooks/cloq_kvq.py wraps vLLM's Attention.forward).
+FRESH_NONCES = ["6d1f0b3e", "f07a5c21", "4c8e1a7f"]  # q1..q3: never used by the canonical/null runs
+KVQ_CELLS = {"kvq_int4": {"CLOQ_KVQ_BITS": "4"}, "kvq_int3": {"CLOQ_KVQ_BITS": "3"},
+             "kvq_int4_rot": {"CLOQ_KVQ_BITS": "4", "CLOQ_KVQ_ROT": "1"}}
+KVQ_DET = ("q4", "kvq_int4")
+
+
+def kvq(m: str, prefix: str = "a6000", tid: str = "", priority: int = -2) -> list[dict]:
+    """W13: per KVQ cell one task with 3 fresh-nonce runs (<cell>_q1..q3); a node005/node004 det pair for q4 INT4.
+    The worker skips the BF16 canary for these (different numerics by design) and records kv_cache in quantization.json."""
+    R = f"{prefix}_{m}"
+    out = []
+    for cell, kenv in KVQ_CELLS.items():
+        senv = {"CLOQ_PYHOOKS": "1", **kenv}
+        t = eval_task(f"{tid}{m}_{cell}", m, "kvq", {"kind": "bf16"},
+                      [run(f"{R}_{cell}_q{i + 1}", nonce=n) for i, n in enumerate(FRESH_NONCES)], priority)
+        t["serve_env"] = senv
+        out.append(t)
+        if (m, cell) == KVQ_DET:
+            for rep, node in (("a", "node005"), ("b", "node004")):
+                d = eval_task(f"{tid}det_{m}_{cell}_{rep}", m, "kvq", {"kind": "bf16"},
+                              [run(f"{prefix}_det_{m}_{cell}_{rep}", DET)], priority)
+                d.update(node=node, serve_env=dict(senv))
+                out.append(d)
+    return out
+
+
+# W12 (docs/RESEARCH_LOG.md): other weight-only 4-bit formats (COLM 2025 "Quantization Hurts Reasoning?" method list).
+W12_NONCES = ["6d1f0b3e", "f07a5c21", "4c8e1a7f"]  # fresh-nonce stratum q1..q3 (E22)
+
+
+def w12_cells(m: str, prefix: str = "a6k2") -> list[tuple[str, dict]]:
+    return [("nf4", {"kind": "nf4"}), ("mxfp4", {"kind": "mxfp4"}), ("rot_bf16", {"kind": "rot_bf16", "seed": 0}),
+            ("rot_rtn_w4", {"kind": "rot_rtn", "wbits": 4, "seed": 0}),
+            ("rot_gptq_w4", {"kind": "rot_gptq", "wbits": 4, "seed": 0, "calib": f"manifests/{prefix}/{m}/calib_fp_traj_c1.json"})]
+
+
+def w12(m: str, prefix: str = "a6k2", priority: float = -2, openloop: bool = True, cells=None) -> list[dict]:
+    """Per (model, cell): one eval task with 3 fresh-nonce runs <prefix>_<m>_<cell>_q1..q3, plus its E3 open-loop task."""
+    tid, R = prefix + "_", f"{prefix}_{m}"
+    out = []
+    cl = w12_cells(m, prefix) + [("rtnsr_w4", {"kind": "rtnsr", "wbits": 4, "seed": 1})]
+    for cell, ck in cl:
+        if cells and cell not in cells:
+            continue
+        deps = [f"{tid}{m}_calib_c1"] if ck["kind"] == "rot_gptq" else []
+        p = priority - 1 if ck["kind"] == "rtnsr" else priority  # rtnsr: main-session request, -3
+        out.append(eval_task(f"{tid}{m}_{cell}", m, ck["kind"], ck,
+                             [run(f"{R}_{cell}_q{i + 1}", nonce=n) for i, n in enumerate(W12_NONCES)], p, deps))
+        if openloop:
+            ol = eval_task(f"{tid}{m}_ol_{cell}", m, ck["kind"], ck, [], p, deps + [f"{tid}{m}_bf16"])
+            ol["openloop"] = {"ref_runs": [f"{R}_bf16"], "n": 400, "out": f"analysis/openloop/{prefix}/{m}/{cell}"}
+            out.append(ol)
+    return out
+
+
 def determinism(m: str, rep: str, node: str, prefix: str = "a6000", tid: str = "") -> dict:
     """Same BF16 config, 20 tasks; two copies on different nodes must produce byte-identical decisions."""
     t = eval_task(f"{tid}det_{m}_{rep}", m, "bf16", {"kind": "bf16"}, [run(f"{prefix}_det_{m}_{rep}", DET)], -10)
@@ -166,7 +222,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("models", nargs="+")
     ap.add_argument("--retry", action="store_true")
-    ap.add_argument("--only", choices=["det", "matrix", "e5", "e3", "r1", "x1"], default=None)
+    ap.add_argument("--only", choices=["det", "matrix", "e5", "e3", "r1", "x1", "kvq", "w12"], default=None)
+    ap.add_argument("--cells", nargs="*", default=None, help="w12: restrict to these cells")
+    ap.add_argument("--no-openloop", action="store_true", help="w12: eval tasks only")
+    ap.add_argument("--priority", type=float, default=-2, help="w12 priority")
     ap.add_argument("--prefix", default="a6000", help="run-id prefix; a6k2 = deterministic-Inductor rerun (W3)")
     a = ap.parse_args()
     for d in ("todo", "running", "done", "failed"):
@@ -188,6 +247,10 @@ def main():
             tasks += [dict(t, id=tid + t["id"]) for t in r1(m, a.prefix)]
         if a.only == "x1":
             tasks += x1(m, a.prefix, "" if a.prefix == "a6000" else a.prefix + "_")
+        if a.only == "kvq":
+            tasks += kvq(m, a.prefix, "" if a.prefix == "a6000" else a.prefix + "_")
+        if a.only == "w12":
+            tasks += w12(m, a.prefix, a.priority, not a.no_openloop, a.cells)
         if a.only == "e5":
             tid = "" if a.prefix == "a6000" else a.prefix + "_"
             tasks += [dict(t, id=tid + t["id"]) for t in e5(m, a.prefix)]

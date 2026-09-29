@@ -1,7 +1,7 @@
 """Run one queued task on the GPUs a node runner assigned to it.
 
-eval task: build the checkpoint in node-local scratch (bf16: none; rtn/gauss: cloq.compress;
-gptq/awq: cloq.quantize), serve it on this worker's port, delete the weight files once vLLM has
+eval task: build the checkpoint in node-local scratch (bf16: none; rtn/gauss/gshape/rtnsign/nf4/mxfp4/rtnsr:
+cloq.compress; gptq/awq: cloq.quantize; rot_bf16/rot_rtn: cloq.rotate; rot_gptq: cloq.rotate then cloq.quantize --src), serve it on this worker's port, delete the weight files once vLLM has
 loaded them, run every (run, domain) of the task against the node's shared user simulator, stop the
 server and verify the GPUs are released. calib task: build a calibration manifest (CPU).
 
@@ -167,17 +167,35 @@ def build_ckpt(task, env, gpus, scratch: Path, log) -> tuple[str, dict | None]:
     if out.exists():
         shutil.rmtree(out)
     e = dict(env, CUDA_VISIBLE_DEVICES=gpus[0])
-    if ck["kind"] in ("rtn", "gauss", "gshape", "rtnsign"):
-        cmd = [sys.executable, "-m", "cloq.compress", ck["kind"], "--src", src, "--out", str(out), "--no-sha",
-               "--source-model", m["hf_id"], "--source-revision", m["revision"]]
+    prov = ["--source-model", m["hf_id"], "--source-revision", m["revision"]]
+    rot = None
+    if ck["kind"] in ("rtn", "gauss", "gshape", "rtnsign", "nf4", "mxfp4", "rtnsr"):
+        cmd = [sys.executable, "-m", "cloq.compress", ck["kind"], "--src", src, "--out", str(out), "--no-sha"] + prov
         if ck["kind"] == "rtn":
             cmd += ["--wbits", str(ck["wbits"])]
-        else:
+        elif ck["kind"] == "rtnsr":  # stochastic rounding on the RTN grid (k ignored)
+            cmd += ["--wbits", str(ck["wbits"]), "--seed", str(ck["seed"])]
+        elif ck["kind"] not in ("nf4", "mxfp4"):
             cmd += ["--k", str(ck["k"]), "--seed", str(ck["seed"])] + (["--wbits", str(ck["wbits"])] if "wbits" in ck else [])
+    elif ck["kind"] in ("rot_bf16", "rot_rtn"):  # QuaRot-style rotation (cloq.rotate), optionally + RTN g128
+        cmd = [sys.executable, "-m", "cloq.rotate", "--src", src, "--out", str(out), "--no-sha",
+               "--seed", str(ck.get("seed", 0))] + prov + (["--wbits", str(ck["wbits"])] if ck["kind"] == "rot_rtn" else [])
+    elif ck["kind"] == "rot_gptq":  # rotate to scratch, then GPTQ on the rotated BF16 model
+        rot = scratch / f"ckpt_{task['id']}_rot"
+        if rot.exists():
+            shutil.rmtree(rot)
+        r = subprocess.run([sys.executable, "-m", "cloq.rotate", "--src", src, "--out", str(rot), "--no-sha",
+                            "--seed", str(ck.get("seed", 0))] + prov, cwd=ROOT, env=e, stdout=log, stderr=subprocess.STDOUT)
+        if r.returncode != 0:
+            raise RuntimeError(f"rotation failed ({ck}) rc={r.returncode}")
+        cmd = [sys.executable, "-m", "cloq.quantize", "--method", "gptq", "--wbits", str(ck["wbits"]), "--src", str(rot),
+               "--calib", str(ROOT / ck["calib"]), "--out", str(out), "--no-sha"]
     else:
         cmd = [sys.executable, "-m", "cloq.quantize", "--method", ck["kind"], "--wbits", str(ck["wbits"]),
                "--calib", str(ROOT / ck["calib"]), "--out", str(out), "--no-sha"]
     r = subprocess.run(cmd, cwd=ROOT, env=e, stdout=log, stderr=subprocess.STDOUT)
+    if rot is not None:
+        shutil.rmtree(rot, ignore_errors=True)
     if r.returncode != 0:
         raise RuntimeError(f"checkpoint build failed ({ck}) rc={r.returncode}")
     return str(out), json.load(open(out / "quantization.json"))
@@ -192,9 +210,17 @@ def run_eval(task, args, st: Status):
     log = open(logdir / f"{task['id']}.log", "a")
     log.write(f"\n=== {time.ctime()} {socket.gethostname()} gpus={args.gpus} port={args.port}\n")
     log.flush()
-    st.set("quantize" if task["ckpt"]["kind"] in ("gptq", "awq") else "compress" if task["ckpt"]["kind"] not in ("bf16", "hf") else "setup",
+    st.set("quantize" if task["ckpt"]["kind"] in ("gptq", "awq", "rot_gptq") else "compress" if task["ckpt"]["kind"] not in ("bf16", "hf") else "setup",
            f"build {task['ckpt']['kind']}")
     path, qmeta = build_ckpt(task, env, gpus, scratch, log)
+    senv = task.get("serve_env", {})
+    kvq = bool(senv.get("CLOQ_KVQ_BITS")) and senv.get("CLOQ_PYHOOKS") == "1"
+    if kvq:  # W13: fake KV-cache quantization hook (scripts/a6000/pyhooks/cloq_kvq.py) on top of the task's weights
+        m = MODELS[task["model"]]
+        qmeta = dict(qmeta or {"method": "bf16", "source_model": m["hf_id"], "source_revision": m["revision"]},
+                     kv_cache={"method": "kvq_fake", "bits": int(senv["CLOQ_KVQ_BITS"]), "rot": senv.get("CLOQ_KVQ_ROT", "0") == "1",
+                               "which": senv.get("CLOQ_KVQ_WHICH", "kv"), "granularity": "per-token per-head, group=head_dim, asymmetric",
+                               "hook": "pyhooks/cloq_kvq.py"})
     st.set("setup", "starting vLLM")
     slog = open(logdir / f"{task['id']}.vllm.log", "a")
     server = subprocess.Popen([str(ROOT / "scripts/a6000/serve.sh"), args.gpus, str(args.port), path, "agent", str(AGENT_MAXLEN),
@@ -208,7 +234,7 @@ def run_eval(task, args, st: Status):
                 raise RuntimeError("vLLM agent server did not come up in 30 min")
             time.sleep(5)
         # BF16 servers of a model must be bit-identical on every node (quantized ckpts differ by design)
-        if task["ckpt"]["kind"] == "bf16" and not task.get("serve_extra"):  # eager etc. = different flavour by design
+        if task["ckpt"]["kind"] == "bf16" and not task.get("serve_extra") and not kvq:  # eager/KVQ etc. = different flavour by design
             st.set("check", "numerics canary")
             check_canary(args.port, task["model"], "agent")
         if path.startswith(str(scratch)):  # weights are on the GPU now; free the RAM disk
