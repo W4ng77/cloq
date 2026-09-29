@@ -22,6 +22,19 @@ cross-model transfer.
 - Agent roles: `~/.claude/agents/cloq-{insight,survey,experiment,verify}.md` (on the cluster login node).
 - **Verifier (iter 1, 2026-09-29 02:36Z):** I1 REVISE (v2: per-decision hazard floor), I2 HYPOTHESIS, I3 HYPOTHESIS (at risk: q8 RTN-W4), I4 HYPOTHESIS with I4a HELD (serving numerics move the canonical score ±8 pp). Also: legacy→a6k2 changed the user simulator (11/20 det tasks), so E5 needs the eager null. `docs/insights/iter_1_verdicts.md`, `docs/insights/LEDGER.md`, scripts `analysis/insights/iter_1/verify/v0{1..4}_*.py`.
 
+## W8 · Duplicate decision records from resumed runs; more infra-error runs (2026-09-28 23:45 PDT)
+**TL;DR** tau2's `auto_resume` and retries re-run a simulation, but `cloq.agent` appends to decisions.jsonl. So an
+interrupted or retried task kept the records of its abandoned attempt (6,724 records in 52 run-domains). Outcomes were
+unaffected (trajectory.jsonl is rebuilt from the final results), but per-decision analyses were polluted. Fix:
+`scripts/a6000/dedup_decisions.py` keeps the last attempt per task (applied to all a6k2 runs; the remaining count
+mismatches are only infrastructure-error episodes), and `cloq/run_arm.py` now does the same at the end of every run.
+The rescan found 6 more runs with simulator-outage episodes from before the W6 guard; they were deleted and re-queued
+(`*_redo`). Also: the runners on node004/005/007 crashed on an unknown model code (l8) after my W5 change. Their tasks
+were re-queued, the runners resubmitted (49671–49673), and the runner now re-reads models.json (unknown model = not
+claimable).
+- Evidence: dry-run log in session; `scripts/a6000/dedup_decisions.py`; `/data/ziyangs/cloq_work/logs/node_node004_49664.out` (KeyError 'l8').
+- Consequence: iter_2 analyses (p0x, c01, c02) must be re-run after the redos finish.
+
 ## W6 · Simulator outages scored as agent failures (2026-09-28 23:10 PDT)
 **TL;DR** node003 uses node004's user simulator. When I restarted node004 (19:43 and ~21:50), node003 episodes ended in
 `infrastructure_error`, yet the tasks exited rc=0. 11 run-families had ≥2 such episodes (q4 nulls n3–n5 were 100%).
