@@ -70,11 +70,12 @@ def source_dir() -> Path:
     return Path(snapshot_download(C.MODEL_ID, revision=C.MODEL_REVISION, local_files_only=True))
 
 
-def load_bf16_model(device: str = "cuda"):
+def load_bf16_model(device: str = "cuda", src: str | None = None):
     from transformers import AutoModelForCausalLM
 
+    kw = {"revision": C.MODEL_REVISION} if src is None else {}
     model = AutoModelForCausalLM.from_pretrained(
-        C.MODEL_ID, revision=C.MODEL_REVISION, dtype=torch.bfloat16, attn_implementation="sdpa"
+        src or C.MODEL_ID, dtype=torch.bfloat16, attn_implementation="sdpa", **kw
     )
     model.eval()
     model.config.use_cache = False
@@ -327,6 +328,8 @@ def main():
     ap.add_argument("--awq-rows", type=int, default=4096)
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--no-sha", action="store_true")
+    ap.add_argument("--src", default=None, help="local BF16 checkpoint dir to quantize instead of the pinned source "
+                    "model (e.g. a cloq.rotate output); its quantization.json is recorded as pre_transform")
     args = ap.parse_args()
     method = "rtn" if args.rtn else args.method
     q = C.FROZEN["quantization"]
@@ -335,7 +338,7 @@ def main():
         print(f"{out} exists; skipping")
         return
     torch.manual_seed(0)
-    model = load_bf16_model()
+    model = load_bf16_model(src=args.src)
     meta = {
         "method": "AWQ-style" if method == "awq" else method.upper(), "wbits": args.wbits,
         "group_size": q["group_size"], "sym": q["sym"], "percdamp": q["percdamp"], "blocksize": q["blocksize"],
@@ -344,6 +347,13 @@ def main():
         "calibration_manifest": args.calib,
         "moe_experts": "RTN (same grid)" if is_moe(model.model.layers[0]) else None,
     }
+    if args.src:
+        meta["source_dir"] = args.src
+        pq = Path(args.src) / "quantization.json"
+        if pq.exists():
+            meta["pre_transform"] = {k: v for k, v in json.load(open(pq)).items() if k not in ("per_tensor", "weight_files")}
+            if "rotation" in meta["pre_transform"]:
+                meta["method"] = "QuaRot-" + meta["method"]
     t0 = time.time()
     if method == "rtn":
         stats, new = {}, {}
@@ -367,7 +377,7 @@ def main():
     gc.collect()
     meta["seconds_quantize"] = time.time() - t0
     moe = meta["moe_experts"] is not None
-    write_checkpoint(source_dir(), out, new, args.wbits if moe else None, meta, sha=not args.no_sha)
+    write_checkpoint(Path(args.src) if args.src else source_dir(), out, new, args.wbits if moe else None, meta, sha=not args.no_sha)
     print(f"saved {out} in {time.time() - t0:.0f}s")
 
 

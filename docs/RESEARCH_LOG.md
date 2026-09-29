@@ -63,6 +63,43 @@ to max_steps. Those cells are likely GPU sinks (W11); defer them if the queue ba
 - Queued (priority −2): `a6k2_{q4,q8,q14}_kvq_{int4,int3,int4_rot}`, each 3 runs `_q1.._q3` with fresh nonces
   6d1f0b3e/f07a5c21/4c8e1a7f. Det pair `a6k2_det_q4_kvq_int4_{a,b}` is pinned to node005/node004.
 
+## W12 · More weight-only 4-bit formats: NF4, MXFP4, QuaRot rotation (+RTN/GPTQ), stochastic-rounding RTN (2026-09-29 12:00 PDT)
+**TL;DR** Six new fake-quant cells go into the live pipeline, each dequantized back to bf16 and served through the
+identical vLLM path. They are `nf4` (QLoRA NormalFloat-4, absmax block 64), `mxfp4` (OCP MX: E2M1 elements with a
+shared E8M0 scale per 32), and the QuaRot-style `rot_bf16` (fused RMSNorm plus a seeded random-Hadamard residual
+rotation, no quantization, a control). On top of that rotation come `rot_rtn_w4` and `rot_gptq_w4`. `rtnsr_w4` is
+RTN's own grid with stochastic rounding: an on-grid, unbiased control, where `rtnsign` is off-grid. This adds the
+method list of the COLM 2025 "Quantization Hurts Reasoning?" paper and extends E17 (error size vs structure).
+- Unit tests pass on CPU (`tests/test_fp4_rotate.py`, run with `BNB_PATH=/data/ziyangs/cloq_work/tmp/bnbref`):
+  - NF4 matches bitsandbytes 0.50.2 `quantize_4bit`/`dequantize_4bit` 100% (fp32 and bf16 inputs).
+  - MXFP4 matches an ml_dtypes `float4_e2m1fn`/`float8_e8m0fnu` reference 100%, with hand-checked round-to-nearest-even ties and saturation to 6.
+  - Hadamard: H H^T = dI for d = 2560, 4096 and 5120 (Paley order 20 ⊗ Sylvester).
+  - A tiny tied Qwen3 stored in fp32 gives max |Δlogprob| 6.4e-7 after rotation.
+  - rtnsr stays on the RTN grid, is unbiased (0.04 steps after 64 draws), and its error is 1.41× RTN's.
+- q4 rotation check (`analysis/rotation/verify_q4.json`; task `a6k2_w12_verify_rot_q4`; `scripts/a6000/verify_rotation.py`).
+  It uses 20 calibration contexts (40,960 positions) and compares rot_bf16 with the original:
+  - fp32 compute: top-1 agreement 99.55%, mean |Δlp(top1)| 0.006. Here only the bf16 storage of the rotated weights differs.
+  - bf16 compute: 98.4%, mean 0.018. This is the size of the bf16 numerics floor: the original model in bf16 vs fp32 compute agrees 98.7%, mean 0.013.
+  - Max |Δlp| is 0.8–0.9 at near-tie positions (the numerics reference reaches 1.1). The last position agrees 20/20.
+  - vLLM serves the untied checkpoint (`tie_word_embeddings=false`, explicit `lm_head.weight`). Greedy 48-token outputs are identical on 3/6 prompts; the other 3 diverge at a near-tie (token 0 or 13).
+  - q_norm/k_norm act per head on the projection outputs, so the rotation leaves them unchanged.
+- q4 smoke (task = production cell, fresh nonces q1–q3, overall db_match over 85 tasks). References:
+  - fresh-nonce and n-nonce references: RTN-W4 q* 0.306, GPTQ-W4-d1 q* 0.408, AWQ-W4 q* 0.404, null n* 0.359.
+  - new cells: nf4 0.341/–/0.376 (q2 still running at queue time), mxfp4 0.341/0.353/0.329, rot_bf16 0.341/0.388/0.365, rot_rtn_w4 0.318/0.306/0.376,
+    rot_gptq_w4 0.400/0.400/0.412, rtnsr_w4 0.212/0.235/0.294. Mean relative weight error: nf4 0.0086,
+    mxfp4 0.0137, rot_rtn 0.0102 (RTN-W4 ≈ 0.0107), rtnsr 0.0212.
+- Queued (priority −2; rtnsr −3): q8 and q14 × all 6 cells (runs `a6k2_<m>_<cell>_q1..q3`, nonces 6d1f0b3e/f07a5c21/4c8e1a7f).
+  Also E3 open-loop tasks `a6k2_<m>_ol_<cell>` for q4/q8/q14 (ref `a6k2_<m>_bf16`, out `analysis/openloop/a6k2/<m>/<cell>`).
+  q14's open-loop tasks wait on `a6k2_q14_bf16` (in todo), as the existing q14 E3 cells do.
+- Code: `cloq/compress.py` (modes nf4, mxfp4, rtnsr), `cloq/rotate.py` (new), `cloq/quantize.py --src` (GPTQ on a local
+  rotated checkpoint; records `pre_transform`), `scripts/a6000/worker.py` (kinds nf4, mxfp4, rtnsr, rot_bf16, rot_rtn, rot_gptq),
+  `scripts/a6000/make_tasks.py --only w12`. Logs: `/data/ziyangs/cloq_work/logs/tasks/a6k2_q4_{nf4,mxfp4,rot_*,rtnsr_w4}.log`.
+- Caveats:
+  - NF4 stores fp32 absmax with no double quantization. Double quantization of the scales is not modelled.
+  - Rotation uses a single seed (0), and rot_* keeps embeddings and lm_head rotated in BF16. QuaRot additionally rotates
+    per head in attention and applies online Hadamards for activations; neither matters for weight-only quantization.
+    Only the residual rotation is applied.
+
 ## V6 · Insight loop, iteration 1 (2026-09-29, in discussion)
 **TL;DR** Four candidates (I1–I4), repositioned against the literature. The per-step margin model is inherited
 from Du et al. 2026. Our claims are the closed-loop composition, saturation along δ, a later damage threshold, and

@@ -8,6 +8,13 @@ identical BF16 vLLM path as the source model (fake-quant: only the weight values
 Modes (docs/A6000_PLAN.md section 3):
   rtn    round-to-nearest, asymmetric, group 128, the same grid as cloq.gptq (W8 / W4 / W3)
   gauss  W + N, N i.i.d. Gaussian per linear, rescaled so ||N||_F = k * ||RTN_W4(W) - W||_F
+  nf4    QLoRA NormalFloat-4 (bitsandbytes code table), blockwise absmax, block 64, fp32 absmax (no double quant)
+  mxfp4  OCP Microscaling MXFP4: FP4 E2M1 elements (round-to-nearest-even, saturating), one shared E8M0
+         power-of-two scale per 32 elements, X = 2^(floor(log2 amax) - 2) (OCP MX v1.0 section 6.3)
+  rtnsr  RTN-W<wbits> g128 asym on the SAME grid as rtn (scale/zero from Quantizer.find_params) but stochastic
+         rounding q = clamp(floor(x/scale + zero + u), 0, maxq), u ~ U[0,1) seeded by tensor_seed(seed, name):
+         on-grid, unbiased control for rtn (rtnsign is off-grid)
+  (rotated QuaRot-style checkpoints: cloq.rotate)
 
 Quantized tensors: every q/k/v/o and gate/up/down projection inside a decoder layer, including MoE
 experts. Embeddings, lm_head, norms, MoE routers and any vision tower stay BF16.
@@ -15,6 +22,7 @@ experts. Embeddings, lm_head, norms, MoE routers and any vision tower stay BF16.
 usage:
   python -m cloq.compress rtn   --src <hf snapshot dir> --out <dir> --wbits 4
   python -m cloq.compress gauss --src <hf snapshot dir> --out <dir> --k 0.3 --seed 1
+  python -m cloq.compress nf4   --src <hf snapshot dir> --out <dir>
 """
 
 from __future__ import annotations
@@ -62,6 +70,64 @@ def rtn_dequant(W: torch.Tensor, wbits: int, groupsize: int = GROUP) -> torch.Te
     return Q
 
 
+# bitsandbytes NF4 code (bitsandbytes/functional.py get_4bit_type("nf4"); QLoRA appendix E), ascending.
+NF4_CODE = [-1.0, -0.6961928009986877, -0.5250730514526367, -0.39491748809814453, -0.28444138169288635,
+            -0.18477343022823334, -0.09105003625154495, 0.0, 0.07958029955625534, 0.16093020141124725,
+            0.24611230194568634, 0.33791524171829224, 0.44070982933044434, 0.5626170039176941,
+            0.7229568362236023, 1.0]
+NF4_BLOCK = 64
+FP4_E2M1 = [0.0, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0]  # magnitudes; index parity = mantissa bit (RNE tie-break)
+MX_BLOCK = 32
+FP4_EMAX = 2  # exponent of the largest normal E2M1 value (6 = 1.5 * 2^2)
+
+
+def _blocks(W: torch.Tensor, block: int) -> torch.Tensor:
+    assert W.numel() % block == 0, f"numel {W.numel()} not a multiple of block {block}"
+    return W.reshape(-1, block)  # row-major flat blocks, as bitsandbytes / MX do (== per-row groups when cols % block == 0)
+
+
+@torch.no_grad()
+def nf4_dequant(W: torch.Tensor, block: int = NF4_BLOCK) -> torch.Tensor:
+    """bitsandbytes quantize_4bit(quant_type="nf4", blocksize=block) followed by dequantize_4bit, in fp32."""
+    code = torch.tensor(NF4_CODE, device=W.device, dtype=torch.float32)
+    mids = (code[1:] + code[:-1]) / 2  # bnb dQuantizeNF4: x > midpoint -> upper code
+    blk = _blocks(W.float(), block)
+    absmax = blk.abs().amax(-1, keepdim=True)
+    inv = torch.where(absmax > 0, 1.0 / absmax, torch.zeros_like(absmax))  # bnb multiplies by 1/absmax
+    idx = torch.bucketize(blk * inv, mids, right=False)
+    return (code[idx] * absmax).reshape(W.shape)
+
+
+@torch.no_grad()
+def mxfp4_dequant(W: torch.Tensor, block: int = MX_BLOCK) -> torch.Tensor:
+    """OCP MX v1.0 MXFP4 quantize + dequantize, in fp32."""
+    grid = torch.tensor(FP4_E2M1, device=W.device, dtype=torch.float32)
+    mids = (grid[1:] + grid[:-1]) / 2
+    blk = _blocks(W.float(), block)
+    amax = blk.abs().amax(-1, keepdim=True)
+    _, e = torch.frexp(amax)  # amax = m * 2^e, m in [0.5, 1) -> floor(log2 amax) = e - 1 (exact)
+    shared = torch.where(amax > 0, e - 1 - FP4_EMAX, torch.full_like(e, -127)).clamp(-127, 127)  # E8M0 range
+    v = torch.ldexp(blk, -shared)  # exact: power-of-two scale
+    a = v.abs().clamp(max=FP4_E2M1[-1])  # saturate to +-6
+    idx = torch.bucketize(a, mids, right=False)  # at a tie this is the lower code ...
+    tie = (idx < len(FP4_E2M1) - 1) & (a == mids[idx.clamp(max=len(FP4_E2M1) - 2)]) & (idx % 2 == 1)
+    idx = idx + tie.long()  # ... round half to even (even index = even mantissa)
+    return torch.ldexp(torch.sign(v) * grid[idx], shared).reshape(W.shape)
+
+
+@torch.no_grad()
+def rtnsr_dequant(W: torch.Tensor, wbits: int, g: torch.Generator, groupsize: int = GROUP) -> torch.Tensor:
+    """rtn_dequant's grid (same scale/zero per 1 x groupsize block), stochastic instead of nearest rounding."""
+    rows, cols = W.shape
+    q = Quantizer(wbits, sym=False)
+    assert cols % groupsize == 0, f"rtnsr needs cols % {groupsize} == 0"
+    blk = W.reshape(rows * (cols // groupsize), groupsize)
+    q.find_params(blk)
+    u = torch.rand(blk.shape, generator=g, device=W.device, dtype=torch.float32)
+    k = torch.clamp(torch.floor(blk / q.scale + q.zero + u), 0, q.maxq)
+    return (q.scale * (k - q.zero)).reshape(rows, cols)
+
+
 def tensor_seed(seed: int, name: str) -> int:
     return (int(seed) * 1_000_003 + zlib.crc32(name.encode())) % (2**63 - 1)
 
@@ -71,6 +137,13 @@ def perturb(name: str, W16: torch.Tensor, args, device: str) -> tuple[torch.Tens
     W = W16.to(device=device, dtype=torch.float32)
     if args.mode == "rtn":
         Q = rtn_dequant(W, args.wbits)
+    elif args.mode == "rtnsr":
+        g = torch.Generator(device=device).manual_seed(tensor_seed(args.seed, name))
+        Q = rtnsr_dequant(W, args.wbits, g)
+    elif args.mode == "nf4":
+        Q = nf4_dequant(W)
+    elif args.mode == "mxfp4":
+        Q = mxfp4_dequant(W)
     elif args.mode in ("gshape", "rtnsign"):
         # E17 (docs/insights/iter_3_candidates.md): separate error SIZE from error STRUCTURE.
         # gshape: Gaussian noise whose per-group (1 x 128) RMS equals that of the RTN-W<wbits> error, times k.
@@ -113,7 +186,7 @@ def _sha256(p: Path) -> str:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("mode", choices=["rtn", "gauss", "gshape", "rtnsign"])
+    ap.add_argument("mode", choices=["rtn", "gauss", "gshape", "rtnsign", "nf4", "mxfp4", "rtnsr"])
     ap.add_argument("--src", required=True, help="local BF16 snapshot directory")
     ap.add_argument("--out", required=True)
     ap.add_argument("--wbits", type=int, default=4)
@@ -126,6 +199,8 @@ def main():
     args = ap.parse_args()
     if args.mode in ("gauss", "gshape", "rtnsign"):
         assert args.k is not None and args.seed is not None, f"{args.mode} needs --k and --seed"
+    if args.mode == "rtnsr":
+        assert args.seed is not None, "rtnsr needs --seed"
     src, out = Path(args.src), Path(args.out)
     if (out / "quantization.json").exists():
         print(f"{out} exists; skipping")
@@ -152,6 +227,12 @@ def main():
             shutil.copy(p, out / p.name)
     assert n_target > 0, "no decoder linear weights matched; unknown checkpoint layout"
     rels = [v["rel_weight_err"] for v in stats.values()]
+    fmt = {"nf4": {"method": "NF4", "wbits": 4, "group_size": NF4_BLOCK, "sym": True,
+                   "format": "bitsandbytes NF4 code, blockwise absmax (fp32, no double quant)"},
+           "rtnsr": {"method": "RTN-stochastic", "wbits": args.wbits, "gauss_k": None, "sr_seed": args.seed,
+                     "format": "rtn grid (g128 asym, Quantizer.find_params), q = clamp(floor(x/s + z + u)), u~U[0,1)"},
+           "mxfp4": {"method": "MXFP4", "wbits": 4, "group_size": MX_BLOCK, "sym": True,
+                     "format": "OCP MX v1.0: FP4 E2M1 (RNE, saturating) x shared E8M0 2^(floor(log2 amax)-2)"}}
     meta = {
         "method": "RTN" if args.mode == "rtn" else "gaussian",
         "wbits": args.wbits if args.mode == "rtn" else None,
@@ -163,6 +244,8 @@ def main():
         "mean_rel_weight_err": sum(rels) / len(rels), "seconds": time.time() - t0,
         "per_tensor": stats,
     }
+    if args.mode in fmt:
+        meta.update(fmt[args.mode])
     if not args.no_sha:
         meta["weight_files"] = {p.name: _sha256(p) for p in sorted(out.glob("*.safetensors"))}
     (out / "quantization.json").write_text(json.dumps(meta, indent=1))
