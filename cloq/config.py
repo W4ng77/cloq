@@ -48,11 +48,13 @@ USER_SERVED_NAME = "user"
 
 def agent_llm_args(api_base: str = AGENT_API_BASE) -> dict:
     g = FROZEN["generation_agent"]
+    # Sampling baseline (iter 4): CLOQ_AGENT_TEMPERATURE / CLOQ_AGENT_SEED override the frozen greedy decoding for
+    # one run; the seed is sent per request, so a sampled run is a deterministic function of (prompt, seed).
     return {
-        "temperature": g["temperature"],
+        "temperature": float(os.environ.get("CLOQ_AGENT_TEMPERATURE", g["temperature"])),
         "top_p": g["top_p"],
         "max_tokens": g["max_tokens"],
-        "seed": g["seed"],
+        "seed": int(os.environ.get("CLOQ_AGENT_SEED", g["seed"])),
         "presence_penalty": g["presence_penalty"],
         "frequency_penalty": g["frequency_penalty"],
         "extra_body": {

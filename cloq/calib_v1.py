@@ -36,7 +36,12 @@ from cloq import config as C
 from cloq.calib import load_states
 
 V1 = json.load(open(C.PROJECT_ROOT / "configs" / "frozen_v1.json"))
-DRAWS = V1["calibration"]["draws"]
+DRAWS = dict(V1["calibration"]["draws"])
+_EXTRA = C.PROJECT_ROOT / "configs" / "draws_extra.json"  # iter-4 extra draws (E4-3); never redefines a frozen draw
+if _EXTRA.exists():
+    _x = json.load(open(_EXTRA))["draws"]
+    assert not set(_x) & set(DRAWS), f"draws_extra.json redefines frozen draws {set(_x) & set(DRAWS)}"
+    DRAWS.update(_x)
 BUDGET_ROWS = int(V1["calibration"]["budget_rows"])
 
 

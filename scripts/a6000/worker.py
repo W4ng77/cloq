@@ -280,6 +280,7 @@ def run_eval(task, args, st: Status):
                     q = {k: v for k, v in qmeta.items() if k not in ("per_tensor", "stats")}
                     (qdir / "quantization.json").write_text(json.dumps(q, indent=1))
                 e = dict(env)
+                e.update({k: str(v) for k, v in r.get("env", {}).items()})  # per-run overrides, e.g. agent sampling
                 if r.get("nonce"):
                     e["CLOQ_PROMPT_NONCE"] = r["nonce"]
                 else:
