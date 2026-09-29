@@ -102,6 +102,18 @@ def resolved_db_match(traj: dict) -> bool | None:
     return None
 
 
+def task_success(traj: dict) -> bool | None:
+    """Primary per-task endpoint. retail/airline: DB end-state match (frozen v0 primary endpoint).
+    telecom (reward_basis without DB; dual control): tau2's official basis reward, i.e. all env
+    assertions on the user device / agent DB [and the gold actions where ACTION is in the basis]."""
+    basis = traj.get("reward_basis_task")
+    if basis is None:
+        basis = (((traj.get("task") or {}).get("evaluation_criteria") or {}).get("reward_basis")) or ["DB"]
+    if "DB" in basis or traj.get("official_reward") is None:
+        return resolved_db_match(traj)
+    return bool(traj["official_reward"] == 1.0)
+
+
 def per_task_stats(traj: dict, decisions: list[dict]) -> dict:
     msgs = traj["messages"]
     agent_msgs = [m for m in msgs if m.get("role") == "assistant"]
@@ -122,6 +134,11 @@ def per_task_stats(traj: dict, decisions: list[dict]) -> dict:
         "reward": traj.get("reward"),
         "db_match": resolved_db_match(traj),
         "db_match_raw": traj.get("db_match"),
+        "success": task_success(traj),
+        "official_reward": traj.get("official_reward"),
+        "env_assert_all": traj.get("env_assert_all"),
+        "n_user_tool_calls": traj.get("n_user_tool_calls"),
+        "n_user_tool_errors": traj.get("n_user_tool_errors"),
         "communicate_all": traj.get("communicate_all"),
         "action_all": traj.get("action_all"),
         "termination_reason": traj.get("termination_reason"),
@@ -165,6 +182,12 @@ def summarize_run(run_dir: Path) -> dict:
         "n_tasks": n,
         "reward_mean": mean("reward"),
         "db_match_rate": mean("db_match"),
+        "success_rate": mean("success"),
+        "official_reward_mean": mean("official_reward"),
+        "env_assert_rate": mean("env_assert_all"),
+        "mean_user_tool_calls": mean("n_user_tool_calls"),
+        "user_tool_error_rate": ((sum(r["n_user_tool_errors"] or 0 for r in rows) / sum(r["n_user_tool_calls"] or 0 for r in rows))
+                                 if sum(r["n_user_tool_calls"] or 0 for r in rows) else None),
         "communicate_rate": mean("communicate_all"),
         "action_rate": mean("action_all"),
         "n_decisions_total": n_dec_total,

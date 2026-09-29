@@ -221,7 +221,7 @@ def run_eval(task, args, st: Status):
                    "--out", ol["out"]] + [x for r in ol["ref_runs"] for x in ("--ref-run", r)]
             if subprocess.run(cmd, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT).returncode != 0:
                 raise RuntimeError("openloop_d failed")
-        jobs = [(r, d) for r in task["runs"] for d in ("retail", "airline")]
+        jobs = [(r, d) for r in task["runs"] for d in task.get("domains", ("retail", "airline"))]
         done, running = 0, []
         st.set("eval", f"{len(jobs)} run-domains", 0.0)
         pending = list(jobs)
@@ -269,11 +269,11 @@ def run_eval(task, args, st: Status):
         stop_server(server, gpus)
     summ = {}
     for r in task["runs"]:
-        for d in ("retail", "airline"):
+        for d in task.get("domains", ("retail", "airline")):
             mp = ROOT / "runs" / r["run_id"] / d / "metrics.json"
             if mp.exists():
                 m = json.load(open(mp))
-                summ[f"{r['run_id']}/{d}"] = {k: m.get(k) for k in ("db_match_rate", "reward_mean", "n_tasks", "mean_decisions", "premature_rate", "termination_reasons")
+                summ[f"{r['run_id']}/{d}"] = {k: m.get(k) for k in ("db_match_rate", "success_rate", "official_reward_mean", "reward_mean", "n_tasks", "mean_decisions", "premature_rate", "termination_reasons")
                                               if k in m}
     return summ
 

@@ -108,14 +108,56 @@ def simulation_to_trajectory(sim, task) -> dict:
         "action_all": (all(c.action_match for c in ri.action_checks) if (ri is not None and ri.action_checks) else None),
         "task": task.model_dump(),
     }
+    rec.update(basis_reward(sim, task))
     return rec
+
+
+def basis_reward(sim, task) -> dict:
+    """Task-basis reward (tau2's official score) next to the ALL_IGNORE_BASIS product.
+
+    We evaluate with ALL_IGNORE_BASIS, whose `reward` multiplies DB, ENV_ASSERTION, ACTION and COMMUNICATE
+    whatever the task's reward_basis. For telecom (reward_basis ENV_ASSERTION [+ ACTION]) that product
+    also demands the gold user-side action sequence, which tau2 does not score. `official_reward` is the
+    product over the task's own basis only (NL_ASSERTION is judged offline by cloq.nl_judge and is left
+    out here); a premature termination scores 0 as in tau2. User-side tool use (dual control) is counted
+    separately from the agent's.
+    """
+    ri = sim.reward_info
+    crit = task.evaluation_criteria
+    basis = [b.value if hasattr(b, "value") else str(b) for b in ((crit.reward_basis if crit is not None else None) or [])]
+    env_all = (all(c.met for c in ri.env_assertions) if (ri is not None and ri.env_assertions) else None)
+    comps = {
+        "DB": (ri.db_check.db_match if (ri is not None and ri.db_check is not None) else None),
+        "ENV_ASSERTION": env_all,
+        "ACTION": (all(c.action_match for c in ri.action_checks) if (ri is not None and ri.action_checks) else None),
+        "COMMUNICATE": (all(c.met for c in ri.communicate_checks) if (ri is not None and ri.communicate_checks) else None),
+    }
+    reason = sim.termination_reason.value if hasattr(sim.termination_reason, "value") else str(sim.termination_reason)
+    if reason not in ("user_stop", "agent_stop"):
+        official = 0.0
+    else:
+        official = 1.0
+        for b in basis:
+            if b in comps and comps[b] is not None:
+                official *= float(bool(comps[b]))
+            elif b in ("ENV_ASSERTION", "ACTION", "COMMUNICATE"):
+                pass  # empty check list: vacuously met (tau2 scores it 1.0)
+    user_calls = [tc for m in sim.messages if getattr(m, "role", None) == "user" for tc in (getattr(m, "tool_calls", None) or [])]
+    user_tool_msgs = [m for m in sim.messages if getattr(m, "role", None) == "tool" and getattr(m, "requestor", None) == "user"]
+    return {
+        "reward_basis_task": basis,
+        "env_assert_all": env_all,
+        "official_reward": official,
+        "n_user_tool_calls": len(user_calls),
+        "n_user_tool_errors": sum(1 for m in user_tool_msgs if getattr(m, "error", False)),
+    }
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--run-id", required=True)
     ap.add_argument("--arm", required=True, help="bf16 | static | fp_traj | cloq | q_only | rtn ...")
-    ap.add_argument("--domain", required=True, choices=["retail", "airline"])
+    ap.add_argument("--domain", required=True, choices=["retail", "airline", "telecom"])
     ap.add_argument("--task-ids", nargs="*", default=None)
     ap.add_argument("--task-file", default=None, help="json list of task ids or manifest with domain->ids")
     ap.add_argument("--agent-base", default=C.AGENT_API_BASE)
@@ -183,7 +225,8 @@ def main():
         "run_id": args.run_id, "arm": args.arm, "domain": args.domain, "note": args.note,
         "checkpoint": args.checkpoint, "frozen": C.FROZEN,
         "tau2_run_config": json.loads(cfg.model_dump_json()),
-        "evaluation_type_at_run": "all_ignore_basis (DB/ACTION/COMMUNICATE computed; NL assertions judged offline by cloq.nl_judge)",
+        "evaluation_type_at_run": "all_ignore_basis (DB/ENV_ASSERTION/ACTION/COMMUNICATE computed; NL assertions judged offline by cloq.nl_judge;"
+                                  " official_reward = product over the task's own reward_basis, the telecom primary endpoint)",
     }, indent=2))
     (run_dir / "environment.json").write_text(json.dumps(environment_json(args.agent_base, args.user_base), indent=2))
     (run_dir / "model.json").write_text(json.dumps({
