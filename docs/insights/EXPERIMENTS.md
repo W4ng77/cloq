@@ -1,7 +1,7 @@
 **TL;DR**
-- Blocker: agent servers draw a numerics "flavour" at compile time (Inductor reduction autotune). Only q4 bf16 and its nulls are verified clean; q4/q8 cells are mixed. Do E1 (≈0.75 GPU-h) now, then E2 (flag + canary + rerun q4/q8, ≈22 GPU-h, ≈2 h wall) **before** q4 gptq/awq and q14/q30a3/q32 references start.
-- E4 (0 GPU-h): fix s02 censoring (40/54 q8 k=1 tasks are censored raw-token divergences) and tag every run with its flavour.
-- Then E5 (flavour null family, ≈6 GPU-h) and E3 (open-loop D, ≈26 GPU-h est.). Discussion: `docs/insights/iter_1_discussion.md#experiment-round-1`.
+- Iter-2 prep (2026-09-29T05:06Z): 20 a6k2 run-domains (≥10% of episodes; 27 with any) are silently broken by `infrastructure_error` (node003's remote simulator); re-queue them (E9, ≈4.5 GPU-h) and add a worker guard (E11). Evidence: `docs/insights/iter_2_prep.md#0-data-flags-fix-before-any-number-goes-into-the-paper`.
+- Queue the FP32-head control (E8, ≈1.6 GPU-h, one vLLM flag). It is the only open test for W2 / Du et al. Next is E10 (E3 for the sub-grid cells, ≈0.8 GPU-h).
+- The review's no-GPU items A2-1…A2-9 are done: `analysis/insights/iter_2/out/*.json` ← `analysis/insights/iter_2/p0*.py` (`run_all.sh`).
 
 # Experiment plan (running)
 
@@ -23,6 +23,20 @@ The matrix totals ≈115 GPU-h. Capacity is ≈26 agent GPUs (`/data/ziyangs/clo
 | E5 | proposed (iter 1) | numerics-flavour null family: legacy q4/q8 runs (free) + 1 `--enforce-eager` BF16 run per model + gauss k=0.03 s3–s5 for q4/q8 | I1-P1c, I4-P4c, survey weight-only null | ≈6 | `out/s04_node_floor.json` ← `s04_node_floor.py` |
 | E6 | deferred | seeds s3/s4 at k=0.3 and k=1, all models (P2d power: SE ≈0.037 per model with 2 seeds) | I2-P2d | ≈15 | power arithmetic in the discussion §Decisive tests |
 | X1 | proposed drop (conditional) | `q32_gptq_w4_d2`, if q32 GPTQ builds OOM; no insight needs a 2nd calibration draw at 32B | — | −4 to −8 | candidates I3 (4080 draws exchangeable) |
+| E8 | proposed (iter 2) | FP32 lm_head control on q4: det pair + bf16, eager, k = 0.001 s1, k = 0.03 s1, all with `--hf-overrides '{"head_dtype": "float32"}'`; pre-registered predictions (a)–(d) | I1/W2, novelty vs Du et al. | ≈1.6 | spec and predictions: `docs/insights/iter_2_prep.md#e8-fp32-head-control-the-reviews-item-11-essential-for-w2-and-for-positioning-against-du-et-al`; tie share `analysis/insights/iter_2/out/p02_ties.json` `tie_density` |
+| E9 | proposed (iter 2) | re-queue the F1-broken runs away from node003: new task `a6k2_q4_null_fix` (n3–n5) plus 7 done tasks unchanged (q8 gauss1_s1, q8 rtn_w3, q4 gauss0.003_s1, gauss1_s4, gauss2_s2, gauss3_s1, q8 gauss0.001_s2), after moving the broken run dirs aside | all outcome claims | ≈4.5 | `analysis/insights/iter_2/out/p00_snapshot.json` `infra_error_runs`; `/data/ziyangs/cloq_work/logs/tasks/a6k2_q4_bf16.log` L1257 |
+| E10 | proposed (iter 2) | E3 open-loop D for k ∈ {0.001, 0.003, 0.01, 2} × s1/s2 (`make_tasks.py --only e3`) | W11 / Fig. 2 x-axis | ≈0.8 (q4), ≈1.6 (q4 + q8) | `analysis/insights/iter_2/out/p05_e3_axis.json` |
+| E11 | proposed (iter 2) | worker guard: fail or retry a task whose run has any `infrastructure_error`, and probe the simulator between runs; iter-1 verify scripts drop those episodes | data integrity | 0 (code) | `docs/insights/iter_2_prep.md#f1-infrastructure_error-episodes-are-silently-scored-as-failures` |
+| A2-1 | done (iter 2) | declared-margin TOST per family, per cell and pooled free zone; M80 per family | W1 | 0 | `analysis/insights/iter_2/out/p01_equivalence.json` ← `p01_equivalence.py` |
+| A2-2 | done (iter 2) | within-pass stratified Δ (IVW), null sets A–D, leave-one-family-out | W3, W4 | 0 | same, `stratified`, `nullsets`, `lofo_nullset_A` |
+| A2-3 | done (iter 2) | exact-tie floor: tie density (5 models), flat sub-grid hazard, tie share of flips, cross-model floor prediction | W2 | 0 | `out/p02_ties.json` ← `p02_ties.py`; `out/p06_weight_ulp.json` ← `p06_weight_ulp.py` |
+| A2-4 | done (iter 2) | Flat-Score / Singh / McNemar vs the null-referenced TOST | W5 | 0 | `out/p07_protocol_tally.json` ← `p07_protocol_tally.py` |
+| A2-5 | done (iter 2) | Replay Gap reconciliation (agent-first flips, depth) | W5, Q4 | 0 | `out/p03_replay_gap.json` ← `p03_replay_gap.py` |
+| A2-6 | done (iter 2) | text vs tool hazard | W2 | 0 | `out/p02_ties.json` `closed_loop.*.hazard_{text,tool}` |
+| A2-7 | done (iter 2) | write/read/text first divergence, write-set change, Spearman vs Δ (P2b predictor not supported) | P2b | 0 | `out/p04_write_flips.json` ← `p04_write_flips.py` |
+| A2-8 | done (iter 2) | null width: non-degenerate p_t fraction, SD ratio with chi-square CI | W9 | 0 | `out/p01_equivalence.json` `null_width_A` |
+| A2-9 | done (iter 2) | E3 axis choice: token flip rate | W11 | 0 | `out/p05_e3_axis.json` ← `p05_e3_axis.py` |
+| X2 | dropped (iter 2) | extra per-family draws aimed at ±5 pp equivalence | W1 | — | M80 ≥ 6.5 pp even at 5 draws: `out/p01_equivalence.json` `families.*.m80_tost` |
 
 ## Ready-to-queue specs
 
@@ -57,3 +71,4 @@ E5: add `eval_task(f"{m}_bf16_eager", m, "bf16", {"kind": "bf16"}, [run(f"{R}_bf
 ## History
 
 - 2026-09-28 (iter 1, round 1): E1–E6 and X1 proposed. Evidence scripts were added under `analysis/insights/iter_1/exp/` (read-only over logs, runs and the queue; `e_bestconfig.sh` reads the node-local caches over ssh).
+- 2026-09-29 (iter 2 prep): A2-1…A2-9 done (0 GPU-h). E8–E11 proposed and X2 dropped. Flags F1 (`infrastructure_error` scored as failure; 20 run-domains ≥10%, 27 with any) and F2 (iter-1 `action_key` ignores top-level tau2 tool calls). The E8 specs are in `docs/insights/iter_2_prep.md#3-proposals-gpu-and-code-for-main`.

@@ -251,6 +251,10 @@ def run_eval(task, args, st: Status):
                         json.load(open(ROOT / "runs" / rid / d / "status.json")).get("status") == "completed"
                     if p.returncode != 0 or not ok:
                         raise RuntimeError(f"run {rid}/{d} failed rc={p.returncode}")
+                    # episodes cut by a dead simulator/server are not agent failures (W6): never accept them as data
+                    tr = json.load(open(ROOT / "runs" / rid / d / "metrics.json")).get("termination_reasons") or {}
+                    if isinstance(tr, dict) and tr.get("infrastructure_error", 0):
+                        raise RuntimeError(f"run {rid}/{d}: {tr['infrastructure_error']} infrastructure_error episodes")
                     done += 1
                     # storage: tau2_results.json (~4 MB/task) duplicates trajectory.jsonl once the run is complete
                     tr = ROOT / "runs" / rid / d / "tau2_results.json"
