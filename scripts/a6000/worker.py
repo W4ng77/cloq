@@ -262,7 +262,19 @@ def run_eval(task, args, st: Status):
                     # episodes cut by a dead simulator/server are not agent failures (W6): never accept them as data
                     tr = json.load(open(ROOT / "runs" / rid / d / "metrics.json")).get("termination_reasons") or {}
                     if isinstance(tr, dict) and tr.get("infrastructure_error", 0):
-                        raise RuntimeError(f"run {rid}/{d}: {tr['infrastructure_error']} infrastructure_error episodes")
+                        # W10: a conversation that outgrows the simulator/agent context window is the agent's doing
+                        # (it loops or rambles), i.e. a task failure, not an outage. Record causes; fail only on real outages.
+                        causes = {}
+                        res = ROOT / "runs" / rid / d / "tau2_results.json"
+                        if res.exists():
+                            for sim in json.load(open(res)).get("simulations", []):
+                                if str(sim.get("termination_reason")) == "infrastructure_error":
+                                    err = str((sim.get("info") or {}).get("error", ""))
+                                    causes[str(sim["task_id"])] = "context_overflow" if "ContextWindowExceeded" in err else "outage"
+                        (ROOT / "runs" / rid / d / "infra_causes.json").write_text(json.dumps(causes, indent=1))
+                        n_out = sum(v == "outage" for v in causes.values()) if causes else tr["infrastructure_error"]
+                        if n_out:
+                            raise RuntimeError(f"run {rid}/{d}: {n_out} infrastructure_error episodes (outage)")
                     done += 1
                     # storage: tau2_results.json (~4 MB/task) duplicates trajectory.jsonl once the run is complete
                     tr = ROOT / "runs" / rid / d / "tau2_results.json"

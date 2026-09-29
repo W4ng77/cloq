@@ -52,6 +52,14 @@ found") and passes JSON arrays as strings (11/38). The template ablation gives t
 - Consequence: l8's high retail tool-error rate belongs to the model, not to the harness. Treat l8 as a
   low-capability family (floor effects on db_match) when reading its perturbation nulls.
 
+## W10 · Context-window overflow is a task failure, not an outage (2026-09-29 03:00 PDT)
+**TL;DR** `a6k2_q8_gauss2_s2` failed the W6 guard with 2 infrastructure_error episodes. They were not outages: a
+heavily perturbed agent looped until the dialogue exceeded the simulator's 65,536-token window. That is the agent's own
+failure. The worker now classifies each infrastructure_error from tau2's `info.error` into
+`runs/<run>/<dom>/infra_causes.json` (context_overflow vs outage) and fails the task only on outages. Analyses
+(`analysis/insights/iter_2/common.py`) count context_overflow as failure. The task was re-queued.
+- Evidence: `/data/ziyangs/cloq_work/logs/tasks/a6k2_q8_gauss2_s2.log` (ContextWindowExceededError); fix `scripts/a6000/worker.py`.
+
 ## W8 · Duplicate decision records from resumed runs; more infra-error runs (2026-09-28 23:45 PDT)
 **TL;DR** tau2's `auto_resume` and retries re-run a simulation, but `cloq.agent` appends to decisions.jsonl. So an
 interrupted or retried task kept the records of its abandoned attempt (6,724 records in 52 run-domains). Outcomes were

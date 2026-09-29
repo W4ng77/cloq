@@ -158,6 +158,13 @@ def outcomes(run, dom, with_reason=False):
             db = ((s.get("reward_info") or {}).get("db_check") or {}).get("db_match")
             tr = s.get("termination_reason")
             rows.append((str(s["task_id"]), int(bool(db) and tr in ("user_stop", "agent_stop")), tr))
+    # W10: infrastructure_error caused by a context-window overflow is the agent's own failure (runaway dialogue),
+    # recorded by the worker in infra_causes.json; relabel it so it counts as a failure, not as missing.
+    cp = RUNS / run / dom / "infra_causes.json"
+    if cp.exists():
+        causes = json.load(open(cp))
+        rows = [(t, 0, "context_overflow") if tr == INFRA and causes.get(t) == "context_overflow" else (t, y, tr)
+                for t, y, tr in rows]
     if with_reason:
         return {t: (y, tr) for t, y, tr in rows}
     return {t: y for t, y, tr in rows if INFRA_AS_FAIL or tr != INFRA}
