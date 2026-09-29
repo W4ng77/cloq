@@ -2,7 +2,7 @@
 
 usage:
   python -m cloq_code.run_code --run-id code_q4_bf16 --arm bf16 \
-      [--task-file manifests/code/lcb_mh_v5v6.json] [--limit 20 | --task-ids abc374_f ...] \
+      [--task-file manifests/code/lcb_emh_v5v6.json] [--limit 20 | --task-ids abc374_f ...] \
       [--agent-base http://127.0.0.1:8001/v1] [--max-turns 8] [--max-concurrency 8]
 
 Artifacts under runs/<run_id>/code/ (same names and record conventions as cloq.run_arm):
@@ -138,7 +138,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--run-id", required=True)
     ap.add_argument("--arm", required=True)
-    ap.add_argument("--task-file", default=str(C.PROJECT_ROOT / "manifests/code/lcb_mh_v5v6.json"))
+    ap.add_argument("--task-file", default=str(C.PROJECT_ROOT / "manifests/code/lcb_emh_v5v6.json"))
     ap.add_argument("--task-ids", nargs="*", default=None)
     ap.add_argument("--limit", type=int, default=None, help="first N problems of the manifest order")
     ap.add_argument("--agent-base", default=C.AGENT_API_BASE)
