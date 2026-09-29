@@ -10,6 +10,18 @@ Newest first.
 
 ---
 
+## W15 — E17 size-vs-structure complete; r_common family regex fix (2026-09-29)
+**TL;DR** `iter_3/r_common.QUANT_RE` recognised only rtn/awq/gptq, so r01–r09 silently dropped every E17 control and every new method (gshape, rtnsign, rtnsr, nf4, mxfp4, rot_*, kvq_*). Fixed. With all 3 draws per control on q4/q8/q14 (attractor-model λ, nonce null, task bootstrap, unfrozen):
+
+| model | RTN W4 | gshape (RTN per-group RMS, Gaussian) | rtnsign (RTN magnitudes, random signs) | Gaussian k=1 (fixed ckpt) |
+|---|---|---|---|---|
+| q4 | 0.24 [0.09, 0.42] | 0.42 [0.22, 0.62] | 0.24 [0.12, 0.37] | 0.34 [0.16, 0.56] |
+| q8 | 0.19 [0.01, 0.41] | 0.17 [0.02, 0.38] | 0.42 [0.17, 0.70] | 0.27 [0.07, 0.52] |
+| q14 | 0.25 [0.06, 0.45] | 0.20 [−0.01, 0.41] | 0.35 [0.13, 0.58] | 0.30 [0.09, 0.49] |
+
+No ordering holds across models and every CI overlaps: RTN's specific error structure reallocates no more than size-matched random error; the controls reallocate as much or more (3-model means: RTN 0.23, gshape 0.26, rtnsign 0.34). Supports "reallocation is set by error size, not quantizer structure" (M4). Provisional until the frozen-snapshot rerun. Earlier E17 numbers in chat (q8 gshape 0.049, q14 rtnsign 0.175) were a different metric (fate-change fraction) from an ad hoc script and are superseded.
+Evidence: `analysis/insights/iter_3/out/r01_realloc_unfrozen.json`; `analysis/insights/iter_3/r_common.py` (QUANT_RE); runs `runs/a6k2_{q4,q8,q14}_{gshape,rtnsign}_w4_q{1,2,3}`.
+
 ## W14 — KV-quant scheduling (2026-09-29)
 **TL;DR** Plain KV INT4/INT3 destroys q4 (token flip 79%/90% vs 4.3% with Hadamard rotation, 0.75% at INT8), so its closed-loop cells would loop to max_steps for hours (W11) and add nothing beyond gauss k=3. Deferred the 6 plain INT4/INT3 cells, added KV INT8 cells on q4/q8/q14 (fresh nonces q1–q3) as the free-zone deployed-analog point, and made the cross-node det pair INT4+rotation.
 Evidence: `analysis/kvq/validate_q4.json`; `queue/deferred/a6k2_{q4,q8,q14}_kvq_{int4,int3}.json`; `queue/todo/a6k2_{q4,q8,q14}_kvq_{int8,int4_rot}.json`, `a6k2_det_q4_kvq_int4_rot_{a,b}.json`.

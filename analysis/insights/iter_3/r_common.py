@@ -32,7 +32,9 @@ OUT.mkdir(exist_ok=True)
 OPENLOOP = Path("/data/ziyangs/cloq/analysis/openloop/a6k2")
 MIN_TASKS = 77
 TAG = ("live" if SNAP_PATH and "live" in os.path.basename(SNAP_PATH) else "frozen") if SNAP_PATH else "unfrozen"
-QUANT_RE = re.compile(r"^(rtn_w\d|awq_w\d|gptq_w\d(?:_d\d)?)_(?:n|q)\d+$")
+# fixed-checkpoint families on fresh/null nonces: quantizers, E17 size-vs-structure controls (gshape, rtnsign, rtnsr),
+# grid/rotation formats (nf4, mxfp4, rot_*) and fake KV-cache quant (kvq_*)
+QUANT_RE = re.compile(r"^((?:rot_)?(?:rtn|awq|gptq|gshape|rtnsign|rtnsr|nf4|mxfp4|bf16)(?:_w\d)?(?:_d\d)?|kvq_\w+?)_(?:n|q)\d+$")
 GCTL_RE = re.compile(r"^(gauss[\d.]+_s\d+)_q\d+$")
 GCAN_RE = re.compile(r"^(gauss([\d.]+))_s\d+$")
 
