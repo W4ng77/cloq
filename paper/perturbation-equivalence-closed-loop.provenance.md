@@ -101,7 +101,7 @@ Status labels: **HELD** (stated plainly), **TENT** (tentative / hypothesis, stat
 | q8 W3 −3.9 [−13.9,+6.9]; tool flips 0.76–0.88 | verdicts §I2 confound 2 | — | TENT |
 | 11 families (gauss0.03 anomaly) | verdicts §I2 confound 5 | — | open |
 | tool flips 0.19–0.42 (RTN-W4), 0.23–0.92 (k=1); Δ ≈ −2 | verdicts §I2 "Where the statement is off" | verify/out/v01_legacy_recompute{,_a6k2}.json `B_flip_by_kind` | TENT |
-| recovery 0.68 (read/lookup) vs 0.21 (write) | verdicts §I2 | analysis/strategy_v2_workflow/mechanism/a567.out Q7 | 4080, analysis-file only. **Conflict:** candidates §I2 give 0.214–0.346 (write) vs 0.677–1.0 (text-only) |
+| recovery 0.21–0.35 (Q action write) vs 0.40–0.80 (Q action read/lookup), BF16-solved tasks | analysis/strategy_v2_workflow/mechanism/a567.out Q7 "recovery by (BF16 action, Q action) at t_tool" (write: 0.214, 0.300, 0.346; read/lookup: 0.398, 0.677, 0.800) | — | 4080, analysis-file only. Replaces verdict wording 0.68/0.21 (verification pass 2026-09-28) |
 | process channels 15.1/16.9 vs 12.0–12.3; premature 0.034/0.069 vs 0; repeated calls 0.236 vs 0.04–0.07; 11.1–12.9 | candidates §I2 table | out/s06_pilot_delta_q4_{retail,airline}.json | legacy |
 | max_steps 7/33, 8/32 vs 0 | verdicts §I2 | verify/out/v03_outcomes_pooled.json `q4.cells.a6000_q4_rtn_w3_n*.terminations` | legacy |
 
