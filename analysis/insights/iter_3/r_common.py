@@ -32,6 +32,8 @@ OUT.mkdir(exist_ok=True)
 OPENLOOP = Path("/data/ziyangs/cloq/analysis/openloop/a6k2")
 MIN_TASKS = 77
 TAG = ("live" if SNAP_PATH and "live" in os.path.basename(SNAP_PATH) else "frozen") if SNAP_PATH else "unfrozen"
+# CLOQ_TAG overrides the output tag (e.g. live_<snapshot id>) so a newer gated snapshot does not overwrite <name>_live.json
+TAG = os.environ.get("CLOQ_TAG") or TAG
 # fixed-checkpoint families on fresh/null nonces: quantizers, E17 size-vs-structure controls (gshape, rtnsign, rtnsr),
 # grid/rotation formats (nf4, mxfp4, rot_*) and fake KV-cache quant (kvq_*)
 QUANT_RE = re.compile(r"^((?:rot_)?(?:rtn|awq|gptq|gshape|rtnsign|rtnsr|nf4|mxfp4|bf16)(?:_w\d)?(?:_d\d)?|kvq_\w+?)_(?:n|q)\d+$")

@@ -16,7 +16,7 @@ fi
 for S in "$FROZEN" "$(readlink -f "$LIVE")"; do
   export CLOQ_SNAPSHOT=$S
   TAG=$(case "$S" in *live*) echo live;; *) echo frozen;; esac)
-  for s in r01_realloc r02_stability r03_fragility r04_margin_predict r05_openloop_task r06_crossmodel r07_damage r08_size_generic r09_headline; do
+  for s in r01_realloc r02_stability r03_fragility r04_margin_predict r05_openloop_task r06_crossmodel r07_damage r08_size_generic r09_headline r10_turnover_stats; do
     python $s.py > out/${s%%_*}_$TAG.log 2>&1
   done
   echo "done $TAG ($S)"

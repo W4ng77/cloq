@@ -10,6 +10,24 @@ Newest first.
 
 ---
 
+## W17 — R3/R4 statistics for λ–c turnover: floor, hierarchical bootstrap, TOST/NI, Holm (2026-09-29 12:55 PDT)
+**TL;DR** Addresses review_storyline_v4 R3/R4 and W6/W7. Run on a fresh integrity-gated snapshot (20260929T1937Z) for q4/q8/q14/q30a3/q32 (l8: no runs), with a hierarchical paired bootstrap (tasks, null draws, checkpoints and draws resampled).
+- **Survives Holm.**
+  - W4 turnover above a numerics floor (rot_bf16/null_K/gauss0.001/0.003), pooled over 5 models: RTN +0.19 [0.10, 0.30], GPTQ +0.15 [0.07, 0.24], AWQ +0.16 [0.07, 0.25].
+  - RTN re-rolls no more than random-sign error of RTN magnitude (NI, margin 0.10, p_holm 0.038).
+- **Fails.** "20–40%" and "5–10×": against the floor, q4 RTN break is 2.2× [0.9, 8.9] and fix 1.2× [0.4, 3.7].
+- **Not established.** λ-equivalence of W4 methods at ±0.10. The pooled Δλ vs RTN is only −0.05 to +0.13, but no TOST passes.
+- **Unidentified.** "c follows method": RTN's c is unidentified (λ 2.5% bound ≤ 0.10) on every model, so none of the 14 Δc tests can be run.
+- **Checkpoint lottery.** The same-method checkpoint gap exceeds the method gaps: q4 GPTQ d1−d2 ΔΔ +9.6 pp [1.8, 17.4], while every method-vs-RTN ΔΔ CI covers 0. The checkpoint variance of Δ exceeds the method variance on q4/q14/q32 (1–2 df; tests need R1).
+- **Coin check.** Passes in 81/83 cells, but it is weak (median CI width 0.39).
+- **Provenance.**
+  - "Partial ρ 0.86" was flip vs per-decision *hazard* (A2-15). For λ it is 0.39 [−0.03, 0.73]: the probe is mostly a dose proxy.
+  - The 85 tasks are the `evaluation` split of `manifests/task_split_v0.json` after 22 BF16-unstable exclusions; the 57 calibration tasks are unused.
+  - `r01_realloc_unfrozen.json` (q4,q8 only, ungated) is left unchanged. The gated all-model r01 is `r01_realloc_live_20260929T1937Z.json`.
+  - `r_common.py` gains a `CLOQ_TAG` output-tag override.
+
+Evidence: `docs/insights/iter_3_stats_R3.md`; `analysis/insights/iter_3/r10_turnover_stats.py`; `analysis/insights/iter_3/out/{r10_turnover_stats,r01_realloc}_live_20260929T1937Z.json`, `out/snapshot_live_20260929T1937Z.json`, `out/integrity_live_20260929T1937Z.log`; `paper/review_storyline_v4.md`.
+
 ## W16 — Simulator rebalancing without runner restarts (2026-09-29 12:30 PDT)
 **TL;DR** node005's simulator stayed KV-bound (4 running, 36–38 waiting) while node001/node004 simulators were idle. (1) Stopped `a6k2_q4_gauss3_s2_redo` (26/85 tasks after 13 h; k=3 loops to max_steps, W11) and moved it to `queue/deferred/` (finished episodes kept, resume-safe); `a6k2_q4_gauss3_s1_redo` (54/85) continues. (2) `worker.py` now reads `queue/USER_BASE.<node>` at task start, so a node's new tasks can use another node's simulator without restarting its runner; `USER_BASE.node005` → node004. All simulators are the same model with the same canary hash, so outcomes are unaffected. (3) `gputop.py` sums non-negative counter increments (server restarts gave negative cluster tok/s).
 Evidence: `queue/deferred/a6k2_q4_gauss3_s2_redo.json`; `queue/USER_BASE.node005`; `scripts/a6000/{worker,gputop}.py`; `gpumon/node005.jsonl`.
