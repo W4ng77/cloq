@@ -10,6 +10,10 @@ Newest first.
 
 ---
 
+## W22 — Iteration-4 pre-registration (2026-09-29)
+**TL;DR** Pre-registered H1 (recalibration lottery, φ>1), H2 (net effect replicates across nonces), H3 (split-task fingerprint), Holm over H1–H3; H4 (quantizer vs random coherence) secondary. Confirmatory units: GPTQ/AWQ-W4 d3/d4 and Gaussian k=1 seeds s2/s4/s5 on q4/q8 × nonces q1/q2 (40 runs). Written while these runs were running; no closed-loop outcome of them had been analysed (q4 churnctl_k1_s2 had finished, not opened). sha256[:16] of the registered file: 0d5e8385c911824f.
+Evidence: `docs/insights/PREREG_iter4.md`.
+
 ## W21 — Review packet, v5 review, sampling baseline pulled (2026-09-29)
 **TL;DR** Storyline v5 reviewed: 2.5/5 as-is, 3.5 if reframed around the checkpoint lottery with confirmatory recalibration draws (`paper/review_storyline_v5.md`). The review found the W19 sampling baseline mis-designed (vLLM re-seeds every request with the same seed, so a fixed seed acts as a fixed perturbation); `a6k2_q4_samp_T*` moved to `queue/deferred/` before any run started. All results, open-loop outputs, determinism canaries, calibration manifests and docs committed; analysis caches git-ignored. `docs/REVIEW_PACKET.md` is a self-contained entry point for external reviewers (methodology, results, reviews, open questions), linked from README.
 Evidence: `docs/REVIEW_PACKET.md`, `paper/review_storyline_v5.md`, `queue/deferred/a6k2_q4_samp_T{0.2,0.5,0.8}.json`.
