@@ -1,6 +1,8 @@
-# COLING 论文计划（2026-09-28 修订）
+# 论文计划（2026-09-28 修订；投稿目标改为 NAACL 2027）
 
-**截稿日期待用户确认**；下文时间线以截稿日 D 倒排。
+**投稿（2026-09-28 用户决定）：** 走 ARR 2026 年 10 月轮，截稿 **2026-10-12 AoE**（NAACL 2027 与 COLING 2027 共用这一轮），按 NAACL 要求准备；12-23 前 commit 时选 NAACL 为主会。要求：ACL 模板 review 模式、双盲匿名、长文 8 页正文、必须有 Limitations、Responsible NLP checklist、至少一位作者注册审稿（reciprocal reviewing）。LaTeX 源：`paper/latex/`。来源：https://2027.naacl.org/calls/main_conference_papers/
+
+截稿日 D = 2026-10-12（ARR）；下文时间线以 D 倒排。
 
 ## 1. 题目与一句话
 *Perturbation Equivalence in Closed-Loop Agents: When Is a Compressed Agent Actually Worse?*
