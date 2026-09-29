@@ -87,3 +87,11 @@ E5: add `eval_task(f"{m}_bf16_eager", m, "bf16", {"kind": "bf16"}, [run(f"{R}_bf
 - 2026-09-28 (iter 1, round 1): E1–E6 and X1 proposed. Evidence scripts were added under `analysis/insights/iter_1/exp/` (read-only over logs, runs and the queue; `e_bestconfig.sh` reads the node-local caches over ssh).
 - 2026-09-29 (iter 2 conformal): A2-10/A2-11 done (0 GPU-h, snapshot 05:45Z). E12 (≈2.4 GPU-h) and E13 (rule) proposed. Flags: F-C1, where the pooled ±5 pp equivalence rests on the mixed-prompt null A, and F-C2, where open-loop features do not predict success Δ, so the C4 gate cannot certify damage. See `docs/insights/iter_2_conformal.md`.
 - 2026-09-29 (iter 2 prep): A2-1…A2-9 done (0 GPU-h). E8–E11 proposed and X2 dropped. Flags F1 (`infrastructure_error` scored as failure; 20 run-domains ≥10%, 27 with any) and F2 (iter-1 `action_key` ignores top-level tau2 tool calls). The E8 specs are in `docs/insights/iter_2_prep.md#3-proposals-gpu-and-code-for-main`.
+
+### E22 · Conformal-stratum completion (queued 2026-09-29 ~11:00 PDT, main session)
+**TL;DR** NULL_RULE.md makes the nonce stratum primary (canonical vs nonce not exchangeable, p=0.0099), and the canonical
+stratum has only n=2 nulls. So every Gaussian control and the RTN-W8 negative control were untestable. This adds fresh-nonce
+draws q1–q3 (never used by the null family) for gauss k=0.3 (seed 1), gauss k=1 (seed 2; seed 1 is covered by churnctl_k1)
+and RTN-W8 on q4/q8/q14: 9 tasks × 3 runs, about 10 GPU-h. All test cells (quantizers `*_qx`, E17 gshape/rtnsign, X1, l8,
+controls) are then in the nonce stratum, with J = 8 nulls (n1–n8).
+- Tasks: `/data/ziyangs/cloq_work/queue/todo/a6k2_<m>_{gauss0.3_s1,gauss1_s2,rtn_w8}_cf.json`.
