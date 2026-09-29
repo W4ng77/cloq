@@ -407,3 +407,9 @@ The framing-pass answers for P1–P3 and the criterion are superseded by I1–I4
 - Confidence-weighted compounding cost in agents: search ACL Anthology and OpenReview directly; lead 2606.02965 is unopened.
 - Pruning and distillation on agents: not yet swept.
 - Unread leads: 2602.18998, 2601.14888, 2510.18731, 2604.08782, 2608.14711, 2605.08137 (S-cae, end).
+- *(added by cloq-verify, iter 1; evidence `docs/insights/iter_1_verdicts.md`)* **V1-Q1 (I4, E5).** Has any agent-benchmark paper treated the *user simulator's* serving numerics as a perturbation? Legacy→a6k2 re-serving changed the simulator's first user message in 11/20 det tasks, the same tasks for q4 and q30a3 (`analysis/insights/iter_1/verify/out/v02_a6k2_det.json`).
+- **V1-Q2 (I1).** Any prior report of a per-decision divergence-hazard *floor* that is flat below a resolution scale (e.g. the bf16 log-prob grid, 0.125 nats) and rises only above it? (Patodiya's 3.5% per turn vs 36% per episode is the nearest; check Du 2609.26621 §5 and Islam 2604.13206.)
+- **V1-Q3 (I3).** RTN vs GPTQ/AWQ at *matched output-logit shift*: evidence that RTN carries damage beyond its shift (systematic/outlier-channel error vs noise-like error)? Legacy q8 RTN-W4 Δ −10.5 pp vs Gaussian k=1 0.0 pp at matched median |d| (`verify/out/v04_pooled_draws.json`).
+- **V1-Q4 (I2).** Agent self-correction after a wrong tool call: published recovery rates besides Flat Score's 55%? Our q4 shows tool-turn flip rates 0.2–0.9 (k=1, RTN-W4) with no measurable db_match loss.
+- **V1-Q5 (I1, I4; carried from candidates).** Divergence or benchmark-score change from a compiler/autotune-level numerics change (not batch or kernel swap) in multi-turn agents.
+- **V1-Q6 (I2; carried).** Agent-quantization work reporting decisions/turns per episode against a noise null; matched-output-KL quantizer comparisons in agents (I3-Q4 re-check before submission).
