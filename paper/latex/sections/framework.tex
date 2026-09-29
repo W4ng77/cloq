@@ -1,0 +1,41 @@
+\section{Framework}
+\label{sec:framework}
+
+\subsection{Setting and notation}
+An agent $M$ interacts with a user simulator and a tool environment on task $t$. At decision $s$ it emits a turn (free text or a tool call) token by token under greedy decoding. The task outcome $Y_t(M) \in \{0,1\}$ is the database end-state match; premature termination is scored as failure.
+
+For each generated token $j$ under the reference, the \emph{margin} $m_j$ is the gap between the top-1 and top-2 log-probabilities. A perturbation $\pi$ (a prompt nonce, a weight change, or a change of serving numerics) shifts the reference log-probability gap at token $j$ by $d_j$; $D_\pi$ is the distribution of these shifts and $\delta$ its scale. The Gaussian noise level $k$ (\S\ref{sec:setup}) is the \emph{dose} we apply; the median of \absd{} is the \emph{shift} we measure, either \emph{closed-loop} (unflipped prefix tokens of identical-context decisions, on the bf16 log-probability grid; Table~\ref{tab:hazard}) or \emph{open-loop} (a replay over all tokens of the reference contexts; Appendix~\ref{app:openloop}). The two are different quantities that we never compare numerically.
+
+\subsection{Per-step model (inherited) and closed-loop composition}
+Following \citet{du2026greedy}, a token flips when the shift overcomes the margin, $P(\text{flip}_j) \approx P(d_j < -m_j)$. A decision $s$ diverges if any of its tokens flips on an identical context,
+\begin{equation}
+p_s = 1 - \textstyle\prod_{j \in s} P(d_j \ge -m_j).
+\end{equation}
+In a closed loop, a divergence at decision $s$ changes the context of all later decisions, including the simulator's replies, so
+\begin{equation}
+P(\text{diverged by } t) = 1 - \textstyle\prod_{s \le t} (1 - p_s),
+\end{equation}
+and $p_s$ is the per-decision divergence hazard. The composition is elementary; what matters is what it implies when margins are structured.
+
+\subsection{Predictions}
+Text turns contain several near-tied tokens per decision, while tool calls are usually decided by margins of several nats (\S\ref{sec:p1}). This two-tier structure yields three predictions.
+
+\textbf{P1 (floor, then ranking).} Any perturbation whose shifts reach the bf16 log-probability grid step (0.125 nats in our closed-loop measurements) flips text-turn near-ties at a rate set by the density of ties, not by $\delta$, so the per-decision hazard has a floor that every such perturbation reaches and episode-level divergence saturates. Once tool-turn margins start to be crossed, the hazard grows with $\delta$ and ranks perturbations. With $D \equiv 0$ there is no divergence.
+
+\textbf{P2 (damage later than divergence).} A re-rolled trajectory is a new sample from roughly the same policy, so expected success should stay within the null until $\delta$ reaches the margins of state-changing actions and those flips are not recovered; damage thus starts at a larger $\delta$ than divergence, leaving a \emph{free zone}.
+
+\textbf{P3 (predictability).} The perturbation enters the per-step model only through $D$, so a model's divergence curve should be predictable from its reference margins and $D$, and perturbations with matched $D$ should have matched closed-loop outcomes. This is a hypothesis; \S\ref{sec:p3} reports evidence that may falsify it for RTN.
+
+\subsection{Perturbation equivalence}
+\label{sec:criterion}
+Let $\mathcal{P}_M = \{\pi_1, \ldots, \pi_R\}$ be a null family of perturbations of the reference $M$ that are not intended to change capability; each member yields an outcome vector $Y^{(r)} = (Y_t^{(r)})_{t \in T}$. In this paper the family draws on prompt nonces (a presentation-only session-identifier line in the system prompt), a serving-numerics variant (eager instead of compiled execution), and weight-only Gaussian noise at $k = 0.03$. The pooled null used for testing (\S\ref{sec:p2}) contains the canonical, nonce and eager runs; the $k = 0.03$ draws are analysed as a separate family, because whether they belong in the null is itself open (\S\ref{sec:p2}, \S\ref{sec:consequences}).
+
+\textbf{Definition.} A compressed model $C$ is \emph{perturbation-equivalent} to $M$ on task set $T$ if the columns of the task $\times$ run matrix $[Y^{(1)}, \ldots, Y^{(R)}, Y(C)]$ are exchangeable.
+
+Under P1, each task outcome in the null is approximately a Bernoulli draw with task-specific rate $p_t$, so the run-level standard deviation of the null is
+\begin{equation}
+\mathrm{SD}_{\text{run}} \approx \sqrt{\tfrac{1}{n}\,\overline{p_t(1-p_t)}},
+\end{equation}
+where $n$ is the number of tasks and the bar denotes the mean over tasks. We operationalize the criterion with three statistics, in decreasing order of maturity: (i) $\Delta = \frac{1}{n}\sum_t (Y_t(C) - \bar{Y}_t^{\text{null}})$, pooled over domains, with a task-cluster bootstrap CI (pre-registered MDE of the pooled five-model free-zone test: about 3.4\pp{}); (ii) the \emph{cell-only win rate} (tasks the cell passes that the null majority fails) against the null's own band, which detects nested pass sets (damage) rather than re-rolls; (iii) a permutation test on mean pairwise $\phi$ between columns (null--null vs.\ null--cell). \pending{$\phi$ permutation test (P4b) --- task $\times$ run matrices of a6k2 q4 and q8, analysis E4-f in \nolinkurl{analysis/insights/iter_1/verify/v04_pooled_draws.py}}
+
+Work on static benchmarks shows that scores change under paraphrase and across prompt templates, with paraphrased questions often scoring below the original wording \citep{lunardi2025robustness,mizrahi2024multiprompt}, so a nonce null might sit systematically below the canonical run. Canonical-prompt members (weight-only and numerics) are therefore the preferred null, with nonces reported alongside; the q4 analysis in \S\ref{sec:p2} still pools nonces into the null, and the canonical-prompt test that bears on this choice is pending (\S\ref{sec:consequences}). Figure~\ref{fig:schematic} (Appendix~\ref{app:stats}) sketches the mechanism and the test.

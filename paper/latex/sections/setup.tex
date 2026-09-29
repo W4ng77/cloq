@@ -1,0 +1,36 @@
+\section{Experimental Setup}
+\label{sec:setup}
+
+\paragraph{Benchmark and harness.} We use \tautwo{} \citep{barres2025tau2} retail and airline in text mode, on the 85 development tasks of our frozen split (58 retail, 27 airline). The harness allows 32k prompt tokens (agent maximum model length 33,792), because an 8k truncation policy lowered scores in an earlier study (Appendix~\ref{app:deepdive}). Decoding is greedy for agent and simulator. The endpoint is database end-state match, with premature termination (step limit, error limit, infrastructure error) scored as failure.
+
+\paragraph{Models.} Qwen3-4B-Instruct-2507 (q4), Qwen3-8B (q8), Qwen3-14B (q14), Qwen3-30B-A3B-Instruct-2507 (q30a3) and Qwen3-32B (q32), pinned to fixed revisions and served with the Hermes tool parser; thinking is disabled for the hybrid models. The user simulator is a fixed BF16 Qwen3-30B-A3B-Instruct-2507, shared by all agents. The main matrix runs on RTX A6000 GPUs.
+
+\paragraph{Perturbation matrix.} A \emph{cell} is one (model, perturbation) configuration and a \emph{draw} is one independent run of a cell (Table~\ref{tab:matrix}). The Gaussian ladder adds i.i.d.\ Gaussian noise to every linear layer, rescaled per layer so that $\lVert N \rVert_F = k \cdot \lVert \mathrm{RTN}_{W4}(W) - W \rVert_F$ (RTN W4, group 128, asymmetric): $k = 1$ matches the per-layer error norm of RTN-W4, and $k = 0.03$ is a thirtieth of it. Embeddings, LM head, norms and MoE routers stay in BF16; quantized cells are fake-quantized (dequantized weights served in BF16).
+
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}p{3.2cm}p{1.75cm}p{2.25cm}@{}}
+\toprule
+Cells & Draws / cell & Role \\
+\midrule
+BF16, canonical prompt & 1 & reference run \\
+BF16, eager execution & 1 & agent-only numerics null \\
+BF16, nonces 1--5 & 5 & nonce null \\
+Gaussian, $k \in \{0.03, 0.1, 0.3, 1, 3\}$ & 2 seeds; 5 at $k{=}0.03$ (q4, q8) & dose ladder; $k{=}0.03$ is the weight-only null \\
+RTN W8 / W4 / W3 (g128, asym.) & 2 (nonces 1, 2) & quantization \\
+GPTQ W4 (calib.\ draws d1, d2), W3 & 2 per draw & quantization \\
+AWQ W4 & 2 & quantization \\
+BF16 pair, 20 tasks, two nodes & 1 pair & $D \equiv 0$ check \\
+\bottomrule
+\end{tabular}
+\caption{Perturbation matrix per model. Quantized cells are run under nonces 1 and 2; Gaussian cells under the canonical prompt with different noise seeds. Completion counts per cell are in Appendix~\ref{app:config}.}
+\label{tab:matrix}
+\end{table}
+
+\paragraph{Deterministic serving.} Agents are served with vLLM batch-invariant kernels, the FlashInfer sampler disabled, and \texttt{TORCHINDUCTOR\_DETERMINISTIC=1}. Every server start runs a numerics canary against stored reference outputs for the agent and the simulator. Cross-node determinism pairs are byte-identical in prompts and completions: 257/257 decisions for q4 and 303/303 for q30a3. \S\ref{sec:diagnostics} describes the incident that led to this configuration.
+
+\paragraph{Two passes: legacy and clean.} A first pass (\emph{legacy}) was served before the deterministic-Inductor fix, so each server drew one of several numerics variants at compile time; only q4 BF16 and its nonce nulls are verified to share one. The full matrix was re-run under the fix (\emph{clean}), and every number is labelled legacy or clean. Where we pool the two, we treat the numerics variant as one more exchangeable perturbation, justified by P1 for cells above the floor; since this rests on P1 itself, pooled numbers are marked as such.
+
+\paragraph{Measurements.} From the decision logs we compute (i) the first divergence per task against the reference: the first decision whose raw tokens differ on an identical context (tasks ending before divergence are censored), with Kaplan--Meier (KM) estimates of $P(\text{first divergence} \le s)$; (ii) the \emph{per-decision hazard}, the number of first divergences divided by the number of decisions at risk, with a task-bootstrap CI (because episodes last about 12 decisions, KM $P(\le 12)$ is already near 1 at the floor hazards of Table~\ref{tab:hazard} and cannot rank perturbations; the hazard can); (iii) identical-context flip rates for text and tool turns and the closed-loop shift \absd{}; and (iv) the outcome statistics of \S\ref{sec:criterion}. An open-loop measurement (E3) replays each cell on the reference BF16 contexts on its own server and records per-token flips and shifts over all tokens (Appendix~\ref{app:openloop}).

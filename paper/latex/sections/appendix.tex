@@ -1,0 +1,178 @@
+\section{Statistical Details}
+\label{app:stats}
+
+\paragraph{$\Delta$ against the null.} For each task, the null mean $\bar Y_t^{\text{null}}$ is the mean outcome over null members (leave-one-out when the tested cell is itself a null member), computed on tasks with at least three null draws. $\Delta$ is the task average of $Y_t(C) - \bar Y_t^{\text{null}}$, pooled over retail and airline, and its CI is from a task-cluster bootstrap that resamples tasks and keeps all runs of a task together. Pooling across cells of one family averages over draws before the task difference is taken. A per-run rule used in an earlier version of our protocol (``inside the range of five nulls'') had a high per-run false-flag rate and was replaced by this statistic.
+
+\paragraph{Wins and losses against the null majority.} An episode (task $\times$ draw) of a family is a win if it passes a task whose null mean is below 0.5 and a loss if it fails a task whose null mean is above 0.5; tasks with a null mean of exactly 0.5 count as neither.
+
+\paragraph{Minimum detectable effect.} The pooled five-model free-zone test was pre-registered with an MDE of about 3.4\pp{}.
+
+\paragraph{Bernoulli prediction for the null SD.} The predicted run-level SD is $\sqrt{\overline{p_t(1-p_t)}/n}$ with $p_t$ estimated from the null draws of each task; the observed SD uses near-complete null draws only (at least 90\% of the tasks with a null mean). The observed-to-predicted ratio was pre-registered to lie in $[0.5, 2]$. With 4--6 draws this check has little power. \pending{P4a pooled over five models $\times$ five nonce nulls (20 df) --- \nolinkurl{a6k2_<model>_null_n1..n5}; \nolinkurl{verify/v04_pooled_draws.py}}
+
+\paragraph{Kaplan--Meier and hazard.} First divergence is the first decision whose raw tokens differ from the reference on an identical context (wording and format changes count; a behaviour-only divergence curve is a secondary measure). Tasks that end before diverging are censored. The per-decision hazard is the number of first divergences divided by the number of decisions at risk, with a task-bootstrap CI.
+
+\paragraph{Calibration test of \S\ref{sec:intro}.} The gap was tested with an exchangeable-null permutation (each task's pair of outcomes swapped with probability 0.5, 100,000 draws), which equals the exact one-sided McNemar binomial test on 8 versus 1 discordant tasks ($p = 0.01953$); the two-sided McNemar $p$ is 0.0389.
+
+\begin{figure}[h]
+\centering
+\fbox{\parbox{0.93\columnwidth}{\centering\small\vspace{4pt}
+Task $t$ (same instructions, same simulator) $\rightarrow$ BF16 reference / null member (nonce, Gaussian $k{=}0.03$, eager numerics) / compressed cell (RTN, GPTQ, AWQ) $\rightarrow$ decisions identical until the first flipped near-tie $\rightarrow$ free-text turn, margin below shift: flip, trajectory re-rolled; tool-call turn, margin of several nats: same action $\rightarrow$ task outcome, one Bernoulli draw with rate $p_t$ $\rightarrow$ cell outcomes exchangeable with null outcomes? yes: perturbation-equivalent; no (nested pass set, $\Delta$ below the null band): damage.\\[2pt]
+{\color{red}[Diagram to be drawn from this flow.]}\vspace{4pt}}}
+\caption{Placeholder for a conceptual schematic of the closed-loop re-roll and the equivalence test (\S\ref{sec:framework}). It illustrates the mechanism and is not drawn from a specific trajectory; the two-tier margin structure it depicts is measured in \S\ref{sec:p1}. Source: flowchart in the Markdown draft of this paper.}
+\label{fig:schematic}
+\end{figure}
+
+\section{Configuration Details}
+\label{app:config}
+
+\begin{itemize}[leftmargin=*,itemsep=0pt,topsep=2pt]
+\item Agent serving: vLLM with \texttt{VLLM\_BATCH\_INVARIANT=1}, \texttt{VLLM\_USE\_FLASHINFER\_SAMPLER=0}, \texttt{TORCHINDUCTOR\_DETERMINISTIC=1}; 32,768-token prompt budget, agent maximum model length 33,792.
+\item Tensor parallelism: q30a3 and q32 on two GPUs, restricted to NVLink-connected pairs after a cross-switch pair hung at NCCL initialization.
+\item Nonces: five fixed strings inserted as a session-identifier line in the system prompt.
+\item Gaussian noise: per linear layer, $\lVert N\rVert_F = k\,\lVert \mathrm{RTN}_{W4,g128,\text{asym}}(W) - W\rVert_F$, $k \in \{0.03, 0.1, 0.3, 1, 3\}$.
+\item GPTQ and AWQ calibration sets are drawn from the model's own BF16 trajectories (trajectory-based arm): GPTQ W4 d1 and d2 use calibration draws c1 and c2; AWQ W4 and GPTQ W3 use c1.
+\item Models: Qwen/Qwen3-4B-Instruct-2507, Qwen/Qwen3-8B, Qwen/Qwen3-14B, Qwen/Qwen3-30B-A3B-Instruct-2507 and Qwen/Qwen3-32B, each pinned to a fixed Hugging Face revision.
+\end{itemize}
+
+\pending{per-cell completion counts for Table~\ref{tab:matrix} --- all a6k2 cells, from \nolinkurl{docs/a6000/QUEUE.md} and \nolinkurl{runs/a6k2_*/<domain>/status.json}; at the last snapshot 51/109 a6k2 run-domains were complete (q4 nearly complete, q8 partial, q14/q30a3/q32 calibration and determinism only)}
+
+\pending{full per-cell configuration and completion table --- all cells, from \nolinkurl{scripts/a6000/make_tasks.py} and \nolinkurl{runs/a6k2_*/<domain>/{config,status,metrics}.json}}
+
+\section{Comparison with the Closest Work}
+\label{app:comparison}
+
+\begin{table*}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}p{2.4cm}p{2.2cm}p{2.7cm}p{2.7cm}p{2.9cm}p{1.9cm}@{}}
+\toprule
+Work & Closed-loop agent & Compression & Runs / episodes per cell & Null / equivalence margin & Logit margins measured \\
+\midrule
+ACBench \citeyearpar{dong2025acbench} & partly (tool use, workflows) & GPTQ, AWQ, SQ, pruning & 1 run & none & no (single-step diagnostics) \\
+Flat Score \citeyearpar{jang2026flat} & yes (\tautwo{}) & FP8, AWQ-INT4 & 4 trials per task (456 episodes per cell) & TOST $\pm 7.5$\pp{}; noise floor from one repeat run & no \\
+Noise Floor Audit \citeyearpar{chen2026noisefloor} & no (BFCL, single turn) & none & multiple reruns & reruns vs.\ prompt perturbations & no \\
+\citet{singh2026certifying} & no (static) & various & n/r & paired equivalence test at a declared margin ($\pm 2$\pp{} example) & no \\
+Replay Gap \citeyearpar{gonuguntla2026replay} & yes (SWE agents) & model swap; FP8/AWQ controls & control forks & same-model control forks & no \\
+\citet{patodiya2026same} & multi-turn tool episodes & two engines, four weight formats & n/r & none & no \\
+\citet{du2026greedy} & no (single turn) & BF16 vs.\ FP16 & n/r & none & yes (per-step model) \\
+\textbf{This work} & yes (\tautwo{}, fixed simulator) & RTN W8/W4/W3, GPTQ W4/W3, AWQ W4, Gaussian ladder & 2 draws $\times$ 85 tasks (170 episodes); up to 7 draws per pooled family & reference model's own perturbation null (10 draws on q4) & yes (per token) \\
+\bottomrule
+\end{tabular}
+\caption{Comparison with the closest work. ``Null'' means a reference distribution against which the compressed or perturbed model is judged. Entries are taken from our literature notes; ``n/r'' marks cells we could not confirm in the parts we read.}
+\label{tab:comparison}
+\end{table*}
+
+Table~\ref{tab:comparison} summarizes the design differences discussed in \S\ref{sec:related}. Counted in episodes, Flat Score runs more episodes per cell than we do; our difference is the null and the measured margins, not the sample size.
+
+\section{Open-Loop Shift Measurement (E3 Pilot)}
+\label{app:openloop}
+
+Closed-loop estimates of $D$ are biased, because shifts are only observed on the unflipped prefix of each decision. The open-loop measurement replays the perturbed model on the clean BF16 q4 contexts (400 decisions, 33,836 tokens). Table~\ref{tab:openloop} reports the q4 RTN-W4 pilot and the BF16 self-replay control.
+
+\begin{table}[h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lrccc@{}}
+\toprule
+BF16 margin (nats) & tokens & W4 flip & W4 med.\ \absd{} & BF16 flip \\
+\midrule
+{[0, 0.25)} & 265 & 0.574 & 0.651 & 0.0 \\
+{[0.25, 0.5)} & 480 & 0.556 & 0.559 & 0.0 \\
+{[0.5, 1)} & 865 & 0.462 & 0.433 & 0.0 \\
+{[1, 2)} & 1,633 & 0.337 & 0.264 & 0.0 \\
+{[2, 4)} & 2,557 & 0.196 & 0.115 & 0.0 \\
+{[4, 8)} & 3,645 & 0.063 & 0.011 & 0.0 \\
+{[8, $\infty$)} & 24,387 & 0.003 & 0.0 & 0.0 \\
+\bottomrule
+\end{tabular}}
+\caption{q4, open-loop per-token flip rate by reference BF16 margin on the contexts of the clean canonical BF16 run, for RTN-W4 and a BF16 self-replay. The median \absd{} column is open-loop \absd{} (E3), a different quantity from the closed-loop \absd{} of Table~\ref{tab:hazard}. Source: open-loop replay outputs for q4 RTN-W4 and BF16.}
+\label{tab:openloop}
+\end{table}
+
+Over all tokens, RTN-W4 flips 6.4\% of tokens and shifts 30.2\% of them; 60.8\% of decisions contain at least one flipped token, and the first token flips in 19.3\% of decisions. The flip rate falls monotonically with the reference margin, from 0.57 below 0.25 nats to 0.003 above 8 nats. The BF16 self-replay has no token flips in any bin and $|\Delta \text{logprob}| \le 5 \times 10^{-5}$ on every token (99th percentile $4.9 \times 10^{-5}$), the rounding of the logged log-probabilities; the replay path therefore adds no perturbation beyond logging precision.
+
+\begin{figure}[h]
+\centering
+\fbox{\parbox{0.93\columnwidth}{\centering\vspace{2pt}
+\pending{plot of Table~\ref{tab:openloop} (flip rate versus margin bin, RTN-W4 against BF16) --- to be rendered from \nolinkurl{analysis/openloop/a6k2/q4/{rtn_w4,bf16}.json}; extend to all cells once E3 finishes}\vspace{2pt}}}
+\caption{Placeholder (not yet plotted). Open-loop flip rate by reference margin, q4 RTN-W4 versus BF16 self-replay. Data: Table~\ref{tab:openloop}.}
+\label{fig:openloop}
+\end{figure}
+
+\paragraph{A caution on units.} The open-loop median \absd{} over all tokens is near zero for RTN-W4 ($1.3 \times 10^{-6}$; 90th percentile 0.29; 99th percentile 3.76), because most tokens have very large margins and near-certain probabilities. The closed-loop \absd{} of Table~\ref{tab:hazard} and of the \S\ref{sec:p3} placements is a different quantity: it is computed on the unflipped prefix tokens of identical-context decisions and on the bf16 log-probability grid. We do not compare the two numerically, and matched-$D$ comparisons must use one definition throughout. \pending{E3 across all cells --- \nolinkurl{analysis/openloop/a6k2/<model>/<cell>.json} from \nolinkurl{scripts/a6000/openloop_d.py} (\nolinkurl{make_tasks.py --only e3}); report p50, p90 and the full CDF of $|d|$ per cell on a single definition}
+
+\section{The 4B Deep Dive}
+\label{app:deepdive}
+
+These results come from an earlier study of Qwen3-4B-Instruct-2507 on two RTX 4080 GPUs: 18 GPTQ W4 (g128) checkpoints from six calibration strategies $\times$ three calibration draws, plus RTN and BF16, on the same 85 tasks, with an 8k harness and the same 4B model as the simulator. We report it separately because its harness and simulator differ from the main setup. The numbers were recomputed from analysis outputs of that study; the raw runs are not available to us for re-checking.
+
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+\item \emph{Calibration strategies are indistinguishable in closed loop.} The 18 checkpoints range from 0.271 to 0.424 in pooled database match against BF16 at 0.376 (long tasks: 0.054--0.270 against 0.297). An arm-label permutation test on the 18 checkpoint scores gives $p = 0.683$ (pooled) and 0.368 (long tasks); a draw-label permutation gives 0.881 and 0.744. Every arm-versus-arm bootstrap interval crosses zero. The calibration draw alone moves one arm's long-task success from 0.054 to 0.243. RTN scores 0.271 pooled, equal to the lowest GPTQ checkpoint.
+\item \emph{Open-loop NLL is unrelated to closed-loop success.} Across the 18 checkpoints, the Spearman correlation between teacher-forced NLL per token and pooled success is $-0.124$ (mean over decisions) or $+0.054$ (token-weighted); both give $|\rho| \le 0.13$, and they disagree in sign, so we report both. The arm with the best NLL (0.0769) and near-best full tool-call agreement (0.840) has the worst long-task success (0.117).
+\item \emph{Flips are state-determined.} The reference model's NLL on a state predicts open-loop flips of compressed checkpoints there with AUC 0.93, and flip indicators correlate 0.548 within an arm and 0.538 across arms. In 0.844 of diverging (checkpoint, task) pairs, the first divergence falls on the least-confident step so far, against 0.292 by chance.
+\item \emph{Failures are write-dominated and loops are mostly agent-side.} The arm $\times$ failure-category test gives $p = 0.94$. Of 150 premature terminations, 36.7\% are agent-side loops, 35.3\% show no repetition, 20.0\% are mixed and 8.0\% simulator-side; excluding simulator-side loops changes any checkpoint's score by at most 0.009.
+\item \emph{Write flips are recovered less often.} Among BF16-solved tasks, the compressed checkpoint still solved the task in 0.21--0.35 of cases when its action at the first tool-turn divergence was a write, against 0.40--0.80 when it was a read or lookup (recomputed from analysis files; raw-run check pending).
+\item \emph{Re-rolls dominate the W4 effect.} The net W4 loss is 0.044 [$-0.038$, 0.126] against gross per-task churn of 0.261; checkpoint identity explains a variance share of 0.008 against a residual of 0.490; and the gain rate (fail under BF16, pass under W4) is 166/954 = 0.174, so W4 pass sets are not nested in BF16's.
+\end{itemize}
+
+Taken together with the main results, these describe a regime in which W4 compression of a 4B agent is not distinguishable from re-rolling, and in which comparisons of calibration strategies against one reference run mostly measure re-rolls.
+
+\paragraph{Harness length.} Table~\ref{tab:harness} compares the 8k truncation harness of the earlier study with the 32k harness on the same 85 tasks (Qwen3-4B, BF16 and the first calibration draw of each arm). Removing truncation raises every model by 0.01--0.04 and leaves the ranking nearly unchanged. One W4 checkpoint (MatchedAlt c1) scores above BF16 under both harnesses, which is itself an instance of re-roll noise.
+
+\begin{table}[h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Model & 8k & 32k & 8k trunc.\ retail / airline \\
+\midrule
+BF16 & 0.376 & 0.412 & 0.29 / 0.20 \\
+Static c1 & 0.365 & 0.376 & 0.56 / 0.22 \\
+FP-Traj c1 & 0.282 & 0.306 & 0.53 / 0.50 \\
+Traj-All c1 & 0.318 & 0.353 & 0.58 / 0.33 \\
+Traj-Novel c1 & 0.318 & 0.353 & 0.53 / 0.34 \\
+MatchedRandom c1 & 0.329 & 0.341 & 0.49 / 0.36 \\
+MatchedAlt c1 & 0.424 & 0.447 & 0.53 / 0.45 \\
+\bottomrule
+\end{tabular}}
+\caption{Pooled database match under 8k and 32k harnesses, with the 8k truncation rate per domain (4B study). Traj-All and Traj-Novel are two trajectory-based calibration arms, renamed for anonymity.}
+\label{tab:harness}
+\end{table}
+
+\section{Further Robustness Checks}
+\label{app:robust}
+
+\paragraph{Simulator-side loops.} Scoring simulator-side loops as missing rather than as failures moves any checkpoint's success by at most 0.009 (Appendix~\ref{app:deepdive}), so attributing premature endings to the agent does not drive our conclusions.
+
+\paragraph{Strict error budget.} Following \citet{jang2026flat}, we also score a strict endpoint that fails episodes with more than two tool errors. On the legacy q4 pilot this changes $\Delta$ by at most 1.7\pp{}. \pending{strict-budget endpoint and empty-episode audit on the damage cells --- \nolinkurl{a6k2_{q4,q8}_{gauss3_s*,rtn_w3_n*,gptq_w3_n*}}; \nolinkurl{analysis/insights/iter_1/s06_pilot_delta.py} (E4c)}
+
+\paragraph{Real quantized kernels.} Our quantized cells use fake quantization. The Replay Gap result \citep{gonuguntla2026replay} suggests that null width can depend on the serving format. \pending{Marlin real-kernel determinism pairs for q8 awq\_w4 and gptq\_w4 (E7), and real-format versus fake-quant divergence and success for gptq\_w4\_d1 on q8/q32 --- Phase 4 cells; \nolinkurl{scripts/a6000/make_tasks.py}} If real-kernel reruns are byte-identical, the null structure of \S\ref{sec:criterion} carries over unchanged; if they are not, the per-format rerun null must be measured and reported per arm.
+
+\paragraph{Agent-only numerics null for all models.} \pending{bf16\_eager cells for q14, q30a3, q32 (V1-A3) --- \nolinkurl{a6k2_{q14,q30a3,q32}_bf16_eager}; \nolinkurl{verify/v01_legacy_recompute.py} a6k2 and \nolinkurl{verify/v03_outcomes_pooled.py} a6k2}
+
+\section{Additional Results}
+\label{app:extra}
+
+\paragraph{P1 in legacy cells and on q8.} Legacy q4 cells show the same two regimes as Table~\ref{tab:hazard}: numerics variant 0.18 [0.14, 0.24] per decision; $k{=}0.03$: 0.19--0.20; $k{=}0.3$: 0.39--0.42; $k{=}1$: 0.78--0.98. Legacy q8 has a lower floor (0.12--0.14 per decision at $k{=}0.03$; 0.11 on the two clean $k{=}0.03$ seeds) with nonce 0.21, $k{=}0.3$ 0.29--0.34, GPTQ-W4 0.41--0.46 and AWQ-W4 0.51--0.56. On clean cells at $k{=}0.3$ the text-to-tool flip ratio is 5.8 / 5.7 (q4) and 6.4 / 11.3 (q8).
+
+\paragraph{Process channels.} On legacy q4 retail at $k{=}1$, episodes grow from 12.0--12.3 decisions (nulls) to 15.1 / 16.9, premature endings rise from 0 to 0.034 / 0.069, and repeated tool calls reach 0.236 against 0.04--0.07, while RTN-W4 and every $k \le 0.3$ cell stay at null level (11.1--12.9 decisions, no premature endings). At RTN-W3, the step limit ends 7/33 and 8/32 of finished legacy episodes (both domains) against none in the nulls, so part of the W3 damage is process failure.
+
+\paragraph{Cross-model predictions.} We pre-registered margin-only first-divergence curves for q8, q14 and q30a3; for example, at $k{=}0.3$ the predicted $P(\le 0 / \le 4 / \le 8)$ is 0.25 / 0.77 / 0.99 for q14 and 0.35 / 0.61 / 1.00 for q30a3, to be scored within $\pm 0.15$ after removing the survivorship bias (the margin-only prediction under-predicted legacy q4 by 0.1--0.15). \pending{observed first-divergence curves for q14 and q30a3 at $k = 0.3$ against the pre-registered predictions --- cells \nolinkurl{a6k2_{q14,q30a3}_gauss0.3_s{1,2}}; scripts \nolinkurl{analysis/insights/iter_1/s03_margin_predictions.py} and \nolinkurl{verify/v01_legacy_recompute.py} a6k2} A related prediction is that $D(k)$ does not depend on model size. On clean cells, q4 and q8 have identical closed-loop median \absd{} at $k = 0.03 / 0.1 / 0.3$ (0.125 / 0.25 / 0.5); the P3a test must compare all models on a single \absd{} definition (closed-loop or E3 open-loop, not a mix). \pending{P3a, median $|d|$ at $k = 0.1 / 0.3 / 1$ for q14, q30a3, q32 within $1.5\times$ of q4 --- cells \nolinkurl{a6k2_{q14,q30a3,q32}_gauss{0.1,0.3,1}_s{1,2}}; E3}
+
+\paragraph{Matched-$D$ placements on q8.} On legacy q8, by closed-loop shift, GPTQ-W4 (median \absd{} 0.75, 90th percentile 2.0--2.25) sits between $k{=}0.3$ and $k{=}1$, and AWQ-W4 (1.5; 3.5) and RTN-W4 (1.5; 4.1--4.25) sit near $k{=}1$ (1.625--1.75; 4.6--4.75), with matching tool-turn flip rates (AWQ-W4 0.38--0.41, RTN-W4 0.39--0.44, $k{=}1$ 0.35--0.41). \pending{clean q8 matched-D test --- cells \nolinkurl{a6k2_q8_{rtn_w4_n1,rtn_w4_n2,gauss1_s1,gauss1_s2,awq_w4_n1,awq_w4_n2,gptq_w4_d1_n1,gptq_w4_d1_n2,gptq_w4_d2_n1,gptq_w4_d2_n2}} with E3 D (p50 and p90); \nolinkurl{verify/v04_pooled_draws.py}, \nolinkurl{scripts/a6000/openloop_d.py}} These placements use closed-loop \absd{}, whereas the pending test uses open-loop E3 \absd{}; the pending placement will be read on the E3 scale alone. If the RTN-W4 gap disappears on clean cells at matched p50 and p90, the matched-$D$ claim survives on two models; if it persists, the claim narrows to ``error-minimizing quantizers (GPTQ, AWQ) sit on the Gaussian band; RTN does not'', and RTN would carry damage beyond its logit shift (for example through systematic rather than zero-mean error).
+
+\paragraph{The determinism incident in detail.} The compiled kernels of the legacy q4 determinism pair were identical across its two nodes, and on a third node cold, warm, concurrent and prefix-cache-free starts all reproduced the second node's output (30/30); eager execution produced a third variant. Inductor chose the reduction configuration of the fused residual + RMSNorm kernel by timing it at compile time (\texttt{R0\_BLOCK} 2048 on one node, 4096 elsewhere). The q30a3 pair, whose autotuning happened to pick the same configuration on both nodes, was fully identical.
+
+\section{Further Recommendations}
+\label{app:recs}
+
+Continuing the checklist of \S\ref{sec:recs}; (\textdagger) marks an item resting on tentative findings.
+(6)~\textbf{Do not substitute open-loop fidelity for closed-loop success}: teacher-forced NLL and tool-call agreement did not track closed-loop success in our 4B study.
+(7)~\textbf{Report process channels and a strict endpoint}: decisions per episode, premature endings, repeated tool calls and a strict error budget can move before the headline score.
+(8)~\textbf{Look for nested pass sets} (\textdagger): damage shows up as a compressed cell that almost never passes a task the null fails; re-rolls do not.
+(9)~\textbf{Disclose the harness}: context length and truncation policy moved scores by 0.01--0.04 in our setting.

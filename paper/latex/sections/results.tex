@@ -1,0 +1,105 @@
+\section{Results}
+\label{sec:results}
+
+\subsection{P1: a divergence floor, then a regime that ranks the shift}
+\label{sec:p1}
+
+\paragraph{Episode-level divergence saturates; the per-decision hazard does not.} On clean q4 cells, every perturbation from eager execution to RTN-W8 reaches KM $P(\le 12) \ge 0.96$, so episode-level divergence cannot distinguish them. The per-decision hazard can (Table~\ref{tab:hazard}).
+
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lccc@{}}
+\toprule
+q4 configuration (clean) & med.\ \absd{} & hazard / decision & KM $P(\le 12)$ \\
+\midrule
+eager BF16 (agent-only) & 0.125 & 0.17 [0.15, 0.20] & 0.96 \\
+Gaussian $k{=}0.03$ ($\times$5) & 0.125 & 0.18--0.23 & 0.97--1.0 \\
+RTN W8 ($\times$2) & 0.125 & 0.21 / 0.23 & 1.0 \\
+nonces 1--3 & 0.25 & 0.25--0.27 & 0.98--1.0 \\
+Gaussian $k{=}0.1$ ($\times$2) & 0.25 & 0.28 / 0.29 & 1.0 \\
+Gaussian $k{=}0.3$ ($\times$2) & 0.5 & 0.42 / 0.45 [0.35--0.55] & 1.0 \\
+RTN W4 ($\times$2) & 1.75--2.0 & 0.73 / 0.78 & 1.0 \\
+Gaussian $k{=}1$ ($\times$2) & 2.0--2.1 & 0.77 / 0.99 & 1.0 \\
+Gaussian $k{=}3$, RTN W3 & $\ge$ 2.6 & 1.0 & 1.0 \\
+\bottomrule
+\end{tabular}}
+\caption{Clean q4: median closed-loop shift \absd{} (bf16 grid), per-decision divergence hazard (95\% task-bootstrap CI where available), and episode-level divergence. Live snapshot 2026-09-29T02:36Z.}
+\label{tab:hazard}
+\end{table}
+
+Table~\ref{tab:hazard} shows the two regimes P1 predicts. Every perturbation whose median shift equals one bf16 grid step (0.125) reaches a floor of about 0.17--0.23 per decision: a change from compiled to eager kernels, Gaussian noise at 3\% of the RTN-W4 error norm, and RTN-W8. The nonce members (0.25--0.27) sit above this band, at the level of $k = 0.1$. Above the floor the hazard grows slowly, roughly $2\times$ per decade of $k$ up to $k = 0.3$ (0.42--0.45), and then jumps once tool turns start to flip (0.73--0.78 for RTN-W4, 0.77--0.99 at $k = 1$). The same structure appears in the legacy q4 cells and, with a lower floor (0.12--0.14 per decision at $k{=}0.03$ legacy; 0.11 on the two clean seeds), in q8 (Appendix~\ref{app:extra}). The q8 result comes from variant-mixed legacy cells and a partial clean set (79 tasks), so we treat it as consistent with P1 rather than as a confirmation; for clean q8 at $k{=}0.03$ (seed 1), KM $P(\le 12)$ is 0.84 [0.75, 0.93], just below the 0.85 we pre-registered for P1 but above the 0.7 falsification line.
+
+\paragraph{The floor is set by text-turn ties.} Reference margins are two-tiered in all four models we measured. The median minimum margin of a text turn is 0.0 nats (q4, q30a3) or 0.125--0.25 (q8, q14), with 2.7--6.0 tokens per decision below 0.5 nats; for tool calls it is 4.25--7.75 nats, with 0.06--0.65 tokens below 0.5. Correspondingly, at $k \le 0.1$, identical-context text turns flip at 0.22--0.53 per decision and tool turns at 0.02--0.08 (q4, q8), and on legacy q4 cells 72--82 of 77--85 first divergences per configuration at $k \le 0.1$, nonce and W8 are wording or format changes.
+
+\paragraph{$D \equiv 0$ gives no divergence.} Under the deterministic configuration, the cross-node q4 pair has 257/257 identical-context decisions with zero flips and no divergence on 20 tasks, and the q30a3 pair 303/303; a clean q4 BF16 run and one determinism replica also agree on 257/257 decisions. Conversely, eager versus compiled BF16 on clean q4 has median $\absd{} = 0.125$ and KM $P(\le 12) = 0.96$. Divergence thus shows no events at $D \equiv 0$ and a hazard of at least 0.17 per decision at the smallest shift we can measure; only the episode-level KM saturates there.
+
+\paragraph{Across models.} Figure~\ref{fig:hazard} will extend Table~\ref{tab:hazard} to all five models on an open-loop shift axis. P1 holds across the family if all five models show a floor at the grid step and a hazard that separates $k{=}0.3$ from it; if any model has KM $P(\le 12) < 0.7$ at a nonce or $k{=}0.03$, or if its KM $P(\le 4)$ rises by more than 0.3 between $k{=}0.03$ and $k{=}0.1$, P1 is falsified for that model. On clean q4, KM $P(\le 4)$ rises from 0.54--0.69 to 0.78--0.79 between these two values of $k$, below the 0.3 limit.
+
+\begin{figure}[t]
+\centering
+\fbox{\parbox{0.93\columnwidth}{\centering\vspace{2pt}
+\pending{Figure~\ref{fig:hazard} --- per-decision hazard (95\% CI) versus median $|d|$ for q4, q8, q14, q30a3, q32, with one marker per family (eager, nonce, Gaussian $k = 0.03\dots3$, RTN W8/W4/W3, GPTQ W4/W3, AWQ W4) --- cells \nolinkurl{a6k2_<model>_{bf16,bf16_eager,null_n1..n5,gauss<k>_s<seed>,rtn_w<b>_n<i>,gptq_w4_d<d>_n<i>,awq_w4_n<i>,gptq_w3_n<i>}}; script \nolinkurl{analysis/insights/iter_1/verify/v01_legacy_recompute.py} a6k2; shift axis from E3 (\nolinkurl{scripts/a6000/openloop_d.py})}\vspace{2pt}}}
+\caption{Placeholder (not yet plotted): per-decision hazard versus shift, five Qwen3 models. Data: clean-pass decision logs; shift from the open-loop E3 replay, using a statistic that does not collapse near zero (the open-loop median is $1.3\times10^{-6}$ for q4 RTN-W4; Appendix~\ref{app:openloop}).}
+\label{fig:hazard}
+\end{figure}
+
+\subsection{P2: damage appears later than divergence (tentative, Qwen3-4B)}
+\label{sec:p2}
+
+On q4 we pool all draws of each configuration family (legacy and clean) and compare each family with a pooled null of 10 draws (canonical BF16 from both passes, nonces 1--4 legacy and 1--3 clean, and clean eager BF16), using a task-cluster bootstrap (Table~\ref{tab:delta}).
+
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lcc@{}}
+\toprule
+q4 family (draws) & $\Delta$ pp [95\% CI] & wins / losses \\
+\midrule
+Gaussian $k{=}0.03$ (7) & $+5.1$ [$+1.4$, $+8.9$] & 63 / 18 \\
+Gaussian $k{=}0.1$ (4) & $-1.5$ [$-5.1$, $+2.0$] & 27 / 18 \\
+RTN W8 (4) & $+1.2$ [$-2.8$, $+5.4$] & 33 / 17 \\
+Gaussian $k{=}0.3$ (4) & $+1.0$ [$-3.7$, $+5.7$] & 37 / 24 \\
+RTN W4 (4) & $-2.0$ [$-7.6$, $+3.9$] & 33 / 24 \\
+Gaussian $k{=}1$ (4) & $-2.3$ [$-8.7$, $+3.8$] & 41 / 35 \\
+RTN W3 (4, partial: 46 tasks) & $-14.0$ [$-26.3$, $-2.4$] & 7 / 22 \\
+Gaussian $k{=}3$ (4, partial: 25 tasks) & $-16.1$ [$-31.8$, $-0.7$] & 2 / 9 \\
+\bottomrule
+\end{tabular}}
+\caption{q4, $\Delta$ database match against the pooled 10-draw null (pp; legacy and clean draws pooled). Wins / losses: episodes that pass a task the null majority fails / fail a task it passes (definition in Appendix~\ref{app:stats}). Live snapshot 2026-09-29T02:36Z.}
+\label{tab:delta}
+\end{table}
+
+Read together with Table~\ref{tab:hazard}, this is the two-threshold shape P2 predicts. Divergence reaches its floor at the smallest perturbation we apply (hazard 0.17, eager), while database match is not distinguishable from the null through $k{=}1$ and RTN-W4 ($\Delta = -2.3$ [$-8.7$, $+3.8$] and $-2.0$ [$-7.6$, $+3.9$]) and drops only at $k{=}3$ ($-16$\pp{}) and RTN-W3 ($-14$\pp{}). Non-rejection is not equivalence: we have not run a declared-margin equivalence test, and these intervals are wide. On q4 the free zone spans at least from $k{=}0.03$ to $k{=}1$ (about 1.5 decades of $k$); the Gaussian damage threshold lies somewhere in $(1, 3]$, a resolution of half a decade. The pre-registered pooled free-zone statistic ($k \le 0.1$ and W8) is $-0.2$\pp{} [$-5.0$, $+4.5$] on legacy q4, $-0.7$\pp{} [$-6.1$, $+4.6$] on legacy q8, $+1.9$\pp{} [$-2.6$, $+6.4$] on clean q4 and $-3.5$\pp{} [$-9.6$, $+1.9$] on clean q8 (the last with 2--3 nulls and partial tasks). None meets the falsification rule (below $-3.4$\pp{} with a CI excluding zero), although the clean q8 point estimate is already past $-3.4$.
+
+This is tentative for four reasons: (i) the damage estimate comes mostly from legacy draws (clean W3 alone: $-8.5$ and $-9.3$\pp{} on 39 and 25 tasks, CIs including zero); (ii) q8 shows no significant W3 damage ($-3.9$\pp{} [$-13.9$, $+6.9$]) despite tool-turn flip rates of 0.76--0.88, possibly because its lower base rate masks damage; (iii) the $k{=}0.03$ family sits \emph{above} the null ($+5.1$\pp{}), either chance among 11 families or a canonical-prompt effect against the nonce members (\S\ref{sec:consequences}); (iv) the empty/terminated-episode audit recommended by the Agentic Benchmark Checklist \citep{zhu2025abc} has not been run on the damage cells.
+
+\paragraph{What damage needs.} Tool-turn flip rates are already 0.19--0.42 for RTN-W4 and 0.23--0.92 at $k{=}1$ while $\Delta$ is about $-2$\pp{} and not significant; damage appears only where tool flips approach 1.0 ($k{=}3$, W3). Most action flips are thus recovered by the loop, and the tool-turn flip rate, which our original wording of P2 named as the predictor, does not track damage. We restate the mechanism: damage requires \emph{unrecovered flips of state-changing actions}, and the predictor to test is the write-flip rate (consistent with the 4B study, Appendix~\ref{app:deepdive}). \pending{write/read/text annotation of first divergences and ``undone within episode'' flag (analysis V1-A4), and Spearman of $\Delta$ against write-flip rate versus tool-turn flip rate, KM $P(\le 4)$ and median $|d|$ (P2b) --- all a6k2 cells per model, E3 flip rates from \nolinkurl{scripts/a6000/openloop_d.py}} Process channels (episode length, premature endings, repeated calls) move at $k{=}1$ while success does not, and part of the W3 damage is step-limit failure (Appendix~\ref{app:extra}), as failure channels do under flat scores in \citet{jang2026flat}.
+
+\paragraph{Across models.} Figure~\ref{fig:delta} will use the same shift axis as Figure~\ref{fig:hazard}. \pending{clean q4/q8 re-test of the damage threshold --- cells \nolinkurl{a6k2_{q4,q8}_{null_n1..n5,gauss3_s1,gauss3_s2,rtn_w3_n1,rtn_w3_n2,gptq_w3_n1,gptq_w3_n2}}; \nolinkurl{verify/v03_outcomes_pooled.py} a6k2, \nolinkurl{verify/v04_pooled_draws.py}} P2 holds on clean data if the clean damage cells have CIs below zero while the pooled free-zone $\Delta$ stays within $\pm 3.4$\pp{}; if clean W3 and $k{=}3$ stay indistinguishable from the null, the q4 damage threshold rests on legacy draws only; if the pooled free-zone $\Delta$ falls below $-3.4$\pp{} with a CI excluding zero, the free zone is refuted.
+
+\begin{figure}[t]
+\centering
+\fbox{\parbox{0.93\columnwidth}{\centering\vspace{2pt}
+\pending{Figure~\ref{fig:delta} --- $\Delta$ database match versus median $|d|$ per family with the null band (null-draw SD and leave-one-out range) for q4, q8, q14, q30a3, q32, free zone shaded where $\Delta$ CIs include zero --- cells \nolinkurl{a6k2_<model>_{null_n1..n5,bf16,bf16_eager,gauss<k>_s<seed>,rtn_w<b>_n<i>,gptq_w4_d<d>_n<i>,awq_w4_n<i>,gptq_w3_n<i>}}; scripts \nolinkurl{analysis/insights/iter_1/verify/v03_outcomes_pooled.py} a6k2 and \nolinkurl{v04_pooled_draws.py}}\vspace{2pt}}}
+\caption{Placeholder (not yet plotted): $\Delta$ against the reference model's perturbation null versus shift, five Qwen3 models. Data: clean-pass outcome matrices; same shift axis as Figure~\ref{fig:hazard}.}
+\label{fig:delta}
+\end{figure}
+
+\subsection{P3: margins, the shift distribution, and whether $D$ is sufficient}
+\label{sec:p3}
+
+The reference margin predicts which tokens flip on identical contexts (decision-level AUC 0.79--0.97, legacy q4 and q8 cells), replicating the inherited model. An open-loop replay of q4 RTN-W4 on the clean BF16 contexts (400 decisions, 33,836 tokens) shows the per-token flip rate falling monotonically with the reference margin, from 0.57 below 0.25 nats to 0.003 above 8 nats, while a BF16 self-replay has no flips (Appendix~\ref{app:openloop}). Because text turns have near-zero minimum margins in all four measured models, P3 predicts that every model reaches the floor at the grid step, with a height set by its text-tie density; q8's lower floor (0.11--0.14 versus about 0.2 for q4) is consistent with its somewhat larger text-turn margins. Pre-registered margin-only divergence curves for q14 and q30a3, and a test that $D(k)$ does not depend on model size (q4 and q8 have identical clean closed-loop median \absd{} of 0.125 / 0.25 / 0.5 at $k = 0.03 / 0.1 / 0.3$), are pending (Appendix~\ref{app:extra}).
+
+\paragraph{Is $D$ sufficient? An open question.} The strongest form of P3 says that perturbations with matched $D$ have matched closed-loop outcomes whatever their structure. On legacy q8, AWQ-W4 and RTN-W4 land near Gaussian $k{=}1$ by closed-loop shift and tool-turn flip rate, and GPTQ-W4 between $k{=}0.3$ and $k{=}1$ (Appendix~\ref{app:extra}). Outcomes, however, do not all match: pooling the available q8 draws, RTN-W4 has $\Delta = -10.5$\pp{} [$-17.3$, $-4.0$] (7 wins, 25 losses), whereas $k{=}1$ has 0.0\pp{} [$-7.2$, $+7.7$], AWQ-W4 $+1.6$\pp{} [$-7.4$, $+10.7$] and GPTQ-W4 $-0.5$\pp{} [$-6.7$, $+5.6$]. On q4 there is no such gap (RTN-W4 $-2.0$\pp{}, $k{=}1$ $-2.3$\pp{}). The q8 RTN draws include variant-mixed legacy cells, and RTN-W4's 90th-percentile shift is not larger than that of $k{=}1$, so a real gap would point to the structure or sign of the error rather than its size. $D$-sufficiency is unresolved; a clean q8 test is pending (Appendix~\ref{app:extra}).
+
+\subsection{Consequences for evaluation}
+\label{sec:consequences}
+
+\paragraph{The canonical score is one draw.} Re-serving the same BF16 weights with the same prompt in the legacy and clean configurations changes the q4 canonical score from 0.412 to 0.329 ($-8.2$\pp{}; 21/85 tasks = 25\% discordant; McNemar $p = 0.19$) and the q8 score from 0.316 to 0.380 ($+6.4$\pp{}; 21/79 = 27\%; $p = 0.38$). The pair also changed the simulator's serving (its first message differs in 11 of 20 determinism tasks), so it is an \emph{agent + simulator} serving null. Agent-only numerics changes also flip outcomes: 4/20 tasks in the legacy cross-node pair (0.45 vs.\ 0.55) and 11/69 (16\%) for eager vs.\ compiled execution on clean q4. Consistent with the Bernoulli account (\S\ref{sec:criterion}), the null-draw SD is 2.9\pp{} on q4 (6 near-complete draws; predicted 3.2) and 3.75\pp{} on q8 (4 draws; predicted 3.26), ratios of 0.9 and 1.15. Canonical-prompt draws are not systematically above the other null members (q4 $+1.8$\pp{} [$-2.9$, $+6.6$]; q8 $+1.9$\pp{} [$-3.0$, $+6.8$]). These results are for q4 and q8, greedy decoding, \tautwo{} retail and airline.
+
+\paragraph{Reference-only tests over-flag.} A naive McNemar test against the canonical run flags legacy q4 Gaussian $k{=}0.3$ seed 1 at $p = 0.021$, whereas its null-referenced $\Delta$ is $-8.3$\pp{} [$-16.3$, 0.0]. The calibration result of \S\ref{sec:intro} is the related single-draw failure: $+0.121$ with a one-sided $p = 0.0195$ that became $-0.035$ under three draws. In the damage cells, by contrast, pass sets are nested: cell-only wins against the canonical run are 0/10 and 0/8 for legacy RTN-W3 and 0/4 and 0/7 for $k{=}3$, against 4--7 cell-only wins per 72 tasks in free-zone cells. The clean RTN-W3 draws do not show this yet (3 versus 4 and 3 versus 3 on 39 and 25 tasks), so the cell-only win rate is a promising damage signature that is not yet confirmed on clean data. \pending{cell-only win rate against the null's own win-rate band (P4e) on clean damage cells --- \nolinkurl{a6k2_{q4,q8}_{rtn_w3_n1,rtn_w3_n2,gauss3_s1,gauss3_s2,gptq_w3_n1,gptq_w3_n2}}; \nolinkurl{verify/v03_outcomes_pooled.py} a6k2} \pending{canonical-prompt test (P4c) comparing the weight-only null (Gaussian $k = 0.03$, s1--s5, canonical prompt), the numerics null (eager) and the nonce null --- cells \nolinkurl{a6k2_{q4,q8}_{gauss0.03_s1..s5,bf16_eager,null_n1..n5,bf16}}; \nolinkurl{verify/v04_pooled_draws.py}}
