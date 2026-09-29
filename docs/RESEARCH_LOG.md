@@ -37,7 +37,7 @@ The whole matrix is re-run as `a6k2_*`; old `a6000_*` runs are kept as a legacy 
 - Fix: `scripts/a6000/env.sh` (flag), `scripts/a6000/worker.py::check_canary`; references in
   `analysis/determinism/canary_{agent,sim}_<model>.json`; per-start log `/data/ziyangs/cloq_work/logs/canary.log`.
 - **Fix verified (2026-09-28 20:00 PDT):** `runs/a6k2_det_q4_a` (node005) vs `runs/a6k2_det_q4_b` (node004): 257/257 decisions
-  byte-identical (prompt + completion), identical metrics. q30a3 pair identical on all shared decisions. Canary log
+  byte-identical (prompt + completion), identical metrics. q30a3 pair 303/303 identical. Canary log
   `/data/ziyangs/cloq_work/logs/canary.log`: sim + q4/q8/q30a3 agents match on every node so far.
 - Rerun: `scripts/a6000/make_tasks.py --prefix a6k2`. Old unfinished tasks archived in
   `/data/ziyangs/cloq_work/queue/legacy_v1/`.
