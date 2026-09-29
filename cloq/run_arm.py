@@ -220,6 +220,18 @@ def main():
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
             n_ok += 1
 
+    # W8: tau2 auto_resume / retries re-run a simulation while the decision writer appends, so keep only the final
+    # attempt's records per task (the last trajectory_id written for that task)
+    dp = run_dir / "decisions.jsonl"
+    if dp.exists():
+        recs = [json.loads(ln) for ln in dp.read_text().splitlines() if ln.strip()]
+        last = {r["task_id"]: r["trajectory_id"] for r in recs}
+        kept = [r for r in recs if last[r["task_id"]] == r["trajectory_id"]]
+        if len(kept) < len(recs):
+            tmp = dp.with_suffix(".tmp")
+            tmp.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in kept))
+            os.replace(tmp, dp)
+
     from cloq.metrics import summarize_run
 
     metrics = summarize_run(run_dir)

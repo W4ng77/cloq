@@ -13,3 +13,6 @@ PYTHONPATH=/data/ziyangs/cloq python p06_weight_ulp.py > out/p06.log 2>&1
 
 python p07_protocol_tally.py > out/p07.log 2>&1
 tail -n 1 out/p0*.log
+# conformal layer (docs/insights/iter_2_conformal.md); c02 needs p02_ties.py importable
+python c01_conformal_equivalence.py > out/c01.log 2>&1
+python c02_openloop_conformal.py > out/c02.log 2>&1

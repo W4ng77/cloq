@@ -1,7 +1,7 @@
 **TL;DR**
 - Iter-2 prep (2026-09-29T05:06Z): 20 a6k2 run-domains (≥10% of episodes; 27 with any) are silently broken by `infrastructure_error` (node003's remote simulator); re-queue them (E9, ≈4.5 GPU-h) and add a worker guard (E11). Evidence: `docs/insights/iter_2_prep.md#0-data-flags-fix-before-any-number-goes-into-the-paper`.
 - Queue the FP32-head control (E8, ≈1.6 GPU-h, one vLLM flag). It is the only open test for W2 / Du et al. Next is E10 (E3 for the sub-grid cells, ≈0.8 GPU-h).
-- The review's no-GPU items A2-1…A2-9 are done: `analysis/insights/iter_2/out/*.json` ← `analysis/insights/iter_2/p0*.py` (`run_all.sh`).
+- The no-GPU items A2-1…A2-11 are done. A2-10/11 are the conformal layer: `analysis/insights/iter_2/out/c0*.json` ← `c0*.py`, explained in `docs/insights/iter_2_conformal.md`. E12 (≈2.4 GPU-h, 3 extra nonce nulls per model) makes the exact within-prompt test usable.
 
 # Experiment plan (running)
 
@@ -37,6 +37,10 @@ The matrix totals ≈115 GPU-h. Capacity is ≈26 agent GPUs (`/data/ziyangs/clo
 | A2-8 | done (iter 2) | null width: non-degenerate p_t fraction, SD ratio with chi-square CI | W9 | 0 | `out/p01_equivalence.json` `null_width_A` |
 | A2-9 | done (iter 2) | E3 axis choice: token flip rate | W11 | 0 | `out/p05_e3_axis.json` ← `p05_e3_axis.py` |
 | X2 | dropped (iter 2) | extra per-family draws aimed at ±5 pp equivalence | W1 | — | M80 ≥ 6.5 pp even at 5 draws: `out/p01_equivalence.json` `families.*.m80_tost` |
+| A2-10 | done (iter 2, conformal) | conformal/permutation equivalence per draw, family and pooled (null sets A/S/B); ε-TOST by test inversion; e-values; power and granularity | C2, W1 | 0 | `analysis/insights/iter_2/out/c01_conformal_equivalence.json` ← `c01_conformal_equivalence.py`; `docs/insights/iter_2_conformal.md#1-conformal-equivalence-test-a2-10` |
+| A2-11 | done (iter 2, conformal) | open-loop → closed-loop conformal intervals (jackknife+, leave-one-model-out), hazard and success Δ; re-runnable as E3 for q14/q30a3/q32 lands | C3, C4 | 0 | `analysis/insights/iter_2/out/c02_openloop_conformal.json` ← `c02_openloop_conformal.py`; `docs/insights/iter_2_conformal.md#2-open-loop--closed-loop-conformal-prediction-a2-11` |
+| E12 | proposed (iter 2, conformal) | 3 extra nonce nulls n6–n8 (new nonces) for q4, q8, q14, so the prompt-stratum-matched exact test S has n = 6 (p_min 1/28 at 2 draws) | C2 (F-C1: pooled ±5 pp rests on the mixed-prompt null) | ≈2.4 | spec: `docs/insights/iter_2_conformal.md#5-design-flaws-and-proposals`; basis `queue/done/a6k2_q8_bf16.json` (2,680 s for 6 runs), `a6k2_q14_gauss0.1_s1.json` (1,968 s) |
+| E13 | proposed (iter 2, conformal) | rule: new nonce'd cells (PLAN_iter3 X1/X2) use nonces disjoint from the null nonces | C2 | 0 | `c01…json` `note_S`; `scripts/a6000/make_tasks.py` L44/L53 reuse `NONCES[0:2]` |
 
 ## Ready-to-queue specs
 
@@ -71,4 +75,5 @@ E5: add `eval_task(f"{m}_bf16_eager", m, "bf16", {"kind": "bf16"}, [run(f"{R}_bf
 ## History
 
 - 2026-09-28 (iter 1, round 1): E1–E6 and X1 proposed. Evidence scripts were added under `analysis/insights/iter_1/exp/` (read-only over logs, runs and the queue; `e_bestconfig.sh` reads the node-local caches over ssh).
+- 2026-09-29 (iter 2 conformal): A2-10/A2-11 done (0 GPU-h, snapshot 05:45Z). E12 (≈2.4 GPU-h) and E13 (rule) proposed. Flags: F-C1, where the pooled ±5 pp equivalence rests on the mixed-prompt null A, and F-C2, where open-loop features do not predict success Δ, so the C4 gate cannot certify damage. See `docs/insights/iter_2_conformal.md`.
 - 2026-09-29 (iter 2 prep): A2-1…A2-9 done (0 GPU-h). E8–E11 proposed and X2 dropped. Flags F1 (`infrastructure_error` scored as failure; 20 run-domains ≥10%, 27 with any) and F2 (iter-1 `action_key` ignores top-level tau2 tool calls). The E8 specs are in `docs/insights/iter_2_prep.md#3-proposals-gpu-and-code-for-main`.

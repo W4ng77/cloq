@@ -7,7 +7,7 @@
 
 Paper: *Perturbation Equivalence in Closed-Loop Agents: When Is a Compressed Agent Actually Worse?* (`docs/COLING_PLAN.md`).
 Base map: `analysis/coling/RELATED_WORK.md`. BibTeX: `analysis/coling/references.bib` plus `analysis/insights/references_new.bib`.
-Last update: 2026-09-28, iteration 1, round 1. Insight ids follow `docs/insights/iter_1_candidates.md`.
+Last update: 2026-09-29, iteration 2 conformal pass (T8); previously 2026-09-28, iteration 1, round 1. Insight ids follow `docs/insights/iter_1_candidates.md`.
 
 ## How to read the evidence tags
 
@@ -259,6 +259,41 @@ Nothing here is cited from memory. Most close competitors date from May–Sep 20
 - **Other prompt-sensitivity anchors.** FormatSpread https://arxiv.org/abs/2310.11324 (up to 76 pt); Butterfly Effect https://arxiv.org/abs/2401.03729 (evidence: S-mfd §OE-19–20; map)
 
 ---
+
+### T8. Conformal methods in LLM and agent evaluation (iter 2)
+
+A conformal-layer pass on 2026-09-29 used 7 web queries. Each entry below gives the verification level:
+- **[abs]**: the arXiv abs page was opened in this pass.
+- **[snippet]**: only the search-result abstract text was read.
+
+Use: `docs/insights/iter_2_conformal.md#3-novelty`.
+
+- **S-C1. Conformal Elo.** Kargi, Salinas 2026. https://arxiv.org/abs/2606.13221 [abs]
+  - Split conformal on LLM-vs-human Elo residuals, with **models as the exchangeable unit** (55 held-out LMArena models).
+  - **Relation:** the closest precedent for our leave-one-model-out open→closed intervals. Ours works in closed loop and has 2–5 models.
+- **S-C2. Compression + conformal uncertainty.** Tong et al. 2026. https://arxiv.org/abs/2606.01850 [abs]
+  - CP measures the *compressed model's own* uncertainty. Uncertainty inflation is threshold-like.
+  - It is not a compressed-vs-full equivalence test and has no agents.
+  - **Relation:** cite as adjacent. Its threshold finding is consistent with our two thresholds.
+- **S-C3. Role-stratified conformal risk control for tool calls.** Rahman et al. 2026. https://arxiv.org/abs/2607.24343 [abs]
+  - Controls risk per argument role of a tool call.
+  - **Relation:** agent-side CRC at single-call granularity, not closed-loop equivalence.
+- **S-C4. Conformal agent error attribution.** Feng et al. 2026. https://arxiv.org/abs/2605.06788 [abs]
+  - Filtration-based CP sets over agent trajectories.
+  - **Relation:** sequential CP inside one trajectory. Ours ranks whole runs against a null family.
+- **S-C5. E-valuator.** Sadhuka et al. 2025/2026. https://arxiv.org/abs/2512.03109 [abs]
+  - Agent verifier scores become e-processes with false-alarm control.
+  - **Relation:** e-values in agent evaluation. It is the precedent for our e-value product across models.
+- **S-C6. LLM-as-a-judge conformal intervals.** EMNLP 2025. https://aclanthology.org/2025.emnlp-main.569/ [snippet]
+  - Extended to judge ensembles in https://arxiv.org/abs/2609.06367 [snippet].
+  - **Relation:** conformal in evaluation, on judge scores.
+- **S-C7. E-values expand conformal prediction.** Gauthier, Bach, Jordan 2025. https://arxiv.org/abs/2503.13050 [snippet]
+  - Also: **S-C8. BB-predictor / e-test statistics.** Balinsky & Balinsky, COPA 2024. https://arxiv.org/abs/2403.19082 [snippet].
+  - **Relation:** statistical basis for the soft-rank conformal e-values in `analysis/insights/iter_2/c01_conformal_equivalence.py`.
+- **S-C9. UQ for LLM agents: taxonomy and protocol.** 2026. https://arxiv.org/abs/2609.07395 [snippet]
+  - **Relation:** check before submission whether it includes run-level exchangeability tests.
+
+**Novelty statement.** No entry above treats a compressed checkpoint's closed-loop run as a draw to be ranked against a perturbation-null family (a conformal equivalence test). None gives conformal intervals from open-loop to closed-loop behaviour. The sweep was shallow, so re-sweep S-C9 and ACL Anthology 2026 before submission.
 
 ## Answers for iteration 1
 
