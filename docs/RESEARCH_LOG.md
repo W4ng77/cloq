@@ -21,15 +21,26 @@ cross-model transfer.
 - Discussion (survey + experiment round 1): `docs/insights/iter_1_discussion.md`. Plan: `docs/insights/EXPERIMENTS.md`.
 - Agent roles: `~/.claude/agents/cloq-{insight,survey,experiment,verify}.md` (on the cluster login node).
 
-## W3 · Cross-node determinism incident (2026-09-29, open)
-**TL;DR** q4 BF16 on node005 diverges on 20/20 tasks from node004/node003. The prompts are identical, so the
-difference is on the agent side. Kernel hashes are identical on node004–007. A probe is queued to separate prefix
-caching, chunked prefill and compile graphs.
-- Evidence: `runs/a6000_det_q4_a` (node005) vs `runs/a6000_det_q4_b` (node004). Node floor analysis:
-  `analysis/insights/iter_1/out/s04_node_floor.json`. Kernel hash test: `/data/ziyangs/cloq_work/numtest.py`
-  (same hash `932e7dab8e342639` on node004–007, GPUs 4–5).
-- Probe: `scripts/a6000/det_probe.py` → `analysis/determinism/probe_q4.json`; queue record
-  `/data/ziyangs/cloq_work/queue/*/probe_det_q4.json`; log `/data/ziyangs/cloq_work/logs/tasks/probe_det_q4.log`.
+## W3 · Cross-node determinism incident (2026-09-29, root cause found, fix deployed)
+**TL;DR** torch Inductor picked the reduction config for the fused residual+RMSNorm kernel by timing it at compile
+time: R0_BLOCK 2048 on node005 vs 4096 elsewhere. The summation order changed, so every token shifted, and vLLM batch
+invariance does not cover this. Fix: `TORCHINDUCTOR_DETERMINISTIC=1` plus a numerics canary at every server start.
+The whole matrix is re-run as `a6k2_*`; old `a6000_*` runs are kept as a legacy "numerics flavour" null (E5).
+- Symptom: `runs/a6000_det_q4_a` (node005) vs `runs/a6000_det_q4_b` (node004): 20/20 tasks and 113/113
+  identical-prompt decisions shift; `analysis/insights/iter_1/out/s04_node_floor.json`,
+  `analysis/insights/iter_1/exp/e_detshift.py`.
+- Kernels are identical across nodes: `/data/ziyangs/cloq_work/numtest.py` (hash `932e7dab8e342639` on node004–007).
+- Runtime is not the cause: `analysis/determinism/probe_q4.json`. On node006, cold / warm / concurrent / no-prefix-cache
+  all match node004 30/30; eager is a third flavour (A 14/30, B 16/30). Script `scripts/a6000/det_probe.py`.
+- Root cause (experiment agent): `analysis/insights/iter_1/exp/e_bestconfig.sh`, `e_server_flavour.py`;
+  discussion `docs/insights/iter_1_discussion.md` (Experiment round 1), plan E1–E6 `docs/insights/EXPERIMENTS.md`.
+- Fix: `scripts/a6000/env.sh` (flag), `scripts/a6000/worker.py::check_canary`; references in
+  `analysis/determinism/canary_{agent,sim}_<model>.json`; per-start log `/data/ziyangs/cloq_work/logs/canary.log`.
+- **Fix verified (2026-09-28 20:00 PDT):** `runs/a6k2_det_q4_a` (node005) vs `runs/a6k2_det_q4_b` (node004): 257/257 decisions
+  byte-identical (prompt + completion), identical metrics. q30a3 pair identical on all shared decisions. Canary log
+  `/data/ziyangs/cloq_work/logs/canary.log`: sim + q4/q8/q30a3 agents match on every node so far.
+- Rerun: `scripts/a6000/make_tasks.py --prefix a6k2`. Old unfinished tasks archived in
+  `/data/ziyangs/cloq_work/queue/legacy_v1/`.
 
 ## W2 · A6000 matrix running (2026-09-28 18:10 →)
 **TL;DR** 5 models × 30 configs + determinism pairs; 110 tasks on node003–007 (38 GPUs). Checkpoints live only in
