@@ -132,6 +132,8 @@ class CLOQAgent(LLMAgent[LLMAgentState]):
         content = assistant_message.content
         parser_error = bool(content) and ("<tool_call>" in content) and not assistant_message.is_tool_call()
 
+        margins = _token_margins(choice0.get("logprobs"))
+
         rec = {
             **_RUN_META,
             "task_id": self.task_id,
@@ -155,6 +157,7 @@ class CLOQAgent(LLMAgent[LLMAgentState]):
             "tool_calls": [tc.model_dump() for tc in assistant_message.tool_calls] if assistant_message.is_tool_call() else None,
             "parser_error": parser_error,
             "generation_seconds": dt,
+            **margins,
         }
         if _WRITER is not None:
             _WRITER.write(rec)
@@ -162,6 +165,31 @@ class CLOQAgent(LLMAgent[LLMAgentState]):
             logger.warning("CLOQAgent: no decision writer set; decision not logged")
         self.decision_idx += 1
         return assistant_message
+
+
+def _token_margins(lp) -> dict:
+    """Per-token decision margins from the server's top-k logprobs (CLOQ_TOP_LOGPROBS > 0).
+
+    margin_t = logprob(chosen token) - logprob(best alternative among the returned top-k); for greedy
+    decoding this is the top-1 minus top-2 logit gap at step t. Stored rounded to 1e-4 so the record stays
+    small; tokens whose top-k holds no alternative get None.
+    """
+    content = (lp or {}).get("content") if isinstance(lp, dict) else None
+    if not content:
+        return {}
+    chosen, margin = [], []
+    for t in content:
+        c = t.get("logprob")
+        alts = [a.get("logprob") for a in (t.get("top_logprobs") or []) if a.get("token") != t.get("token")]
+        chosen.append(round(c, 4) if c is not None else None)
+        margin.append(round(c - max(alts), 4) if (c is not None and alts) else None)
+    valid = [m for m in margin if m is not None]
+    return {
+        "token_logprobs": chosen,
+        "token_margins": margin,
+        "first_token_margin": margin[0] if margin else None,
+        "min_margin": min(valid) if valid else None,
+    }
 
 
 def _select_tau2_messages(full_msgs, full_lm, kept_lm):

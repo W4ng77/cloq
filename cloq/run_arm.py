@@ -61,6 +61,10 @@ def environment_json(agent_base: str, user_base: str) -> dict:
         "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
         "prompt_nonce": os.environ.get("CLOQ_PROMPT_NONCE"),
         "max_prompt_tokens": C.MAX_PROMPT_TOKENS,
+        "model_id": C.MODEL_ID, "model_revision": C.MODEL_REVISION,
+        "chat_template_kwargs": C.CHAT_TEMPLATE_KWARGS, "user_model_id": C.USER_MODEL_ID,
+        "user_chat_template_kwargs": C.USER_CHAT_TEMPLATE_KWARGS, "top_logprobs": C.TOP_LOGPROBS,
+        "slurm_job_id": os.environ.get("SLURM_JOB_ID"),
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 

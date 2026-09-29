@@ -131,7 +131,7 @@ def judge_run(run_dir: Path, user_base: str, concurrency: int = 8) -> dict:
             ok = ok and bool(r["nl_all_met"])
         succ.append({"task_id": t["task_id"], "task_success": ok, "reward_basis": basis})
     (run_dir / "task_success.json").write_text(json.dumps({
-        "judge": {"model": C.MODEL_ID, "revision": C.MODEL_REVISION, "server": user_base, "args": judge_args},
+        "judge": {"model": C.USER_MODEL_ID, "server": user_base, "args": judge_args},
         "n_tasks": len(succ), "n_judge_errors": n_err,
         "task_success_rate": sum(s["task_success"] for s in succ) / max(1, len(succ)),
         "per_task": succ,

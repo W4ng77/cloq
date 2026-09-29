@@ -20,7 +20,7 @@ from typing import Any, Optional
 
 from transformers import AutoTokenizer
 
-from cloq.config import MAX_PROMPT_TOKENS, MODEL_ID, MODEL_REVISION
+from cloq.config import CHAT_TEMPLATE_KWARGS, MAX_PROMPT_TOKENS, MODEL_ID, MODEL_REVISION
 
 _TOK = None
 _TOK_LOCK = threading.Lock()
@@ -39,14 +39,14 @@ def render_prompt(messages: list[dict], tools: Optional[list[dict]]) -> str:
     """Render exactly what the chat template produces for a generation request."""
     tok = get_tokenizer()
     return tok.apply_chat_template(
-        messages, tools=tools or None, add_generation_prompt=True, tokenize=False
+        messages, tools=tools or None, add_generation_prompt=True, tokenize=False, **CHAT_TEMPLATE_KWARGS
     )
 
 
 def render_prompt_ids(messages: list[dict], tools: Optional[list[dict]]) -> list[int]:
     tok = get_tokenizer()
     out = tok.apply_chat_template(
-        messages, tools=tools or None, add_generation_prompt=True, tokenize=True
+        messages, tools=tools or None, add_generation_prompt=True, tokenize=True, **CHAT_TEMPLATE_KWARGS
     )
     if isinstance(out, dict) or hasattr(out, "input_ids"):
         out = out["input_ids"]
