@@ -87,7 +87,7 @@ method list of the COLM 2025 "Quantization Hurts Reasoning?" paper and extends E
   - q_norm/k_norm act per head on the projection outputs, so the rotation leaves them unchanged.
 - q4 smoke (task = production cell, fresh nonces q1–q3, overall db_match over 85 tasks). References:
   - fresh-nonce and n-nonce references: RTN-W4 q* 0.306, GPTQ-W4-d1 q* 0.408, AWQ-W4 q* 0.404, null n* 0.359.
-  - new cells: nf4 0.341/–/0.376 (q2 still running at queue time), mxfp4 0.341/0.353/0.329, rot_bf16 0.341/0.388/0.365, rot_rtn_w4 0.318/0.306/0.376,
+  - new cells: nf4 0.341/0.365/0.376, mxfp4 0.341/0.353/0.329, rot_bf16 0.341/0.388/0.365, rot_rtn_w4 0.318/0.306/0.376,
     rot_gptq_w4 0.400/0.400/0.412, rtnsr_w4 0.212/0.235/0.294. Mean relative weight error: nf4 0.0086,
     mxfp4 0.0137, rot_rtn 0.0102 (RTN-W4 ≈ 0.0107), rtnsr 0.0212.
 - Queued (priority −2; rtnsr −3): q8 and q14 × all 6 cells (runs `a6k2_<m>_<cell>_q1..q3`, nonces 6d1f0b3e/f07a5c21/4c8e1a7f).
