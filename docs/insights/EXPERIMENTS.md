@@ -41,6 +41,14 @@ The matrix totals ≈115 GPU-h. Capacity is ≈26 agent GPUs (`/data/ziyangs/clo
 | A2-11 | done (iter 2, conformal) | open-loop → closed-loop conformal intervals (jackknife+, leave-one-model-out), hazard and success Δ; re-runnable as E3 for q14/q30a3/q32 lands | C3, C4 | 0 | `analysis/insights/iter_2/out/c02_openloop_conformal.json` ← `c02_openloop_conformal.py`; `docs/insights/iter_2_conformal.md#2-open-loop--closed-loop-conformal-prediction-a2-11` |
 | E12 | proposed (iter 2, conformal) | 3 extra nonce nulls n6–n8 (new nonces) for q4, q8, q14, so the prompt-stratum-matched exact test S has n = 6 (p_min 1/28 at 2 draws) | C2 (F-C1: pooled ±5 pp rests on the mixed-prompt null) | ≈2.4 | spec: `docs/insights/iter_2_conformal.md#5-design-flaws-and-proposals`; basis `queue/done/a6k2_q8_bf16.json` (2,680 s for 6 runs), `a6k2_q14_gauss0.1_s1.json` (1,968 s) |
 | E13 | proposed (iter 2, conformal) | rule: new nonce'd cells (PLAN_iter3 X1/X2) use nonces disjoint from the null nonces | C2 | 0 | `c01…json` `note_S`; `scripts/a6000/make_tasks.py` L44/L53 reuse `NONCES[0:2]` |
+| A2-12 | done (iter 2, review v2) | integrity gate G1–G7 + frozen snapshot manifest; run_all.sh reads it; headline diff | W-A | 0 | `analysis/insights/iter_2/out/snapshot_20260929T0732Z.json` ← `integrity.py`; `out/diff_20260929T0732Z.md` ← `diff_outputs.py`; `docs/insights/iter_2_integrity.md#1-integrity-gate-a2-12-review-w-a` |
+| A2-13 | done, provisional (iter 2, review v2) | churn: stratum-matched, excess churn with CI, negative controls, null-vs-null, Flat-Score r; fixed-checkpoint control auto-included | W-B, Q1/Q2/Q5 | 0 | `out/k01_churn.json` ← `k01_churn.py`; `iter_2_integrity.md#2-churn-checks-a2-13-review-w-b-q1-q2-q5` |
+| A2-14 | done (iter 2, review v2) | Holm across all family×statistic tests; e-product dropped (per-model + mean); NR1 null rule (S primary) | W-C, W-G | 0 | `docs/insights/NULL_RULE.md`; `out/n01_null_rule.json` ← `n01_null_rule.py`; `out/c01_conformal_equivalence.json` |
+| A2-15 | done, provisional (iter 2, review v2) | C3 matched dose: partial rho(flip, hazard given dose) 0.86 [0.67, 0.96] | W-D | 0 | `out/d01_matched_dose.json` ← `d01_matched_dose.py` |
+| A2-16 | done, provisional (iter 2, review v2) | floor by pairing stratum; stratum-matched cross-model prediction (5–29% error) | Q4, C1 | 0 | `out/f01_floor_strata.json` ← `f01_floor_strata.py` |
+| E14 | proposed (iter 2, review v2) | dedup the 4 completed runs that still have abandoned attempts (`scripts/a6000/dedup_decisions.py`), then re-run the gate | F-I3 | 0 | `iter_2_integrity.md#7-proposals-for-main-costs-from-queuedonejson-seconds` |
+| E15 | proposed (iter 2, review v2) | fixed Gaussian k=1 s1 checkpoint × churnctl nonces (6d1f0b3e/f07a5c21) on q4/q8/q14: stratum-S Gaussian damage test and dose-matched churn control | F-I1, F-I2 (churn headline, k=1 harm) | ≈3.5–6 | spec in `iter_2_integrity.md#7-proposals-for-main-costs-from-queuedonejson-seconds`; basis `queue/done/a6k2_q4_gauss1_s4_redo.json` (1,724 s), `a6k2_q8_gauss1_s2.json` (3,498 s), `a6k2_q14_gauss1_s1.json` (1,848 s) |
+| E16 | proposed (iter 2, review v2) | re-run `bash analysis/insights/iter_2/run_all.sh` after redos, null_extra and churnctl land; replace the provisional numbers | all | ≈3 min CPU | `analysis/insights/iter_2/run_all.sh` |
 
 ## Ready-to-queue specs
 
@@ -73,6 +81,8 @@ E4a: patch `analysis/insights/iter_1/s02_trajectory_divergence.py`. Where `b[key
 E5: add `eval_task(f"{m}_bf16_eager", m, "bf16", {"kind": "bf16"}, [run(f"{R}_bf16_eager")], p)`, served with the extra vLLM arg `--enforce-eager`. The worker needs a `serve_extra` field for this. Also add gauss `{"kind": "gauss", "k": 0.03, "seed": s}` for s = 3, 4, 5.
 
 ## History
+
+- 2026-09-29 (iter 2, review v2 must-do 2–5): A2-12…A2-16 done on frozen snapshot `20260929T0732Z` (provisional). E14–E16 proposed. Flags: F-I1 (canonical stratum capped at n = 2, so Gaussian cells are untestable under the NR1-primary null S), F-I2 (dose-matched Gaussian k=1 churns at least as much as the quantizers), F-I3 (4 completed runs not deduplicated). See `docs/insights/iter_2_integrity.md`.
 
 - 2026-09-28 (iter 1, round 1): E1–E6 and X1 proposed. Evidence scripts were added under `analysis/insights/iter_1/exp/` (read-only over logs, runs and the queue; `e_bestconfig.sh` reads the node-local caches over ssh).
 - 2026-09-29 (iter 2 conformal): A2-10/A2-11 done (0 GPU-h, snapshot 05:45Z). E12 (≈2.4 GPU-h) and E13 (rule) proposed. Flags: F-C1, where the pooled ±5 pp equivalence rests on the mixed-prompt null A, and F-C2, where open-loop features do not predict success Δ, so the C4 gate cannot certify damage. See `docs/insights/iter_2_conformal.md`.

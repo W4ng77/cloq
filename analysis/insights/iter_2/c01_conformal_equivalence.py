@@ -19,10 +19,13 @@ the bag (complete case). Partial runs (being re-run as *_redo, or still running)
 3. Conformal e-values (soft rank): e_C = (n+1) s_C / sum_bag s_i (e=1 if all s=0); E[e] <= 1 under H0 by symmetry.
    Family: mean of per-draw e (valid under any dependence between draws sharing the null bag).
    Across tasks: per-task e_t with s = |y_r(t) - mean_bag y(t)|, averaged over t (valid under any dependence).
-   Across models: product of family e-values (assumes the model-level experiments are independent); an e-value
-   product can be extended as q30a3/q32 arrive without re-planning (optional continuation).
+   Across models: per-model family e-values and their arithmetic MEAN (an e-value under any dependence; the
+   product used before review v2 assumed independent model-level experiments and was dropped, W-C).
 4. Pooled across models: stratified permutation (labels permuted within model), statistic = mean over models of the
    per-model signed net difference (Monte Carlo, B draws, p = (1 + #)/(B + 1)).
+   Multiplicity (review v2 W-C): Holm across ALL (family x {net, harm, churn}) tests, pooled (`*_holm_all`) and per
+   model on the conservative exact p (`perm.p_*_cons_holm_all`). Exactness holds only if the null draws are
+   exchangeable among themselves; docs/insights/NULL_RULE.md decides whether A or S is primary (n01_null_rule.py).
 5. Equivalence (non-rejection is NOT equivalence): permutation confidence set for a location shift delta of the
    run-level success rate (Lehmann inversion: C rates - delta exchangeable with null rates). TOST at eps: reject
    delta <= -eps and delta >= +eps, each one-sided at 5% (= 90% set inside (-eps, eps)). eps_min = smallest eps on
@@ -329,12 +332,16 @@ def pooled(per_model, fams, models):
                 o += (r[:m].mean() - r[m:].mean()) / len(parts)
             phi.append((1 + (s >= o - 1e-12).sum()) / 4001); plo.append((1 + (s <= o + 1e-12).sum()) / 4001)
         eqv = equiv_from_p(np.array(phi), np.array(plo))
-        prod = {k: round(float(np.prod([p["e_family"][k] for p in parts.values()])), 4) for k in ("net", "harm", "churn", "task_avg")}
+        # review v2 W-C: models share tasks, nonces, simulator and harness, so the cross-model PRODUCT of e-values
+        # (valid only for independent experiments) is dropped. Reported instead: per-model e-values and their
+        # arithmetic mean, which is an e-value under ANY dependence (Vovk & Wang 2021, arXiv:1912.06116, Prop. 3.1).
+        e_per = {q: {k: p["e_family"][k] for k in ("net", "harm", "churn", "task_avg")} for q, p in parts.items()}
+        e_mean = {k: round(float(np.mean([p["e_family"][k] for p in parts.values()])), 4) for k in ("net", "harm", "churn", "task_avg")}
         out[f] = {"models": sorted(parts), "delta_mean_over_models": round(float(obs), 4),
                   "p_net_stratified_mc": round(float(p_net), 5), "p_harm_stratified_mc": round(float(p_harm), 5),
                   "churn_obs": round(float(cobs), 4), "p_churn_stratified_mc": round(float(p_churn), 5),
                   "p_min_exact": float(1 / np.prod([p["perm"]["n_perm"] for p in parts.values()])),
-                  "equiv_common_shift": eqv, "e_product": prod}
+                  "equiv_common_shift": eqv, "e_per_model": e_per, "e_mean_over_models": e_mean}
     return out
 
 
@@ -360,7 +367,21 @@ def main():
         for key in ("p_harm_stratified_mc", "p_net_stratified_mc", "p_churn_stratified_mc"):
             h = holm({f: pl[f][key] for f in fams_h})
             for f in fams_h:
-                pl[f][key + "_holm"] = h[f]
+                pl[f][key + "_holm"] = h[f]   # Holm across families, one statistic (iter-2 convention, kept for the diff)
+        # review v2 W-C: Holm across ALL (family x statistic) tests reported for the pooled layer (primary)
+        keys = ("p_net_stratified_mc", "p_harm_stratified_mc", "p_churn_stratified_mc")
+        h = holm({(f, k): pl[f][k] for f in fams_h for k in keys})
+        for (f, k), v in h.items():
+            pl[f][k + "_holm_all"] = v
+        # per model: Holm across all (family x statistic) conservative exact permutation p-values
+        for q, r in per.items():
+            if not r:
+                continue
+            fm = [f for f in r["families"] if f != "free_zone"]
+            h = holm({(f, st): r["families"][f]["perm"][f"p_{st}_cons"] for f in fm for st in ("net", "harm", "churn")})
+            for (f, st), v in h.items():
+                r["families"][f]["perm"][f"p_{st}_cons_holm_all"] = v
+            r["holm_all_m"] = len(h)
         pl_all = pooled(per, allf, list(per))
         for r in per.values():
             if r:
@@ -382,7 +403,7 @@ def main():
                       f"p01={e.get('p01_tost', {}).get('verdict_5pp')}")
         for f, x in pl.items():
             print(f"  POOLED {f:10s} {x['models']} Δ={x['delta_mean_over_models']:+.3f} p_net={x['p_net_stratified_mc']} "
-                  f"p_harm={x['p_harm_stratified_mc']} holm={x.get('p_harm_stratified_mc_holm')} churn={x['churn_obs']} p_churn={x['p_churn_stratified_mc']} holm={x.get('p_churn_stratified_mc_holm')} eq={x['equiv_common_shift']} e={x['e_product']}")
+                  f"p_harm={x['p_harm_stratified_mc']} holm_all={x.get('p_harm_stratified_mc_holm_all')} churn={x['churn_obs']} p_churn={x['p_churn_stratified_mc']} holm_all={x.get('p_churn_stratified_mc_holm_all')} eq={x['equiv_common_shift']} e_mean={x['e_mean_over_models']}")
     dump("c01_conformal_equivalence.json", res)
 
 

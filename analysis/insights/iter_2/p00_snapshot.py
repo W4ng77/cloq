@@ -5,13 +5,13 @@ Usage: python p00_snapshot.py -> out/p00_snapshot.json
 import json
 from collections import Counter
 
-from common import DOMS, RUNS, dump, now, outcomes
+from common import DOMS, RUNS, dump, in_snapshot, now, outcomes
 
 
 def main():
     res = {"snapshot_utc": now(), "runs": {}, "infra_error_runs": {}}
     for p in sorted(RUNS.iterdir()):
-        if not p.is_dir() or not p.name.startswith(("a6k2_", "a6000_")):
+        if not p.is_dir() or not p.name.startswith(("a6k2_", "a6000_")) or not in_snapshot(p.name):
             continue
         r = {}
         for d in DOMS:

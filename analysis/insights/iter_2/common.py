@@ -8,6 +8,8 @@ Conventions follow analysis/insights/iter_1/verify/v01_legacy_recompute.py and v
     context already differs (censored: the environment/simulator diverged first).
 A compact per-(run, domain) decision cache is kept in iter_2/.cache (keyed on file size + mtime) so repeated scripts
 do not re-parse the 30-40 MB decisions.jsonl files.
+Frozen snapshot: set CLOQ_SNAPSHOT=out/snapshot_<utc>.json (run_all.sh does) to restrict every script to the runs
+admitted by integrity.py and to refuse files changed after the freeze.
 """
 import hashlib
 import json
@@ -30,6 +32,30 @@ OUT.mkdir(exist_ok=True)
 CACHE.mkdir(exist_ok=True)
 DOMS = ("retail", "airline")
 WRITE_RE = re.compile(r"^(cancel|modify|return|exchange|book|update|send|transfer)")
+
+# Frozen snapshot (integrity.py -> out/snapshot_<utc>.json). When CLOQ_SNAPSHOT is set (run_all.sh sets it), every
+# script sees only the runs admitted by the integrity gate, and any decisions/trajectory/metrics file whose size or
+# mtime changed after the freeze raises instead of being read silently. Unset = live runs/ (exploration only).
+SNAP_PATH = os.environ.get("CLOQ_SNAPSHOT")
+SNAP = json.load(open(SNAP_PATH)) if SNAP_PATH else None
+CTL_RE = re.compile(r"_q\d+$")  # fixed-checkpoint churn controls (a6k2_<m>_gauss0.03_s1_q1/_q2), see k01_churn.py
+
+
+def in_snapshot(run):
+    return SNAP is None or run in SNAP["frozen"]
+
+
+def exists_frozen(run):
+    return (RUNS / run).exists() and in_snapshot(run)
+
+
+def check_frozen(run, dom, fname):
+    if SNAP is None:
+        return
+    rec = SNAP["frozen"][run].get(dom, {}).get("files", {}).get(fname)
+    st = (RUNS / run / dom / fname).stat()
+    if rec is None or rec["size"] != st.st_size or abs(rec["mtime"] - st.st_mtime) > 1e-3:
+        raise RuntimeError(f"{run}/{dom}/{fname} changed after snapshot {SNAP['snapshot_id']}; re-run integrity.py")
 
 
 def now():
@@ -63,8 +89,9 @@ def _calls(r):
 def _parse(args):
     run, dom = args
     p = RUNS / run / dom / "decisions.jsonl"
-    if not p.exists():
+    if not p.exists() or not in_snapshot(run):
         return (run, dom), {}
+    check_frozen(run, dom, "decisions.jsonl")
     st = p.stat()
     c = CACHE / f"{run}__{dom}.pkl"
     if c.exists():
@@ -113,7 +140,10 @@ INFRA_AS_FAIL = os.environ.get("CLOQ_INFRA_AS_FAIL") == "1"
 def outcomes(run, dom, with_reason=False):
     mp = RUNS / run / dom / "metrics.json"
     rows = []
+    if not in_snapshot(run):
+        return {}
     if mp.exists():
+        check_frozen(run, dom, "metrics.json")
         for t in json.load(open(mp))["per_task"]:
             rows.append((str(t["task_id"]), int(bool(t["db_match"]) and not t.get("premature")), t.get("termination_reason")))
     else:
@@ -141,9 +171,11 @@ def outcomes_both(run):
     return {(d, t): v for d in DOMS for t, v in outcomes(run, d).items()}
 
 
-def runs_for(model, pfx="a6k2"):
+def runs_for(model, pfx="a6k2", ctl=False):
+    """runs of a model in the frozen snapshot (if set); fixed-checkpoint controls only with ctl=True"""
     return sorted(p.name for p in RUNS.iterdir()
-                  if p.is_dir() and p.name.startswith(f"{pfx}_{model}_") and not p.name.endswith("_cal"))
+                  if p.is_dir() and p.name.startswith(f"{pfx}_{model}_") and not p.name.endswith("_cal")
+                  and in_snapshot(p.name) and (ctl or not CTL_RE.search(p.name)))
 
 
 def fam(run, model):
@@ -197,6 +229,8 @@ def boot_mean_clusters(clusters, rng, B=4000):
 
 def dump(name, obj):
     p = OUT / name
+    if isinstance(obj, dict):
+        obj = {"_frozen_snapshot": {"id": SNAP["snapshot_id"], "path": SNAP_PATH} if SNAP else None, **obj}
     with open(p, "w") as f:
         json.dump(obj, f, indent=1, default=lambda x: x.item() if hasattr(x, "item") else str(x))
     print("wrote", p)

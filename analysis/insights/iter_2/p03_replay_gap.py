@@ -20,7 +20,7 @@ from collections import defaultdict
 
 import numpy as np
 
-from common import dump, first_div, infra_tasks, load_many, now, outcomes_both, runs_for, RUNS
+from common import dump, exists_frozen, first_div, infra_tasks, load_many, now, outcomes_both, runs_for, RUNS
 
 AGENT_ONLY = re.compile(r"_(bf16_eager|gauss0\.00[13]_s\d|gauss0\.01_s\d|gauss0\.03_s\d|rtn_w8_n\d|null_n\d)$")
 ABS = [(0, 0, "0"), (1, 3, "1-3"), (4, 7, "4-7"), (8, 10 ** 6, "8+")]
@@ -79,7 +79,7 @@ def main():
              "per_cell_flip_rate": {r: round(float(np.mean([x["flip"] for x in xs])), 4) for r, xs in recs.items() if xs}}
         # legacy -> clean canonical (agent + simulator numerics)
         a, b = f"a6000_{model}_bf16", f"a6k2_{model}_bf16"
-        if (RUNS / a).exists():
+        if exists_frozen(a) and exists_frozen(b):
             D = load_many([a, b])
             Ya, Yb = outcomes_both(a), outcomes_both(b)
             lr = [{"i": i, "L": L, "why": why, "flip": int(Ya[(d, t)] != Yb[(d, t)])}

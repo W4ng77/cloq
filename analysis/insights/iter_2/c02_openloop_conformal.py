@@ -24,7 +24,7 @@ from collections import defaultdict
 
 import numpy as np
 
-from common import ROOT, dump, fam, infra_tasks, load_many, now, outcomes_both, ref_for, runs_for
+from common import ROOT, dump, exists_frozen, fam, infra_tasks, load_many, now, outcomes_both, ref_for, runs_for
 from p02_ties import pair
 
 OL = ROOT / "analysis/openloop/a6k2"
@@ -64,7 +64,7 @@ def closed_loop(model):
         cells[stem] = {"ol": json.load(open(f)), "runs": rs}
     need = sorted({r for c in cells.values() for r in c["runs"]} |
                   {ref_for(model, r, runs)[0] for c in cells.values() for r in c["runs"]})
-    D = load_many([r for r in need if (ROOT / "runs" / r).exists()])
+    D = load_many([r for r in need if exists_frozen(r)])
     out = {}
     for stem, c in cells.items():
         ev = risk = 0; used = []

@@ -27,7 +27,7 @@ from collections import defaultdict
 
 import numpy as np
 
-from common import DOMS, ROOT, RUNS, dump, fam, first_div, infra_tasks, load_many, now, ref_for, runs_for
+from common import DOMS, ROOT, RUNS, check_frozen, dump, exists_frozen, fam, first_div, infra_tasks, load_many, now, ref_for, runs_for
 
 BINS = [("0", 0, 0), ("(0,0.125]", 1e-9, 0.125), ("(0.125,0.25]", 0.125 + 1e-9, 0.25), ("(0.25,0.5]", 0.25 + 1e-9, 0.5),
         ("(0.5,1]", 0.5 + 1e-9, 1), ("(1,2]", 1 + 1e-9, 2), (">2", 2 + 1e-9, 1e9)]
@@ -129,8 +129,11 @@ def openloop(model):
     if not base.exists():
         return None
     ref = f"a6k2_{model}_bf16"
+    if not exists_frozen(ref):
+        return None
     ds = []
     for d in DOMS:
+        check_frozen(ref, d, "decisions.jsonl")
         for line in open(RUNS / ref / d / "decisions.jsonl"):
             x = json.loads(line)
             if x.get("token_logprobs") and x.get("completion_token_ids"):
@@ -173,14 +176,16 @@ def main():
     res = {"snapshot_utc": now(), "tie_density": {}, "closed_loop": {}, "open_loop": {}, "cross_model": {}}
     for m in ("q30a3", "q32"):
         cal = f"a6k2_{m}_bf16_cal"
-        if (RUNS / cal).exists():
+        if exists_frozen(cal):
             res["tie_density"][m + " (cal run)"] = tie_density(load_many([cal])[cal])
     floor_h = {}
     for model in ("q4", "q8", "q14"):
         runs = runs_for(model)
+        if f"a6k2_{model}_bf16" not in runs:
+            continue
         pairs = [(r, *ref_for(model, r, runs)) for r in runs if r != f"a6k2_{model}_bf16"]
         det = f"a6k2_det_{model}_a"
-        if (RUNS / det).exists():
+        if exists_frozen(det):
             pairs.append((det, f"a6k2_{model}_bf16", "sha"))
         need = sorted({x for p in pairs for x in p[:2]} | {f"a6k2_{model}_bf16"})
         D = load_many(need)
