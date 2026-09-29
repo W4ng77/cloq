@@ -1,3 +1,5 @@
+> **Reviewers start here:** [`docs/REVIEW_PACKET.md`](docs/REVIEW_PACKET.md) — question, setup, methodology, current results, storyline v5 and its internal reviews, open questions (2026-09-29). Project log: `docs/RESEARCH_LOG.md`.
+
 # CLOQ v0 — Closed-Loop Calibration for Quantized LLM Agents (2×RTX 4080 diagnostic)
 
 Implements `/home/xinyu/llm_agent_closed_loop_quantization_plan_v0.md` on τ²-bench (retail, airline, text mode)
