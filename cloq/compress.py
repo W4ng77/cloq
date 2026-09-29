@@ -71,6 +71,26 @@ def perturb(name: str, W16: torch.Tensor, args, device: str) -> tuple[torch.Tens
     W = W16.to(device=device, dtype=torch.float32)
     if args.mode == "rtn":
         Q = rtn_dequant(W, args.wbits)
+    elif args.mode in ("gshape", "rtnsign"):
+        # E17 (docs/insights/iter_3_candidates.md): separate error SIZE from error STRUCTURE.
+        # gshape: Gaussian noise whose per-group (1 x 128) RMS equals that of the RTN-W<wbits> error, times k.
+        # rtnsign: the exact RTN error magnitudes with i.i.d. random signs (same per-element size, no rounding correlation).
+        E = rtn_dequant(W, args.wbits) - W
+        g = torch.Generator(device=device).manual_seed(tensor_seed(args.seed, name))
+        rows, cols = W.shape
+        if args.mode == "rtnsign":
+            sgn = torch.randint(0, 2, W.shape, generator=g, device=device, dtype=torch.int8).float() * 2 - 1
+            Q = W + E * sgn * args.k
+        else:
+            N = torch.randn(W.shape, generator=g, device=device, dtype=torch.float32)
+            if cols % GROUP == 0:
+                rms = E.reshape(rows, cols // GROUP, GROUP).pow(2).mean(-1, keepdim=True).sqrt()
+                Q = W + (N.reshape(rows, cols // GROUP, GROUP) * rms).reshape(rows, cols) * args.k
+            else:
+                Q = W.clone()
+                for c0 in range(0, cols, GROUP):
+                    e = E[:, c0:c0 + GROUP]
+                    Q[:, c0:c0 + GROUP] += N[:, c0:c0 + GROUP] * e.pow(2).mean(-1, keepdim=True).sqrt() * args.k
     else:
         target = torch.linalg.vector_norm(rtn_dequant(W, 4) - W) * args.k
         g = torch.Generator(device=device).manual_seed(tensor_seed(args.seed, name))
@@ -93,7 +113,7 @@ def _sha256(p: Path) -> str:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("mode", choices=["rtn", "gauss"])
+    ap.add_argument("mode", choices=["rtn", "gauss", "gshape", "rtnsign"])
     ap.add_argument("--src", required=True, help="local BF16 snapshot directory")
     ap.add_argument("--out", required=True)
     ap.add_argument("--wbits", type=int, default=4)
@@ -104,8 +124,8 @@ def main():
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--no-sha", action="store_true", help="skip output shard hashing (ephemeral node-local copies)")
     args = ap.parse_args()
-    if args.mode == "gauss":
-        assert args.k is not None and args.seed is not None, "gauss needs --k and --seed"
+    if args.mode in ("gauss", "gshape", "rtnsign"):
+        assert args.k is not None and args.seed is not None, f"{args.mode} needs --k and --seed"
     src, out = Path(args.src), Path(args.out)
     if (out / "quantization.json").exists():
         print(f"{out} exists; skipping")

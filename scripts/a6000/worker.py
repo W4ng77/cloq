@@ -167,10 +167,13 @@ def build_ckpt(task, env, gpus, scratch: Path, log) -> tuple[str, dict | None]:
     if out.exists():
         shutil.rmtree(out)
     e = dict(env, CUDA_VISIBLE_DEVICES=gpus[0])
-    if ck["kind"] in ("rtn", "gauss"):
+    if ck["kind"] in ("rtn", "gauss", "gshape", "rtnsign"):
         cmd = [sys.executable, "-m", "cloq.compress", ck["kind"], "--src", src, "--out", str(out), "--no-sha",
                "--source-model", m["hf_id"], "--source-revision", m["revision"]]
-        cmd += ["--wbits", str(ck["wbits"])] if ck["kind"] == "rtn" else ["--k", str(ck["k"]), "--seed", str(ck["seed"])]
+        if ck["kind"] == "rtn":
+            cmd += ["--wbits", str(ck["wbits"])]
+        else:
+            cmd += ["--k", str(ck["k"]), "--seed", str(ck["seed"])] + (["--wbits", str(ck["wbits"])] if "wbits" in ck else [])
     else:
         cmd = [sys.executable, "-m", "cloq.quantize", "--method", ck["kind"], "--wbits", str(ck["wbits"]),
                "--calib", str(ROOT / ck["calib"]), "--out", str(out), "--no-sha"]
