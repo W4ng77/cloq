@@ -10,6 +10,20 @@ Newest first.
 
 ---
 
+## W20 — E4-2 fork-alternative open loop implemented, smoke-tested and queued (2026-09-29 14:40 PDT)
+**TL;DR** New `scripts/a6000/openloop_topk.py` records the served cell's top-20 alternatives (token id + logprob) at every BF16 decision start and at the tool-name tokens of BF16 tool calls. It uses the same 400-decision sample as E3, plus the first token of all BF16 decisions. BF16 is run as its own cell, so the contrasts are served-vs-served: Δlogit P(`<tool_call>`), KL(BF16‖cell), and the mass on each tool name.
+- **Integrity.** The BF16 cell reproduces the closed-loop first-token logprobs within the log's 4-decimal rounding. `prompt_logprobs` and generation agree bit for bit.
+- **Smoke, q4 RTN-W4 vs BF16.**
+  - Mean P(act) at decision starts: 0.540 → 0.492.
+  - Split by what BF16 did, it falls from 0.956 to 0.831 at tool starts and rises from 0.016 to 0.065 at text starts, so RTN blurs the fork rather than shifting it one way. Δlogit mean −0.90.
+  - The act/talk argmax flips at 11.75% of starts.
+  - First-token KL: median 0.009, q90 2.8.
+  - P(BF16's tool name) falls from 0.991 to 0.896, and the tool-name switch rate rises from 0.4% to 10.8%.
+- **Queued.** 50 tasks `a6k2_<m>_olk_<cell>` at priority −8: q4 19, q8 17, q14 6, q32 6 (cell list in the iter-4 doc).
+- **Code changes.** `worker.py` passes `openloop.topk` / `positions` / `first_all` / `ref` through to the new script. Tasks without `topk` are unchanged, and `openloop_d.py` is untouched.
+
+Evidence: `scripts/a6000/{openloop_topk,make_tasks_e42,worker}.py`; `analysis/openloop/a6k2/q4/topk/{bf16,rtn_w4}.{json,npz,names.json}`; `docs/insights/iter_4_disposition.md` ("E4-2 implementation"); `/data/ziyangs/cloq_work/queue/*/a6k2_*_olk_*.json`; logs `/data/ziyangs/cloq_work/logs/tasks/a6k2_q4_olk_{bf16,rtn_w4}.log`.
+
 ## W19 — Iteration-4 experiments queued: checkpoint variant vs sampling (2026-09-29, user go-ahead)
 **TL;DR** Tests whether a quantized checkpoint is a reproducible behavioural variant (coherent net effect, persistent fingerprint; W18) unlike nonce/Gaussian perturbations and sampling. Queued via `scripts/a6000/make_tasks_iter4.py`: E4-1 open-loop probes for existing checkpoints on q8/q14/q30a3/q32 (20 reprioritised to −8, 6 new); E4-3 calibration draws c3/c4 → GPTQ/AWQ-W4 d3/d4 on q4/q8 × 2 fresh nonces (8 cells, 16 runs, + open-loop); E4-4 fixed Gaussian k=1 seeds s2/s4/s5 on q4/q8 × 2 fresh nonces (12 runs); S sampling baseline q4 BF16 T∈{0.2,0.5,0.8} × seeds 1–3 on fresh nonces (9 runs). KV-cache quant and q8 new-method closed-loop cells moved +30 (telecom already at 40–60). Code: per-run `env` in worker.py; `CLOQ_AGENT_TEMPERATURE`/`CLOQ_AGENT_SEED` in cloq/config.py (frozen greedy stays the default; recorded in each run's config.json llm_args_agent); extra calibration draws c4/c5 in `configs/draws_extra.json` (frozen_v1 untouched; calib_v1 refuses to redefine a frozen draw). Pending: E4-2 (top-20 open-loop variant) and E4-5 (57 calibration-split tasks).
 Evidence: `scripts/a6000/make_tasks_iter4.py`; `queue/todo/a6k2_{q4,q8}_{gptq,awq}_w4_d{3,4}.json`, `a6k2_{q4,q8}_churnctl_k1_s{2,4,5}.json`, `a6k2_q4_samp_T*.json`; `docs/insights/iter_4_disposition.md`.

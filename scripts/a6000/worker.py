@@ -265,6 +265,11 @@ def run_eval(task, args, st: Status):
             st.set("eval", "open-loop D")
             cmd = [sys.executable, str(ROOT / "scripts/a6000/openloop_d.py"), "--port", str(args.port), "--n", str(ol.get("n", 400)),
                    "--out", ol["out"]] + [x for r in ol["ref_runs"] for x in ("--ref-run", r)]
+            if ol.get("topk"):  # E4-2: top-k alternatives at decision starts / tool names (scripts/a6000/openloop_topk.py)
+                cmd[1] = str(ROOT / "scripts/a6000/openloop_topk.py")
+                cmd += ["--topk", str(ol["topk"]), "--positions", ol.get("positions", "first,tool")]
+                cmd += ["--first-all"] if ol.get("first_all", True) else []
+                cmd += ["--ref", ol["ref"]] if ol.get("ref") else []
             if subprocess.run(cmd, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT).returncode != 0:
                 raise RuntimeError("openloop_d failed")
         jobs = [(r, d) for r in task["runs"] for d in task.get("domains", ("retail", "airline"))]
