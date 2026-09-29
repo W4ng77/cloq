@@ -67,7 +67,14 @@ def pending_tasks() -> list[tuple[Path, dict]]:
 def gpus_needed(t: dict) -> int:
     if t["kind"] == "calib":
         return 0
-    return int(MODELS[t["model"]]["gpus"])
+    if "gpus" in t:
+        return int(t["gpus"])
+    # re-read models.json so a model added while this runner is up is known; unknown -> never claimable
+    try:
+        models = json.load(open(ROOT / "scripts/a6000/models.json"))
+    except Exception:
+        models = MODELS
+    return int(models[t["model"]]["gpus"]) if t["model"] in models else 99
 
 
 def main():
