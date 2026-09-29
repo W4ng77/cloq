@@ -159,6 +159,8 @@ Scale:
 - About 40 GPUs are available until 10-05.
 - Open-loop cells take about 10 minutes.
 
+Pre-registration of the confirmatory tests on the new checkpoints (H1 recalibration lottery φ>1, H2 net effect replicates across nonces, H3 split-task fingerprint; H4 quantizer-vs-random coherence secondary): `docs/insights/PREREG_iter4.md`, committed while those runs were still running (RESEARCH_LOG W22). Suggestions on it are welcome; changes will be logged as amendments.
+
 ## 7. Repository map
 
 - **Paper:**
