@@ -262,6 +262,24 @@ def build_ckpt(task, env, gpus, scratch: Path, log) -> tuple[str, dict | None]:
     return str(out), json.load(open(out / "quantization.json"))
 
 
+def toolcall_side(rid: str, dom: str, task_id: str) -> str:
+    """W41: a tau2 pydantic 'validation error for ToolCall' (e.g. arguments=[] instead of {}) is not an outage. If the
+    agent's last recorded decision for the task parsed cleanly, the malformed call came from the user simulator (telecom
+    users have tools): 'user_sim_error', which stays missing, symmetric in every arm. Otherwise it is the agent's own
+    output: 'agent_parse_error', which counts as a failure (W27)."""
+    last = None
+    try:
+        with open(ROOT / "runs" / rid / dom / "decisions.jsonl") as fh:
+            for ln in fh:
+                if task_id in ln:
+                    r = json.loads(ln)
+                    if str(r.get("task_id")) == task_id:
+                        last = r
+    except OSError:
+        pass
+    return "user_sim_error" if last is not None and str(last.get("parser_error")) == "False" else "agent_parse_error"
+
+
 def run_eval(task, args, st: Status):
     gpus = args.gpus.split(",")
     env = model_env(task["model"], args.port)
@@ -399,7 +417,9 @@ def run_eval(task, args, st: Status):
                                 if str(sim.get("termination_reason")) == "infrastructure_error":
                                     err = str((sim.get("info") or {}).get("error", ""))
                                     causes[str(sim["task_id"])] = ("context_overflow" if "ContextWindowExceeded" in err else
-                                                                   "agent_parse_error" if "only supports single tool-calls" in err else "outage")
+                                                                   "agent_parse_error" if "only supports single tool-calls" in err else
+                                                                   toolcall_side(rid, d, str(sim["task_id"])) if "validation error for ToolCall" in err else
+                                                                   "outage")
                         (ROOT / "runs" / rid / d / "infra_causes.json").write_text(json.dumps(causes, indent=1))
                         n_out = sum(v == "outage" for v in causes.values()) if causes else tr["infrastructure_error"]
                         if n_out:

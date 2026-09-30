@@ -10,6 +10,15 @@ Newest first.
 
 ---
 
+## W41 — Telecom user-simulator ToolCall validation errors are not outages (2026-09-30 00:15 PDT)
+**TL;DR** `a6k2_q4_tel_awq_w4_fdev1` failed on one "outage". The actual error was a tau2 pydantic `validation error for ToolCall` (arguments=`[]`, not a dict), repeated on both attempts. In telecom the user simulator has tools, and the agent's last decision in that episode was a clean `disable_roaming` call, so the malformed call came from the simulator in the state the AWQ agent led to. It is deterministic, so a plain requeue would fail again.
+- **Worker change:** `worker.py` now labels such episodes in `infra_causes.json` via `toolcall_side()`:
+  - `user_sim_error` if the agent's last decision parsed cleanly. It stays missing, like any infrastructure episode, in every arm. It does not abort the task.
+  - `agent_parse_error` otherwise. That counts as a failure (W27).
+- **Unchanged:** the vendored tau2 is not modified, so completed episodes are unaffected.
+- **Reporting:** per-arm counts of user_sim_error are reported as a simulator-reliability row. Task resume-requeued.
+Evidence: `runs/a6k2_q4_tel_awq_w4_f01/telecom/tau2_results.json` (task `[mobile_data_issue]bad_vpn|…[PERSONA:None]`), `decisions.jsonl` decision 4, `scripts/a6000/worker.py` `toolcall_side`, `logs/tasks/a6k2_q4_tel_awq_w4_fdev1.log` L956–1044.
+
 ## W40 — Closed-loop restoration and residual-dose arms on the development blocks (2026-09-30 00:40 PDT)
 **TL;DR** After W39-pert verified the `restore` and `resid` checkpoint kinds (bit-exact endpoints, byte-matched random controls, cross-node reproducible cache), I queued 34 eval tasks (102 runs, about 8.7k episodes) at priority −8.
 - **Cells:** q4 GPTQ-W4 d1 and q8 AWQ-W4 (the primary dev checkpoints).
