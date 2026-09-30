@@ -129,6 +129,7 @@
     "trigger": "script_exists_and_new_done"
    },
    "exclude": [
+    "^fork_ext_",
     "^fork_kv_",
     "^fork_stress_"
    ]
@@ -199,6 +200,22 @@
    "analysis": {
     "name": "external benchmark scores",
     "run": "agent"
+   }
+  },
+  {
+   "id": "ext_forks",
+   "title": "Same-state 2x2 forks on ALFWorld and BFCL multi-turn (no user simulator)",
+   "role": "main",
+   "patterns": [
+    "^fork_ext_dev_"
+   ],
+   "fit": "Generality of the fork decomposition without an LLM user simulator; removes the simulator confound (W39-extfork gate PASS).",
+   "analysis": {
+    "name": "ext fork analysis (G/A/C/I per env x category x cell, hierarchical bootstrap)",
+    "run": "cpu",
+    "script": "analysis/fork/analyze_ext.py",
+    "cmd": "python analysis/fork/analyze_ext.py",
+    "trigger": "script_exists_and_new_done"
    }
   },
   {
