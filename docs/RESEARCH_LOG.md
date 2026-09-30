@@ -10,6 +10,29 @@ Newest first.
 
 ---
 
+## W51 — External-fork analysis script (`analysis/fork/analyze_ext.py`) and the first ALFWorld estimate (2026-09-30)
+**TL;DR** `analysis/fork/analyze_ext.py` (registry id `ext_forks`) reproduces the τ² fork analysis on ALFWorld/BFCL forks. On the first finished cell, q8 AWQ-W4 d1 ALFWorld (134 games), G_all is −3.7 [−11.9, +4.5] pp. The τ² W4 pool is +0.2 [−2.8, +3.2] pp, and BFCL is not in yet.
+- **First cell, q8 AWQ-W4 d1 ALFWorld (134 games).** 119 divergent (89%): 14 rescues, 19 new damages, 30 both succeed, 56 both fail.
+  - A −0.7 [−9.0, +7.5], C +7.5 [−0.7, +15.7], I −3.0 [−13.4, +6.7] pp.
+  - Divergence types: command 102, talk→act 17.
+  - QQ no-op 16/16.
+- **Method.**
+  - Imports `effects`, `summarise`, `pooled` and the constants from `analyze_dev.py`: B = 2000, seed 20261001, g_min = 3 pp; G = Y_BQ − Y_QQ; A/C/I on L = 1 − Y.
+  - Unit = item; non-divergent items enter with zero effect.
+  - Bootstrap: items with replacement within env × category, with draws shared across cells.
+  - Pools use equal weights: W4 = GPTQ-W4 + AWQ-W4, stress = GPTQ-W3 + KV4, per environment and across environments. The two families are never mixed.
+  - Quarantined dirs, incomplete dirs and exclusions by reason are listed.
+  - Provenance: script sha, `analyze_dev` sha, git head, and the sha of every input (search.json, branches.json, effects.jsonl, dev_summary.json, per-state branch files, block trajectory.jsonl). It is idempotent on that fingerprint.
+  - The `.md` has a τ² comparison line (W4 divergence rate and G_all per environment).
+- **Hand check.** 3 states were recomputed from the raw state and branch files and the block trajectory:
+  - talk→act: G −1, A 0, C +1, I −1;
+  - command: G +1, A 0, C −1, I +1;
+  - command: G 0, A +1, C +1, I −1.
+  - In all three, Y_QQ equals the original success, and the controller URLs match the roles.
+- **Sign convention fix.** `fork_ext.py` wrote A/C/I on the Y scale; it now uses the loss scale. `effects.jsonl` in dirs written before this commit (alfworld_q8_{awq_w4_d1,gptq_w3}) carry Y-scale A/C/I. `analyze_ext.py` recomputes everything from the branch files and never reads those values.
+
+Evidence: `analysis/fork/analyze_ext.py`, `analysis/fork/out/ext_20260930T131312Z.{json,md}`, `analysis/fork/ext/dev/alfworld_q8_awq_w4_d1_all/`.
+
 ## W50 — Restoration moved to the damage regime (GPTQ-W3) and given a behavioural endpoint (2026-09-30)
 **TL;DR** The first W40 results (q4 GPTQ-W4 d1, f01–f03) show a design problem. At W4, Q beats BF16 (43.9 vs 33.7; `success_ni` +5.7 pp), so every restoration arm "closes the gap" by losing success. W4 is an equivalence regime, and success recovery is not a meaningful endpoint there.
 
@@ -65,7 +88,7 @@ Newest first.
   - BFCL: divergence 65%; 6 s wall per branch; search 37 s per item.
 - **First development result:** q8 AWQ-W4 d1, ALFWorld, 134 unseen games; 48 min on 2 GPUs; 5.2 s wall per branch at concurrency 12.
   - Coverage: 119 states, 15 without divergence, 0 excluded. QQ no-op 16/16 exact.
-  - Summed effects: ΣG −5, ΣA +1, ΣC −10, ΣI +4. That is 14 rescues vs 19 new damages; G_all −3.7 pp per game.
+  - Summed effects: ΣG −5, ΣA −1, ΣC +10, ΣI −4 on the τ² loss scale L = 1 − Y (corrected in W51; first written on the Y scale as ΣA +1, ΣC −10, ΣI +4). That is 14 rescues vs 19 new damages; G_all −3.7 pp per game.
   - Branch cells mostly agree: 39 states all-fail and 24 all-succeed.
   - One block, no interval. The G/A/C/I reading is left to the main analysis.
 - **Gate-state outcomes are not estimates** (12 smoke states each, q4):

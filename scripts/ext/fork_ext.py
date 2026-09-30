@@ -27,8 +27,8 @@ then regenerates a_Q at h_t (checkpoint identity: completion ids must equal the 
 Modes (task["fork"]["mode"]): gate | gate_same | dev (search + BB/BQ/QB on every state + QQ on a hash sample).
 Outputs mirror the tau2 fork files: <out>/states/<sid>.json, <out>/branches/<sid>[_tag].json, search.json,
 branches.json (rows {state_id, outcomes{branch:{reward, db_match, official_reward, termination_reason, duration, error}}}),
-gate.json / gate_same.json, and effects.jsonl (per state: Y cells, G = Y_BQ - Y_QQ, A = Y_QB - Y_BB, C = Y_BQ - Y_BB,
-I = Y_QQ - Y_QB - Y_BQ + Y_BB; dev uses the original Y_QQ, which the QQ no-op sample verifies).
+gate.json / gate_same.json, and effects.jsonl (per state: Y cells, G = Y_BQ - Y_QQ and, on the loss scale L = 1 - Y,
+A = L_QB - L_BB, C = L_BQ - L_BB, I = L_QQ - L_QB - L_BQ + L_BB; dev uses the original Y_QQ, which the QQ no-op sample verifies).
 
 usage (inside a worker "fork" task with "env"; the benchmark venv's python):
   python scripts/ext/fork_ext.py --task <task.json> --b-base URL --q-base URL --servers <json>
@@ -454,7 +454,8 @@ def effects(st: dict, ys: dict) -> dict:
     rec = {"state_id": st["state_id"], "env": st["env"], "domain": st["domain"], "task_id": st["task_id"], "run_id": st["run_id"],
            "t": st["decision_idx"], "category": st["divergence"]["category"], "Y": y}
     if None not in y.values():
-        rec.update(G=y["BQ"] - y["QQ"], A=y["QB"] - y["BB"], C=y["BQ"] - y["BB"], I=y["QQ"] - y["QB"] - y["BQ"] + y["BB"])
+        L = {k: 1 - v for k, v in y.items()}  # A/C/I on the loss scale L = 1 - Y, as analysis/fork/analyze_dev.py
+        rec.update(G=y["BQ"] - y["QQ"], A=L["QB"] - L["BB"], C=L["BQ"] - L["BB"], I=L["QQ"] - L["QB"] - L["BQ"] + L["BB"])
     return rec
 
 
