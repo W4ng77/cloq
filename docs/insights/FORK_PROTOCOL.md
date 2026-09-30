@@ -484,3 +484,15 @@ It is compared with QQ (G_R = Y_RQ − Y_QQ) and with BQ (the share of the full-
   - The pooled selection statistic had **never been computed**: `analyze_pivot_arms.py` reported "waiting for both GPTQ-W3
     cells", and q8 GPTQ-W3 had not run.
   - No RTN-W3 pivot-arm task had been created.
+
+### §13 amendment 2 (W63): interval method of the selection statistic
+
+- **Change.** The review of 7528f2e found that the hierarchical bootstrap (tasks, then blocks resampled independently inside
+  each task) breaks the shared-nonce dependence across tasks. All fork inference now uses `analyze_dev.Boot` (W63).
+  Blocks are resampled whole. With fewer than 10 complete blocks, the primary interval is the t over block means
+  (df = K − 1), because a percentile bootstrap over so few clusters is anti-conservative.
+- **Consequence for §13.** Eligibility "one-sided 95% LB > 0 and Δ ≥ 5 pp" now uses the one-sided t bound over the
+  per-block pooled Δ. The RTN-W3 cells have 3 blocks (q3–q5), so df = 2. The block-bootstrap and crossed task × block
+  intervals are reported alongside but do not decide eligibility. Everything else in §13 and amendment 1 is unchanged.
+- **Timing.** At the time of this amendment no RTN-W3 pivot-arm task had run, and the pooled selection statistic had never
+  been computed on any W3 population.

@@ -10,8 +10,9 @@ block). Per cell x arm:
 Pipeline controls: `none` must reproduce a_Q exactly and `all` must reproduce a_B exactly.
 Selection (FORK_PROTOCOL §13 as amended in commit 0f26f7d: the RTN-W3 cells, q4 and q8, equal weight; GPTQ-W3 secondary):
   delta   = r_B(arm) - r_B(byte-matched random seed 1), paired on the same states;
-  interval hierarchical bootstrap (tasks, then blocks within task; B = 2000; seed 20261001), with draws shared across the
-          two cells (same task ids and nonces);
+  interval analyze_dev.Boot (W63; §13 amendment 2): blocks resampled whole; with < 10 complete blocks (RTN-W3: q3-q5)
+          the primary one-sided LB is the t over the per-block pooled Δ (df = K - 1); block bootstrap and crossed task x
+          block bootstrap reported alongside; draws shared across the two cells (same task ids and nonces);
   eligible if the one-sided 95% LB > 0 and delta >= 5 pp;
   choose  the largest delta, plus a second arm if also eligible (max 2); ties go to fewer restored bytes.
 
@@ -51,6 +52,15 @@ def budget_bytes(model: str, arm: str) -> float | None:
         return float(m.get("budget_w3") or m.get("budget") or m.get("bytes") or 0) or None
     except Exception:
         return None
+
+
+def pool_delta(pairs) -> dict:
+    """Equal-weight pool of per-cell (pt, Draws): block bootstrap, t over the per-block pooled means (primary with < 10
+    blocks, FORK_PROTOCOL §13 amendment 2), crossed task x block alongside."""
+    pt = float(np.mean([p[0] for p in pairs]))
+    bm = np.mean(np.vstack([p[1].block_means for p in pairs]), axis=0)
+    crossed = (pt, np.mean([p[1].crossed for p in pairs], axis=0))
+    return AD.summarise(pt, np.mean([np.asarray(p[1]) for p in pairs], axis=0), t=AD.t_interval(bm), crossed=crossed)
 
 
 def main():
@@ -110,9 +120,7 @@ def main():
         pooled = {}
         for arm in CANDIDATES:
             if all(arm in draws_delta[c] for c in SEL_CELLS):
-                pt = float(np.mean([draws_delta[c][arm][0] for c in SEL_CELLS]))
-                dr = np.mean([draws_delta[c][arm][1] for c in SEL_CELLS], axis=0)
-                pooled[arm] = AD.summarise(pt, dr)
+                pooled[arm] = pool_delta([draws_delta[c][arm] for c in SEL_CELLS])
         elig = {k: v for k, v in pooled.items() if v["lb95_one_sided"] > 0 and v["est"] >= 5.0}
         order = sorted(elig, key=lambda k: (-elig[k]["est"], budget_bytes("q4", k) or 0))
         chosen = order[:2]
@@ -125,8 +133,7 @@ def main():
     res["selection"] = sel
     if all(c in draws_delta for c in SECONDARY_CELLS):  # secondary (amendment 1): same statistic on GPTQ-W3, not used for selection
         res["secondary_gptq_w3_pooled_delta_pp"] = {
-            arm: AD.summarise(float(np.mean([draws_delta[c][arm][0] for c in SECONDARY_CELLS])),
-                              np.mean([draws_delta[c][arm][1] for c in SECONDARY_CELLS], axis=0))
+            arm: pool_delta([draws_delta[c][arm] for c in SECONDARY_CELLS])
             for arm in CANDIDATES if all(arm in draws_delta[c] for c in SECONDARY_CELLS)}
     utc = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
     OUT.mkdir(parents=True, exist_ok=True)
