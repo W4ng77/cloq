@@ -4,6 +4,7 @@ eval task: build the checkpoint in node-local scratch (bf16: none; rtn/gauss/gsh
 cloq.compress; gptq/awq: cloq.quantize; rot_bf16/rot_rtn: cloq.rotate; rot_gptq: cloq.rotate then cloq.quantize --src), serve it on this worker's port, delete the weight files once vLLM has
 loaded them, run every (run, domain) of the task against the node's shared user simulator, stop the
 server and verify the GPUs are released. calib task: build a calibration manifest (CPU).
+sim task: one extra user-simulator replica on an NVLink pair, registered in the instance registry (run_sim, simreg.py).
 
 usage: python scripts/a6000/worker.py <task.json> --gpus 2,3 --port 8003 --status-prefix <dir>/node003
 """
@@ -123,12 +124,49 @@ def check_canary(port: int, model: str, role: str, name: str = "agent") -> str:
 
 
 def user_base():
-    """Simulator URL: queue/USER_BASE.<node> (read at task start; moves a node's new tasks to another node's simulator
-    without restarting its runner), else $CLOQ_USER_BASE, else the node's own simulator."""
+    """Simulator URL: queue/USER_BASE.<node> (read at every run start; moves a node's new runs to another simulator
+    replica without restarting its runner), else $CLOQ_USER_BASE, else the node's own simulator. A route to a replica
+    that the instance registry (scripts/a6000/simreg.py) lists as not live (draining/stopped/dead/stale) is ignored."""
     f = WORK / "queue" / f"USER_BASE.{socket.gethostname().split('.')[0]}"
-    if f.exists() and f.read_text().strip():
-        return f.read_text().strip()
+    try:
+        url = f.read_text().strip() if f.exists() else ""
+    except OSError:
+        url = ""
+    if url:
+        try:
+            import simreg
+            r = simreg.by_url(url)
+            if r is None or simreg.is_live(r):
+                return url
+        except Exception:
+            return url
     return os.environ.get("CLOQ_USER_BASE", "http://127.0.0.1:8000/v1")
+
+
+def lease(url: str, run: str):
+    """Mark `url` as in use by a long-lived simulator client (run_arm / fork_driver) of this worker (simreg.py leases):
+    a draining replica stops only after every lease on it is gone, so running episodes keep their endpoint."""
+    try:
+        import simreg
+        return simreg.lease_open(f"{socket.gethostname().split('.')[0]}_{os.getpid()}_{run.replace('/', '_')}", url, run)
+    except Exception:
+        return None
+
+
+def lease_touch(p):
+    if p is not None:
+        try:
+            os.utime(p)
+        except OSError:
+            pass
+
+
+def lease_close(p):
+    if p is not None:
+        try:
+            p.unlink()
+        except OSError:
+            pass
 
 def stop_server(proc, gpus):
     if proc is None:
@@ -275,6 +313,7 @@ def run_eval(task, args, st: Status):
         jobs = [(r, d) for r in task["runs"] for d in task.get("domains", ("retail", "airline"))]
         done, running = 0, []
         st.set("eval", f"{len(jobs)} run-domains", 0.0)
+        leases: dict = {}
         pending = list(jobs)
         while pending or running:
             while pending and len(running) < RUN_PAR:
@@ -290,15 +329,20 @@ def run_eval(task, args, st: Status):
                     e["CLOQ_PROMPT_NONCE"] = r["nonce"]
                 else:
                     e.pop("CLOQ_PROMPT_NONCE", None)
+                ub = user_base()
                 cmd = [sys.executable, "-m", "cloq.run_arm", "--run-id", r["run_id"], "--arm", task["arm"], "--domain", d,
                        "--task-file", str(ROOT / r["task_file"]), "--agent-base", f"http://127.0.0.1:{args.port}/v1",
-                       "--user-base", user_base(), "--checkpoint", json.dumps(task["ckpt"])]
+                       "--user-base", ub, "--checkpoint", json.dumps(task["ckpt"])]
+                leases[(r["run_id"], d)] = lease(ub, f"{r['run_id']}/{d}")
                 running.append(((r["run_id"], d), subprocess.Popen(cmd, cwd=ROOT, env=e, stdout=log, stderr=subprocess.STDOUT)))
             time.sleep(10)
+            for lp in leases.values():
+                lease_touch(lp)
             for item in list(running):
                 (rid, d), p = item
                 if p.poll() is not None:
                     running.remove(item)
+                    lease_close(leases.pop((rid, d), None))
                     ok = (ROOT / "runs" / rid / d / "status.json").exists() and \
                         json.load(open(ROOT / "runs" / rid / d / "status.json")).get("status") == "completed"
                     if p.returncode != 0 or not ok:
@@ -331,6 +375,8 @@ def run_eval(task, args, st: Status):
     finally:
         for _, p in locals().get("running", []):
             p.kill()
+        for lp in locals().get("leases", {}).values():
+            lease_close(lp)
         stop_server(server, gpus)
     summ = {}
     for r in task["runs"]:
@@ -459,8 +505,10 @@ def run_fork(task, args, st: Status):
                "--b-base", f"http://127.0.0.1:{plan['B'][1]}/v1", "--q-base", f"http://127.0.0.1:{plan['Q'][1]}/v1",
                "--user-base", ubase, "--servers", str(sfile)]
         drv = subprocess.Popen(cmd, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT)
+        drv_lease = lease(ubase, f"fork/{task['id']}")
         while drv.poll() is None:
             time.sleep(10)
+            lease_touch(drv_lease)
             for role, p in procs.items():
                 if p.poll() is not None:
                     drv.kill()
@@ -468,6 +516,7 @@ def run_fork(task, args, st: Status):
         if drv.returncode != 0:
             raise RuntimeError(f"fork_driver failed rc={drv.returncode}")
     finally:
+        lease_close(locals().get("drv_lease"))
         for role, p in procs.items():
             stop_server(p, [plan[role][0]])
     outp = ROOT / task["fork"]["out"]
@@ -477,6 +526,119 @@ def run_fork(task, args, st: Status):
         if (outp / name).exists():
             res["verdict"] = json.load(open(outp / name)).get("verdict")
     return res
+
+
+def run_sim(task, args, st: Status):
+    """kind "sim" (W34-infra): one extra user-simulator replica on this worker's NVLink pair, served on the worker's
+    port (8001 + first GPU, so it never collides with an agent port on the node). A runner holding the node claims it
+    like any 2-GPU task, so a replica is added WITHOUT restarting the runner, and only once a whole pair has drained
+    (while a 2-GPU task waits, the runner's upper pairs take only 2-GPU tasks, W5; the task's high priority wins).
+    Steps: serve.sh on 0.0.0.0 -> numerics canary == fixed reference (check_canary, role sim) -> identical-request
+    no-op check against a live reference replica -> concurrent throughput probe -> registry state up + heartbeat.
+    Retire on queue/SIMSTOP.<instance>, queue/STOP, queue/STOP.<node> or < task["min_left"] s of Slurm time: state
+    draining (the balancer and user_base() stop routing to it), then stop once no lease (running run_arm/fork_driver)
+    refers to it. SIGTERM from the runner: stop now and leave the task in running/ so the runner requeues it."""
+    import simreg
+    node = socket.gethostname().split(".")[0]
+    gpus = args.gpus.split(",")
+    if len(gpus) != 2 or int(gpus[0]) % 2 or int(gpus[1]) != int(gpus[0]) + 1:
+        raise RuntimeError(f"sim task needs one NVLink pair, got GPUs {gpus}")
+    code = task.get("model", "q30a3")
+    m = MODELS[code]
+    port = args.port
+    iid, url = simreg.instance_id(node, port), simreg.base_url(node, port)
+    job = os.environ.get("SLURM_JOB_ID")
+    rec = {"instance_id": iid, "url": url, "host": node, "port": port, "gpus": gpus, "model": code, "served_name": "user",
+           "hf_id": m["hf_id"], "revision": m["revision"], "maxlen": int(task.get("maxlen", 65536)),
+           "owner": {"kind": "sim_task", "task": task["id"], "job": job, "pid": os.getpid()},
+           "started": time.time(), "state": "starting", "health": {"ok": False, "checked": time.time(), "detail": "starting"}}
+    simreg.write(rec)
+    slog = open(WORK / "logs" / f"sim_{iid}_{job or 'x'}.log", "a")
+    senv = dict(os.environ, CLOQ_TOOL_PARSER=m["parser"], CLOQ_SERVE_HOST="0.0.0.0")
+    server = subprocess.Popen([str(ROOT / "scripts/a6000/serve.sh"), args.gpus, str(port), snapshot(m["hf_id"], m["revision"]),
+                               "user", str(rec["maxlen"])], env=senv, stdout=slog, stderr=subprocess.STDOUT, start_new_session=True)
+
+    def on_term(*_):  # runner shutdown: never leave a replica behind, never touch anything but our own GPUs
+        simreg.update(iid, state="stopped", stopped=time.time(), stop_reason="SIGTERM (runner stopping)",
+                      interrupted_leases=simreg.active_leases(url))
+        try:
+            stop_server(server, gpus)
+        finally:
+            os._exit(143)
+    signal.signal(signal.SIGTERM, on_term)
+    try:
+        st.set("setup", f"sim replica {iid}: starting vLLM")
+        t0 = time.time()
+        while not healthy(port):
+            if server.poll() is not None:
+                raise RuntimeError("simulator replica exited during startup")
+            if time.time() - t0 > 1800:
+                raise RuntimeError("simulator replica did not come up in 30 min")
+            time.sleep(5)
+        st.set("check", f"sim replica {iid}: numerics canary")
+        h = check_canary(port, code, "sim", name="user")  # raises unless == analysis/determinism/canary_sim_<model>.json
+        ref = task.get("ref_url")
+        if not ref:
+            live = [r for r in simreg.all_instances().values() if r.get("model") == code and r["instance_id"] != iid
+                    and simreg.is_live(r)]
+            live.sort(key=lambda r: (r.get("host") != node, r.get("port", 0)))
+            ref = live[0]["url"] if live else None
+        noop = simreg.noop_check(url, ref) if ref else {"ok": None, "detail": "no live reference replica"}
+        if noop.get("ok") is False:
+            raise RuntimeError(f"no-op check failed vs {ref}: {noop['identical']}/{noop['n']} identical")
+        st.set("check", f"sim replica {iid}: throughput probe")
+        tp = simreg.throughput(url, conc=int(task.get("probe_conc", 16)))
+        simreg.update(iid, state="up", canary=h, canary_ok=True, noop=noop, throughput=tp, up_since=time.time(),
+                      health={"ok": True, "checked": time.time(), "detail": "up"})
+        with open(WORK / "logs/sim_instances.log", "a") as f:
+            f.write(json.dumps({"event": "up", "instance": iid, "task": task["id"], "job": job, "gpus": gpus, "canary": h,
+                                "noop_ok": noop.get("ok"), "gen_tok_s": tp["gen_tok_s"], "time": time.time()}) + "\n")
+        st.set("user", f"user simulator replica {iid} (canary {h})")
+        min_left = float(task.get("min_left", 1800))
+        fails, draining, reason = 0, False, ""
+        while True:
+            time.sleep(30)
+            if server.poll() is not None or not healthy(port):
+                fails += 1
+                if server.poll() is not None or fails >= 3:
+                    raise RuntimeError(f"simulator replica {iid} died (rc={server.poll()})")
+            else:
+                fails = 0
+            simreg.heartbeat(iid, fails == 0, "draining" if draining else "up")
+            end = os.environ.get("CLOQ_JOB_END")
+            left = float(end) - time.time() if end else 1e9
+            q = WORK / "queue"
+            if not draining:
+                reason = ("SIMSTOP" if (q / f"SIMSTOP.{iid}").exists() else "STOP" if (q / "STOP").exists()
+                          else f"STOP.{node}" if (q / f"STOP.{node}").exists() else "job time" if left < min_left else "")
+                if reason:
+                    draining = True
+                    simreg.update(iid, state="draining", draining_since=time.time(), stop_reason=reason)
+                    st.set("user", f"sim replica {iid} draining ({reason})")
+                continue
+            leases = simreg.active_leases(url)
+            if leases and left > 300:
+                continue
+            simreg.update(iid, state="stopped", stopped=time.time(), interrupted_leases=leases)
+            if leases:  # only when the Slurm job is about to end anyway: record who loses the endpoint
+                with open(WORK / "logs/sim_interruptions.jsonl", "a") as f:
+                    f.write(json.dumps({"instance": iid, "time": time.time(), "cause": "job end", "leases": leases}) + "\n")
+            (q / f"SIMSTOP.{iid}").unlink(missing_ok=True)
+            return {"instance": iid, "url": url, "canary": h, "noop": noop, "throughput": tp, "stop_reason": reason,
+                    "served_s": time.time() - t0}
+    except BaseException as e:
+        r = simreg.read(iid) or {}
+        if r.get("state") != "stopped":
+            simreg.update(iid, state="dead", stopped=time.time(), stop_reason=repr(e)[:300],
+                          interrupted_leases=simreg.active_leases(url))
+            if simreg.active_leases(url):
+                with open(WORK / "logs/sim_interruptions.jsonl", "a") as f:
+                    f.write(json.dumps({"instance": iid, "time": time.time(), "cause": repr(e)[:300],
+                                        "leases": simreg.active_leases(url)}) + "\n")
+        raise
+    finally:
+        signal.signal(signal.SIGTERM, signal.SIG_DFL)
+        stop_server(server, gpus)
 
 
 def run_calib(task, args, st: Status):
@@ -513,6 +675,8 @@ def main():
             if r.returncode != 0:
                 raise RuntimeError(f"cmd failed rc={r.returncode}")
             res = {"cmd": "ok"}
+        elif task["kind"] == "sim":  # extra user-simulator replica (W34-infra, scripts/a6000/simreg.py)
+            res = run_sim(task, args, st)
         elif task["kind"] == "fork":  # same-state 2x2 fork (cloq/fork.py, scripts/a6000/fork_driver.py)
             res = run_fork(task, args, st)
         else:
