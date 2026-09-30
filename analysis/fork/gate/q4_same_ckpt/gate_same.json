@@ -1,0 +1,379 @@
+{
+ "protocol": "fork-v1",
+ "spec": {
+  "mode": "gate_same",
+  "q_blocks": [
+   [
+    "a6k2_q4_gptq_w4_d1_q3",
+    "retail"
+   ],
+   [
+    "a6k2_q4_gptq_w4_d1_q3",
+    "airline"
+   ]
+  ],
+  "n_per_block": 3,
+  "idcheck_n": 8,
+  "concurrency": 8,
+  "out": "analysis/fork/gate/q4_same_ckpt"
+ },
+ "servers": {
+  "B": {
+   "gpu": "5",
+   "port": 8106,
+   "pid": 2980632,
+   "ckpt": {
+    "kind": "gptq",
+    "wbits": 4,
+    "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+   },
+   "path": "/tmp/cloq_49673/ckpt_fork_gate_same_q4_gptq_w4_d1_Q",
+   "gpu_util": "0.44",
+   "canary": "a72b3da03409576e",
+   "ckpt_sha256": "e6c24bc24d5d2729f0ae2de9cbcee08d7291a829cdc3d1eb2d48fefd1a9605a1"
+  },
+  "Q": {
+   "gpu": "5",
+   "port": 8206,
+   "pid": 2983328,
+   "ckpt": {
+    "kind": "gptq",
+    "wbits": 4,
+    "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+   },
+   "path": "/tmp/cloq_49673/ckpt_fork_gate_same_q4_gptq_w4_d1_Q",
+   "gpu_util": "0.44",
+   "canary": "a72b3da03409576e",
+   "ckpt_sha256": "e6c24bc24d5d2729f0ae2de9cbcee08d7291a829cdc3d1eb2d48fefd1a9605a1"
+  },
+  "q_quantization": {
+   "method": "GPTQ",
+   "wbits": 4,
+   "group_size": 128,
+   "sym": false,
+   "percdamp": 0.01,
+   "blocksize": 128,
+   "act_order": true,
+   "true_sequential": true,
+   "source_model": "Qwen/Qwen3-4B-Instruct-2507",
+   "source_revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+   "storage": "fake-quant bf16",
+   "calibration_manifest": "/data/ziyangs/cloq/manifests/a6k2/q4/calib_fp_traj_c1.json",
+   "moe_experts": null,
+   "calibration": {
+    "protocol": "v1",
+    "arm": "fp_traj",
+    "draw": "c1",
+    "draw_seed": 20260729,
+    "budget_rows": 64000,
+    "total_rows": 64000,
+    "rows_within_budget": true,
+    "n_states": 57,
+    "n_tasks": 57,
+    "rows_per_state_min": 1122,
+    "rows_per_state_max": 1123,
+    "median_context_tokens": 6041.0,
+    "total_context_tokens": 372294,
+    "states_by_source": {
+     "fp": 57
+    },
+    "states_by_depth_quartile": {
+     "0": 16,
+     "1": 13,
+     "2": 14,
+     "3": 14
+    },
+    "states_by_domain": {
+     "retail": 39,
+     "airline": 18
+    },
+    "fp_run": "a6k2_q4_bf16_cal",
+    "q_run": null,
+    "novelty": null,
+    "notes": [],
+    "split_file_sha256": "7d1671154c37375990fd01999df2257e1bef916ee8201158b850846876315a79",
+    "manifest_sha256": "780875fe8a38bd31c9687ffafb512b09061db1c3b8786ecacbbbb9547cd5a20a"
+   },
+   "seconds_quantize": 386.7578899860382,
+   "n_expert_tensors_rtn": 0
+  },
+  "user_base": "http://127.0.0.1:8000/v1",
+  "host": "node007",
+  "job": "49673"
+ },
+ "bases": {
+  "B": "http://127.0.0.1:8106/v1",
+  "Q": "http://127.0.0.1:8206/v1"
+ },
+ "idcheck_Q": {
+  "label": "Q",
+  "base": "http://127.0.0.1:8206/v1",
+  "n": 8,
+  "n_match": 8,
+  "rows": [
+   {
+    "run_id": "a6k2_q4_gptq_w4_d1_q3",
+    "domain": "retail",
+    "task_id": "27",
+    "t": 3,
+    "n_prompt": 5372,
+    "n_completion": 101,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_gptq_w4_d1_q3",
+    "domain": "retail",
+    "task_id": "102",
+    "t": 6,
+    "n_prompt": 7134,
+    "n_completion": 377,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_gptq_w4_d1_q3",
+    "domain": "retail",
+    "task_id": "21",
+    "t": 17,
+    "n_prompt": 8203,
+    "n_completion": 29,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_gptq_w4_d1_q3",
+    "domain": "retail",
+    "task_id": "13",
+    "t": 7,
+    "n_prompt": 6770,
+    "n_completion": 87,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_gptq_w4_d1_q3",
+    "domain": "retail",
+    "task_id": "66",
+    "t": 5,
+    "n_prompt": 5935,
+    "n_completion": 126,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_gptq_w4_d1_q3",
+    "domain": "retail",
+    "task_id": "7",
+    "t": 8,
+    "n_prompt": 8419,
+    "n_completion": 161,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_gptq_w4_d1_q3",
+    "domain": "retail",
+    "task_id": "90",
+    "t": 1,
+    "n_prompt": 5077,
+    "n_completion": 31,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_gptq_w4_d1_q3",
+    "domain": "retail",
+    "task_id": "82",
+    "t": 2,
+    "n_prompt": 5218,
+    "n_completion": 30,
+    "match": true
+   }
+  ],
+  "ok": true
+ },
+ "idcheck_Bhandle": {
+  "label": "B-handle (same ckpt)",
+  "base": "http://127.0.0.1:8106/v1",
+  "n": 8,
+  "n_match": 8,
+  "rows": [
+   {
+    "run_id": "a6k2_q4_gptq_w4_d1_q3",
+    "domain": "retail",
+    "task_id": "27",
+    "t": 3,
+    "n_prompt": 5372,
+    "n_completion": 101,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_gptq_w4_d1_q3",
+    "domain": "retail",
+    "task_id": "102",
+    "t": 6,
+    "n_prompt": 7134,
+    "n_completion": 377,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_gptq_w4_d1_q3",
+    "domain": "retail",
+    "task_id": "21",
+    "t": 17,
+    "n_prompt": 8203,
+    "n_completion": 29,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_gptq_w4_d1_q3",
+    "domain": "retail",
+    "task_id": "13",
+    "t": 7,
+    "n_prompt": 6770,
+    "n_completion": 87,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_gptq_w4_d1_q3",
+    "domain": "retail",
+    "task_id": "66",
+    "t": 5,
+    "n_prompt": 5935,
+    "n_completion": 126,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_gptq_w4_d1_q3",
+    "domain": "retail",
+    "task_id": "7",
+    "t": 8,
+    "n_prompt": 8419,
+    "n_completion": 161,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_gptq_w4_d1_q3",
+    "domain": "retail",
+    "task_id": "90",
+    "t": 1,
+    "n_prompt": 5077,
+    "n_completion": 31,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_gptq_w4_d1_q3",
+    "domain": "retail",
+    "task_id": "82",
+    "t": 2,
+    "n_prompt": 5218,
+    "n_completion": 30,
+    "match": true
+   }
+  ],
+  "ok": true
+ },
+ "rows": [
+  {
+   "state_id": "1665090184c954fe",
+   "domain": "retail",
+   "task_id": "11",
+   "t": 5,
+   "shadow_eq_aQ": true,
+   "shadow_prompt_ok": true,
+   "all_four_equal": true,
+   "noop_vs_orig": {
+    "QQ": true,
+    "BB": true,
+    "BQ": true,
+    "QB": true
+   },
+   "differs": []
+  },
+  {
+   "state_id": "cf2a079408760767",
+   "domain": "retail",
+   "task_id": "110",
+   "t": 2,
+   "shadow_eq_aQ": true,
+   "shadow_prompt_ok": true,
+   "all_four_equal": true,
+   "noop_vs_orig": {
+    "QQ": true,
+    "BB": true,
+    "BQ": true,
+    "QB": true
+   },
+   "differs": []
+  },
+  {
+   "state_id": "50cd68454a3bb25e",
+   "domain": "retail",
+   "task_id": "7",
+   "t": 3,
+   "shadow_eq_aQ": true,
+   "shadow_prompt_ok": true,
+   "all_four_equal": true,
+   "noop_vs_orig": {
+    "QQ": true,
+    "BB": true,
+    "BQ": true,
+    "QB": true
+   },
+   "differs": []
+  },
+  {
+   "state_id": "cae6058444eaee24",
+   "domain": "airline",
+   "task_id": "19",
+   "t": 3,
+   "shadow_eq_aQ": true,
+   "shadow_prompt_ok": true,
+   "all_four_equal": true,
+   "noop_vs_orig": {
+    "QQ": true,
+    "BB": true,
+    "BQ": true,
+    "QB": true
+   },
+   "differs": []
+  },
+  {
+   "state_id": "309ff0c59fbc3b95",
+   "domain": "airline",
+   "task_id": "17",
+   "t": 6,
+   "shadow_eq_aQ": true,
+   "shadow_prompt_ok": true,
+   "all_four_equal": true,
+   "noop_vs_orig": {
+    "QQ": true,
+    "BB": true,
+    "BQ": true,
+    "QB": true
+   },
+   "differs": []
+  },
+  {
+   "state_id": "c23e83ebd46247e7",
+   "domain": "airline",
+   "task_id": "47",
+   "t": 2,
+   "shadow_eq_aQ": true,
+   "shadow_prompt_ok": true,
+   "all_four_equal": true,
+   "noop_vs_orig": {
+    "QQ": true,
+    "BB": true,
+    "BQ": true,
+    "QB": true
+   },
+   "differs": []
+  }
+ ],
+ "verdict": {
+  "b_same_ckpt": true,
+  "n_states": 6,
+  "n_errors": 0,
+  "domains": [
+   "airline",
+   "retail"
+  ],
+  "idcheck": true,
+  "pass": true
+ }
+}

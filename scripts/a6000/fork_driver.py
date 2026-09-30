@@ -577,8 +577,47 @@ def cpucheck(blocks: list[str], out: Path, every: int = 1, max_tasks: int = 0) -
     return res
 
 
+def reverdict(out: Path) -> dict:
+    """Recompute the gate checks offline from the saved state and branch files (no server). Used after a comparator
+    fix; every change is recorded under `reverdict` with the reason, and the original verdict is kept."""
+    g = json.loads((out / "gate.json").read_text())
+    old = g["verdict"]
+    blk_cache: dict = {}
+
+    def blk(st):
+        k = (st["run_id"], st["domain"])
+        if k not in blk_cache:
+            blk_cache[k] = F.Block(ROOT, *k)
+        return blk_cache[k]
+
+    for s in g.get("a_noop_BB", []):
+        if "error" in s:
+            continue
+        b = blk({"run_id": s["run_id"], "domain": s["domain"]})
+        st = F.make_state(b, s["task_id"], s["t"])  # current make_state (official_reward recomputed when absent)
+        r = json.loads((out / "branches" / f"{st['state_id']}_bbnoop.json").read_text())
+        s["noop"] = noop_check(st, r, orig_final_hash(st, b))
+        s["orig_official_reward_source"] = st["orig"]["official_reward_source"]
+    for s in g.get("states", []):
+        if "error" in s:
+            continue
+        st = json.loads((out / "states" / f"{s['state_id']}.json").read_text())
+        st["orig"]["official_reward"] = F.official_from_traj(blk(st).traj[st["task_id"]])
+        r4 = json.loads((out / "branches" / f"{s['state_id']}_fwd.json").read_text())
+        s["a_noop_QQ"] = noop_check(st, r4["QQ"], orig_final_hash(st, blk(st)))
+    g["verdict"] = verdict(g)
+    g.setdefault("reverdict", []).append({"time": time.time(), "old_verdict": old, "reason":
+        "original runs written before trajectory.jsonl carried official_reward (e.g. a6k2_q4_null_n1) had None on the "
+        "original side; the original official_reward is now recomputed from the stored reward_info with basis_reward's formula "
+        "(validated: 335/335 episodes with the field reproduce it)"})
+    dump(out / "gate.json", g)
+    log("reverdict " + json.dumps(g["verdict"]))
+    return g
+
+
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--reverdict", default=None, help="fork out dir: recompute gate checks from saved files")
     ap.add_argument("--task")
     ap.add_argument("--b-base")
     ap.add_argument("--q-base")
@@ -595,6 +634,9 @@ def main():
     logger.remove()
     logger.add(sys.stderr, level="ERROR")
     F.setup_tau2()
+    if a.reverdict:
+        reverdict(ROOT / a.reverdict)
+        return
     if a.cpucheck:
         r = cpucheck(a.block, ROOT / a.out, a.every, a.max_tasks)
         print(json.dumps({"ok": r["ok"]}))

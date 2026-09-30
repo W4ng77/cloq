@@ -397,6 +397,27 @@ def run_config(rc: dict, agent_base: str, user_base: str):
 # ----------------------------------------------------------------------------
 
 
+def official_from_traj(tr: dict) -> Optional[float]:
+    """official_reward of an original episode. Runs written before cloq.run_arm.basis_reward existed lack the field;
+    it is then recomputed from the stored reward_info with the same formula (product over the task's reward_basis of
+    DB / ENV_ASSERTION / ACTION / COMMUNICATE; empty check lists vacuously met; premature termination scores 0)."""
+    if "official_reward" in tr:
+        return tr["official_reward"]
+    ri = tr.get("reward_info") or {}
+    if tr.get("termination_reason") not in ("user_stop", "agent_stop"):
+        return 0.0
+    basis = (tr["task"].get("evaluation_criteria") or {}).get("reward_basis") or []
+    comps = {"DB": (ri.get("db_check") or {}).get("db_match"),
+             "ENV_ASSERTION": all(c.get("met") for c in ri["env_assertions"]) if ri.get("env_assertions") else None,
+             "ACTION": all(c.get("action_match") for c in ri["action_checks"]) if ri.get("action_checks") else None,
+             "COMMUNICATE": all(c.get("met") for c in ri["communicate_checks"]) if ri.get("communicate_checks") else None}
+    out = 1.0
+    for b in basis:
+        if comps.get(b) is not None:
+            out *= float(bool(comps[b]))
+    return out
+
+
 def make_state(block: Block, task_id: str, t: int, extra: Optional[dict] = None) -> dict:
     """Fork state at Q's decision t of `block` (without a_B; the search adds it). Machine-readable manifest fields
     are listed in docs/insights/FORK_PROTOCOL.md §State manifest."""
@@ -435,7 +456,9 @@ def make_state(block: Block, task_id: str, t: int, extra: Optional[dict] = None)
                        "parser_error": dec.get("parser_error"), "finish_reason": dec.get("finish_reason")},
         "a_Q": {"message": msgs[p], "source": "trajectory (recorded Q action)"},
         "orig": {"termination_reason": tr["termination_reason"], "reward": tr.get("reward"), "db_match": tr.get("db_match"),
-                 "official_reward": tr.get("official_reward"), "n_messages": len(msgs),
+                 "official_reward": official_from_traj(tr),
+                 "official_reward_source": "trajectory" if "official_reward" in tr else "recomputed from reward_info",
+                 "n_messages": len(msgs),
                  "suffix_sha": canon_seq_sha(msgs[p:]),
                  "suffix_prompt_ids_sha": [ids_sha(d["prompt_token_ids"]) for d in block.dec[task_id][t:]],
                  "budget_final": budget_used(msgs, n0)},
