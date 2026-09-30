@@ -521,6 +521,12 @@ def run_fork(task, args, st: Status):
             if c["ckpt"]["kind"] == "bf16" and not c["serve_extra"] and not FS.hooked(c):
                 check_canary(plan[role][1], task["model"], "agent")
                 servers[role]["canary_ref_ok"] = True
+        for role, meta in (("B", b_meta), ("Q", q_meta)):  # derived restore/resid ckpts: same canary rules as run_eval
+            c = cfg[role]
+            if (meta or {}).get("protocol") == derived.PROTOCOL and not c["serve_extra"] and not FS.hooked(c):
+                servers[role]["derived"] = {k: meta.get(k) for k in ("tag", "method", "arm", "alpha", "equals", "content_sha256",
+                                                                     "files_sha256", "eff_alpha", "n_restored", "base_cache")}
+                servers[role]["derived"]["canary"] = derived.canary_checks(plan[role][1], task["model"], meta, check_canary)
         if (same_cfg or task.get("expect_same_numerics")) and servers["B"]["canary"] != servers["Q"]["canary"]:
             raise RuntimeError(f"same effective config / expected same numerics, different canaries: "
                                f"{servers['B']['canary']} vs {servers['Q']['canary']}")

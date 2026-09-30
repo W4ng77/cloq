@@ -52,6 +52,16 @@ def kvq(cfg: dict) -> dict | None:
     return {"bits": bits, "rot": rot, "which": which, "active": bits < 16 or rot, "namespace": f"kvq_b{bits}_r{int(rot)}_{which}"}
 
 
+def aq(cfg: dict) -> dict | None:
+    e = cfg["serve_env"]
+    if not (hooked(cfg) and (e.get("CLOQ_AQ_BITS") or e.get("CLOQ_AQ_HAD", "0") != "0")):
+        return None
+    b = int(e.get("CLOQ_AQ_BITS", 16))
+    only = sorted(x for x in e.get("CLOQ_AQ_ONLY", "qkv,o,gate_up,down").split(",") if x)
+    return {"bits": b, "fmt": e.get("CLOQ_AQ_FMT", "sym_quarot"), "clip": e.get("CLOQ_AQ_CLIP", "1.0"),
+            "group": e.get("CLOQ_AQ_GROUP", "-1"), "only": only, "had": e.get("CLOQ_AQ_HAD", "0"), "quant": b < 16}
+
+
 def bits(cfg: dict) -> dict:
     ck = cfg["ckpt"]
     w = 16 if ck["kind"] in ("bf16", "rot_bf16") else int(ck.get("wbits", 16)) if "wbits" in ck else None
@@ -62,7 +72,7 @@ def bits(cfg: dict) -> dict:
     if q:
         k = q["bits"] if "k" in q["which"] else 16
         v = q["bits"] if "v" in q["which"] else 16
-    a = int(cfg["serve_env"].get("CLOQ_ABITS", 16)) if hooked(cfg) else 16
+    a = aq(cfg)["bits"] if aq(cfg) else 16
     return {"W": w, "A": a, "K": k, "V": v}
 
 
@@ -90,7 +100,7 @@ def effective_config(cfg: dict, model: dict, ckpt_sha: str | None, maxlen: int, 
            "serve_extra": list(cfg["serve_extra"]), "max_model_len": maxlen,
            "numerics_env": {k: base_env.get(k) for k in NUMERICS_ENV}, "bits": bits(cfg),
            "hook_version": hook_version() if hooked(cfg) else None,
-           "cache_namespace": q["namespace"] if q else "default"}
+           "cache_namespace": "/".join(x for x in ((q or {}).get("namespace"), ("aq:" + hashlib.sha256(json.dumps(aq(cfg), sort_keys=True).encode()).hexdigest()[:8]) if aq(cfg) else None) if x) or "default"}
     return eff
 
 
@@ -107,19 +117,38 @@ def num_layers(model: dict, path: str) -> int | None:
 
 
 def hook_coverage(log_text: str, cfg: dict, n_layers: int | None) -> dict | None:
-    """Coverage from the server log of this launch: `wrapped` lines (patch installed, per process) and `hooked attention`
-    lines (one per Attention instance built in the engine process; decoder self-attention is what the KV hook
-    quantizes). Acceptance: every decoder layer hooked in the engine process."""
-    q = kvq(cfg)
+    """Coverage from the server log of this launch. KV hook: `wrapped` lines (patch installed, per process) and one
+    `hooked attention` line per Attention instance in the engine process; every decoder layer must be hooked. Activation
+    hook: its per-module lines (action quant / had_only / pass) in the engine process; with bits < 16 the number of
+    quantized linear modules must equal len(only) x layers, with a Hadamard setting at least one Hadamard module.
+    The compile-cache roots the hooks report are recorded (cache namespace actually used)."""
     if not hooked(cfg):
         return None
-    wrapped = [ln for ln in log_text.splitlines() if "[cloq_kvq]" in ln and "wrapped" in ln]
-    inst = [ln for ln in log_text.splitlines() if "[cloq_kvq]" in ln and "hooked attention" in ln]
-    by_pid: dict = {}
-    for ln in inst:
-        pid = ln.split("pid=")[1].split()[0] if "pid=" in ln else "?"
-        if "type=decoder" in ln.lower() or "type=attentiontype.decoder" in ln.lower():
-            by_pid[pid] = by_pid.get(pid, 0) + 1
-    n_dec = max(by_pid.values()) if by_pid else 0
-    return {"kvq": q, "n_wrapped_processes": len(wrapped), "decoder_attention_hooked": n_dec, "expected_layers": n_layers,
-            "ok": (q is None) or (len(wrapped) > 0 and n_layers is not None and n_dec == n_layers)}
+    lines = log_text.splitlines()
+    q, a = kvq(cfg), aq(cfg)
+    out = {"kvq": q, "aq": a, "cache_roots": sorted({ln.split("cache_root=")[1].split()[0] for ln in lines if "cache_root=" in ln and "[cloq_" in ln})}
+    ok = True
+    if q is not None:
+        wrapped = [ln for ln in lines if "[cloq_kvq]" in ln and "wrapped" in ln]
+        by_pid: dict = {}
+        for ln in lines:
+            if "[cloq_kvq]" in ln and "hooked attention" in ln and "type=decoder" in ln.lower():
+                pid = ln.split("pid=")[1].split()[0]
+                by_pid[pid] = by_pid.get(pid, 0) + 1
+        n_dec = max(by_pid.values()) if by_pid else 0
+        out.update({"n_wrapped_processes": len(wrapped), "decoder_attention_hooked": n_dec, "expected_layers": n_layers})
+        ok &= len(wrapped) > 0 and n_layers is not None and n_dec == n_layers
+    if a is not None:
+        cnt: dict = {}
+        for ln in lines:
+            if "[cloq_aq]" in ln and " module " in ln and "action=" in ln:
+                pid = ln.split("pid=")[1].split()[0]
+                act = ln.split("action=")[1].split()[0]
+                cnt.setdefault(pid, {"quant": 0, "had_only": 0, "pass": 0})
+                cnt[pid][act] = cnt[pid].get(act, 0) + 1
+        best = max(cnt.values(), key=lambda c: sum(c.values())) if cnt else {"quant": 0, "had_only": 0, "pass": 0}
+        exp_q = len(a["only"]) * n_layers if (a["quant"] and n_layers) else 0
+        out.update({"aq_modules": best, "aq_expected_quant": exp_q})
+        ok &= (not a["quant"] or best["quant"] == exp_q) and (a["had"] == "0" or best["quant"] + best["had_only"] > 0) and bool(cnt)
+    out["ok"] = bool(ok)
+    return out
