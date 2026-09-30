@@ -10,6 +10,31 @@ Newest first.
 
 ---
 
+## W34-infra — Multi-replica user simulator: instance registry, drain-then-add, 6 replicas live (2026-09-30)
+**TL;DR** The review finding on e72b93e was confirmed in code. The balancer read only port 8000 and keyed replicas by node name. The runner started exactly one simulator.
+- **What changed:**
+  - Every replica is now in a registry: `cloq_work/sims/<node>-<port>.json`, holding URL, GPUs, canary, no-op check, throughput, owner, state and health.
+  - Routing is per instance URL, using per-instance waiting/running/KV load.
+  - Routes still change only at run start. A route to a dead replica is moved at once; otherwise there is a 15-min hold per node, and the anti-herding rule and atomic replace are unchanged.
+  - Leases keep a draining replica up until its clients finish.
+  - `noderunner --sims N` starts N replicas on NVLink pairs at ports 8000+k, with a port-collision guard, heartbeat, and a `DRAIN.<node>` flag.
+  - A queue task of kind `sim` adds a replica to a running runner without restarting it. That runner already keeps upper pairs for 2-GPU work, so the pair empties as its valid tasks finish.
+- **node004-8007 is live (GPUs 6,7, job 49671, no restart):**
+  - canary `9a594b881feb752a`, equal to the reference;
+  - 4/4 identical answers to the same requests as node004-8000, both when idle and under 32-way concurrent load;
+  - 377.6 and 618.4 generated tok/s at 16 and 32 concurrent requests;
+  - 8 live run leases by 22:35.
+- **Replicas now:** 6 (12 GPUs), all with the same canary.
+- **7th replica (node005):** queued, then deferred by the main session. Simulator waiting is 0–6, below the add rule (waiting > 30 for 30 min).
+- **Disruption:** no runner restart, no Slurm submit or cancel, and no interrupted episodes.
+
+Evidence:
+- Code: `scripts/a6000/{simreg,worker,noderunner,sim_balancer,gputop}.py`, `scripts/a6000/gpumon.sh` (commits d8a7d27, 51d5cc7, f7f4e9c).
+- Dry run, 17/17 checks: `scripts/a6000/dryrun_simreg.py`, `/data/ziyangs/cloq_work/logs/w34_infra_dryrun.txt`.
+- Registry: `/data/ziyangs/cloq_work/sims/`.
+- Rollout logs, all under `/data/ziyangs/cloq_work/logs/`: `sim_instances.log`, `w34_node004-8007_{noop_underload,tp32}.json`, `sim_balancer.log`, `node_node004_49671.out`.
+- Plan: `docs/insights/RESOURCE_PLAN.md` (inventory and rollout record).
+
 ## W35 — Old line stopped; experiment registry, automatic analysis daemon, board main-line view (2026-09-30)
 **TL;DR**
 - **Old line stopped.** 10 running old-line tasks (high-dose Gaussian redos, W3 on q32/l8, q30a3 k=3, old telecom BF16) were stopped through their run processes (clean server shutdown) and 51 queued old-line tasks moved to `queue/deferred/`. Finished episodes are kept and resumable.
