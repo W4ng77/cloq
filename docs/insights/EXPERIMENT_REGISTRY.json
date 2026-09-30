@@ -170,6 +170,24 @@
    }
   },
   {
+   "id": "wakv",
+   "title": "q4 W x A x KV 2^3 closed-loop matrix (QuaRot-rotated) + A8 / SmoothQuant anchors, dev blocks f01-f03",
+   "role": "support",
+   "patterns": [
+    "^a6k2_q4_quarot_w\\d+a\\d+kv\\d+_fdev$",
+    "^a6k2_q4_aq_a8_fdev$",
+    "^a6k2_q4_sq_w8a8_fdev$"
+   ],
+   "fit": "Which precision axis (weights, activations, KV) drives closed-loop turnover and damage, and whether effects add (W47). Paired with bfpair and GPTQ-W4 on the same nonces.",
+   "analysis": {
+    "name": "W x A x KV factorial effects and additivity",
+    "run": "cpu",
+    "script": "analysis/ahook/analyze_wakv.py",
+    "cmd": "python analysis/ahook/analyze_wakv.py --snapshot {snapshot}",
+    "trigger": "script_exists_and_new_done"
+   }
+  },
+  {
    "id": "external",
    "title": "BFCL multi-turn and ALFWorld",
    "role": "support",
