@@ -100,6 +100,22 @@
    }
   },
   {
+   "id": "difficulty",
+   "title": "Difficulty / horizon moderators of fork effects (exploratory; M1-M5 draft prereg for telecom holdout)",
+   "role": "main",
+   "patterns": [
+    "^fork_(dev|kv|stress|tel)_"
+   ],
+   "fit": "Tests whether harm appears on harder / longer tasks and whether continuation harm C grows with remaining horizon (compounding). Dev = exploratory; M1-M5 pre-registered for the telecom holdout (FORK_PROTOCOL \u00a712).",
+   "analysis": {
+    "name": "difficulty-stratified G/A/C/I + C-vs-horizon slope",
+    "run": "cpu",
+    "script": "analysis/fork/analyze_difficulty.py",
+    "cmd": "python analysis/fork/analyze_difficulty.py --snapshot {snapshot} --include-gate-telecom",
+    "trigger": "script_exists_and_new_done"
+   }
+  },
+  {
    "id": "tel_dev",
    "title": "Telecom development blocks (80 dev tasks; holdout untouched)",
    "role": "support",
