@@ -1,7 +1,8 @@
 """Run one queued task on the GPUs a node runner assigned to it.
 
 eval task: build the checkpoint in node-local scratch (bf16: none; rtn/gauss/gshape/rtnsign/nf4/mxfp4/rtnsr:
-cloq.compress; gptq/awq: cloq.quantize; rot_bf16/rot_rtn: cloq.rotate; rot_gptq: cloq.rotate then cloq.quantize --src), serve it on this worker's port, delete the weight files once vLLM has
+cloq.compress; gptq/awq: cloq.quantize; rot_bf16/rot_rtn: cloq.rotate; rot_gptq: cloq.rotate then cloq.quantize --src;
+restore/resid: cloq.perturb from a cached Q, scripts/a6000/derived.py), serve it on this worker's port, delete the weight files once vLLM has
 loaded them, run every (run, domain) of the task against the node's shared user simulator, stop the
 server and verify the GPUs are released. calib task: build a calibration manifest (CPU).
 sim task: one extra user-simulator replica on an NVLink pair, registered in the instance registry (run_sim, simreg.py).
@@ -23,6 +24,9 @@ import time
 import traceback
 import urllib.request
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import derived  # noqa: E402  restore / resid checkpoint kinds (P2 line 3)
 
 ROOT = Path("/data/ziyangs/cloq")
 WORK = Path("/data/ziyangs/cloq_work")
@@ -210,6 +214,8 @@ def build_ckpt(task, env, gpus, scratch: Path, log) -> tuple[str, dict | None]:
         return path, {"method": "hf", "format": ck.get("format"), "hf_id": ck["hf_id"], "revision": ck["revision"],
                       "source_model": m["hf_id"], "source_revision": m["revision"], "quantization_config": qc,
                       "serve_extra": task.get("serve_extra", [])}
+    if ck["kind"] in derived.KINDS:  # P2 line 3: restoration / residual dose from a cached Q (scripts/a6000/derived.py)
+        return derived.build(task, src, m["revision"], env, gpus, scratch, log, build_ckpt, ckpt_sha)
     out = scratch / f"ckpt_{task['id']}"
     if out.exists():
         shutil.rmtree(out)
@@ -284,6 +290,9 @@ def run_eval(task, args, st: Status):
         if task["ckpt"]["kind"] == "bf16" and not task.get("serve_extra") and not kvq:  # eager/KVQ etc. = different flavour by design
             st.set("check", "numerics canary")
             check_canary(args.port, task["model"], "agent")
+        if (qmeta or {}).get("protocol") == derived.PROTOCOL and not task.get("serve_extra") and not kvq:
+            st.set("check", "numerics canary (derived ckpt)")
+            qmeta["canary"] = derived.canary_checks(args.port, task["model"], qmeta, check_canary)
         if path.startswith(str(scratch)):  # weights are on the GPU now; free the RAM disk
             for f in Path(path).glob("*.safetensors"):
                 f.unlink()
@@ -386,6 +395,9 @@ def run_eval(task, args, st: Status):
                 m = json.load(open(mp))
                 summ[f"{r['run_id']}/{d}"] = {k: m.get(k) for k in ("db_match_rate", "success_rate", "official_reward_mean", "reward_mean", "n_tasks", "mean_decisions", "premature_rate", "termination_reasons")
                                               if k in m}
+    if (qmeta or {}).get("protocol") == derived.PROTOCOL:
+        summ["_ckpt"] = {k: qmeta.get(k) for k in ("tag", "method", "arm", "alpha", "equals", "content_sha256", "files_sha256",
+                                                   "eff_alpha", "n_restored", "canary", "base_cache")}
     return summ
 
 
