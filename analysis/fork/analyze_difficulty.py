@@ -3,17 +3,19 @@ confirmatory; the moderator list for the telecom holdout is fixed separately (FO
 
 Units and effects exactly as analysis/fork/analyze_dev.py (task x block; Y = DB success for retail/airline, official
 task-basis success for telecom; G = Y_BQ - Y_QQ, A = L_QB - L_BB, C = L_BQ - L_BB, I = L_QQ - L_QB - L_BQ + L_BB), and
-the same inputs, exclusions, quarantine and hierarchical bootstrap (tasks, then blocks within task; B = 2000, seed
-20261001; draws shared within a cell).
+the same inputs, exclusions, quarantine, split guard and inference (analyze_dev.Boot, W63: complete shared blocks, block
+bootstrap with >= 10 blocks else t over blocks; crossed task x block bootstrap alongside; B = 2000, seed 20261001).
 Moderators (per model x cell):
-  (a) remaining horizon after the fork state h = n_decisions(Q episode) - t*, tertiles within the cell (divergent units
-      only; conditional effects), plus the compounding test: bootstrap slope of C (and G, A, I) on h, per 10 decisions,
+  (a) EXPLORATORY ONLY: remaining horizon after the fork state h = n_decisions(Q episode) - t*, tertiles within the cell
+      (divergent units only; conditional effects). h is Q's realised trajectory length, confounded by loops and failure,
+      so it is never a confirmatory stratum. Plus the compounding test: bootstrap slope of C (and G, A, I) on h, per 10 decisions,
       weighted least squares under the hierarchical draws; two-sided bootstrap p = 2 min(P(slope <= 0), P(slope >= 0)).
   (b) task length = mean number of agent decisions of the task's BF16 (bfpair) episodes, tertiles within the cell.
   (c) task difficulty = BF16 success rate of the task over all admitted bfpair blocks of that model and domain,
       bins {0}, (0, 0.5], (0.5, 1].
   (d) domain.
   (e) telecom persona: Hard / None / Easy (from the task id).
+  (f) remaining step budget at the fork (max_steps - steps used before t*), tertiles: known at the fork.
 For (b)-(e), each stratum reports G_all (all units of the stratum, non-divergent = 0) and the effects conditional on
 divergence; strata use the cell's shared draws.
 --include-gate-telecom adds the telecom units of the gate directories (a6k2_q8_tel_awq_w4_q1; selected tasks, not the
@@ -74,7 +76,9 @@ def tertile_labels(vals: list[float]) -> tuple[list[str], list[float]]:
 
 
 def slope_test(units: list[dict], boot: AD.Boot, key: str) -> dict:
-    """Weighted LS slope of effect `key` on remaining horizon h (per 10 decisions) under the hierarchical draws."""
+    """Slope of effect `key` on remaining horizon h (pp per 10 decisions), weighted LS. Primary per AD.summarise:
+    block bootstrap (blocks resampled whole) with >= 10 blocks, else t over per-block slopes; crossed task x block
+    bootstrap (generalisation) alongside."""
     if len(units) < 5:
         return {"n": len(units), "note": "too few units"}
     ti = np.array([boot.tix[u["task"]] for u in units])
@@ -83,18 +87,24 @@ def slope_test(units: list[dict], boot: AD.Boot, key: str) -> dict:
     y = np.array([u["E"][key] for u in units], float)
 
     def fit(w):
-        sw = w.sum(-1, keepdims=True)
+        sw = np.maximum(w.sum(-1, keepdims=True), 1e-12)
         mx, my = (w * x).sum(-1, keepdims=True) / sw, (w * y).sum(-1, keepdims=True) / sw
         return 10 * ((w * (x - mx) * (y - my)).sum(-1) / np.maximum((w * (x - mx) ** 2).sum(-1), 1e-12))
 
     pt = float(fit(np.ones((1, len(x))))[0])
-    W = boot.W[:, ti] * boot.V[:, ti, ki]
-    dr = fit(W)
-    dr = dr[np.isfinite(dr)]
-    p = float(min(1.0, 2 * min((dr <= 0).mean(), (dr >= 0).mean()))) if len(dr) else None
-    lo, hi = np.percentile(dr, [2.5, 97.5]) if len(dr) else (np.nan, np.nan)
-    return {"n": len(units), "slope_pp_per_10_decisions": round(100 * pt, 3), "ci95": [round(100 * float(lo), 3), round(100 * float(hi), 3)],
-            "p_two_sided_boot": p, "h_range": [float(x.min()), float(x.max())]}
+    blk = []
+    for k in np.unique(ki):
+        m = ki == k
+        if m.sum() >= 3 and np.ptp(x[m]) > 0:
+            blk.append(float(fit(m[None, :].astype(float))[0]))
+    t = AD.t_interval(blk)
+    dr = fit(boot.unit_weights(ti, ki, "block"))
+    cr = fit(boot.unit_weights(ti, ki, "crossed"))
+    r = AD.summarise(pt, dr[np.isfinite(dr)], t=t, crossed=(pt, cr[np.isfinite(cr)]))
+    d = dr[np.isfinite(dr)]
+    r.update({"n": len(units), "h_range": [float(x.min()), float(x.max())], "unit": "pp per 10 decisions",
+              "p_two_sided_block_boot": float(min(1.0, 2 * min((d <= 0).mean(), (d >= 0).mean()))) if len(d) else None})
+    return r
 
 
 def strata(units, boot, label_of, levels, conditional_only=False):
@@ -104,13 +114,15 @@ def strata(units, boot, label_of, levels, conditional_only=False):
         if not su:
             continue
         if conditional_only:
-            r = {"n_states": len(su), "counts": {k: int(sum(u["E"][k] for u in su)) for k in ("rescue", "damage", "both_succeed", "both_fail")}}
-            for s in ("G", "A", "C", "I"):
+            r = {"n_states": len(su), "counts": {k: int(sum(u["E"][k] for u in su)) for k in ("rescue", "damage", "M", "both_succeed", "both_fail")}}
+            for s in ("G", "rescue", "damage", "M", "A", "C", "I"):
                 X, M = boot.arrays(su, s)
-                r[f"{s}_cond_pp"] = AD.summarise(*boot.ratio(X, M))
+                r[f"{s}_cond_pp"] = AD.summarise(*boot.ratio(X, M))  # Draws carry t and crossed
         else:
             r = AD.analyse(su, boot)
             r = {k: r[k] for k in ("n_units", "n_tasks", "n_states", "divergence_rate", "all_pp", "conditional_on_divergence_pp", "counts") if k in r}
+            if "all_pp" in r:  # keep the headline r/d/M/G and the decomposition; drop the per-branch levels for size
+                r["all_pp"] = {k: v for k, v in r["all_pp"].items() if k in ("G", "rescue", "damage", "M", "A", "C", "I", "QB_minus_QQ", "BB_minus_QQ")}
         out[lv] = r
     return out
 
@@ -121,6 +133,7 @@ def main():
     ap.add_argument("--cells", nargs="*", default=None)
     ap.add_argument("--include-gate-telecom", action="store_true")
     ap.add_argument("--B", type=int, default=AD.B_BOOT)
+    ap.add_argument("--split", default="dev")
     a = ap.parse_args()
     t0 = time.time()
     try:
@@ -135,6 +148,8 @@ def main():
         dirs += [d for d in AD.discover(True) if "analysis/fork/gate" in str(d)]
     cache: dict = {}
     loaded = [AD.load_dir(d, snap, cache) for d in dirs]
+    split_info = AD.split_guard([u for L in loaded for u in L["units"]], a.split, "analyze_difficulty")
+    split_info["incomplete_blocks"] = AD.mark_incomplete_blocks([u for L in loaded for u in L["units"]], a.split)
     units, seen = [], set()
     for L in loaded:
         if L["quarantined"]:
@@ -160,7 +175,7 @@ def main():
     bf = bf16_task_stats(snap)
     files = {k: v for L in loaded for k, v in L["files"].items()}
     fp = hashlib.sha256(json.dumps({"script": AD.sha256(__file__), "dev": AD.sha256(AD.__file__), "snapshot": AD.sha256(a.snapshot),
-                                    "files": files, "cells": a.cells, "gate": a.include_gate_telecom, "B": a.B}, sort_keys=True).encode()).hexdigest()[:16]
+                                    "files": files, "cells": a.cells, "gate": a.include_gate_telecom, "B": a.B, "split": a.split, "splits": AD.sha256(AD.SPLITS)}, sort_keys=True).encode()).hexdigest()[:16]
     OUT.mkdir(parents=True, exist_ok=True)
     for p in sorted(OUT.glob("difficulty_*.json")):
         try:
@@ -189,12 +204,18 @@ def main():
         hl, hq = tertile_labels([u["h"] for u in div])
         for u, l in zip(div, hl):
             u["h_t"] = l
+        bl, bq = tertile_labels([u["steps_left"] for u in div])
+        for u, l in zip(div, bl):
+            u["budget_t"] = l
         lu = [u for u in cu if u["bf_len"] is not None]
         ll, lq = tertile_labels([u["bf_len"] for u in lu])
         for u, l in zip(lu, ll):
             u["len_t"] = l
         r = {"n_units": len(cu), "n_states": len(div), "n_units_without_bf16_stats": sum(1 for u in cu if u["bf_succ"] is None),
-             "a_remaining_horizon": {"tertile_cuts": hq, "strata": strata(div, boot, lambda u: u.get("h_t"), ["T1", "T2", "T3"], True),
+             "f_remaining_step_budget_at_fork": {"note": "known at the fork: max_steps - steps used before t* (conditional effects)",
+                                                 "tertile_cuts": bq, "strata": strata(div, boot, lambda u: u.get("budget_t"), ["T1", "T2", "T3"], True)},
+             "a_remaining_horizon": {"note": "EXPLORATORY: realised Q trajectory length after t*, confounded by loops and failure",
+                                     "tertile_cuts": hq, "strata": strata(div, boot, lambda u: u.get("h_t"), ["T1", "T2", "T3"], True),
                                      "slope": {k: slope_test(div, boot, k) for k in ("C", "G", "A", "I")}},
              "b_task_length_bf16": {"tertile_cuts": lq, "strata": strata(cu, boot, lambda u: u.get("len_t"), ["T1", "T2", "T3"])},
              "c_bf16_difficulty": {"bins": ["0", "(0,0.5]", "(0.5,1]"],
@@ -209,7 +230,8 @@ def main():
            "snapshot": {"id": snap.get("snapshot_id"), "path": str(Path(a.snapshot).resolve()), "sha256": AD.sha256(a.snapshot)},
            "script": {"path": str(Path(__file__).resolve()), "sha256": AD.sha256(__file__), "analyze_dev_sha256": AD.sha256(AD.__file__),
                       "git_head": subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()},
-           "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "bootstrap": {"B": a.B, "seed": AD.SEED},
+           "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "split": split_info,
+           "bootstrap": {"B": a.B, "seed": AD.SEED, "scheme": "analyze_dev.Boot (W63): complete shared blocks (block bootstrap if >= 10 blocks, else t over blocks) + crossed task x block"},
            "include_gate_telecom": a.include_gate_telecom, "input_dirs": [L["dir"] for L in loaded],
            "cells": res_cells, "seconds": round(time.time() - t0, 1)}
     utc = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
@@ -219,9 +241,9 @@ def main():
     def f(x):
         return f"{x['est']:+.1f} [{x['ci95'][0]:+.1f}, {x['ci95'][1]:+.1f}]"
     L = [f"**TL;DR** EXPLORATORY difficulty moderators of fork effects ({len(res_cells)} cells, "
-         f"{sum(v['n_states'] for v in res_cells.values())} states). Compounding test (slope of C on remaining horizon, pp per 10 "
-         "decisions): " + "; ".join(f"{k} {v['a_remaining_horizon']['slope']['C'].get('slope_pp_per_10_decisions')} "
-                                    f"(p {v['a_remaining_horizon']['slope']['C'].get('p_two_sided_boot')})" for k, v in res_cells.items()) + ".",
+         f"{sum(v['n_states'] for v in res_cells.values())} states). Exploratory compounding slope of C on realised remaining horizon "
+         "(pp per 10 decisions; confounded by loops, not confirmatory): " + "; ".join(
+             f"{k} {v['a_remaining_horizon']['slope']['C'].get('est')} {v['a_remaining_horizon']['slope']['C'].get('ci95')}" for k, v in res_cells.items()) + ".",
          "", f"# Difficulty-stratified fork effects, exploratory ({res['utc']})", "",
          f"Snapshot `{res['snapshot']['id']}`, script sha {res['script']['sha256'][:12]}, git {res['script']['git_head'][:10]}. "
          f"Full numbers: `{jp.relative_to(ROOT)}`. pp; 95% hierarchical bootstrap. Post hoc: do not read p-values as confirmatory.", ""]
@@ -231,8 +253,11 @@ def main():
             L.append(f"- {name}, cuts {v[key]['tertile_cuts']}: " + "; ".join(
                 f"{lv}: n {r['n_states']}, G {f(r['G_cond_pp'])}, C {f(r['C_cond_pp'])}" for lv, r in v[key]["strata"].items()))
             s = v[key]["slope"]["C"]
-            if "slope_pp_per_10_decisions" in s:
-                L.append(f"  - slope of C: {s['slope_pp_per_10_decisions']:+.2f} pp/10 decisions [{s['ci95'][0]:+.2f}, {s['ci95'][1]:+.2f}], p {s['p_two_sided_boot']}")
+            if "est" in s:
+                L.append(f"  - EXPLORATORY slope of C: {s['est']:+.2f} pp/10 decisions [{s['ci95'][0]:+.2f}, {s['ci95'][1]:+.2f}] ({s['primary']}); crossed {s.get('crossed_ci95')}")
+        fb = v["f_remaining_step_budget_at_fork"]
+        L.append(f"- (f) remaining step budget at the fork (known at t*), cuts {fb['tertile_cuts']}: " + "; ".join(
+            f"{lv}: n {r['n_states']}, G {f(r['G_cond_pp'])}, C {f(r['C_cond_pp'])}" for lv, r in fb["strata"].items()))
         for name, key in (("(b) BF16 task length", "b_task_length_bf16"), ("(c) BF16 difficulty", "c_bf16_difficulty")):
             L.append(f"- {name}: " + "; ".join(f"{lv}: units {r['n_units']}, G_all {f(r['all_pp']['G'])}, C_all {f(r['all_pp']['C'])}"
                                               for lv, r in v[key]["strata"].items() if "all_pp" in r))

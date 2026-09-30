@@ -12,11 +12,22 @@ infrastructure failures, Q block not admitted in the snapshot, quarantined fork 
 counted per reason; they are never coded as "no divergence".
   Explicit secondary endpoints: Y_QB - Y_QQ (escalate to B after Q's pivot action; = L_QQ - L_QB = C + I) and Y_BB - Y_QQ
 (B from the pivot on; = L_QQ - L_BB = A + C + I).
-  G_all (primary)       mean over the full task pool: task-level mean over its blocks, then the mean over tasks.
+  G_all (primary)       mean over the full task pool: mean over blocks of the block's mean over tasks.
   G_div (secondary)     ratio form over divergent units only (sum of effects / number of states).
-Intervals: hierarchical percentile bootstrap, tasks with replacement, then blocks with replacement within each drawn
-task, B = 2000, seed 20261001. The draws are shared by all cells (tasks and nonces are crossed across cells), so the
-pooled estimates (pre-declared equal weight per cell, within model and overall) carry valid intervals.
+Headline (review of 7528f2e): the two-sided consequence decomposition on one denominator (all units of the fixed task
+pool, non-divergent units = 0): r = P(Y_BQ=1, Y_QQ=0), d = P(Y_BQ=0, Y_QQ=1), M = r + d (outcome changed in either
+direction), G = r - d; and r, d, M conditional on divergence.
+Intervals (W63, class Boot): a block (nonce) is a common effect over all tasks, so it is resampled whole.
+  primary   fixed task pool: statistic per complete shared block, then (i) block bootstrap (block_boot_ci95) and (ii) t
+            over block means (t_ci95, df = K - 1), flagged when they disagree. `ci95`/`lb95_one_sided` = the block
+            bootstrap when K >= 10 complete blocks (W4: 20, KV8: 22), else the t interval (stress/telecom/restore cells
+            have 3-6 blocks; a percentile bootstrap over so few clusters is anti-conservative). B = 2000, seed 20261001.
+  secondary generalisation to new tasks: crossed two-way bootstrap, tasks and blocks resampled jointly (crossed_ci95).
+Draws are shared by all cells (same task ids and nonces), so the equal-weight pools carry valid intervals.
+Complete blocks (W63): only complete shared blocks enter (every split task of the domain present in the block, no
+pending branches); incomplete blocks are listed per cell and their units excluded with that reason.
+Split (W63): --split dev (default) uses manifests/fork/splits_v1.json; units outside the split are excluded and any
+telecom-holdout unit aborts the run unless --split holdout with a frozen PREREG_FORK_CONFIRM.md (sha recorded).
 Thresholds (§F): g_min = eps = 3 pp. The lower one-sided 95% bound (5th percentile) is reported with flags
 LB > 0 and LB > 3 pp. 5 pp is a sensitivity analysis only.
 Quarantine (protocol A): a fork task (output directory) with any QQ no-op sample differing from its original
@@ -60,12 +71,73 @@ FAMILIES = {"W4": ("gptq_w4_d1", "awq_w4"), "KV8": ("kvq_int8",), "stress": ("gp
 def family(cell: str) -> str:
     return next((f for f, cs in FAMILIES.items() if cell in cs), "other")
 B_BOOT, SEED, G_MIN = 2000, 20261001, 0.03
+MIN_BLOCKS_BOOT = 10  # below this many complete blocks the percentile block bootstrap is anti-conservative: t is primary
 RUN_RE = re.compile(r"^a6k2_(q\d+|l8|m24)_(.+)_(q\d+|f\d\d|n\d+|h\d+)$")
 TYPES = ["act->talk", "talk->act", "tool_name", "tool_args", "user_device_call", "other"]
 
 
 def sha256(p) -> str:
     return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+
+
+SPLITS = ROOT / "manifests/fork/splits_v1.json"
+
+
+def unit_key(u: dict) -> tuple[str, str]:
+    return u["domain"], u["task"].split(":", 1)[1]
+
+
+PENDING = "state without branches"
+
+
+def mark_incomplete_blocks(units: list[dict], split: str) -> dict:
+    """Primary inference uses complete shared blocks only (W63): a (model, cell, domain, block) counts when every split
+    task of that domain has a unit in it and none is still pending (a frozen state whose branches have not run yet).
+    Other exclusions (search / branch infrastructure failures) leave a block complete and are counted as usual.
+    Units of incomplete blocks are excluded with that reason. Returns {(model:cell, domain, block): reason}."""
+    need = {d: {str(t) for t in ts} for d, ts in json.load(open(SPLITS))["splits"][split]["tasks"].items()}
+    groups = defaultdict(list)
+    for u in units:
+        groups[(u["model"], u["cell"], u["domain"], u["block"])].append(u)
+    out = {}
+    for (m, c, d, b), us in groups.items():
+        have = {unit_key(u)[1] for u in us if u.get("excluded", "").startswith("not in split") is False}
+        missing = len(need.get(d, set()) - have)
+        pending = sum(1 for u in us if u.get("excluded") == PENDING)
+        if missing or pending:
+            out[f"{m}:{c}|{d}|{b}"] = f"{missing} tasks missing, {pending} pending"
+            for u in us:
+                if "excluded" not in u:
+                    u["excluded"] = "incomplete block (tasks missing or branches pending)"
+    return out
+
+
+def split_guard(units: list[dict], split: str, who: str = "analysis") -> dict:
+    """Holdout boundary (W63). Units outside `split` are excluded ("not in split"); a unit whose task belongs to the
+    telecom holdout aborts the analysis unless split == "holdout", which itself requires a frozen PREREG_FORK_CONFIRM.md
+    whose sha256 equals the manifest's holdout.prereg_sha256. Returns provenance for the output."""
+    man = json.load(open(SPLITS))
+    sp = man["splits"]
+    if split not in sp:
+        raise SystemExit(f"{who}: unknown split {split!r} (manifest {SPLITS.relative_to(ROOT)}: {sorted(sp)})")
+    if split == "holdout":
+        h = sp["holdout"]
+        pre = ROOT / h["prereg"]
+        if not h.get("prereg_sha256") or not pre.exists() or sha256(pre) != h["prereg_sha256"]:
+            raise SystemExit(f"{who}: refusing --split holdout: {h['prereg']} is not frozen with the sha256 recorded in "
+                             f"{SPLITS.relative_to(ROOT)} (recorded {h.get('prereg_sha256')})")
+    own = {(d, str(t)) for d, ts in sp[split]["tasks"].items() for t in ts}
+    hold = {(d, str(t)) for d, ts in sp.get("holdout", {}).get("tasks", {}).items() for t in ts}
+    leak = [u for u in units if unit_key(u) in hold and split != "holdout"]
+    if leak:
+        raise SystemExit(f"{who}: refusing: {len(leak)} unit(s) belong to the telecom holdout "
+                         f"(e.g. {leak[0]['run_id']} {leak[0]['task']}); holdout analyses need --split holdout after the prereg freeze")
+    n = 0
+    for u in units:
+        if unit_key(u) not in own and "excluded" not in u:
+            u["excluded"] = f"not in split {split}"
+            n += 1
+    return {"split": split, "manifest": str(SPLITS.relative_to(ROOT)), "manifest_sha256": sha256(SPLITS), "n_units_not_in_split": n}
 
 
 def success(domain: str, rec: dict) -> int:
@@ -213,19 +285,50 @@ def load_dir(d: Path, snap: dict, traj_sha_cache: dict) -> dict:
 
 def effects(Y: dict) -> dict:
     L = {k: 1 - v for k, v in Y.items()}
-    return {"G": Y["BQ"] - Y["QQ"], "rescue": int(Y["BQ"] == 1 and Y["QQ"] == 0), "damage": int(Y["BQ"] == 0 and Y["QQ"] == 1),
+    r = int(Y["BQ"] == 1 and Y["QQ"] == 0)
+    d = int(Y["BQ"] == 0 and Y["QQ"] == 1)
+    return {"G": Y["BQ"] - Y["QQ"], "rescue": r, "damage": d, "M": r + d,
             "both_succeed": int(Y["BQ"] == 1 and Y["QQ"] == 1), "both_fail": int(Y["BQ"] == 0 and Y["QQ"] == 0),
             "A": L["QB"] - L["BB"], "C": L["BQ"] - L["BB"], "I": L["QQ"] - L["QB"] - L["BQ"] + L["BB"],
             "Y_QQ": Y["QQ"], "Y_BB": Y["BB"], "Y_BQ": Y["BQ"], "Y_QB": Y["QB"],
             "QB_minus_QQ": Y["QB"] - Y["QQ"], "BB_minus_QQ": Y["BB"] - Y["QQ"]}
 
 
-STATS = ["G", "rescue", "damage", "both_succeed", "both_fail", "A", "C", "I", "Y_QQ", "Y_BB", "Y_BQ", "Y_QB",
+# r = rescue, d = new damage, M = r + d (outcome changes in either direction), G = r - d
+STATS = ["G", "rescue", "damage", "M", "both_succeed", "both_fail", "A", "C", "I", "Y_QQ", "Y_BB", "Y_BQ", "Y_QB",
          "QB_minus_QQ", "BB_minus_QQ"]  # Y_QB-Y_QQ = C + I, Y_BB-Y_QQ = A + C + I
+COND_STATS = ("G", "rescue", "damage", "M", "both_succeed", "both_fail", "A", "C", "I", "QB_minus_QQ", "BB_minus_QQ")
+
+
+class Draws(np.ndarray):
+    """Block-bootstrap draws that also carry the t-over-blocks interval and the crossed draws of the same estimate, so
+    `summarise(*boot.task_mean(...))` reports all three wherever the pair is stored. Derived arrays (means across cells,
+    arithmetic) do not inherit this metadata."""
+
+    def __new__(cls, a, t=None, crossed=None, crossed_pt=None, block_means=None):
+        obj = np.asarray(a, float).view(cls)
+        obj.t_info, obj.crossed, obj.crossed_pt, obj.block_means = t, crossed, crossed_pt, block_means
+        return obj
+
+    def __array_finalize__(self, obj):
+        self.t_info = self.crossed = self.crossed_pt = self.block_means = None
 
 
 class Boot:
-    """Shared hierarchical draws: tasks with replacement, then blocks with replacement within each drawn task."""
+    """Inference over the fixed task pool with complete shared blocks (W63; review of 7528f2e).
+
+    A block (nonce) is one closed-loop run of every task, so it is a common random effect over all tasks. It must be
+    resampled as a whole, never independently inside each task.
+      primary (fixed task pool): the statistic of each complete block (mean over that block's tasks), then inference over
+               blocks. (i) Block bootstrap (blocks with replacement, B draws, shared by all cells, so pools are valid);
+               (ii) t over block means (df = K - 1). Both are reported (`ci95` = block bootstrap, `t_ci95`) and flagged
+               when they disagree.
+      secondary (generalisation to new tasks): crossed two-way bootstrap that keeps the global task x block pairing,
+               tasks and blocks resampled jointly (unit weight = task multiplicity x block multiplicity), as in
+               success_ni's generalisation_task_clustered_crossed (`crossed_ci95`).
+    Point estimate: mean of block means (equal block weight). Ratio (conditional) forms use block sums.
+    `task_mean` / `ratio` keep their old signatures and return the primary (block bootstrap) draws.
+    """
 
     def __init__(self, tasks: list[str], blocks_of: dict[str, list[str]], B: int = B_BOOT, seed: int = SEED):
         self.tasks = tasks
@@ -234,19 +337,10 @@ class Boot:
         self.bix = {b: i for i, b in enumerate(self.blocks)}
         T, K = len(tasks), len(self.blocks)
         rng = np.random.default_rng(seed)
-        self.W = np.zeros((B, T))  # task multiplicity
-        self.V = np.zeros((B, T, K))  # block multiplicity within task
-        avail = [[self.bix[b] for b in sorted(blocks_of[t])] for t in tasks]
-        for r in range(B):
-            self.W[r] = np.bincount(rng.integers(0, T, T), minlength=T)
-            for t in range(T):
-                a = avail[t]
-                if a:
-                    self.V[r, t, a] = np.bincount(rng.integers(0, len(a), len(a)), minlength=len(a))
-        self.W1 = np.ones(T)
-        self.V1 = np.zeros((T, K))
-        for t in range(T):
-            self.V1[t, avail[t]] = 1
+        self.Vb = np.stack([np.bincount(rng.integers(0, K, K), minlength=K) for _ in range(B)]).astype(float)  # (B, K)
+        self.Wc = np.stack([np.bincount(rng.integers(0, T, T), minlength=T) for _ in range(B)]).astype(float)  # (B, T)
+        self.Vc = np.stack([np.bincount(rng.integers(0, K, K), minlength=K) for _ in range(B)]).astype(float)  # (B, K)
+        self.last: dict = {}
 
     def arrays(self, units: list[dict], key: str, mask_key=None):
         T, K = len(self.tasks), len(self.blocks)
@@ -259,28 +353,91 @@ class Boot:
             M[t, k] = 1
         return X, M
 
+    def block_means(self, X, M):
+        n = M.sum(0)
+        return np.where(n > 0, (X * M).sum(0) / np.maximum(n, 1e-12), np.nan)
+
     def task_mean(self, X, M):
-        """Point estimate and bootstrap draws of the task-hierarchical mean."""
-        def est(W, V):
-            den_tk = (V * M).sum(-1)
-            tm = np.where(den_tk > 0, (V * M * X).sum(-1) / np.maximum(den_tk, 1e-12), 0.0)
-            wt = W * (den_tk > 0)
-            return (wt * tm).sum(-1) / np.maximum(wt.sum(-1), 1e-12)
-        return float(est(self.W1, self.V1)), est(self.W, self.V)
+        """Primary estimator (mean of block means) and its block-bootstrap draws; also sets self.last (t, crossed)."""
+        bm = self.block_means(X, M)
+        has = np.isfinite(bm)
+        bmz = np.where(has, bm, 0.0)
+        pt = float(bmz[has].mean()) if has.any() else float("nan")
+        w = self.Vb * has
+        draws = (w * bmz).sum(-1) / np.maximum(w.sum(-1), 1e-12)
+        cw = self.Wc[:, :, None] * self.Vc[:, None, :]
+        crossed = (cw * X * M).sum((-1, -2)) / np.maximum((cw * M).sum((-1, -2)), 1e-12)
+        self.last = {"block_means": bm, "crossed": crossed, "crossed_pt": float((X * M).sum() / max(M.sum(), 1e-12)),
+                     "t": t_interval(bm[has])}
+        return pt, Draws(draws, self.last["t"], crossed, self.last["crossed_pt"], bm)
 
     def ratio(self, X, M):
-        """Ratio form over the masked units (secondary, conditional on divergence)."""
-        def est(W, V):
-            wv = W[..., None] * V
-            return (wv * M * X).sum((-1, -2)) / np.maximum((wv * M).sum((-1, -2)), 1e-12)
-        return float(est(self.W1, self.V1)), est(self.W, self.V)
+        """Ratio form over the masked units (conditional on divergence) with block sums; crossed draws in self.last."""
+        S, N = (X * M).sum(0), M.sum(0)
+        pt = float(S.sum() / max(N.sum(), 1e-12))
+        draws = (self.Vb * S).sum(-1) / np.maximum((self.Vb * N).sum(-1), 1e-12)
+        cw = self.Wc[:, :, None] * self.Vc[:, None, :]
+        crossed = (cw * X * M).sum((-1, -2)) / np.maximum((cw * M).sum((-1, -2)), 1e-12)
+        br = np.where(N > 0, S / np.maximum(N, 1e-12), np.nan)
+        self.last = {"block_means": br, "crossed": crossed, "crossed_pt": pt, "t": t_interval(br), "t_note": "t over per-block ratios"}
+        return pt, Draws(draws, self.last["t"], crossed, pt, br)
+
+    def unit_weights(self, ti, ki, scheme: str = "block"):
+        """(B, n) weights of units at (task index, block index) under the block or crossed scheme."""
+        return self.Vb[:, ki] if scheme == "block" else self.Wc[:, ti] * self.Vc[:, ki]
 
 
-def summarise(pt: float, draws: np.ndarray, pct: bool = True) -> dict:
-    lo, hi = np.percentile(draws, [2.5, 97.5])
-    lb = np.percentile(draws, 5)
+def t_interval(x) -> dict | None:
+    x = np.asarray([v for v in x if np.isfinite(v)], float)
+    if len(x) < 2:
+        return None
+    from scipy.stats import t as tdist
+    m, se = x.mean(), x.std(ddof=1) / np.sqrt(len(x))
+    q = tdist.ppf(0.975, len(x) - 1)
+    return {"lo": float(m - q * se), "hi": float(m + q * se), "lb_one_sided": float(m - tdist.ppf(0.95, len(x) - 1) * se),
+            "k": int(len(x)), "df": int(len(x) - 1)}
+
+
+def summarise(pt: float, draws: np.ndarray, pct: bool = True, boot: "Boot | None" = None, t: dict | None = None,
+              crossed: tuple | None = None) -> dict:
+    """Interval report. `draws` = block-bootstrap draws; t = t over block means (from boot.last or given); crossed =
+    (point, draws) of the crossed task x block bootstrap. Primary interval (`ci95`, `lb95_one_sided`, `primary`):
+    block bootstrap when there are >= MIN_BLOCKS_BOOT complete blocks, else t over block means (few clusters). Both are
+    always reported (`block_boot_ci95`, `t_ci95`), flagged when they disagree, plus `crossed_ci95` (generalisation)."""
     f = 100 if pct else 1
-    return {"est": round(float(f * pt), 3), "ci95": [round(float(f * lo), 3), round(float(f * hi), 3)], "lb95_one_sided": round(float(f * lb), 3)}
+    if isinstance(draws, Draws):  # metadata travels with the draws (siblings store (pt, draws) pairs)
+        t = t if t is not None else draws.t_info
+        crossed = crossed if crossed is not None else ((draws.crossed_pt, draws.crossed) if draws.crossed is not None else None)
+    elif boot is not None and boot.last:
+        t = t if t is not None else boot.last.get("t")
+        crossed = crossed if crossed is not None else (boot.last.get("crossed_pt"), boot.last.get("crossed"))
+    draws = np.asarray(draws, float)
+    draws = draws[np.isfinite(draws)]
+    lo, hi = np.percentile(draws, [2.5, 97.5]) if len(draws) else (np.nan, np.nan)
+    lb = np.percentile(draws, 5) if len(draws) else np.nan
+    out = {"est": round(float(f * pt), 3), "block_boot_ci95": [round(float(f * lo), 3), round(float(f * hi), 3)],
+           "block_boot_lb95": round(float(f * lb), 3)}
+    primary = "block bootstrap"
+    ci, lb1 = out["block_boot_ci95"], out["block_boot_lb95"]
+    if t:
+        out["t_ci95"] = [round(f * t["lo"], 3), round(f * t["hi"], 3)]
+        out["t_lb95_one_sided"] = round(f * t["lb_one_sided"], 3)
+        out["n_blocks"] = t["k"]
+        wb, wt = hi - lo, t["hi"] - t["lo"]
+        out["block_vs_t_differ"] = bool(abs(wb - wt) > 0.2 * max(wb, wt, 1e-12) or (lo > 0) != (t["lo"] > 0))
+        if t["k"] < MIN_BLOCKS_BOOT:
+            primary = f"t over {t['k']} block means (fewer than {MIN_BLOCKS_BOOT} blocks)"
+            ci, lb1 = out["t_ci95"], out["t_lb95_one_sided"]
+    elif len(draws) and boot is not None and len(boot.blocks) < MIN_BLOCKS_BOOT:
+        primary = "block bootstrap (t unavailable; few blocks: interpret with caution)"
+    out["ci95"], out["lb95_one_sided"], out["primary"] = ci, lb1, primary
+    if crossed is not None and crossed[1] is not None:
+        c = np.asarray(crossed[1], float)
+        c = c[np.isfinite(c)]
+        if len(c):
+            out["crossed_est"] = round(f * float(crossed[0]), 3)
+            out["crossed_ci95"] = [round(float(f * x), 3) for x in np.percentile(c, [2.5, 97.5])]
+    return out
 
 
 def analyse(units: list[dict], boot: Boot, draws_out: dict | None = None, label: str = "") -> dict:
@@ -293,21 +450,22 @@ def analyse(units: list[dict], boot: Boot, draws_out: dict | None = None, label:
     for s in STATS:
         X, M = boot.arrays(units, s)
         pt, dr = boot.task_mean(X, M)
-        all_[s] = summarise(pt, dr)
+        all_[s] = summarise(pt, dr, boot=boot)
         if draws_out is not None:
-            draws_out.setdefault(label, {})[s] = (pt, dr)
+            draws_out.setdefault(label, {})[s] = (pt, dr, boot.last["block_means"], boot.last["crossed"], boot.last["crossed_pt"])
     res["all_pp"] = all_
     g = all_["G"]
     res["G_all_decision"] = {"lb_gt_0": bool(g["lb95_one_sided"] > 0), "lb_gt_gmin": bool(g["lb95_one_sided"] > 100 * G_MIN),
-                             "ub_lt_minus_gmin": bool(g["ci95"][1] < -100 * G_MIN), "g_min_pp": 100 * G_MIN}
+                             "ub_lt_minus_gmin": bool(g["ci95"][1] < -100 * G_MIN), "g_min_pp": 100 * G_MIN,
+                             "t_lb_gt_0": bool(g.get("t_lb95_one_sided", -1e9) > 0), "basis": "block bootstrap (primary); t over blocks alongside"}
     if div:
         cond = {}
-        for s in ("G", "rescue", "damage", "both_succeed", "both_fail", "A", "C", "I", "QB_minus_QQ", "BB_minus_QQ"):
+        for s in COND_STATS:
             X, M = boot.arrays(div, s)
             pt, dr = boot.ratio(X, M)
-            cond[s] = summarise(pt, dr)
+            cond[s] = summarise(pt, dr, boot=boot)
         res["conditional_on_divergence_pp"] = cond
-        res["counts"] = {k: int(sum(u["E"][k] for u in div)) for k in ("rescue", "damage", "both_succeed", "both_fail")}
+        res["counts"] = {k: int(sum(u["E"][k] for u in div)) for k in ("rescue", "damage", "M", "both_succeed", "both_fail")}
         ts = np.array([u["t"] for u in div])
         rel = np.array([u["t"] / max(1, u["n_decisions"] or 1) for u in div])
         res["t_star"] = {"quantiles": {str(q): float(np.quantile(ts, q)) for q in (0.1, 0.25, 0.5, 0.75, 0.9)},
@@ -326,28 +484,34 @@ def breakdown(units: list[dict], boot: Boot, field: str, levels: list[str]) -> d
         sub = [u for u in div if u.get(field) == lv]
         if not sub:
             continue
-        r = {"n_states": len(sub), "counts": {k: int(sum(u["E"][k] for u in sub)) for k in ("rescue", "damage", "both_succeed", "both_fail")}}
-        for s in ("G", "A", "C", "I"):
+        r = {"n_states": len(sub), "counts": {k: int(sum(u["E"][k] for u in sub)) for k in ("rescue", "damage", "M", "both_succeed", "both_fail")}}
+        for s in ("G", "rescue", "damage", "M", "A", "C", "I"):
             X, M = boot.arrays(sub, s)
             pt, dr = boot.ratio(X, M)
-            r[f"{s}_cond_pp"] = summarise(pt, dr)
+            r[f"{s}_cond_pp"] = summarise(pt, dr, boot=boot)
         # contribution to G_all: effect of this type's units, all other units counted as zero
         zu = [{**u, "E": {**u["E"], "G": u["E"]["G"] if (u["div"] and u.get(field) == lv) else 0}} for u in units]
         X, M = boot.arrays(zu, "G")
         pt, dr = boot.task_mean(X, M)
-        r["G_all_contribution_pp"] = summarise(pt, dr)
+        r["G_all_contribution_pp"] = summarise(pt, dr, boot=boot)
         out[lv] = r
     return out
 
 
 def pooled(draws: dict, labels: list[str]) -> dict:
-    """Equal-weight pool over cells (pre-declared), on the shared bootstrap draws."""
+    """Equal-weight pool over cells (pre-declared) on the shared draws: block bootstrap, t over the per-block pooled means
+    (blocks present in every pooled cell), crossed; primary per summarise(). Accepts (pt, draws) pairs from siblings."""
     out = {}
-    for s in ("G", "rescue", "damage", "A", "C", "I"):
-        pts = [draws[l][s][0] for l in labels if l in draws]
-        drs = [draws[l][s][1] for l in labels if l in draws]
-        if pts:
-            out[s] = summarise(float(np.mean(pts)), np.mean(drs, axis=0))
+    for s in ("G", "rescue", "damage", "M", "A", "C", "I", "QB_minus_QQ", "BB_minus_QQ"):
+        vals = [draws[l][s] for l in labels if l in draws and s in draws[l]]
+        if not vals:
+            continue
+        pt = float(np.mean([v[0] for v in vals]))
+        t = crossed = None
+        if all(len(v) >= 5 for v in vals):
+            t = t_interval(np.mean(np.vstack([v[2] for v in vals]), axis=0))
+            crossed = (float(np.mean([v[4] for v in vals])), np.mean([v[3] for v in vals], axis=0))
+        out[s] = summarise(pt, np.mean([v[1] for v in vals], axis=0), t=t, crossed=crossed)
     return out
 
 
@@ -357,6 +521,7 @@ def main():
     ap.add_argument("--cells", nargs="*", default=None)
     ap.add_argument("--include-gate", action="store_true", help="also read analysis/fork/gate (selected states; testing only)")
     ap.add_argument("--B", type=int, default=B_BOOT)
+    ap.add_argument("--split", default="dev", help="dev (default) | holdout (only after the prereg freeze); manifests/fork/splits_v1.json")
     a = ap.parse_args()
     t0 = time.time()
     try:  # tau2 (imported for the telecom user-tool list) logs at INFO on import
@@ -382,11 +547,12 @@ def main():
     if not loaded:
         print(f"analyze_dev: no fork output directories under {ROOTS}{' + gate' if a.include_gate else ''}; nothing to do.")
         return
-    tag = ("gatetest_" if a.include_gate else "") + ("_".join(sorted(a.cells)) if a.cells else "all")
+    tag = ("gatetest_" if a.include_gate else "") + ("" if a.split == "dev" else f"{a.split}_") + ("_".join(sorted(a.cells)) if a.cells else "all")
     script_sha = sha256(__file__)
     files = {k: v for L in loaded for k, v in L["files"].items()}
     fp = hashlib.sha256(json.dumps({"script": script_sha, "snapshot": sha256(a.snapshot), "files": files, "cells": a.cells,
-                                    "gate": a.include_gate, "B": a.B}, sort_keys=True).encode()).hexdigest()[:16]
+                                    "gate": a.include_gate, "B": a.B, "split": a.split, "splits": sha256(SPLITS)},
+                                   sort_keys=True).encode()).hexdigest()[:16]
     OUT.mkdir(parents=True, exist_ok=True)
     for p in sorted(OUT.glob(f"dev_{tag}_*.json")):
         try:
@@ -395,6 +561,7 @@ def main():
                 return
         except Exception:
             continue
+    split_info = split_guard([u for L in loaded for u in L["units"]], a.split, "analyze_dev")
     quarantine = [L["dir"] for L in loaded if L["quarantined"]]
     units, seen, dups = [], set(), 0
     for L in loaded:  # a unit (Q run, domain, task) found in several output dirs is counted once (first dir, sorted)
@@ -407,6 +574,7 @@ def main():
                 continue
             seen.add(k)
             units.append(u)
+    incomplete = mark_incomplete_blocks(units, a.split)
     excluded = [u for u in units if "excluded" in u]
     ok = [u for u in units if "excluded" not in u]
     for u in ok:
@@ -430,10 +598,16 @@ def main():
         for u in excluded:
             if u["model"] == m and u["cell"] == c:
                 ex[u["excluded"].split(":")[0] if u["excluded"].startswith(("search", "branch error")) else u["excluded"]] += 1
+        r["incomplete_blocks"] = sorted(k.split("|", 1)[1] for k in incomplete if k.startswith(f"{m}:{c}|"))
         r["excluded"] = dict(ex)
-        r["coverage"] = {"units_searched": len(cu) + sum(ex.values()), "units_analysed": len(cu), "states": r["n_states"],
-                         "tasks": r["n_tasks"], "blocks": sorted({u["block"] for u in cu}),
-                         "domains": {d: sum(1 for u in cu if u["domain"] == d) for d in sorted({u["domain"] for u in cu})}}
+        allc = [u for u in units if u["model"] == m and u["cell"] == c]
+        r["coverage"] = {"units_found": len(allc), "units_analysed": len(cu), "states": r["n_states"],
+                         "excluded_by_reason": dict(ex), "tasks": r["n_tasks"], "blocks": sorted({u["block"] for u in cu}),
+                         "blocks_found": sorted({u["block"] for u in allc}),
+                         "domains": {d: {"units": sum(1 for u in cu if u["domain"] == d),
+                                         "task_ids": sorted({u["task"].split(":", 1)[1] for u in cu if u["domain"] == d})}
+                                     for d in sorted({u["domain"] for u in allc})},
+                         "source_dirs": sorted({u["dir"] for u in allc})}
         res_cells[lab] = r
     models = sorted({m for m, _ in cells})
     pools = {}
@@ -451,7 +625,11 @@ def main():
         "script": {"path": str(Path(__file__).resolve()), "sha256": script_sha,
                    "git_head": subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()},
         "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "cells_filter": a.cells, "include_gate": a.include_gate,
-        "bootstrap": {"B": a.B, "seed": SEED, "scheme": "tasks, then blocks within task; draws shared by all cells"},
+        "bootstrap": {"B": a.B, "seed": SEED,
+                      "primary": "fixed task pool: statistic per complete shared block; ci95 = block bootstrap if >= 10 blocks else t over block means; both reported (block_boot_ci95, t_ci95)",
+                      "secondary": "generalisation to new tasks: crossed two-way bootstrap, tasks and blocks resampled jointly (crossed_ci95)",
+                      "draws": "shared by all cells (same task ids and nonces), so equal-weight pools are valid"},
+        "split": split_info, "incomplete_blocks": incomplete,
         "thresholds": {"g_min_pp": 100 * G_MIN, "eps_pp": 100 * G_MIN, "sensitivity_pp": 5.0},
         "success_definition": {"retail/airline": "DB success (db_match and user_stop/agent_stop)", "telecom": "official task-basis success (official_reward == 1)"},
         "input_dirs": [L["dir"] for L in loaded], "quarantined_dirs": quarantine, "duplicate_units_dropped": dups,
@@ -469,30 +647,61 @@ def main():
 def markdown(res: dict, jp: Path) -> str:
     def f(x):
         return f"{x['est']:+.1f} [{x['ci95'][0]:+.1f}, {x['ci95'][1]:+.1f}]"
+
+    def fr(x):  # non-negative rates
+        return f"{x['est']:.1f} [{x['ci95'][0]:.1f}, {x['ci95'][1]:.1f}]"
+
+    def tci(x):
+        return f"[{x['t_ci95'][0]:+.1f}, {x['t_ci95'][1]:+.1f}]" if "t_ci95" in x else "n/a"
+
+    def cc(x):
+        return f"[{x['crossed_ci95'][0]:+.1f}, {x['crossed_ci95'][1]:+.1f}]" if "crossed_ci95" in x else "n/a"
     cells = res["cells"]
-    tl = "; ".join(f"{k} G_all {f(v['all_pp']['G'])} pp (states {v['n_states']}/{v['n_units']})" for k, v in cells.items() if "all_pp" in v)
-    L = [f"**TL;DR** Fork development analysis{' (INCLUDES GATE STATES: testing only)' if res['include_gate'] else ''}: {tl}. "
+    tl = "; ".join(f"{k}: r {v['all_pp']['rescue']['est']:.1f}, d {v['all_pp']['damage']['est']:.1f}, M {v['all_pp']['M']['est']:.1f}, "
+                   f"G {f(v['all_pp']['G'])} pp" for k, v in cells.items() if "all_pp" in v)
+    L = [f"**TL;DR** Fork development analysis{' (INCLUDES GATE STATES: testing only)' if res['include_gate'] else ''}, split "
+         f"{res['split']['split']}. Two-sided consequences on the full pool (r rescue, d new damage, M = r + d, G = r - d): {tl}. "
          f"No-op sample {res['noop_sample']['n_pass']}/{res['noop_sample']['n']}; quarantined dirs {len(res['quarantined_dirs'])}.",
          "", f"# Fork development analysis ({res['utc']})", "",
          f"Snapshot `{res['snapshot']['id']}` (sha {res['snapshot']['sha256'][:12]}), script sha {res['script']['sha256'][:12]}, "
-         f"git {res['script']['git_head'][:10]}, fingerprint {res['input_fingerprint']}. Full numbers: `{jp.relative_to(ROOT)}`.",
-         "Units = task x block; percentages in pp; 95% hierarchical bootstrap (tasks, blocks within task), B = "
-         f"{res['bootstrap']['B']}. G_all is the primary endpoint (g_min = eps = 3 pp).", "",
-         "| cell | units | states | G_all | rescue | damage | A | C | I | LB>0 | LB>3pp |", "|---|---|---|---|---|---|---|---|---|---|---|"]
+         f"git {res['script']['git_head'][:10]}, fingerprint {res['input_fingerprint']}, splits {res['split']['manifest_sha256'][:12]}. "
+         f"Full numbers: `{jp.relative_to(ROOT)}`.",
+         "Units = task x block; pp. Primary intervals over complete shared blocks: block bootstrap with >= 10 blocks, else t over block means (both in the JSON); "
+         "secondary: crossed task x block bootstrap (generalisation to new tasks). G_all is the primary endpoint (g_min = eps = 3 pp).", "",
+         "## Two-sided consequences (full pool, one denominator)", "",
+         "| cell | units | states | r | d | M | G (primary) | G t-over-blocks | G crossed |", "|---|---|---|---|---|---|---|---|---|"]
     for k, v in cells.items():
         if "all_pp" not in v:
             continue
         a = v["all_pp"]
-        L.append(f"| {k} | {v['n_units']} | {v['n_states']} | {f(a['G'])} | {a['rescue']['est']:.1f} | {a['damage']['est']:.1f} | "
-                 f"{f(a['A'])} | {f(a['C'])} | {f(a['I'])} | {v['G_all_decision']['lb_gt_0']} | {v['G_all_decision']['lb_gt_gmin']} |")
-    L += ["", "| pool (equal weight) | G_all | A | C | I |", "|---|---|---|---|---|"]
+        L.append(f"| {k} | {v['n_units']} | {v['n_states']} | {fr(a['rescue'])} | {fr(a['damage'])} | {fr(a['M'])} | {f(a['G'])} | {tci(a['G'])} | {cc(a['G'])} |")
+    L += ["", "Conditional on divergence (r, d, M):", ""]
+    for k, v in cells.items():
+        c = v.get("conditional_on_divergence_pp")
+        if c:
+            L.append(f"- {k}: r {fr(c['rescue'])}, d {fr(c['damage'])}, M {fr(c['M'])}, G {f(c['G'])}")
+    L += ["", "## Four-branch decomposition and escalation contrasts (full pool)", "",
+          "| cell | A | C | I | Y_QB-Y_QQ (= C+I) | Y_BB-Y_QQ (= A+C+I) |", "|---|---|---|---|---|---|"]
+    for k, v in cells.items():
+        if "all_pp" in v:
+            a = v["all_pp"]
+            L.append(f"| {k} | {f(a['A'])} | {f(a['C'])} | {f(a['I'])} | {f(a['QB_minus_QQ'])} | {f(a['BB_minus_QQ'])} |")
+    L += ["", "| pool (equal weight) | r | d | M | G | G t-over-blocks | A | C | I |", "|---|---|---|---|---|---|---|---|---|"]
     for k, v in res["pooled"].items():
         if v:
-            L.append(f"| {k} | {f(v['G'])} | {f(v['A'])} | {f(v['C'])} | {f(v['I'])} |")
-    L += ["", "Consequence composition (divergent units: rescue / new damage / both succeed / both fail) and type breakdown:"]
+            L.append(f"| {k} | {fr(v['rescue'])} | {fr(v['damage'])} | {fr(v['M'])} | {f(v['G'])} | {tci(v['G'])} | {f(v['A'])} | {f(v['C'])} | {f(v['I'])} |")
+    L += ["", "## Coverage and sources", "", "| cell | units found | analysed | states | blocks | tasks per domain | excluded by reason | source dirs |",
+          "|---|---|---|---|---|---|---|---|"]
+    for k, v in cells.items():
+        cv = v.get("coverage", {})
+        doms = ", ".join(f"{d} {x['units']} units / {len(x['task_ids'])} tasks" for d, x in cv.get("domains", {}).items())
+        L.append(f"| {k} | {cv.get('units_found')} | {cv.get('units_analysed')} | {cv.get('states')} | {len(cv.get('blocks', []))} "
+                 f"({','.join(cv.get('blocks', [])[:3])}{'...' if len(cv.get('blocks', [])) > 3 else ''}) | {doms} | "
+                 f"{cv.get('excluded_by_reason') or 'none'} | {len(cv.get('source_dirs', []))} |")
+    L += ["", "Consequence composition and type breakdown (divergent units):"]
     for k, v in cells.items():
         if v.get("counts"):
-            L.append(f"- {k}: {v['counts']}; t* median {v['t_star']['quantiles']['0.5']}; excluded {v['excluded'] or 'none'}")
+            L.append(f"- {k}: {v['counts']}; t* median {v['t_star']['quantiles']['0.5']}")
             for t, b in v["by_type"].items():
                 L.append(f"  - {t}: n {b['n_states']}, {b['counts']}, G|type {f(b['G_cond_pp'])}, contribution to G_all {f(b['G_all_contribution_pp'])}")
     return "\n".join(L) + "\n"

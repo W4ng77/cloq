@@ -8,6 +8,10 @@ with all four branches equal to the original outcome (zero effect). Excluded ite
 quarantined task) leave the denominator and are counted per reason; never coded as "no divergence".
 Unit = item (ALFWorld game, BFCL entry); one run (block) per item and cell. G_all (primary) = mean over the full item
 pool; conditional-on-divergence effects are secondary (ratio form).
+Headline (W63): r = P(Y_BQ=1, Y_QQ=0), d = P(Y_BQ=0, Y_QQ=1), M = r + d, G = r - d on one denominator (all items,
+non-divergent = 0), plus r/d/M conditional on divergence; same definitions as analyze_dev.
+ITEM-LEVEL INFERENCE: the external environments have one run (block) per item and cell, so there is no shared-block
+effect to resample; intervals describe item sampling only (unlike the tau2 forks' block-level inference, W63).
 Intervals: percentile bootstrap, B = 2000, seed 20261001, items resampled with replacement within stratum
 (environment x category: alfworld; bfcl_base / miss_param / miss_func / long_context). The draws are shared by all cells
 (the same items are crossed across cells), so equal-weight pools carry valid intervals. g_min = 3 pp.
@@ -156,9 +160,9 @@ def analyse(units, boot, draws=None, label=""):
     g = r["all_pp"]["G"]
     r["G_all_decision"] = {"lb_gt_0": bool(g["lb95_one_sided"] > 0), "lb_gt_gmin": bool(g["lb95_one_sided"] > 100 * G_MIN),
                            "ub_lt_minus_gmin": bool(g["ci95"][1] < -100 * G_MIN), "g_min_pp": 100 * G_MIN}
-    r["counts"] = {k: int(sum(u["E"][k] for u in div)) for k in ("rescue", "damage", "both_succeed", "both_fail")}
+    r["counts"] = {k: int(sum(u["E"][k] for u in div)) for k in ("rescue", "damage", "M", "both_succeed", "both_fail")}
     if div:
-        r["conditional_on_divergence_pp"] = {s: summarise(*boot.mean(*boot.arrays(div, s))) for s in ("G", "A", "C", "I")}
+        r["conditional_on_divergence_pp"] = {s: summarise(*boot.mean(*boot.arrays(div, s))) for s in ("G", "rescue", "damage", "M", "A", "C", "I")}
         r["t_star_median"] = float(np.median([u["t"] for u in div]))
         r["by_type"] = {}
         for tp in TYPES:
@@ -284,19 +288,21 @@ def markdown(res: dict, jp: Path) -> str:
     def f(x):
         return f"{x['est']:+.1f} [{x['ci95'][0]:+.1f}, {x['ci95'][1]:+.1f}]" if x else "n/a"
     cells = res["cells"]
-    tl = "; ".join(f"{k} G_all {f(v['all_pp']['G'])} pp ({v['n_states']}/{v['n_units']} divergent)" for k, v in cells.items() if "all_pp" in v)
-    L = [f"**TL;DR** External-environment fork analysis (fork-ext-v1): {tl}. {res['tau2_comparison']['line']}", "",
+    tl = "; ".join(f"{k}: r {v['all_pp']['rescue']['est']:.1f}, d {v['all_pp']['damage']['est']:.1f}, M {v['all_pp']['M']['est']:.1f}, "
+                   f"G {f(v['all_pp']['G'])} pp ({v['n_states']}/{v['n_units']} divergent)" for k, v in cells.items() if "all_pp" in v)
+    L = [f"**TL;DR** External-environment fork analysis (fork-ext-v1), ITEM-LEVEL inference (one run per item): two-sided "
+         f"consequences on the full pool (r rescue, d new damage, M = r + d, G = r - d): {tl}. {res['tau2_comparison']['line']}", "",
          f"Source: `{jp.relative_to(ROOT)}` (fingerprint {res['input_fingerprint']}, script {res['script']['sha256'][:12]}, "
          f"git {res['script']['git_head'][:10]}). Units = items; pp; 95% bootstrap (items within env x category), B = "
          f"{res['bootstrap']['B']}, seed {res['bootstrap']['seed']}. G = Y_BQ - Y_QQ; A/C/I on L = 1 - Y. g_min = 3 pp.", "",
          f"Quarantined: {res['quarantined_dirs'] or 'none'}. Incomplete (skipped): {len(res['incomplete_dirs'])}. "
          f"Excluded by reason: {res['excluded_by_reason'] or 'none'}.", "",
-         "| env:model:arm | items | divergent | rescue | damage | both succeed | both fail | G_all | A | C | I |",
-         "|---|---|---|---|---|---|---|---|---|---|---|"]
+         "| env:model:arm | items | divergent | r (pp) | d (pp) | M (pp) | both succeed | both fail | G_all | A | C | I |",
+         "|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for k, v in cells.items():
         c, a = v["counts"], v["all_pp"]
-        L.append(f"| {k} | {v['n_units']} | {v['n_states']} ({100 * v['divergence_rate']:.0f}%) | {c['rescue']} | {c['damage']} | "
-                 f"{c['both_succeed']} | {c['both_fail']} | {f(a['G'])} | {f(a['A'])} | {f(a['C'])} | {f(a['I'])} |")
+        L.append(f"| {k} | {v['n_units']} | {v['n_states']} ({100 * v['divergence_rate']:.0f}%) | {f(a['rescue'])} | {f(a['damage'])} | "
+                 f"{f(a['M'])} | {c['both_succeed']} | {c['both_fail']} | {f(a['G'])} | {f(a['A'])} | {f(a['C'])} | {f(a['I'])} |")
     L += ["", "Per category (G_all, pp):", ""]
     for k, v in cells.items():
         if len(v["by_category"]) > 1:

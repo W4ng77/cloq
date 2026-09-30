@@ -10,6 +10,96 @@ Newest first.
 
 ---
 
+## W63 — Fork inference corrected (block-level, crossed secondary), two-sided consequences r/d/M headline, holdout guard (2026-09-30)
+**TL;DR** The GPT-6.1 review of 7528f2e was right that the fork bootstrap resampled nonces independently inside each task, breaking the shared-block dependence. Inference is now over complete shared blocks, with a crossed task × block bootstrap as the new-task secondary. r / d / M (rescue / new damage / either) are the headline next to G.
+
+The substantive reading is unchanged:
+- **Two-sided consequences:** about 16–21% of task × block units change outcome in either direction under W4 and KV4-rot (M), and only 6–8% under KV8. Rescue and damage are of similar size, so G_all stays near 0.
+- **Interval scope:** with 20 complete blocks, the fixed-task-pool intervals are much tighter than before. The crossed (new-task) intervals match the old ones. The old intervals therefore mostly reflected task sampling, not run-to-run noise.
+
+**Changes**
+- **`analyze_dev.Boot`.**
+  - **Primary (fixed task pool):** the statistic per complete shared block, then a block bootstrap (blocks resampled whole) and a t over block means, both reported. `ci95` is the block bootstrap with ≥ 10 blocks (W4 20, KV8 22), else the t interval (stress, telecom and restore cells have 3–6 blocks; a percentile bootstrap over so few clusters is anti-conservative).
+  - **Secondary:** a crossed task × block bootstrap (tasks and blocks resampled jointly; generalisation to new tasks).
+  - **Ratio forms:** block sums; t over per-block ratios.
+  - **Plumbing:** the draws carry their t and crossed information (`Draws`), so every sibling (difficulty, pivot, pivot_arms, restore_eval) reports all three without code changes.
+  - **External environments** (analyze_ext): stated explicitly as item-level inference, since there is one run per item.
+- **Complete blocks only.** A (cell, domain, block) enters when every split task has a unit and no branch is pending. Incomplete blocks are listed and their units excluded; 24 are incomplete in this snapshot, mostly q8 GPTQ-W4 f03–f17 and RTN-W3. This moved q8 GPTQ-W4 Y_BB − Y_QQ from −1.8 to +4.2, because the partial blocks had counted pending divergent units as missing.
+- **Two-sided consequence decomposition.** On one denominator (the full pool, non-divergent = 0): r = P(Y_BQ=1, Y_QQ=0), d = P(Y_BQ=0, Y_QQ=1), M = r + d, G = r − d, plus r, d and M conditional on divergence. Same definitions in analyze_ext.
+- **Holdout boundary.**
+  - `manifests/fork/splits_v1.json` (dev: retail 58, airline 27, telecom 80 with their blocks; holdout: telecom 34, `prereg_sha256` null).
+  - analyze_dev, difficulty, pivot and restore_eval default to `--split dev`, exclude out-of-split units, and abort on any holdout unit unless `--split holdout` with a frozen PREREG_FORK_CONFIRM.md whose sha is recorded.
+  - A per-cell coverage/source table lists units found and analysed, blocks, tasks per domain, exclusions by reason and source directories.
+- **analyze_pivot.**
+  - Three named oracle contrasts: replace the current action only (Y_BQ − Y_QQ); keep Q's action, then BF16 (Y_QB − Y_QQ = C + I); BF16 action and suffix (Y_BB − Y_QQ, the oracle intervention value; q4 KV4-rot +11.4 pp).
+  - The threshold "value" is relabelled an oracle upper-bound proxy, and the policy claim is dropped from the TL;DR.
+  - AUROC intervals follow the new scheme.
+- **FORK_PROTOCOL.**
+  - **§12 (pre-registration draft):** G_all is the only primary. r, d and M are pre-registered secondaries. C + I is the stress-cell escalation endpoint, with BB − QQ as a reference only. Confirmatory strata use only information known at the fork (remaining step budget, persona, task attributes). M1, the C-slope on realised horizon, is exploratory only. The 34-task limit on new-task generalisation is stated.
+  - **§13 amendment 2 (427778a):** the selection interval is the t over the per-block pooled Δ (RTN-W3: 3 blocks), committed before any RTN-W3 pivot outcome.
+  - **§14:** end-to-end escalation evaluation (design only). A frozen rule on Q-visible signals, predicting help, closed loop against a random trigger at matched BF16 budget, a tool-error trigger, always-Q and always-BF16, on new nonces. Cost ≈ 8 GPU-h for q4 KV4-rot and ≈ 110–135 GPU-h with RTN-W3 q4/q8.
+
+**Before / after** (same snapshot 20260930T2115Z; before = code at the W61 head with the task-hierarchical bootstrap; the ext rows also differ because new external outputs arrived between the runs):
+
+| headline | before (7528f2e; task-hierarchical bootstrap) | after: primary (fixed task pool, complete blocks) | after: crossed (new tasks) | after: r / d / M (pp) |
+|---|---|---|---|---|
+| q4:awq_w4 G_all (1699 units, K=20) | -0.3 [-6.0, +5.1] | -0.3 [-2.2, +1.6] (block boot) | [-6.0, +5.3] | 9.8 / 10.1 / 20.0 |
+| q4:gptq_w3 G_all (255 units, K=3) | -1.2 [-10.0, +7.5] | -1.2 [-7.0, +4.7] (t) | [-9.4, +7.1] | 9.0 / 10.2 / 19.2 |
+| q4:gptq_w4_d1 G_all (1700 units, K=20) | -1.9 [-6.5, +2.8] | -1.9 [-3.8, +0.1] (block boot) | [-6.6, +2.7] | 6.8 / 8.7 / 15.5 |
+| q4:kvq_int4_rot G_all (255 units, K=3) | +4.7 [-4.4, +13.9] | +4.7 [-4.1, +13.5] (t) | [-3.5, +12.9] | 11.8 / 7.1 / 18.8 |
+| q4:kvq_int8 G_all (1870 units, K=22) | -0.3 [-2.9, +2.2] | -0.3 [-1.7, +1.0] (block boot) | [-3.0, +2.3] | 3.1 / 3.4 / 6.5 |
+| q4:rtn_w3 G_all | n/a | no complete block yet (6 incomplete) | | |
+| q8:awq_w4 G_all (1700 units, K=20) | +2.1 [-2.2, +7.0] | +1.9 [-0.6, +4.4] (block boot) | [-3.8, +8.1] | 11.4 / 9.5 / 20.9 |
+| q8:gptq_w4_d1 G_all (1275 units, K=15) | +3.2 [-1.6, +8.3] | +2.8 [+1.0, +4.8] (block boot) | [-3.1, +9.4] | 10.7 / 7.8 / 18.5 |
+| q8:kvq_int4_rot G_all (255 units, K=3) | +3.1 [-5.9, +12.3] | +3.1 [-14.5, +20.8] (t) | [-7.1, +13.7] | 11.8 / 8.6 / 20.4 |
+| q8:kvq_int8 G_all (1870 units, K=22) | +0.5 [-2.1, +3.2] | +0.6 [-0.4, +1.6] (block boot) | [-1.9, +3.0] | 4.3 / 3.7 / 8.1 |
+| KV8:q4:pooled_equal_weight G | -0.3 [-2.9, +2.2] | -0.3 [-1.7, +1.0] | [-3.0, +2.3] | 3.1 / 3.4 / 6.5 |
+| KV8:q8:pooled_equal_weight G | +0.5 [-2.1, +3.2] | +0.6 [-0.4, +1.6] | [-1.9, +3.0] | 4.3 / 3.7 / 8.1 |
+| KV8:all:pooled_equal_weight G | +0.1 [-1.8, +2.0] | +0.1 [-0.9, +1.1] | [-1.9, +2.1] | 3.7 / 3.6 / 7.3 |
+| W4:q4:pooled_equal_weight G | -1.1 [-4.9, +2.6] | -1.1 [-2.7, +0.5] | [-5.0, +2.7] | 8.3 / 9.4 / 17.7 |
+| W4:q8:pooled_equal_weight G | +2.7 [-0.6, +6.1] | +2.4 [+0.9, +4.0] | [-1.7, +6.7] | 11.0 / 8.7 / 19.7 |
+| W4:all:pooled_equal_weight G | +0.8 [-1.7, +3.3] | +0.6 [-0.4, +1.7] | [-2.2, +3.4] | 9.7 / 9.0 / 18.7 |
+| stress:q4:pooled_equal_weight G | +1.8 [-5.2, +8.2] | +1.8 [-0.2, +4.3] | [-4.2, +7.6] | 10.4 / 8.6 / 19.0 |
+| stress:q8:pooled_equal_weight G | +3.1 [-5.9, +12.3] | +3.1 [-14.5, +20.8] | [-7.1, +13.7] | 11.8 / 8.6 / 20.4 |
+| stress:all:pooled_equal_weight G | +2.2 [-3.6, +7.8] | +2.2 [-1.2, +6.4] | [-3.5, +8.5] | 10.8 / 8.6 / 19.5 |
+| q4:awq_w4 Y_BB−Y_QQ (oracle BF16 action+suffix) | -0.6 [-6.2, +4.7] | -0.6 [-2.8, +1.4] | [-6.3, +4.8] | |
+| q4:awq_w4 AUROC −first-token margin | 0.65 [0.59, 0.70] | 0.65 [0.63, 0.67] | [0.593, 0.701] | |
+| q4:gptq_w3 Y_BB−Y_QQ (oracle BF16 action+suffix) | +1.2 [-7.5, +9.8] | +1.2 [-1.7, +4.1] | [-6.3, +8.6] | |
+| q4:gptq_w3 AUROC −first-token margin | 0.60 [0.52, 0.67] | 0.60 [0.51, 0.68] | [0.528, 0.665] | |
+| q4:gptq_w4_d1 Y_BB−Y_QQ (oracle BF16 action+suffix) | -1.6 [-6.6, +3.0] | -1.6 [-3.4, +0.1] | [-6.5, +2.9] | |
+| q4:gptq_w4_d1 AUROC −first-token margin | 0.62 [0.56, 0.68] | 0.62 [0.60, 0.63] | [0.557, 0.67] | |
+| q4:kvq_int4_rot Y_BB−Y_QQ (oracle BF16 action+suffix) | +11.4 [+2.7, +20.8] | +11.4 [+9.7, +13.1] | [+2.7, +20.0] | |
+| q4:kvq_int4_rot AUROC −first-token margin | 0.61 [0.49, 0.76] | 0.61 [0.37, 0.82] | [0.508, 0.731] | |
+| q4:kvq_int8 Y_BB−Y_QQ (oracle BF16 action+suffix) | -0.4 [-3.0, +2.4] | -0.4 [-1.4, +0.7] | [-2.9, +2.4] | |
+| q4:kvq_int8 AUROC −first-token margin | 0.71 [0.65, 0.76] | 0.71 [0.68, 0.73] | [0.645, 0.762] | |
+| q8:awq_w4 Y_BB−Y_QQ (oracle BF16 action+suffix) | +1.1 [-3.9, +5.8] | +0.5 [-1.4, +2.5] | [-5.7, +6.8] | |
+| q8:awq_w4 AUROC −first-token margin | 0.62 [0.56, 0.68] | 0.63 [0.62, 0.64] | [0.572, 0.69] | |
+| q8:gptq_w4_d1 Y_BB−Y_QQ (oracle BF16 action+suffix) | -1.8 [-8.1, +4.1] | +4.2 [+2.0, +6.1] | [-2.6, +11.3] | |
+| q8:gptq_w4_d1 AUROC −first-token margin | 0.68 [0.63, 0.74] | 0.69 [0.67, 0.70] | [0.629, 0.744] | |
+| q8:kvq_int4_rot Y_BB−Y_QQ (oracle BF16 action+suffix) | +4.3 [-4.3, +13.7] | +4.3 [-15.1, +23.8] | [-5.9, +15.3] | |
+| q8:kvq_int4_rot AUROC −first-token margin | 0.68 [0.62, 0.74] | 0.68 [0.60, 0.76] | [0.616, 0.738] | |
+| q8:kvq_int8 Y_BB−Y_QQ (oracle BF16 action+suffix) | +1.1 [-1.5, +3.8] | +1.1 [+0.0, +2.3] | [-1.6, +3.7] | |
+| q8:kvq_int8 AUROC −first-token margin | 0.64 [0.58, 0.70] | 0.64 [0.62, 0.66] | [0.579, 0.697] | |
+| q4:awq_w4 C-slope on realised horizon (EXPLORATORY, pp/10 dec.) | -0.163 [-3.53, 2.515] | -0.16 [-0.87, +0.53] | [-3.319, 2.607] | |
+| q4:gptq_w3 C-slope on realised horizon (EXPLORATORY, pp/10 dec.) | -3.676 [-11.888, 11.479] | -3.68 [-12.87, +5.51] | [-11.543, 10.283] | |
+| q4:gptq_w4_d1 C-slope on realised horizon (EXPLORATORY, pp/10 dec.) | -0.837 [-5.328, 1.252] | -0.73 [-2.15, +0.52] | [-5.812, 1.769] | |
+| q4:kvq_int4_rot C-slope on realised horizon (EXPLORATORY, pp/10 dec.) | -0.862 [-6.963, 11.302] | -1.47 [-43.65, +39.41] | [-10.106, 5.424] | |
+| q4:kvq_int8 C-slope on realised horizon (EXPLORATORY, pp/10 dec.) | -0.522 [-5.004, 1.177] | -0.52 [-1.71, +0.32] | [-5.183, 1.158] | |
+| q8:awq_w4 C-slope on realised horizon (EXPLORATORY, pp/10 dec.) | 0.12 [-1.495, 1.759] | +0.12 [-0.81, +1.08] | [-1.886, 2.185] | |
+| q8:gptq_w4_d1 C-slope on realised horizon (EXPLORATORY, pp/10 dec.) | -0.368 [-2.587, 1.707] | -0.11 [-1.62, +1.70] | [-2.762, 2.799] | |
+| q8:kvq_int4_rot C-slope on realised horizon (EXPLORATORY, pp/10 dec.) | -0.815 [-5.861, 4.431] | -0.81 [-3.06, +1.29] | [-6.536, 3.892] | |
+| q8:kvq_int8 C-slope on realised horizon (EXPLORATORY, pp/10 dec.) | -0.064 [-2.234, 1.963] | +0.24 [-0.89, +1.40] | [-1.928, 2.725] | |
+| ext W4:alfworld:pooled_equal_weight G (item-level) | -3.7 [-9.7, +1.9] | -3.7 [-9.7, +1.9] | item-level only | 9.7 / 13.4 / 23.1 |
+| ext W4:bfcl:pooled_equal_weight G (item-level) | -0.5 [-1.7, +0.8] | -0.5 [-1.7, +0.8] | item-level only | 4.2 / 4.7 / 8.9 |
+| ext W4:all_envs:pooled_equal_weight G (item-level) | -1.8 [-4.2, +0.6] | -1.8 [-4.2, +0.6] | item-level only | 6.4 / 8.2 / 14.6 |
+| ext stress:alfworld:pooled_equal_weight G (item-level) | +3.7 [-1.5, +9.7] | +3.7 [-1.5, +9.7] | item-level only | 6.7 / 3.0 / 9.7 |
+| ext stress:bfcl:pooled_equal_weight G (item-level) | +1.1 [-1.0, +3.3] | +0.8 [-0.4, +2.0] | item-level only | 2.9 / 2.0 / 4.9 |
+| ext stress:all_envs:pooled_equal_weight G (item-level) | +2.4 [-0.3, +5.4] | +1.8 [+0.0, +3.8] | item-level only | 4.1 / 2.3 / 6.5 |
+
+Evidence: before `analysis/fork/out/{dev_all_20260930T213234Z,difficulty_20260930T213530Z,pivot_20260930T213919Z,restore_eval_20260930T214332Z,ext_20260930T214706Z}.{json,md}`;
+after `analysis/fork/out/{dev_all_20260930T220835Z,difficulty_20260930T220917Z,pivot_20260930T221604Z,restore_eval_20260930T220627Z,ext_20260930T221613Z,pivot_arms_20260930T220652Z}.{json,md}`;
+code `analysis/fork/analyze_{dev,difficulty,pivot,pivot_arms,restore_eval,ext}.py`; `manifests/fork/splits_v1.json`; `docs/insights/FORK_PROTOCOL.md` §12–§14.
+
 ## W64 — GPT-6.1 code review: fork-aligned success NI, storage-matched restoration baseline, AWQ-W3 baselines (2026-09-30)
 **TL;DR** Three fixes from the GPT-6.1 code review.
 

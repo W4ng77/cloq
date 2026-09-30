@@ -26,7 +26,8 @@ Behavioural endpoint (W50; primary in the W4 equivalence regime, co-primary with
     wording ignored) compared along the episode. The token level saturates at W4 (any weight change alters some token in
     the first decisions), so the action level is the informative decision-level measure; it is not a same-state
     comparison after the first wording difference.
-Intervals come from the hierarchical bootstrap of analysis/fork/analyze_dev.py (tasks, then blocks within task; B = 2000;
+Intervals come from analysis/fork/analyze_dev.Boot (W63: blocks resampled whole; t over block means with < 10 blocks;
+crossed task x block bootstrap alongside; B = 2000;
 seed 20261001; draws shared by every arm of a population, so arm contrasts are paired). Telecom cells (W53,
 a6k2_pert_<m>_tel_<cell>_<arm>_<blk>, paired with a6k2_<m>_tel_<cell>_<blk> and a6k2_<m>_tel_bfpair_<blk>) get their own
 bootstrap population and a persona breakdown (Hard / Easy / None from the task id).
@@ -53,7 +54,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from analyze_dev import Boot, SEED, B_BOOT, sha256, success, summarise  # noqa: E402
+from analyze_dev import Boot, SEED, B_BOOT, SPLITS, sha256, split_guard, success, summarise  # noqa: E402
 
 OUT = ROOT / "analysis/fork/out"
 ARM_RE = re.compile(r"^a6k2_pert_(q\d+)_((?:tel_)?(?:gptq_w4_d1|awq_w4|gptq_w3|rtn_w3))_(.+)_(f\d\d|q\d+)$")
@@ -206,6 +207,7 @@ def main():
     ap.add_argument("--snapshot", required=True)
     ap.add_argument("--models", nargs="*", default=None)
     ap.add_argument("--B", type=int, default=B_BOOT)
+    ap.add_argument("--split", default="dev", help="W63 holdout boundary (manifests/fork/splits_v1.json)")
     a = ap.parse_args()
     t0 = time.time()
     snap = json.load(open(a.snapshot))
@@ -250,9 +252,14 @@ def main():
                         u["D"] = {"n_B": len(sb), "arm": first_div(dec["arm"][0][task], sb), "Q": first_div(dec["Q"][0][task], sb)}
                         u["A"] = {"n_B": len(sb), "arm": first_act_div(dec["arm"][0][task], sb), "Q": first_act_div(dec["Q"][0][task], sb)}
                     units[(model, cell, arm)].append(u)
+    split_info = split_guard([dict(u, run_id=f"{k[0]}:{k[1]}:{k[2]}") for k, v in units.items() for u in v], a.split, "analyze_restore_eval")
+    for k in list(units):  # split_guard marks out-of-split units on copies; re-apply the membership on the originals
+        man = json.load(open(SPLITS))["splits"][a.split]["tasks"]
+        units[k] = [u for u in units[k] if u["task"].split(":", 1)[1] in {str(t) for t in man.get(u["domain"], [])}]
     script_sha = sha256(__file__)
     fp = hashlib.sha256(json.dumps({"script": script_sha, "dev": sha256(ROOT / "analysis/fork/analyze_dev.py"),
-                                    "snapshot": sha256(a.snapshot), "files": files, "models": a.models, "B": a.B},
+                                    "snapshot": sha256(a.snapshot), "files": files, "models": a.models, "B": a.B,
+                                    "split": a.split, "splits": sha256(SPLITS)},
                                    sort_keys=True).encode()).hexdigest()[:16]
     OUT.mkdir(parents=True, exist_ok=True)
     for p in sorted(OUT.glob("restore_eval_*.json")):
@@ -438,7 +445,8 @@ def main():
            "script": {"path": str(Path(__file__).resolve()), "sha256": script_sha,
                       "git_head": subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()},
            "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-           "bootstrap": {"B": a.B, "seed": SEED, "scheme": "tasks, then blocks within task; draws shared by all arms"},
+           "bootstrap": {"B": a.B, "seed": SEED, "scheme": "analyze_dev.Boot (W63): complete shared blocks; ci95 = block bootstrap if >= 10 blocks else t over block means (restore arms have 3 blocks: t is primary); crossed task x block bootstrap (crossed_ci95) alongside; draws shared by all arms"},
+           "split": split_info,
            "success_definition": {"retail/airline": "DB success", "telecom": "official task-basis success"},
            "arms": res_arms, "compensation": compensation, "storage_matched": storage, "skipped": skipped, "input_files": files, "seconds": round(time.time() - t0, 1)}
     utc = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
@@ -451,7 +459,7 @@ def main():
          f"{sum(v['n_units'] for v in res_arms.values())} paired units; {len(skipped)} run-domains skipped. Snapshot {res['snapshot']['id']}.",
          "Primary damage regime: RTN-W3 (q3-q5), success and behaviour co-primary; W4 cells: behaviour primary; GPTQ-W3: "
          "secondary (compensation effect).",
-         "", f"# Restoration closed-loop arms ({res['utc']})", "", f"Full numbers: `{jp.relative_to(ROOT) if jp.is_relative_to(ROOT) else jp}`. pp; 95% hierarchical bootstrap.", "",
+         "", f"# Restoration closed-loop arms ({res['utc']})", "", f"Full numbers: `{jp.relative_to(ROOT) if jp.is_relative_to(ROOT) else jp}`. pp; primary 95% interval over complete shared blocks (t over block means with < 10 blocks), crossed task x block alongside (JSON).", "",
          "| arm | units | Q | arm | BF16 | arm-Q | BF16-Q | gap closed | turnover vs Q (fix/break) |", "|---|---|---|---|---|---|---|---|---|"]
     for k, v in res_arms.items():
         p = v["pp"]
