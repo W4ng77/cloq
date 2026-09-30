@@ -107,6 +107,36 @@ For t = 0, 1, … along Q's decisions (`fork_driver.search_task`):
   lives inside one engine process, so no KV or prefix cache is ever shared across weights. Per-server
   `vllm:prefix_cache_*` counters are recorded at the start and end.
 - The simulator is the node's port 8000 or `queue/USER_BASE.<node>` (same model and canary on every node).
+- **Per-role serving configuration** (fix of the W34 bug: before it, `run_fork` ignored `serve_env`/`serve_extra`, so
+  a KV- or activation-quantized Q would have been served unquantized; no such fork had run). Code: `scripts/a6000/fork_serve.py`.
+  - **Roles.** A task gives each role in full: `task["B"]`, `task["Q"]` = `{"ckpt", "serve_env", "serve_extra"}`. The legacy
+    `q_ckpt`/`b_ckpt` map to empty serve_env/extra.
+  - **Launch.** Each role's server gets the model env, then its serve_env on top, and serve_extra after the fixed vLLM
+    args, as `run_eval` does.
+  - **Canary.** The BF16 reference canary is checked only for the plain BF16 path; hooked or extra-arg servers are a
+    different flavour by design, as in run_eval.
+  - **Recorded per role** (`logs/tasks/<id>.servers.json` and the gate output `servers`): full launch args, serve_env,
+    W/A/K/V bits, hook version (sha256 of `scripts/a6000/pyhooks/*.py`), compile-cache namespace (`kvq_b<b>_r<rot>_<which>`
+    or default), hook coverage, weights identity, and `effective_config_sha` (the hash of all of these plus model,
+    max_model_len and frozen numerics env; not GPU, port or gpu_util).
+  - **Same configuration** means equal `effective_config_sha`, never the same weight path. Same config ⇒ canaries must be
+    equal. A pure-KV Q shares B's weights (built once) but runs its own server with its own config hash.
+    `expect_same_numerics` / `expect_distinct_numerics` assert canary equality or inequality.
+  - **Hook coverage.** The KV hook prints one `hooked attention` line per Attention instance built in the engine
+    process (added to `pyhooks/cloq_kvq.py`; model-construction time only, numerics unchanged). A hooked role fails at
+    startup unless the patch is installed and every decoder layer (config `num_hidden_layers`) is hooked.
+  - **Acceptance tasks (q4, 1 GPU).**
+    - `fork_accept_kv16_bridge_q4`: KV16 through the hook must equal the plain BF16 path, with the same canary and four
+      branches equal to the BF16 original.
+    - `fork_accept_kvq_q4`: pure-KV Q (INT4 + Hadamard) vs plain BF16 B on distinct servers with distinct canaries; gate
+      (a)(c)(d)(e) under the hooked config.
+    - `fork_accept_kvq_same_q4`: both handles on the hooked config; four-branch no-intervention agreement.
+- **GPU sharing.** Only one worker owns a GPU. With `gpus: 1` that single fork worker hosts both B and Q (GPU_UTIL 0.44
+  each). Two independent workers must never share a card (`stop_server` kills every process on its GPUs, and the runner
+  allocates whole cards). The 1-GPU B+Q layout ran the q4 gate at concurrency 8 (mean prompt 7.3k tokens) with no
+  failure.
+- **Counting.** Replicate blocks are complete shared-nonce blocks (existing q3–q5 + new f01–f17 = 20 per cell,
+  `manifests/fork/dev_blocks_v1.json`), not queue jobs.
 
 ## 6. State manifest (machine-readable; one JSON file per state)
 

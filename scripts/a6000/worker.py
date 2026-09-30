@@ -373,11 +373,13 @@ def run_fork(task, args, st: Status):
     log = open(logdir / f"{task['id']}.log", "a")
     log.write(f"\n=== {time.ctime()} {socket.gethostname()} gpus={args.gpus} port={args.port} (fork)\n")
     log.flush()
-    q_ck, b_ck = task["q_ckpt"], task.get("b_ckpt", {"kind": "bf16"})
-    same = q_ck == b_ck
+    import fork_serve as FS  # per-role serving configs (scripts/a6000/fork_serve.py)
+    cfg = {r: FS.role_cfg(task, r) for r in ("B", "Q")}
+    q_ck, b_ck = cfg["Q"]["ckpt"], cfg["B"]["ckpt"]
+    same_w = q_ck == b_ck  # same weights spec: build once (the configurations may still differ, e.g. pure-KV Q)
     st.set("quantize" if q_ck["kind"] in ("gptq", "awq") else "setup", f"fork: build Q {q_ck['kind']}")
     q_path, q_meta = build_ckpt({"id": task["id"] + "_Q", "model": task["model"], "ckpt": q_ck}, env, gpus, scratch, log)
-    b_path, b_meta = (q_path, q_meta) if same else build_ckpt({"id": task["id"] + "_B", "model": task["model"], "ckpt": b_ck}, env, gpus, scratch, log)
+    b_path, b_meta = (q_path, q_meta) if same_w else build_ckpt({"id": task["id"] + "_B", "model": task["model"], "ckpt": b_ck}, env, gpus, scratch, log)
     one_gpu = len(gpus) == 1
     plan = {"B": (gpus[0], args.port + 100, b_path, b_ck), "Q": (gpus[-1], args.port + 200, q_path, q_ck)}
     servers, procs = {}, {}
@@ -388,9 +390,12 @@ def run_fork(task, args, st: Status):
             senv = dict(env)
             if one_gpu:
                 senv["GPU_UTIL"] = str(task.get("gpu_util", 0.44))
-            slog = open(logdir / f"{task['id']}.{role}.vllm.log", "a")
-            procs[role] = subprocess.Popen([str(ROOT / "scripts/a6000/serve.sh"), g, str(port), path, "agent", str(AGENT_MAXLEN)],
-                                           env=senv, stdout=slog, stderr=subprocess.STDOUT, start_new_session=True)
+            senv.update(cfg[role]["serve_env"])  # same semantics as run_eval: the role's serve_env over the model env
+            launch = [str(ROOT / "scripts/a6000/serve.sh"), g, str(port), path, "agent", str(AGENT_MAXLEN), *cfg[role]["serve_extra"]]
+            lp = logdir / f"{task['id']}.{role}.vllm.log"
+            off = lp.stat().st_size if lp.exists() else 0
+            slog = open(lp, "a")
+            procs[role] = subprocess.Popen(launch, env=senv, stdout=slog, stderr=subprocess.STDOUT, start_new_session=True)
             t0 = time.time()
             while not healthy(port):
                 if procs[role].poll() is not None:
@@ -398,19 +403,36 @@ def run_fork(task, args, st: Status):
                 if time.time() - t0 > 1800:
                     raise RuntimeError(f"fork {role} server did not come up in 30 min")
                 time.sleep(5)
+            with open(lp, errors="replace") as fh:
+                fh.seek(off)
+                cov = FS.hook_coverage(fh.read(), cfg[role], FS.num_layers(MODELS[task["model"]], path))
             servers[role] = {"gpu": g, "port": port, "pid": procs[role].pid, "ckpt": ck, "path": path,
-                             "gpu_util": senv.get("GPU_UTIL", "0.90"), "canary": canary(port, task["model"])}
+                             "serve_env": cfg[role]["serve_env"], "serve_extra": cfg[role]["serve_extra"], "launch_args": launch[1:],
+                             "gpu_util": senv.get("GPU_UTIL", "0.90"), "hook_coverage": cov, "canary": canary(port, task["model"])}
+            if cov is not None and not cov["ok"]:
+                raise RuntimeError(f"fork {role}: hook coverage failed {cov}")
         st.set("check", "fork: canaries")
-        if b_ck["kind"] == "bf16":  # BF16 servers must be bit-identical to every other BF16 server of the model (W3)
-            check_canary(plan["B"][1], task["model"], "agent")
-            servers["B"]["canary_ref_ok"] = True
-        if same and servers["B"]["canary"] != servers["Q"]["canary"]:
-            raise RuntimeError(f"same checkpoint, different canaries: {servers['B']['canary']} vs {servers['Q']['canary']}")
-        for role, path in (("Q", q_path),) + ((("B", b_path),) if not same else ()):
+        for role, path in (("Q", q_path),) + ((("B", b_path),) if not same_w else ()):
             if path.startswith(str(scratch)):
                 servers[role]["ckpt_sha256"] = ckpt_sha(path)
-        if same:
+        if same_w:
             servers["B"]["ckpt_sha256"] = servers["Q"].get("ckpt_sha256")
+        for role in ("B", "Q"):
+            eff = FS.effective_config(cfg[role], MODELS[task["model"]], servers[role].get("ckpt_sha256"), AGENT_MAXLEN, env)
+            servers[role]["effective_config"] = eff
+            servers[role]["effective_config_sha"] = FS.config_hash(eff)
+        same_cfg = servers["B"]["effective_config_sha"] == servers["Q"]["effective_config_sha"]
+        servers["same_effective_config"] = same_cfg
+        for role in ("B", "Q"):  # BF16 reference canary only for the plain BF16 path (as run_eval: hooks/extra = other flavour)
+            c = cfg[role]
+            if c["ckpt"]["kind"] == "bf16" and not c["serve_extra"] and not FS.hooked(c):
+                check_canary(plan[role][1], task["model"], "agent")
+                servers[role]["canary_ref_ok"] = True
+        if (same_cfg or task.get("expect_same_numerics")) and servers["B"]["canary"] != servers["Q"]["canary"]:
+            raise RuntimeError(f"same effective config / expected same numerics, different canaries: "
+                               f"{servers['B']['canary']} vs {servers['Q']['canary']}")
+        if task.get("expect_distinct_numerics") and servers["B"]["canary"] == servers["Q"]["canary"]:
+            raise RuntimeError("roles expected to differ numerically share a canary (quantization hook inactive?)")
         for path in {q_path, b_path}:
             if path.startswith(str(scratch)):
                 for f in Path(path).glob("*.safetensors"):

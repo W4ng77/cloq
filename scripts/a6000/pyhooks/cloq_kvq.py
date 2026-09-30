@@ -101,5 +101,17 @@ def install(mod):
 
     Attention.forward = forward
     Attention._cloq_kvq = TAG
+    # Coverage record (fork acceptance, docs/insights/FORK_PROTOCOL.md §5): one line per Attention instance built in this
+    # process, at model construction (plain Python, before compile; numerics unaffected).
+    orig_init = Attention.__init__
+    count = [0]
+
+    def __init__(self, *a, **k):
+        orig_init(self, *a, **k)
+        count[0] += 1
+        print(f"[cloq_kvq] pid={os.getpid()} hooked attention #{count[0]} type={getattr(self, 'attn_type', None)} "
+              f"prefix={k.get('prefix', '')}", file=sys.stderr, flush=True)
+
+    Attention.__init__ = __init__
     print(f"[cloq_kvq] pid={os.getpid()} wrapped {mod.__name__}.Attention.forward: bits={BITS} rot={int(ROT)} "
           f"which={WHICH} cache_root={os.environ.get('VLLM_CACHE_ROOT')}", file=sys.stderr, flush=True)
