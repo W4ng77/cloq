@@ -135,6 +135,20 @@ For t = 0, 1, … along Q's decisions (`fork_driver.search_task`):
     - `fork_accept_kvq_q4`: pure-KV Q (INT4 + Hadamard) vs plain BF16 B on distinct servers with distinct canaries; gate
       (a)(c)(d)(e) under the hooked config.
     - `fork_accept_kvq_same_q4`: both handles on the hooked config; four-branch no-intervention agreement.
+- **Derived checkpoints (restore/resid, `scripts/a6000/derived.py`, W39-pert).** Per role, the same canary rules as
+  run_eval, recorded in `servers.<role>.derived.canary`:
+  - an equals-BF16 build must reproduce the BF16 reference;
+  - an equals-Q build must reproduce the per-base reference `canary_agentq_<base>`;
+  - every tag must reproduce its own `canary_derived_<tag>`.
+
+  For restoration forks, the Q role is `resid` α=1 or `restore` arm `none`, so Q and every arm come from the same cached
+  base (`ckpt_cache/base`).
+- **Activation hook (`cloq_aq`).** A bits come from `CLOQ_AQ_BITS`. Coverage: with bits < 16 the number of quantized linear
+  modules in the engine process must equal len(`CLOQ_AQ_ONLY`) × layers. The hook-reported compile-cache roots are recorded.
+- **Allocation guard.** q8 needs one GPU per server; two 8B servers do not fit one A6000 at max_len 33792.
+  `fork_gate_q8_telecom_iso` first failed this way on node006, whose runner (job 49642, pre-424df02) ignores
+  `task["gpus"]`. `run_fork` now refuses a wrong allocation before building. The dev generator pins q8 tasks to
+  node004/005/007.
 - **GPU sharing.** Only one worker owns a GPU. With `gpus: 1` that single fork worker hosts both B and Q (GPU_UTIL 0.44
   each). Two independent workers must never share a card (`stop_server` kills every process on its GPUs, and the runner
   allocates whole cards). The 1-GPU B+Q layout ran the q4 gate at concurrency 8 (mean prompt 7.3k tokens) with no
