@@ -108,7 +108,7 @@ def main():
                         cmd = an["cmd"].replace("{snapshot}", sp)
                         t0 = time.time()
                         try:
-                            r = subprocess.run(["nice", "-n", "10", "bash", "-c", cmd], cwd=ROOT, capture_output=True, text=True, timeout=TIMEOUT)
+                            r = subprocess.run(["nice", "-n", "10", "bash", "-c", "source scripts/a6000/env.sh >/dev/null 2>&1; export PYTHONPATH=$PWD:${PYTHONPATH:-}; " + cmd], cwd=ROOT, capture_output=True, text=True, timeout=TIMEOUT)
                             rc, tail = r.returncode, (r.stdout + r.stderr)[-1500:]
                         except subprocess.TimeoutExpired:
                             rc, tail = -1, "timeout"
