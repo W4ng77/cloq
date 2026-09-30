@@ -10,6 +10,25 @@ Newest first.
 
 ---
 
+## W56 — node003 rebooted; node001 NFS stalls, drained (2026-09-30 09:45 PDT)
+**TL;DR** Two infrastructure problems appeared within minutes of each other, around 08:40.
+
+**node003 rebooted unexpectedly** (Slurm reason, 08:48; munge socket errors in the log).
+- The runner got SIGTERM at 08:40. It requeued its running tasks, and other nodes picked them up. Nothing was orphaned.
+- Job 49694 was requeued by Slurm and is now PENDING (ReqNodeNotAvail). It restarts by itself when node003 returns.
+- The cluster is down 6 GPUs (40 usable).
+
+**node001 NFS client stalls.**
+- Processes are stuck in `rpc_wait_bit_killable`: vLLM startup, the GPTQ build, even the runner.
+- Metadata access takes 2.1 s on node001, versus 0.2–0.5 s on the other nodes. Direct reads run at 173 MB/s, versus 421 MB/s on node004.
+- Three fork/pivot tasks failed with "B server did not come up in 30 min", with an empty vLLM log. All were requeued.
+- `queue/DRAIN.node001` = 2–7 stops new tasks there. Running tasks finish, and node001's simulator (GPUs 0,1) keeps serving.
+- To undo: delete the file once node001's NFS latency is normal again.
+
+**Monitor:** it now also reports job state changes. The old one missed RUNNING→PENDING because the job id stayed in squeue.
+
+Evidence: `sinfo -N -n node003`, `logs/node_node003_49694.out`, `logs/node_node001_49727.out`, the srun/dd timings in this session, `logs/tasks/{fork_ext_dev_q8_gptq_w3_bfcl_miss_param,pivot_q4_gptq_w3_rand_attn_s1__rand_mlp_s1,pivot_q4_gptq_w4_d1_rand_attn_s1__rand_mlp_s1}.*`.
+
 ## W55 — Pivot-time restoration: detection (CPU), arm screening queued, step 3 gated by a pre-declared rule (2026-09-30)
 **TL;DR** The pivot (the first semantic divergence) is only moderately detectable from Q's own uncertainty (AUROC 0.60–0.73), and no escalation value is distinguishable from zero yet. Pivot-arm screening (32 tasks, ≈ 26 GPU-h) is queued. Step 3 will run only if the rule fixed in FORK_PROTOCOL §13 selects an arm.
 - **Step 1: `analysis/fork/analyze_pivot.py`** (EXPLORATORY; registrable as `python analysis/fork/analyze_pivot.py --snapshot {snapshot}`).
