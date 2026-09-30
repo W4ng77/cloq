@@ -1,0 +1,607 @@
+"""Fork driver (protocol fork-v1): identity checks, divergence search, fork branches and the engineering gate.
+
+Runs inside a worker task of kind "fork" (scripts/a6000/worker.py::run_fork), which builds the checkpoints, serves B
+and Q on two separate vLLM servers, passes their URLs, and stops them afterwards. The CPU-only restoration check
+(`cpucheck`) needs no server. Protocol: docs/insights/FORK_PROTOCOL.md; library: cloq/fork.py.
+
+modes (task["fork"]["mode"]):
+  gate       (a) no-op Q->Q and B->B, (c) order/concurrency isolation and save/load hashes, (d) budget accounting,
+             (e) re-prefill after a controller switch, on states from a divergence search over the q_blocks.
+  gate_same  (b) B and Q handles on two servers of the SAME checkpoint: all four branches must agree.
+  search     divergence search only (states + search log), for development forks.
+  branches   BB/BQ/QB (+ optional QQ no-op sample) on saved states.
+usage:
+  python scripts/a6000/fork_driver.py --task <task.json> --b-base URL --q-base URL --user-base URL --servers <json>
+  python scripts/a6000/fork_driver.py --cpucheck --block RUN:DOMAIN [--block ...] --out analysis/fork/gate/cpucheck_x.json
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import random
+import statistics
+import sys
+import threading
+import time
+import traceback
+import urllib.request
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
+ROOT = Path(os.environ.get("CLOQ_ROOT", "/data/ziyangs/cloq"))
+sys.path.insert(0, str(ROOT))
+
+from cloq import fork as F  # noqa: E402
+
+LOCK = threading.Lock()
+
+
+def log(msg: str) -> None:
+    with LOCK:
+        print(f"[{time.strftime('%F %T')}] {msg}", flush=True)
+
+
+def dump(path: Path, obj) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(obj, indent=1, ensure_ascii=False, default=str))
+    tmp.replace(path)
+
+
+def hsel(key: str) -> str:
+    return F.sha(key)
+
+
+# ----------------------------------------------------------------------------
+# server helpers
+# ----------------------------------------------------------------------------
+
+
+def metrics(base: str) -> dict:
+    """Prefix-cache and request counters of one vLLM server (per-process by construction)."""
+    url = base.rsplit("/v1", 1)[0] + "/metrics"
+    out = {}
+    try:
+        with urllib.request.urlopen(url, timeout=10) as r:
+            for line in r.read().decode().splitlines():
+                if line.startswith("#"):
+                    continue
+                for key in ("vllm:prefix_cache_queries_total", "vllm:prefix_cache_hits_total", "vllm:prompt_tokens_total",
+                            "vllm:generation_tokens_total", "vllm:request_success_total"):
+                    if line.startswith(key):
+                        out[key] = out.get(key, 0.0) + float(line.rsplit(" ", 1)[1])
+    except Exception as e:
+        out["error"] = repr(e)
+    return out
+
+
+def complete_ids(base: str, prompt_ids: list[int], max_tokens: int, seed: int) -> list[int]:
+    body = {"model": "agent", "prompt": prompt_ids, "max_tokens": max_tokens, "temperature": 0.0, "top_p": 1.0,
+            "top_k": -1, "seed": seed, "return_token_ids": True, "skip_special_tokens": False}
+    req = urllib.request.Request(base + "/completions", data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=900) as r:
+        c = json.load(r)["choices"][0]
+    return c.get("token_ids")
+
+
+def idcheck(base: str, blocks: list[F.Block], n: int, label: str) -> dict:
+    """Checkpoint identity: the server regenerates n recorded decisions of the blocks (prompt ids -> completion ids)."""
+    pool = [(b, d) for b in blocks for v in b.dec.values() for d in v if d.get("completion_token_ids")]
+    pool.sort(key=lambda x: hsel(f"{x[0].run_id}|{x[0].domain}|{x[1]['task_id']}|{x[1]['decision_idx']}"))
+    pool = pool[:n]
+
+    def one(x):
+        b, d = x
+        seed = b.traj[d["task_id"]]["seed"]
+        got = complete_ids(base, d["prompt_token_ids"], len(d["completion_token_ids"]), seed)
+        return {"run_id": b.run_id, "domain": b.domain, "task_id": d["task_id"], "t": d["decision_idx"],
+                "n_prompt": len(d["prompt_token_ids"]), "n_completion": len(d["completion_token_ids"]),
+                "match": got == d["completion_token_ids"]}
+
+    with ThreadPoolExecutor(8) as ex:
+        rows = list(ex.map(one, pool))
+    res = {"label": label, "base": base, "n": len(rows), "n_match": sum(r["match"] for r in rows), "rows": rows}
+    res["ok"] = res["n"] > 0 and res["n_match"] == res["n"]
+    log(f"idcheck {label}: {res['n_match']}/{res['n']}")
+    return res
+
+
+# ----------------------------------------------------------------------------
+# divergence search
+# ----------------------------------------------------------------------------
+
+
+def search_task(block: F.Block, task_id: str, bases: dict, user_base: str, state_dir: Path, q_check: bool = True) -> dict:
+    """Walk Q's decisions; at each, B generates its full action from the identical prompt; stop at the first semantic
+    divergence (frozen as the primary state before any fork outcome)."""
+    tr = block.traj[task_id]
+    msgs = tr["messages"]
+    n0 = F.prefix_len(tr["task"])
+    pos = F.agent_positions(msgs, n0)
+    decs = block.dec[task_id]
+    row = {"run_id": block.run_id, "domain": block.domain, "task_id": task_id, "n_decisions": len(pos),
+           "orig_termination": tr["termination_reason"], "orig_official_reward": tr.get("official_reward"),
+           "orig_db_match": tr.get("db_match"), "steps": [], "t_star": None, "category": None, "exclusion": None}
+    if len(pos) != len(decs):
+        row["exclusion"] = f"decision/trajectory count mismatch {len(decs)} vs {len(pos)}"
+        return row
+    if tr["termination_reason"] not in ("user_stop", "agent_stop", "max_steps", "too_many_errors"):
+        row["exclusion"] = f"termination {tr['termination_reason']} (infrastructure)"
+        return row
+    t_search = 0.0
+    for t in range(len(pos)):
+        st = F.make_state(block, task_id, t)
+        tag = f"shadowB-{st['state_id']}"
+        t0 = time.time()
+        try:
+            a_b, rec_b = F.shadow(st, bases["B"], tag)
+        except Exception as e:
+            row["exclusion"] = f"shadow failed at t={t}: {e!r}"[:500]
+            return row
+        dt = time.time() - t0
+        t_search += dt
+        ids_ok = F.ids_sha(rec_b.get("prompt_token_ids")) == st["q_decision"]["prompt_ids_sha"]
+        if not ids_ok:  # never code an infrastructure/state failure as "no divergence"
+            row["exclusion"] = f"B prompt ids differ from Q's recorded prompt at t={t} (from_server={rec_b.get('prompt_ids_from_server')})"
+            return row
+        schemas = F.tool_schemas(json.loads(json.dumps(_tools_schema(st))))
+        cmp = F.compare_actions(st["a_Q"]["message"], a_b, schemas)
+        row["steps"].append({"t": t, "category": cmp["category"], "shadow_seconds": dt,
+                             "n_prompt": len(rec_b["prompt_token_ids"]), "n_completion_b": rec_b.get("n_completion_tokens")})
+        if cmp["primary"]:
+            st["a_B"] = {"message": a_b, "source": "shadow B at identical prompt ids",
+                         "record": {k: rec_b.get(k) for k in ("prompt_sha256", "n_prompt_tokens", "finish_reason", "parser_error",
+                                                              "prompt_ids_from_server", "prompt_ids_match_local", "n_completion_tokens")},
+                         "prompt_ids_sha": F.ids_sha(rec_b["prompt_token_ids"]), "completion_ids_sha": F.ids_sha(rec_b.get("completion_token_ids"))}
+            st["divergence"] = {**cmp, "t_star": t, "text_only_before": [s["t"] for s in row["steps"] if s["category"] == "text_only"]}
+            if q_check:  # Q regenerates a_Q at the fork state: checkpoint identity + state restoration at h_t
+                a_q2, rec_q2 = F.shadow(st, bases["Q"], f"shadowQ-{st['state_id']}")
+                st["q_replay"] = {"completion_ids_ok": F.ids_sha(rec_q2.get("completion_token_ids")) == st["q_decision"]["completion_ids_sha"],
+                                  "prompt_ids_ok": F.ids_sha(rec_q2.get("prompt_token_ids")) == st["q_decision"]["prompt_ids_sha"],
+                                  "action_ok": F.canon_msg(a_q2) == F.canon_msg(st["a_Q"]["message"])}
+            st["search"] = {"shadow_seconds_total": t_search, "n_shadow": t + 1}
+            st["io_check"] = F.state_io_check(st, state_dir / f"{st['state_id']}.json")
+            row.update({"t_star": t, "category": cmp["category"], "state_id": st["state_id"], "q_replay": st.get("q_replay"),
+                        "io_check": st["io_check"], "budget": st["budget"]})
+            F.state_io_check(st, state_dir / f"{st['state_id']}.json")  # final write includes io_check
+            break
+    row["shadow_seconds_total"] = t_search
+    row["no_divergence"] = row["t_star"] is None
+    return row
+
+
+_TOOLS_CACHE: dict = {}
+
+
+def _tools_schema(st: dict) -> list[dict]:
+    d = st["domain"]
+    if d not in _TOOLS_CACHE:
+        from tau2.runner.build import build_environment
+
+        _TOOLS_CACHE[d] = [t.openai_schema for t in build_environment(d).get_tools()]
+    return _TOOLS_CACHE[d]
+
+
+def pick_tasks(block: F.Block, k: int, prefer_user_tools: bool = False) -> list[str]:
+    ids = sorted(block.traj, key=lambda t: hsel(f"fork-v1-gate|{block.run_id}|{block.domain}|{t}"))
+    if prefer_user_tools:
+        ids = sorted(ids, key=lambda t: -int((block.traj[t].get("n_user_tool_calls") or 0) > 0))
+    return ids[:k]
+
+
+# ----------------------------------------------------------------------------
+# comparisons
+# ----------------------------------------------------------------------------
+
+
+def orig_final_hash(st: dict, block: F.Block) -> dict:
+    from tau2.data_model.tasks import Task
+
+    msgs = block.traj[st["task_id"]]["messages"]
+    env = F.restore_env(st["domain"], Task.model_validate(st["task"]), [F.msg_from_dict(m) for m in msgs])
+    return F.env_hashes(env)
+
+
+def noop_check(st: dict, r: dict, orig_hash: dict) -> dict:
+    """Branch replaying the recorded action with the recorded controller must reproduce the original suffix."""
+    if "error" in r:
+        return {"ok": False, "error": r["error"]}
+    o = st["orig"]
+    prompts = [d["prompt_ids_sha"] for d in r["decisions"]]
+    checks = {
+        "suffix_messages": r["suffix_sha"] == o["suffix_sha"],
+        "prompt_token_ids": prompts == o["suffix_prompt_ids_sha"],
+        "termination": r["termination_reason"] == o["termination_reason"],
+        "reward": r["reward"] == o["reward"], "db_match": r["db_match"] == o["db_match"],
+        "official_reward": r["official_reward"] == o["official_reward"],
+        "budget_final": [r["step_count_final"], r["num_errors_final"]] == list(o["budget_final"]),
+        "env_hash_final_vs_orig_replay": r["env_hash_final"] == orig_hash,
+        "env_hash_replay_vs_live": r.get("env_hash_replay") == r["env_hash_final"],
+        "env_hash_init": r["env_hash_init_ok"], "history_prefix": r["prefix_ok"],
+    }
+    out = {"ok": all(checks.values()), **checks, "n_prompts": len(prompts), "n_prompts_orig": len(o["suffix_prompt_ids_sha"])}
+    if not checks["prompt_token_ids"]:
+        first = next((i for i, (a, b) in enumerate(zip(prompts, o["suffix_prompt_ids_sha"])) if a != b), min(len(prompts), len(o["suffix_prompt_ids_sha"])))
+        out["first_prompt_mismatch"] = first
+    return out
+
+
+def budget_check(st: dict, r: dict) -> dict:
+    if "error" in r:
+        return {"ok": False, "error": r["error"]}
+    live = [r["step_count_final"], r["num_errors_final"]]
+    rec = r["budget_recount"]
+    lim = [st["budget"]["max_steps"], st["budget"]["max_errors"]]
+    term = r["termination_reason"]
+    term_ok = ((term != "max_steps" or live[0] >= lim[0]) and (term != "too_many_errors" or live[1] >= lim[1]))
+    return {"ok": live == rec and term_ok and r["counters_tau2_default"] == [0, 0], "live": live, "recount": rec,
+            "state_used": [st["budget"]["steps_used"], st["budget"]["errors_used"]], "termination": term, "term_consistent": term_ok,
+            "note": "tau2 would restart the counters at 0 (counters_tau2_default); the fork restores them"}
+
+
+def reprefill_check(st: dict, res: dict) -> dict:
+    """QB: B's first request carries the full context the original Q saw at t+1 (same history + a_Q + same observation).
+    BQ: Q's first request equals BB's first continuation request (same history + a_B + same observation)."""
+    out = {}
+    qb, bq, bb = res.get("QB"), res.get("BQ"), res.get("BB")
+
+    def first_cont(r):
+        ds = [d for d in (r or {}).get("decisions", []) if not d["forced"]]
+        return ds[0] if ds else None
+
+    d = first_cont(qb)
+    if d is not None and len(st["orig"]["suffix_prompt_ids_sha"]) > 1:
+        out["QB_first_prompt_eq_orig_Q_t+1"] = d["prompt_ids_sha"] == st["orig"]["suffix_prompt_ids_sha"][1]
+        out["QB_first_from_server"] = bool(d["prompt_ids_from_server"]) and bool(d["prompt_ids_match_local"])
+        out["QB_first_api_base"] = d["api_base"]
+        out["QB_first_n_prompt"] = d["n_prompt_tokens"]
+    d1, d2 = first_cont(bq), first_cont(bb)
+    if d1 is not None and d2 is not None:
+        out["BQ_first_prompt_eq_BB_first"] = d1["prompt_ids_sha"] == d2["prompt_ids_sha"]
+        out["BQ_first_from_server"] = bool(d1["prompt_ids_from_server"]) and bool(d1["prompt_ids_match_local"])
+        out["BQ_first_api_base"] = d1["api_base"]
+    vals = [v for k, v in out.items() if isinstance(v, bool)]
+    out["ok"] = bool(vals) and all(vals)
+    out["applicable"] = bool(vals)
+    return out
+
+
+# ----------------------------------------------------------------------------
+# gate
+# ----------------------------------------------------------------------------
+
+
+def run_4(st, bases, user_base, order, label, concurrent=False):
+    tags = {b: f"{label}-{b}-{st['state_id']}" for b in order}
+    if concurrent:
+        with ThreadPoolExecutor(len(order)) as ex:
+            futs = {b: ex.submit(F.run_branch, st, b[0], b[1], bases, user_base, tags[b]) for b in order}
+            return {b: f.result() for b, f in futs.items()}
+    return {b: F.run_branch(st, b[0], b[1], bases, user_base, tags[b]) for b in order}
+
+
+def load_blocks(pairs) -> list[F.Block]:
+    return [F.Block(ROOT, r, d) for r, d in pairs]
+
+
+def gate(spec: dict, bases: dict, user_base: str, servers: dict, out: Path) -> dict:
+    t_all = time.time()
+    qb = load_blocks(spec["q_blocks"])
+    bb = load_blocks(spec.get("b_blocks", []))
+    res = {"protocol": F.PROTOCOL, "spec": spec, "servers": servers, "bases": bases, "user_base": user_base,
+           "metrics_start": {k: metrics(v) for k, v in bases.items()}}
+    res["idcheck_Q"] = idcheck(bases["Q"], qb, spec.get("idcheck_n", 16), "Q")
+    if bb:
+        res["idcheck_B"] = idcheck(bases["B"], bb, spec.get("idcheck_n", 16), "B")
+    dump(out / "gate_partial.json", res)
+    # divergence search
+    sdir = out / "states"
+    jobs = [(b, t) for b in qb for t in pick_tasks(b, spec.get("search_tasks_per_block", 10), b.domain == "telecom")]
+    t0 = time.time()
+    with ThreadPoolExecutor(spec.get("concurrency", 8)) as ex:
+        rows = list(ex.map(lambda x: _safe(search_task, x[0], x[1], bases, user_base, sdir), jobs))
+    res["search"] = {"seconds": time.time() - t0, "rows": rows}
+    dump(out / "search.json", res["search"])
+    log(f"search: {sum(1 for r in rows if r.get('t_star') is not None)} states from {len(rows)} tasks")
+    # choose states: round robin over (domain, category)
+    found = [r for r in rows if r.get("t_star") is not None]
+    groups: dict = {}
+    for r in sorted(found, key=lambda r: hsel("pick|" + r["state_id"])):
+        groups.setdefault((r["domain"], r["category"]), []).append(r)
+    chosen = []
+    while len(chosen) < spec.get("n_states", 12) and any(groups.values()):
+        for k in sorted(groups):
+            if groups[k] and len(chosen) < spec.get("n_states", 12):
+                chosen.append(groups[k].pop(0))
+    states = [json.loads((sdir / f"{r['state_id']}.json").read_text()) for r in chosen]
+    blk = {(b.run_id, b.domain): b for b in qb + bb}
+    order = ["QQ", "BB", "BQ", "QB"]
+
+    def per_state(st):
+        r4 = run_4(st, bases, user_base, order, "fwd")
+        oh = orig_final_hash(st, blk[(st["run_id"], st["domain"])])
+        rec = {"state_id": st["state_id"], "domain": st["domain"], "task_id": st["task_id"], "t": st["decision_idx"],
+               "category": st["divergence"]["category"], "budget": st["budget"], "q_replay": st.get("q_replay"),
+               "io_check": st.get("io_check"), "a_noop_QQ": noop_check(st, r4["QQ"], oh),
+               "d_budget": {b: budget_check(st, r4[b]) for b in order}, "e_reprefill": reprefill_check(st, r4),
+               "outcomes": {b: {k: r4[b].get(k) for k in ("termination_reason", "reward", "db_match", "official_reward",
+                                                          "step_count_final", "num_errors_final", "duration", "error")} for b in order}}
+        dump(out / "branches" / f"{st['state_id']}_fwd.json", r4)
+        return rec, r4
+
+    t0 = time.time()
+    with ThreadPoolExecutor(spec.get("concurrency", 8)) as ex:
+        outs = list(ex.map(lambda s: _safe(per_state, s), states))
+    res["fwd_seconds"] = time.time() - t0
+    res["states"] = [o[0] if isinstance(o, tuple) else o for o in outs]
+    fwd = {s["state_id"]: o[1] for s, o in zip(states, outs) if isinstance(o, tuple)}
+    dump(out / "gate_partial.json", res)
+    # (c) isolation: reversed order and all four concurrently, on n_iso states
+    iso = []
+    for st in states[: spec.get("n_iso", 4)]:
+        if st["state_id"] not in fwd:
+            continue
+        rv = run_4(st, bases, user_base, list(reversed(order)), "rev")
+        cc = run_4(st, bases, user_base, order, "conc", concurrent=True)
+        dump(out / "branches" / f"{st['state_id']}_rev.json", rv)
+        dump(out / "branches" / f"{st['state_id']}_conc.json", cc)
+        cmp = {b: {"reversed": F.branch_signature(rv[b]) == F.branch_signature(fwd[st["state_id"]][b]),
+                   "concurrent": F.branch_signature(cc[b]) == F.branch_signature(fwd[st["state_id"]][b])} for b in order}
+        iso.append({"state_id": st["state_id"], "domain": st["domain"], "cmp": cmp,
+                    "ok": all(v["reversed"] and v["concurrent"] for v in cmp.values())})
+    res["c_isolation"] = iso
+    # (a) B->B no-op on B's own trajectory
+    bnoop = []
+    if bb:
+        cand = []
+        for b in bb:
+            for tid in pick_tasks(b, spec.get("n_bb_noop", 4), b.domain == "telecom")[: max(1, spec.get("n_bb_noop", 4) // len(bb))]:
+                n = len(b.dec[tid])
+                if n:
+                    cand.append((b, tid, n // 2))
+
+        def bb_one(x):
+            b, tid, t = x
+            st = F.make_state(b, tid, t)
+            r = F.run_branch(st, "Q", "B", bases, user_base, f"bbnoop-{st['state_id']}")  # recorded (B) action, B controller
+            dump(out / "branches" / f"{st['state_id']}_bbnoop.json", r)
+            return {"state_id": st["state_id"], "run_id": b.run_id, "domain": b.domain, "task_id": tid, "t": t, "budget": st["budget"],
+                    "noop": noop_check(st, r, orig_final_hash(st, b)), "d_budget": budget_check(st, r),
+                    "io_check": F.state_io_check(st, out / "states_bnoop" / f"{st['state_id']}.json")}
+
+        with ThreadPoolExecutor(spec.get("concurrency", 8)) as ex:
+            bnoop = list(ex.map(lambda x: _safe(bb_one, x), cand))
+    res["a_noop_BB"] = bnoop
+    res["metrics_end"] = {k: metrics(v) for k, v in bases.items()}
+    res["seconds_total"] = time.time() - t_all
+    res["verdict"] = verdict(res)
+    res["throughput"] = throughput(res, out)
+    dump(out / "gate.json", res)
+    (out / "gate_partial.json").unlink(missing_ok=True)
+    log("verdict " + json.dumps(res["verdict"]))
+    return res
+
+
+def _safe(fn, *a):
+    try:
+        return fn(*a)
+    except Exception as e:
+        log(f"{fn.__name__} failed: {e!r}")
+        return {"error": repr(e), "trace": traceback.format_exc()[-3000:]}
+
+
+def verdict(res: dict) -> dict:
+    sts = [s for s in res.get("states", []) if "error" not in s]
+    bn = [s for s in res.get("a_noop_BB", []) if "error" not in s]
+    v = {
+        "idcheck": res.get("idcheck_Q", {}).get("ok") and res.get("idcheck_B", {"ok": True}).get("ok"),
+        "a_QQ": bool(sts) and all(s["a_noop_QQ"]["ok"] for s in sts),
+        "a_BB": bool(bn) and all(s["noop"]["ok"] for s in bn),
+        "q_replay_at_state": bool(sts) and all((s.get("q_replay") or {}).get("completion_ids_ok") for s in sts),
+        "c_isolation": bool(res.get("c_isolation")) and all(x["ok"] for x in res["c_isolation"]),
+        "c_saveload": bool(sts) and all(s["io_check"]["env_hash_ok"] and s["io_check"]["history_sha_ok"] for s in sts)
+                      and all(s["io_check"]["env_hash_ok"] for s in bn),
+        "d_budget": bool(sts) and all(all(x["ok"] for x in s["d_budget"].values()) for s in sts) and all(s["d_budget"]["ok"] for s in bn),
+        "e_reprefill": bool(sts) and all(s["e_reprefill"]["ok"] for s in sts if s["e_reprefill"]["applicable"]),
+        "n_states": len(sts), "n_state_errors": len(res.get("states", [])) - len(sts),
+        "n_bb_noop": len(bn), "n_bb_errors": len(res.get("a_noop_BB", [])) - len(bn),
+        "domains": sorted({s["domain"] for s in sts} | {s["domain"] for s in bn}),
+        "categories": sorted({s["category"] for s in sts}),
+    }
+    v["pass"] = all(v[k] for k in ("idcheck", "a_QQ", "a_BB", "q_replay_at_state", "c_isolation", "c_saveload", "d_budget", "e_reprefill")) \
+        and v["n_state_errors"] == 0 and v["n_bb_errors"] == 0
+    return v
+
+
+def throughput(res: dict, out: Path) -> dict:
+    """Suffix durations per branch, per-decision shadow cost, simulator calls (from the forward branches)."""
+    durs, n_user, n_dec, shadow = [], [], [], []
+    for p in sorted((out / "branches").glob("*_fwd.json")):
+        r4 = json.loads(p.read_text())
+        for b, r in r4.items():
+            if b == "QQ" or "error" in r:
+                continue
+            durs.append(r["duration"])
+            n_user.append(r["n_user_msgs"])
+            n_dec.append(sum(1 for d in r["decisions"] if not d["forced"]))
+    for r in res.get("search", {}).get("rows", []):
+        shadow += [s["shadow_seconds"] for s in r.get("steps", [])]
+
+    def q(v, p):
+        return sorted(v)[min(len(v) - 1, int(p * len(v)))] if v else None
+
+    return {"n_branches": len(durs), "suffix_seconds_median": statistics.median(durs) if durs else None,
+            "suffix_seconds_p90": q(durs, 0.9), "user_msgs_per_branch_mean": statistics.mean(n_user) if n_user else None,
+            "agent_decisions_per_branch_mean": statistics.mean(n_dec) if n_dec else None,
+            "shadow_seconds_per_decision_median": statistics.median(shadow) if shadow else None,
+            "shadow_seconds_per_decision_p90": q(shadow, 0.9), "n_shadow": len(shadow),
+            "search_decisions_per_task_mean": statistics.mean([len(r.get("steps", [])) for r in res.get("search", {}).get("rows", []) if "steps" in r]) if res.get("search") else None,
+            "search_wall_seconds": res.get("search", {}).get("seconds"), "fwd_wall_seconds": res.get("fwd_seconds"),
+            "note": "wall times under concurrency 8 on one node, shared simulator; branch = BB/BQ/QB (QQ excluded)"}
+
+
+def gate_same(spec: dict, bases: dict, user_base: str, servers: dict, out: Path) -> dict:
+    """(b): both handles serve the same checkpoint (two servers). At states along Q's trajectory, the 'B' shadow must
+    reproduce a_Q, and all four branches must agree with each other and with the original continuation."""
+    qb = load_blocks(spec["q_blocks"])
+    res = {"protocol": F.PROTOCOL, "spec": spec, "servers": servers, "bases": bases}
+    res["idcheck_Q"] = idcheck(bases["Q"], qb, spec.get("idcheck_n", 8), "Q")
+    res["idcheck_Bhandle"] = idcheck(bases["B"], qb, spec.get("idcheck_n", 8), "B-handle (same ckpt)")
+    cand = []
+    for b in qb:
+        for tid in pick_tasks(b, spec.get("n_per_block", 3), b.domain == "telecom"):
+            n = len(b.dec[tid])
+            cand.append((b, tid, (n - 1) // 3))
+    order = ["QQ", "BB", "BQ", "QB"]
+
+    def one(x):
+        b, tid, t = x
+        st = F.make_state(b, tid, t)
+        a_b, rec_b = F.shadow(st, bases["B"], f"sameB-{st['state_id']}")
+        st["a_B"] = {"message": a_b, "source": "shadow via B handle (same checkpoint)"}
+        r4 = run_4(st, bases, user_base, order, "same")
+        dump(out / "branches" / f"{st['state_id']}_same.json", r4)
+        sig = {k: F.branch_signature(v) for k, v in r4.items()}
+        oh = orig_final_hash(st, b)
+        return {"state_id": st["state_id"], "domain": b.domain, "task_id": tid, "t": t,
+                "shadow_eq_aQ": F.canon_msg(a_b) == F.canon_msg(st["a_Q"]["message"]),
+                "shadow_prompt_ok": F.ids_sha(rec_b["prompt_token_ids"]) == st["q_decision"]["prompt_ids_sha"],
+                "all_four_equal": all(sig[k] == sig["QQ"] for k in order),
+                "noop_vs_orig": {k: noop_check(st, r4[k], oh)["ok"] for k in order},
+                "differs": [k for k in order if sig[k] != sig["QQ"]]}
+
+    with ThreadPoolExecutor(spec.get("concurrency", 8)) as ex:
+        rows = list(ex.map(lambda x: _safe(one, x), cand))
+    res["rows"] = rows
+    ok = [r for r in rows if "error" not in r]
+    res["verdict"] = {"b_same_ckpt": bool(ok) and len(ok) == len(rows)
+                      and all(r["all_four_equal"] and r["shadow_eq_aQ"] and r["shadow_prompt_ok"] and all(r["noop_vs_orig"].values()) for r in ok),
+                      "n_states": len(ok), "n_errors": len(rows) - len(ok), "domains": sorted({r["domain"] for r in ok}),
+                      "idcheck": res["idcheck_Q"]["ok"] and res["idcheck_Bhandle"]["ok"]}
+    res["verdict"]["pass"] = res["verdict"]["b_same_ckpt"] and res["verdict"]["idcheck"]
+    dump(out / "gate_same.json", res)
+    log("verdict " + json.dumps(res["verdict"]))
+    return res
+
+
+# ----------------------------------------------------------------------------
+# development modes
+# ----------------------------------------------------------------------------
+
+
+def search_mode(spec, bases, user_base, servers, out):
+    qb = load_blocks(spec["q_blocks"])
+    jobs = []
+    for b in qb:
+        ids = spec.get("task_ids", {}).get(f"{b.run_id}|{b.domain}") or sorted(b.traj, key=lambda t: hsel(f"order|{b.run_id}|{t}"))
+        jobs += [(b, t) for t in ids]
+    t0 = time.time()
+    with ThreadPoolExecutor(spec.get("concurrency", 8)) as ex:
+        rows = list(ex.map(lambda x: _safe(search_task, x[0], x[1], bases, user_base, out / "states", spec.get("q_check", True)), jobs))
+    res = {"protocol": F.PROTOCOL, "spec": spec, "servers": servers, "seconds": time.time() - t0, "rows": rows,
+           "metrics": {k: metrics(v) for k, v in bases.items()}}
+    dump(out / "search.json", res)
+    return res
+
+
+def branches_mode(spec, bases, user_base, servers, out):
+    sdir = ROOT / spec["states_dir"]
+    states = [json.loads(p.read_text()) for p in sorted(sdir.glob("*.json"))]
+    order = spec.get("branches", ["BB", "BQ", "QB"])
+    noop_ids = {s["state_id"] for s in states if int(hsel("noop|" + s["state_id"])[:8], 16) / 16 ** 8 < spec.get("noop_frac", 0.1)}
+
+    def one(st):
+        r = run_4(st, bases, user_base, order + (["QQ"] if st["state_id"] in noop_ids else []), "dev")
+        dump(out / "branches" / f"{st['state_id']}.json", r)
+        return {"state_id": st["state_id"], "outcomes": {b: {k: v.get(k) for k in ("reward", "db_match", "official_reward", "termination_reason", "duration", "error")} for b, v in r.items()}}
+
+    t0 = time.time()
+    with ThreadPoolExecutor(spec.get("concurrency", 8)) as ex:
+        rows = list(ex.map(lambda s: _safe(one, s), states))
+    res = {"protocol": F.PROTOCOL, "spec": spec, "servers": servers, "seconds": time.time() - t0, "rows": rows}
+    dump(out / "branches.json", res)
+    return res
+
+
+# ----------------------------------------------------------------------------
+# CPU-only restoration check
+# ----------------------------------------------------------------------------
+
+
+def cpucheck(blocks: list[str], out: Path, every: int = 1, max_tasks: int = 0) -> dict:
+    """For every (sampled) decision: rebuild h_t from trajectory.jsonl, replay the environment strictly, rebuild the
+    agent state and render its prompt locally; it must equal Q's recorded (server-side) prompt ids. Also checks that
+    the step/error recount reproduces tau2's termination on every max_steps / too_many_errors episode."""
+    res = {"protocol": F.PROTOCOL, "blocks": []}
+    for spec in blocks:
+        run_id, dom = spec.split(":")
+        b = F.Block(ROOT, run_id, dom)
+        n = ok = mism = 0
+        bad, term = [], []
+        tids = sorted(b.traj)[: max_tasks or None]
+        for tid in tids:
+            tr = b.traj[tid]
+            n0 = F.prefix_len(tr["task"])
+            pos = F.agent_positions(tr["messages"], n0)
+            if len(pos) != len(b.dec[tid]):
+                mism += 1
+                continue
+            for t in range(0, len(pos), every):
+                st = F.make_state(b, tid, t)
+                good = F.ids_sha(F.local_prompt_ids(st)) == st["q_decision"]["prompt_ids_sha"]
+                n += 1
+                ok += good
+                if not good:
+                    bad.append([tid, t])
+            s, e = F.budget_used(tr["messages"], n0)
+            if tr["termination_reason"] in ("max_steps", "too_many_errors"):
+                lim = b.run_config["max_steps"] if tr["termination_reason"] == "max_steps" else b.run_config["max_errors"]
+                term.append({"task_id": tid, "termination": tr["termination_reason"], "steps": s, "errors": e,
+                             "consistent": (s >= lim) if tr["termination_reason"] == "max_steps" else (e >= lim)})
+        rec = {"block": spec, "n_tasks": len(tids), "n_count_mismatch": mism, "n_states": n, "n_prompt_match": ok, "bad": bad[:20],
+               "n_budget_terminations": len(term), "n_budget_consistent": sum(x["consistent"] for x in term)}
+        log(json.dumps(rec))
+        res["blocks"].append(rec)
+    res["ok"] = all(r["n_prompt_match"] == r["n_states"] and r["n_budget_consistent"] == r["n_budget_terminations"] for r in res["blocks"])
+    dump(out, res)
+    return res
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--task")
+    ap.add_argument("--b-base")
+    ap.add_argument("--q-base")
+    ap.add_argument("--user-base", default="http://127.0.0.1:8000/v1")
+    ap.add_argument("--servers", default=None)
+    ap.add_argument("--cpucheck", action="store_true")
+    ap.add_argument("--block", action="append", default=[])
+    ap.add_argument("--every", type=int, default=1)
+    ap.add_argument("--max-tasks", type=int, default=0)
+    ap.add_argument("--out")
+    a = ap.parse_args()
+    from loguru import logger
+
+    logger.remove()
+    logger.add(sys.stderr, level="ERROR")
+    F.setup_tau2()
+    if a.cpucheck:
+        r = cpucheck(a.block, ROOT / a.out, a.every, a.max_tasks)
+        print(json.dumps({"ok": r["ok"]}))
+        sys.exit(0 if r["ok"] else 1)
+    task = json.load(open(a.task))
+    spec = task["fork"]
+    servers = json.load(open(a.servers)) if a.servers else {}
+    bases = {"B": a.b_base, "Q": a.q_base}
+    out = ROOT / spec["out"]
+    out.mkdir(parents=True, exist_ok=True)
+    fn = {"gate": gate, "gate_same": gate_same, "search": search_mode, "branches": branches_mode}[spec["mode"]]
+    r = fn(spec, bases, a.user_base, servers, out)
+    v = r.get("verdict")
+    print(json.dumps({"verdict": v}, default=str))
+
+
+if __name__ == "__main__":
+    main()

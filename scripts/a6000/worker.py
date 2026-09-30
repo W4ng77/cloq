@@ -343,6 +343,120 @@ def run_eval(task, args, st: Status):
     return summ
 
 
+def ckpt_sha(path: str) -> str | None:
+    """sha256 over the checkpoint's safetensors files (name + content), for built (scratch) checkpoints only."""
+    import hashlib
+    files = sorted(Path(path).glob("*.safetensors"))
+    if not files:
+        return None
+    h = hashlib.sha256()
+    for f in files:
+        h.update(f.name.encode())
+        fh = hashlib.sha256()
+        with open(f, "rb") as fp:
+            for chunk in iter(lambda: fp.read(1 << 24), b""):
+                fh.update(chunk)
+        h.update(fh.digest())
+    return h.hexdigest()
+
+
+def run_fork(task, args, st: Status):
+    """Fork task (protocol fork-v1, docs/insights/FORK_PROTOCOL.md): build Q (and B) checkpoints, serve each on its own
+    vLLM server (2 GPUs: one per server; 1 GPU: both on it with GPU_UTIL=task['gpu_util'], started one after the
+    other), check the numerics canary per server, run scripts/a6000/fork_driver.py against the node's simulator,
+    then stop both servers. Prefix caches are per server process, so nothing is shared across weights."""
+    gpus = args.gpus.split(",")
+    env = model_env(task["model"], args.port)
+    scratch = Path(os.environ.get("TMPDIR", "/tmp"))
+    logdir = WORK / "logs/tasks"
+    logdir.mkdir(parents=True, exist_ok=True)
+    log = open(logdir / f"{task['id']}.log", "a")
+    log.write(f"\n=== {time.ctime()} {socket.gethostname()} gpus={args.gpus} port={args.port} (fork)\n")
+    log.flush()
+    q_ck, b_ck = task["q_ckpt"], task.get("b_ckpt", {"kind": "bf16"})
+    same = q_ck == b_ck
+    st.set("quantize" if q_ck["kind"] in ("gptq", "awq") else "setup", f"fork: build Q {q_ck['kind']}")
+    q_path, q_meta = build_ckpt({"id": task["id"] + "_Q", "model": task["model"], "ckpt": q_ck}, env, gpus, scratch, log)
+    b_path, b_meta = (q_path, q_meta) if same else build_ckpt({"id": task["id"] + "_B", "model": task["model"], "ckpt": b_ck}, env, gpus, scratch, log)
+    one_gpu = len(gpus) == 1
+    plan = {"B": (gpus[0], args.port + 100, b_path, b_ck), "Q": (gpus[-1], args.port + 200, q_path, q_ck)}
+    servers, procs = {}, {}
+    try:
+        for role in ("B", "Q"):  # sequential start: on one GPU the second server profiles after the first holds its share
+            g, port, path, ck = plan[role]
+            st.set("setup", f"fork: starting {role} server on GPU {g}")
+            senv = dict(env)
+            if one_gpu:
+                senv["GPU_UTIL"] = str(task.get("gpu_util", 0.44))
+            slog = open(logdir / f"{task['id']}.{role}.vllm.log", "a")
+            procs[role] = subprocess.Popen([str(ROOT / "scripts/a6000/serve.sh"), g, str(port), path, "agent", str(AGENT_MAXLEN)],
+                                           env=senv, stdout=slog, stderr=subprocess.STDOUT, start_new_session=True)
+            t0 = time.time()
+            while not healthy(port):
+                if procs[role].poll() is not None:
+                    raise RuntimeError(f"fork {role} server exited during startup")
+                if time.time() - t0 > 1800:
+                    raise RuntimeError(f"fork {role} server did not come up in 30 min")
+                time.sleep(5)
+            servers[role] = {"gpu": g, "port": port, "pid": procs[role].pid, "ckpt": ck, "path": path,
+                             "gpu_util": senv.get("GPU_UTIL", "0.90"), "canary": canary(port, task["model"])}
+        st.set("check", "fork: canaries")
+        if b_ck["kind"] == "bf16":  # BF16 servers must be bit-identical to every other BF16 server of the model (W3)
+            check_canary(plan["B"][1], task["model"], "agent")
+            servers["B"]["canary_ref_ok"] = True
+        if same and servers["B"]["canary"] != servers["Q"]["canary"]:
+            raise RuntimeError(f"same checkpoint, different canaries: {servers['B']['canary']} vs {servers['Q']['canary']}")
+        for role, path in (("Q", q_path),) + ((("B", b_path),) if not same else ()):
+            if path.startswith(str(scratch)):
+                servers[role]["ckpt_sha256"] = ckpt_sha(path)
+        if same:
+            servers["B"]["ckpt_sha256"] = servers["Q"].get("ckpt_sha256")
+        for path in {q_path, b_path}:
+            if path.startswith(str(scratch)):
+                for f in Path(path).glob("*.safetensors"):
+                    f.unlink()
+        servers["q_quantization"] = {k: v for k, v in (q_meta or {}).items() if k not in ("per_tensor", "stats")}
+        ubase = user_base()
+        t1 = time.time()
+        while True:
+            try:
+                urllib.request.urlopen(ubase + "/models", timeout=5)
+                break
+            except Exception:
+                if time.time() - t1 > 2400:
+                    raise RuntimeError(f"user simulator {ubase} unreachable")
+                st.set("setup", "waiting for user simulator")
+                time.sleep(15)
+        servers["user_base"] = ubase
+        servers["host"] = socket.gethostname()
+        servers["job"] = os.environ.get("SLURM_JOB_ID")
+        sfile = logdir / f"{task['id']}.servers.json"
+        sfile.write_text(json.dumps(servers, indent=1))
+        st.set("eval", f"fork {task['fork']['mode']}")
+        cmd = [sys.executable, str(ROOT / "scripts/a6000/fork_driver.py"), "--task", args.task,
+               "--b-base", f"http://127.0.0.1:{plan['B'][1]}/v1", "--q-base", f"http://127.0.0.1:{plan['Q'][1]}/v1",
+               "--user-base", ubase, "--servers", str(sfile)]
+        drv = subprocess.Popen(cmd, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT)
+        while drv.poll() is None:
+            time.sleep(10)
+            for role, p in procs.items():
+                if p.poll() is not None:
+                    drv.kill()
+                    raise RuntimeError(f"fork {role} server died during the driver")
+        if drv.returncode != 0:
+            raise RuntimeError(f"fork_driver failed rc={drv.returncode}")
+    finally:
+        for role, p in procs.items():
+            stop_server(p, [plan[role][0]])
+    outp = ROOT / task["fork"]["out"]
+    res = {"out": str(outp.relative_to(ROOT)), "servers": {k: {kk: vv for kk, vv in v.items() if kk != "path"} if isinstance(v, dict) else v
+                                                           for k, v in servers.items() if k != "q_quantization"}}
+    for name in ("gate.json", "gate_same.json"):
+        if (outp / name).exists():
+            res["verdict"] = json.load(open(outp / name)).get("verdict")
+    return res
+
+
 def run_calib(task, args, st: Status):
     st.set("setup", "build calibration manifest")
     env = model_env(task["model"], args.port)
@@ -377,6 +491,8 @@ def main():
             if r.returncode != 0:
                 raise RuntimeError(f"cmd failed rc={r.returncode}")
             res = {"cmd": "ok"}
+        elif task["kind"] == "fork":  # same-state 2x2 fork (cloq/fork.py, scripts/a6000/fork_driver.py)
+            res = run_fork(task, args, st)
         else:
             res = run_eval(task, args, st) if task["kind"] == "eval" else run_calib(task, args, st)
         task.update({"result": res, "finished": time.time(), "seconds": time.time() - t0, "host": socket.gethostname()})
