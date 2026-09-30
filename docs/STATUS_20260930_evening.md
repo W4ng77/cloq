@@ -14,6 +14,19 @@
 
 All numbers below are development-set and exploratory unless marked otherwise. The telecom holdout (34 tasks) is untouched; its pre-registration will be frozen on 10-03.
 
+> **Revision 1 (2026-09-30 15:00 PDT, after the GPT-6.1 review of 7528f2e).** The wording below overstates three things.
+> - **"Not consequential"** should read: a sizeable share of pivot actions change the outcome, in both directions. Rescue is about 9% and new damage about 9% of divergent units, so roughly 18% (about 15% of all units) flip outcome, and the average cancels them. New headline quantities r, d, M = r + d and G = r − d are being computed on a common denominator.
+> - **"Success is equivalent"** holds only for the mixture of calibration draws d1–d4. The forks use d1, where q4 GPTQ is +5.7 pp. A checkpoint-aligned NI analysis is being added.
+> - **"Harm needs combined axes"** is not identified. The KV16 cells had online Q/K rotation off, so the KV axis changed rotation and quantization together. Four matched rotated-KV16 cells are queued. Separately, RTN-W3 alone is heavily damaged.
+>
+> Also being fixed:
+> - The fork bootstrap resampled blocks within tasks, which breaks the shared-nonce structure. It is moving to complete-block inference, plus crossed task × block inference for generalisation to new tasks.
+> - The pivot "policy value" is an oracle proxy, not an end-to-end policy.
+> - The +12.3 pp on q4 KV4 is Y_BB − Y_QQ, an oracle intervention.
+> - ALFWorld's W4 interval [−9.7, +1.9] shows no detected net effect; it does not show an effect near zero.
+>
+> Result files are now committed (`analysis/RESULTS_INDEX.md`, 4f5cd63). The corrected numbers will appear in STATUS_20261001.
+
 # CLOQ status for external review (2026-09-30 evening)
 
 Repo: `W4ng77/cloq` (private). Earlier context: `docs/REVIEW_PACKET.md`, `docs/insights/EXTERNAL_REVIEW_GPT61_20260930.md` (the plan agreed with GPT-6.1), `docs/EXECUTION_PLAN_20260930.md`. Every result in this file cites the file it comes from. The index of changes is `docs/RESEARCH_LOG.md`, entries W29–W61.
