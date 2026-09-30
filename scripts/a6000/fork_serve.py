@@ -165,7 +165,8 @@ def hook_coverage(log_text: str, cfg: dict, n_layers: int | None) -> dict | None
         wrapped = [ln for ln in lines if "[cloq_kvq]" in ln and "wrapped" in ln]
         by_pid: dict = {}
         for ln in lines:
-            if "[cloq_kvq]" in ln and "hooked attention" in ln and "type=decoder" in ln.lower():
+            low = ln.lower()
+            if "[cloq_kvq]" in ln and "hooked attention" in ln and ("type=decoder" in low or "type=attentiontype.decoder" in low):
                 pid = ln.split("pid=")[1].split()[0]
                 by_pid[pid] = by_pid.get(pid, 0) + 1
         n_dec = max(by_pid.values()) if by_pid else 0
