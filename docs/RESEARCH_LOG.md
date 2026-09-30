@@ -10,6 +10,38 @@ Newest first.
 
 ---
 
+## W45-ahook — Engineering line 1: A8, SmoothQuant W8A8, QuaRot W4A4KV4 fake-quant hooks accepted on q4 (2026-09-30 01:45 PDT)
+**TL;DR** Activation fake quantization now runs inside the frozen BF16 vLLM path.
+- **Hook** (`pyhooks/cloq_aq.py`): QDQ on the inputs of the fused QKVParallelLinear, MergedColumnParallelLinear gate_up and RowParallelLinear o/down layers, plus QuaRot's online Hadamards.
+- **Builders**: SmoothQuant (`cloq/smoothquant.py`) and QuaRot (`cloq/quarot.py`: GPTQ W4, per-head V/O and down_proj Hadamards, H_76 Paley II for 9728).
+- **KV**: QuaRot mode added to the KV hook (`CLOQ_KVQ_ROT=qk`, `CLOQ_KVQ_FMT=quarot`; defaults unchanged).
+
+All six acceptance steps pass on q4:
+- quantizers, GPTQ solver, smoothing and Hadamards are exact against the official code;
+- the A16 hook reproduces the BF16 canary;
+- coverage is 144/144 (36 per fused kind; each kind shown live by ablation) plus 36/36 KV layers;
+- batch, prefix-cache and chunked-vs-unchunked outputs are identical, and compile-cache namespaces are separate (vLLM's own hash does not distinguish A8 from A4);
+- open-loop shift is monotone in precision;
+- causality: 4500/4500 prefix positions are unchanged by later tokens.
+
+Mean |Δlogprob| and token flip rate on 150 BF16 decisions:
+
+| config | mean \|Δlogprob\| | flip |
+|---|---|---|
+| A8 | 0.041 | 2.4% |
+| A4, no rotation | 6.7 | 94% |
+| SmoothQuant W8A8 (α 0.85 by Pile ppl) | 0.030 | 2.0% |
+| W8A8 without smoothing | 0.043 | 2.5% |
+| QuaRot W16A16 (floor) | 0.0065 | 0.55% |
+| QuaRot W16A4 | 0.28 | 8.7% |
+| QuaRot W4A16 | 0.13 | 5.1% |
+| QuaRot W4A4KV4 | 0.43 | 11.6% |
+
+Named methods (SmoothQuant, QuaRot) are checked item by item; the deviations are listed in METHOD_FIDELITY §4–5. "A8" is descriptive.
+Smoke tasks are queued at priority −7: `a6k2_q4_{aq_a8,sq_w8a8,quarot_w4a4kv4}`, 1 fresh-nonce run each. The W×A×KV 2³ matrix is left to the main session.
+- **fork_serve.py caveats:** it reads `CLOQ_ABITS` rather than `CLOQ_AQ_BITS`. Its cache namespace and KV `rot` fields also do not cover AQ or `CLOQ_KVQ_ROT=qk`. Fix these before any A/QuaRot fork.
+Evidence: `docs/insights/METHOD_FIDELITY.md`, `analysis/ahook/{unit_tests,validate_a8_q4,validate_sq_q4,validate_quarot_q4}.json`, `analysis/ahook/ckpt_q4_*.quantization.json`, `tests/test_aq.py`, `scripts/a6000/aq_validate.py`; logs `/data/ziyangs/cloq_work/logs/ahook/`.
+
 ## W44 — Integrity snapshot covers telecom; restoration analysis registered (2026-09-30 01:10 PDT)
 **TL;DR** `analyze_dev.py` (W43) reported that telecom fork units were "not admitted" because `iter_2/integrity.py` scanned only retail and airline, so no telecom run ever entered a snapshot. That would also have silently excluded the telecom holdout.
 - **Change to integrity.py:**
