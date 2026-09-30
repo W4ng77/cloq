@@ -67,4 +67,19 @@ Directional prediction for H4 (stated, not tested as primary): φ_RECAL > φ_RAN
 - H3 fails on split halves: fingerprint claims are dropped.
 
 ## 7. Amendments
-(none)
+**Amendment 1 (2026-09-29/30, before any confirmatory outcome was computed or inspected).** Clarifications made while
+implementing `analysis/insights/iter_4/prereg_h1_h4.py` (commit a4b5c8a) using stand-in checkpoints only; full list and
+rationale in `docs/insights/PREREG_iter4_analysis.md` (A1–A18). Substantive ones:
+- A1: §1 miscounted. The listed units are 8 RECAL + 6 RAND = 14 checkpoints × 2 draws = **28 runs** (not 20 × 2 = 40);
+  the queued tasks and the script use these 28.
+- A2: run ids are `a6k2_<m>_{gptq,awq}_w4_d{3,4}_q{1,2}` and `a6k2_<m>_gauss1_s{2,4,5}_q{1,2}` (the `churnctl_*` names are task ids).
+- A3/A7/A9: permutation nulls are P1's within-task relabelling (H1), exact enumeration when ≤ 5000 relabellings
+  (H2: 576; H4: 1225), otherwise 5000 random; H4 two-sided p = min(1, 2·min one-sided), CI by task bootstrap (B = 2000).
+- A5/A6: complete-case tasks over the eligible nonce null (n1–n8 with ≥ 77 tasks) and confirmatory draws; q4 airline
+  task 45 removed; success = db_match and not premature; outage infra errors missing, context overflow = failure.
+- A8/A17/A18: H3 split scaling, block structure (4 blocks: model × set) and H2 centring as specified in the analysis doc.
+- A10: when φ is undefined (E_indep ≤ 0) H4 conditions on relabellings where it is defined and reports their count.
+- A12: sensitivity drops a task for the whole model if any confirmatory draw of that model ended in max_steps (or overflow).
+- A13: variance components by nested method of moments over GPTQ/AWQ-W4 d1–d4 (secondary).
+- A14: the §4 open-loop predictor analysis is a separate, later script (secondary).
+No hypothesis, test statistic, unit, α or Holm family changed.

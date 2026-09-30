@@ -57,7 +57,7 @@ import numpy as np
 ROOT = Path("/data/ziyangs/cloq")
 HERE = Path(__file__).resolve().parent
 PREREG = ROOT / "docs/insights/PREREG_iter4.md"
-PREREG_SHA16 = "0d5e8385c911824f"
+PREREG_SHA16 = "a991e2e5ca2d6098"  # amendment 1 (A1-A18); originally registered 0d5e8385c911824f (W22)
 Q1, Q2 = "6d1f0b3e", "f07a5c21"
 SEED = 20261005
 B_PERM = 5000

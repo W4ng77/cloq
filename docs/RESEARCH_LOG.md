@@ -10,6 +10,10 @@ Newest first.
 
 ---
 
+## W24 — Pre-registration amendment 1 (2026-09-30)
+**TL;DR** PREREG_iter4 §7 amendment 1 records the 18 implementation clarifications (A1–A18) made while writing the confirmatory script on stand-in checkpoints, before any confirmatory outcome was computed or inspected. Most important: the confirmatory set is 14 checkpoints × 2 draws = 28 runs (the original text miscounted "40"). No hypothesis, statistic, unit, α or Holm family changed. New prereg sha256[:16] a991e2e5ca2d6098 (original 0d5e8385c911824f), updated in `prereg_h1_h4.py`.
+Evidence: `docs/insights/PREREG_iter4.md` §7, `docs/insights/PREREG_iter4_analysis.md`, `analysis/insights/iter_4/prereg_h1_h4.py`.
+
 ## W23 — Confirmatory analysis script for PREREG iter4 (2026-09-29)
 **TL;DR** `analysis/insights/iter_4/prereg_h1_h4.py` implements PREREG_iter4 §2–§4:
 - **Primary.** H1 (φ, P1 estimator unchanged, B = 5000), H2 (r, exact within-model relabelling) and H3 (F_split, 100 task halves, 12 P2 features), with Holm over H1–H3.
