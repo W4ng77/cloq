@@ -10,6 +10,23 @@ Newest first.
 
 ---
 
+## W42 — Decision: deterministic forks (protocol A); development forks queued (2026-09-30 01:00 PDT)
+**TL;DR** The fork engineering gate passed on real divergence states in retail, airline and telecom (W30, `docs/insights/FORK_PROTOCOL.md` §8):
+- no-op QQ 20/20 and BB 10/10 bit-exact;
+- same-checkpoint and KV16 bridge identical;
+- isolation, reordering and a fresh server pair identical;
+- budget counters 80/80;
+- re-prefill 20/20.
+
+The 10-01 evening decision is therefore taken early, about 1 day ahead: **protocol A (deterministic)**. Protocol B (stochastic) is not needed.
+- **Queued:** 16 development fork tasks (`make_tasks_fork_dev.py --write`) at priority −20, ahead of every other science task.
+  - q4 and q8 × GPTQ-W4 d1 and AWQ-W4 d1 × 20 shared-nonce blocks (q3–q5, f01–f17), over all 85 tasks.
+  - A 10% Q→Q no-op sample; any mismatch quarantines the output.
+  - q8 tasks pinned to node004/005/007.
+- **Cost:** q4 about 40–60 GPU-h, q8 about 216–256 GPU-h. Expected q8 coverage in 12 h on about 20 GPUs is about 10–12 blocks.
+- **Next:** development G/A/C/I and annotation (10-02), then PREREG_FORK_CONFIRM.md and the telecom holdout (10-03).
+Evidence: `analysis/fork/gate/`, `docs/insights/FORK_PROTOCOL.md`, queue `todo/fork_dev_*.json`, commit 1cecec0.
+
 ## W41 — Telecom user-simulator ToolCall validation errors are not outages (2026-09-30 00:15 PDT)
 **TL;DR** `a6k2_q4_tel_awq_w4_fdev1` failed on one "outage". The actual error was a tau2 pydantic `validation error for ToolCall` (arguments=`[]`, not a dict), repeated on both attempts. In telecom the user simulator has tools, and the agent's last decision in that episode was a clean `disable_roaming` call, so the malformed call came from the simulator in the state the AWQ agent led to. It is deterministic, so a plain requeue would fail again.
 - **Worker change:** `worker.py` now labels such episodes in `infra_causes.json` via `toolcall_side()`:
