@@ -546,6 +546,54 @@ def dev_mode(spec, bases, user_base, servers, out):
     return {"search_seconds": s["seconds"], "branches_seconds": b["seconds"], "n_states": len(b["rows"])}
 
 
+def pivot_arms(spec, bases, user_base, servers, out):
+    """W55 step 2: at frozen fork states (the pivot t*), each served arm (one per handle: spec["arms"]["B"/"Q"]) makes
+    Q's decision once from the identical prompt; its full action is compared semantically with a_B and a_Q.
+    States: every state file under spec["states_globs"] with a primary divergence, sampled by sha256(salt|state_id)."""
+    import glob as _g
+    files = sorted({p for g in spec["states_globs"] for p in _g.glob(str(ROOT / g))})
+    states = []
+    for p in files:
+        st = json.loads(Path(p).read_text())
+        if st.get("a_B") and st.get("divergence"):
+            states.append(st)
+    states.sort(key=lambda st: hsel(f"{spec.get('salt', 'pivot-arms-v1')}|{st['state_id']}"))
+    states = states[: spec.get("n_states", 150)]
+    log(f"pivot_arms: {len(states)} states from {len(files)} files; arms {spec['arms']}")
+
+    def one(st, h):
+        arm = spec["arms"][h]
+        a, rec = F.shadow(st, bases[h], f"piv-{arm}-{st['state_id']}")
+        sch = F.tool_schemas(_tools_schema(st))
+        cb = F.compare_actions(st["a_B"]["message"], a, sch)
+        cq = F.compare_actions(st["a_Q"]["message"], a, sch)
+        return {"arm": arm, "state_id": st["state_id"], "run_id": st["run_id"], "domain": st["domain"], "task": f"{st['domain']}:{st['task_id']}",
+                "t": st["decision_idx"], "divergence": st["divergence"]["category"],
+                "prompt_ok": F.ids_sha(rec.get("prompt_token_ids")) == st["q_decision"]["prompt_ids_sha"],
+                "eq_B": not cb["primary"], "eq_Q": not cq["primary"], "cat_vs_B": cb["category"], "cat_vs_Q": cq["category"],
+                "exact_B": F.canon_msg(a) == F.canon_msg(st["a_B"]["message"]), "exact_Q": F.canon_msg(a) == F.canon_msg(st["a_Q"]["message"]),
+                "completion_ids_sha": F.ids_sha(rec.get("completion_token_ids")), "finish_reason": rec.get("finish_reason"), "action": a}
+
+    t0 = time.time()
+    res = {"protocol": F.PROTOCOL, "spec": spec, "servers": servers, "n_states": len(states), "arms": {}}
+    for h in ("B", "Q"):
+        if h not in spec["arms"] or (h == "Q" and spec["arms"]["Q"] == spec["arms"].get("B")):
+            continue
+        with ThreadPoolExecutor(spec.get("concurrency", 8)) as ex:
+            rows = list(ex.map(lambda st: _safe(one, st, h), states))
+        arm = spec["arms"][h]
+        (out / f"{arm}.jsonl").write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows))
+        ok = [r for r in rows if "error" not in r]
+        res["arms"][arm] = {"n": len(ok), "n_errors": len(rows) - len(ok), "prompt_ok": sum(r["prompt_ok"] for r in ok),
+                            "eq_B": sum(r["eq_B"] for r in ok), "eq_Q": sum(r["eq_Q"] for r in ok),
+                            "other": sum(1 for r in ok if not r["eq_B"] and not r["eq_Q"]),
+                            "exact_B": sum(r["exact_B"] for r in ok), "exact_Q": sum(r["exact_Q"] for r in ok)}
+        log(f"pivot_arms {arm}: {json.dumps(res['arms'][arm])}")
+    res["seconds"] = time.time() - t0
+    dump(out / f"pivot_arms_{'_'.join(spec['arms'][h] for h in sorted(spec['arms']))}.json", res)
+    return res
+
+
 def branches_mode(spec, bases, user_base, servers, out):
     sdir = ROOT / spec["states_dir"]
     states = [json.loads(p.read_text()) for p in sorted(sdir.glob("*.json"))]
@@ -679,7 +727,7 @@ def main():
     bases = {"B": a.b_base, "Q": a.q_base}
     out = ROOT / spec["out"]
     out.mkdir(parents=True, exist_ok=True)
-    fn = {"gate": gate, "gate_same": gate_same, "search": search_mode, "branches": branches_mode, "dev": dev_mode}[spec["mode"]]
+    fn = {"gate": gate, "gate_same": gate_same, "search": search_mode, "branches": branches_mode, "dev": dev_mode, "pivot_arms": pivot_arms}[spec["mode"]]
     r = fn(spec, bases, a.user_base, servers, out)
     v = r.get("verdict")
     print(json.dumps({"verdict": v}, default=str))

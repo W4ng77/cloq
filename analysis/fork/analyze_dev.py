@@ -10,6 +10,8 @@ Y_QQ is the original episode (no-op replay verified on a 10% sample per fork tas
 enter with all four branches equal to the original outcome (zero effect). Excluded units (search / branch
 infrastructure failures, Q block not admitted in the snapshot, quarantined fork task) leave the denominator and are
 counted per reason; they are never coded as "no divergence".
+  Explicit secondary endpoints: Y_QB - Y_QQ (escalate to B after Q's pivot action; = L_QQ - L_QB = C + I) and Y_BB - Y_QQ
+(B from the pivot on; = L_QQ - L_BB = A + C + I).
   G_all (primary)       mean over the full task pool: task-level mean over its blocks, then the mean over tasks.
   G_div (secondary)     ratio form over divergent units only (sum of effects / number of states).
 Intervals: hierarchical percentile bootstrap, tasks with replacement, then blocks with replacement within each drawn
@@ -214,10 +216,12 @@ def effects(Y: dict) -> dict:
     return {"G": Y["BQ"] - Y["QQ"], "rescue": int(Y["BQ"] == 1 and Y["QQ"] == 0), "damage": int(Y["BQ"] == 0 and Y["QQ"] == 1),
             "both_succeed": int(Y["BQ"] == 1 and Y["QQ"] == 1), "both_fail": int(Y["BQ"] == 0 and Y["QQ"] == 0),
             "A": L["QB"] - L["BB"], "C": L["BQ"] - L["BB"], "I": L["QQ"] - L["QB"] - L["BQ"] + L["BB"],
-            "Y_QQ": Y["QQ"], "Y_BB": Y["BB"], "Y_BQ": Y["BQ"], "Y_QB": Y["QB"]}
+            "Y_QQ": Y["QQ"], "Y_BB": Y["BB"], "Y_BQ": Y["BQ"], "Y_QB": Y["QB"],
+            "QB_minus_QQ": Y["QB"] - Y["QQ"], "BB_minus_QQ": Y["BB"] - Y["QQ"]}
 
 
-STATS = ["G", "rescue", "damage", "both_succeed", "both_fail", "A", "C", "I", "Y_QQ", "Y_BB", "Y_BQ", "Y_QB"]
+STATS = ["G", "rescue", "damage", "both_succeed", "both_fail", "A", "C", "I", "Y_QQ", "Y_BB", "Y_BQ", "Y_QB",
+         "QB_minus_QQ", "BB_minus_QQ"]  # Y_QB-Y_QQ = C + I, Y_BB-Y_QQ = A + C + I
 
 
 class Boot:
@@ -298,7 +302,7 @@ def analyse(units: list[dict], boot: Boot, draws_out: dict | None = None, label:
                              "ub_lt_minus_gmin": bool(g["ci95"][1] < -100 * G_MIN), "g_min_pp": 100 * G_MIN}
     if div:
         cond = {}
-        for s in ("G", "rescue", "damage", "both_succeed", "both_fail", "A", "C", "I"):
+        for s in ("G", "rescue", "damage", "both_succeed", "both_fail", "A", "C", "I", "QB_minus_QQ", "BB_minus_QQ"):
             X, M = boot.arrays(div, s)
             pt, dr = boot.ratio(X, M)
             cond[s] = summarise(pt, dr)
