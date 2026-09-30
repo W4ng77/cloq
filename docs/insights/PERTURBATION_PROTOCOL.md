@@ -175,4 +175,4 @@ Because parameter bytes match, the simulated budgets also match to within 0.005 
 
 - **Fork integration.** `run_fork` builds `restore` / `resid` specs through `build_ckpt` unchanged. It does not yet call `derived.canary_checks`: the per-role canary is recorded, but the equals-bf16 / equals-q rules are enforced only in eval tasks.
 - **Fork Q branch.** For restoration forks, the Q branch should be `resid_a1` (or `restore_none`) rather than a fresh `gptq` build, so that Q and every arm share one cached base.
-- **Gate cross-check.** The smoke tasks compare the cached q4 GPTQ base against the fork gate's Q: files sha `e6c24bc2…` and canary `a72b3da0…` (`/data/ziyangs/cloq_work/logs/tasks/fork_gate_q4_gptq_w4_d1.servers.json`).
+- **Gate cross-check (verified by the smoke, RESEARCH_LOG W39-pert).** The cached q4 GPTQ base reproduced the fork gate's Q files sha `e6c24bc2…` (built on another node), and `resid_a1` reproduced its canary `a72b3da0…`. The cached q8 AWQ base equals the gate's `9ce71e4a…`. `resid_a0` served the BF16 reference canary `c7343b60…`.

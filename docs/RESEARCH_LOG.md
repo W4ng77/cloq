@@ -10,6 +10,47 @@ Newest first.
 
 ---
 
+## W39-pert — Engineering line 3: restoration and residual-dose checkpoint kinds (perturb-v1); smoke passes (2026-09-30)
+**TL;DR** Two new worker ckpt kinds are derived from one cached W4 checkpoint Q:
+- `restore`: BF16 restored in early / middle / late thirds, attention-only, MLP-only, or byte-matched random module sets (3 seeds per budget);
+- `resid`: W_α = W + α(W_Q − W), α ∈ {0, 0.25, 0.5, 1, 2}, labelled as residual interventions, not bit widths.
+
+**Exactness and reproducibility**
+- α = 0 and `all` equal BF16 bit for bit, and α = 1 and `none` equal Q bit for bit: checked by CPU tests and again in every build. The endpoint rule is needed because the literal formula at α = 0 turns −0.0 into +0.0.
+- Smoke on the cluster:
+  - α = 0 served the BF16 reference canary `c7343b60…`;
+  - α = 1 reproduced the files (`e6c24bc2…`) and canary (`a72b3da0…`) of the fork-gate GPTQ Q;
+  - the cached q8 AWQ base equals the fork gate's Q (`9ce71e4a…`), which shows GPTQ/AWQ builds are bit-reproducible across nodes.
+
+**Tasks**
+- Only 5 smoke tasks were queued (priority −7). No matrices and no forks; forks belong to the main session.
+- Manifests for q4/q8 were fixed before any outcome.
+- Random arms match structured arms by BF16 parameter bytes within 0.14 % (q4) and exactly (q8); see `docs/insights/PERTURBATION_PROTOCOL.md` §3.
+
+**Evidence**
+- Code: `cloq/perturb.py`, `scripts/a6000/derived.py` (hooked into `scripts/a6000/worker.py::build_ckpt` / `run_eval`), `scripts/a6000/make_tasks_perturb.py`.
+- Manifests: `manifests/perturb/restore_v1/{q4,q8}/*.json`.
+- Tests: `tests/test_perturb.py` → `tests/out/test_perturb.json` (ALL PASS, CPU ~10 s).
+- Protocol: `docs/insights/PERTURBATION_PROTOCOL.md`.
+- Smoke records: `/data/ziyangs/cloq_work/queue/done/pert_smoke_*.json`, logs `/data/ziyangs/cloq_work/logs/tasks/pert_smoke_*.log`, `/data/ziyangs/cloq_work/ckpt_cache/{base/*/cache.json,registry/,registry.log}`, `analysis/determinism/canary_{derived_*,agentq_*}_*.json`.
+
+**Smoke results**
+
+| task | node | ckpt | equals | content sha | canary | episodes (20 det tasks) |
+|---|---|---|---|---|---|---|
+| `pert_smoke_q4_gptq_resid_a0` | node005 | resid α=0 on GPTQ-W4 d1 (base built 406 s, cached) | bf16 | 37749b09… | c7343b60 = BF16 reference ✓ | build+serve only |
+| `pert_smoke_q4_gptq_resid_a1` | node007 | resid α=1 | q; files = cached Q = fork-gate Q e6c24bc2… | b22e0b7c… | a72b3da0 = fork-gate Q canary ✓ | build+serve only |
+| `pert_smoke_q4_gptq_resid_a0.5` | node005 | resid α=0.5, eff_alpha 0.499996 | — | 33e473c3… | 144dd842 (tag ref) | retail 4/10, airline 2/10 |
+| `pert_smoke_q4_gptq_restore_late` | node007 | restore late (84 linears) | — | 9c6f25ce… | fb88228c (tag ref) | retail 4/10 (1 max_steps), airline 5/10 |
+| `pert_smoke_q8_awq_restore_rand_attn_s1` | node007 | restore rand_attn_s1 (61 linears) on AWQ-W4 d1 (base built 666 s, files = fork-gate q8 AWQ Q 9ce71e4a…) | — | f456d038… | 635eb383 (tag ref) | build+serve only |
+
+**Derived build cost.** 8–24 s each on CPU (q4 / q8), plus serving. The base cache holds 7.5 GB (q4 GPTQ) + 16 GB (q8 AWQ).
+
+**Open for the main session**
+- `run_fork` builds these kinds unchanged, but does not yet apply `derived.canary_checks`.
+- For restoration forks, use `resid_a1` / `restore_none` as the Q branch so Q and every arm share one cached base.
+- KV-side K-only / V-only restoration is config-only via `CLOQ_KVQ_WHICH` (protocol §2.3).
+
 ## W38 — Simulator-free breadth on BFCL and ALFWorld (2026-09-30 00:10 PDT)
 **TL;DR** The user asked for more cost-effective runs beyond τ². I queued 32 more external eval tasks at priority −10, behind W37's eval. None needs the user simulator.
 - **Model scale and MoE:** q14 / q30a3 / q32 × {BF16, GPTQ-W4 d1, AWQ-W4 d1} × {BFCL, ALFWorld}.
