@@ -36,6 +36,11 @@ AGENT_MAXLEN = 33792
 RUN_PAR = int(os.environ.get("CLOQ_RUN_PAR", "4"))
 
 
+# W58: server start timeout (was 30 min). NFS degradation (W56/W57) stalls weight loads for tens of minutes; a stalled
+# start is waiting on I/O, not broken. Override with CLOQ_SERVER_UP_S.
+SERVER_UP_S = int(os.environ.get("CLOQ_SERVER_UP_S", 5400))
+
+
 def snapshot(hf_id: str, rev: str) -> str:
     return str(WORK / "hf/hub" / ("models--" + hf_id.replace("/", "--")) / "snapshots" / rev)
 
@@ -327,8 +332,8 @@ def run_eval(task, args, st: Status):
         while not healthy(args.port):
             if server.poll() is not None:
                 raise RuntimeError("vLLM agent server exited during startup")
-            if time.time() - t0 > 1800:
-                raise RuntimeError("vLLM agent server did not come up in 30 min")
+            if time.time() - t0 > SERVER_UP_S:
+                raise RuntimeError(f"vLLM agent server did not come up in {SERVER_UP_S // 60} min")
             time.sleep(5)
         # BF16 servers of a model must be bit-identical on every node (quantized ckpts differ by design)
         if task["ckpt"]["kind"] == "bf16" and not task.get("serve_extra") and not kvq and not aq:  # eager/KVQ/AQ = different flavour by design
@@ -523,8 +528,8 @@ def run_fork(task, args, st: Status):
             while not healthy(port):
                 if procs[role].poll() is not None:
                     raise RuntimeError(f"fork {role} server exited during startup")
-                if time.time() - t0 > 1800:
-                    raise RuntimeError(f"fork {role} server did not come up in 30 min")
+                if time.time() - t0 > SERVER_UP_S:
+                    raise RuntimeError(f"fork {role} server did not come up in {SERVER_UP_S // 60} min")
                 time.sleep(5)
             with open(lp, errors="replace") as fh:
                 fh.seek(off)
