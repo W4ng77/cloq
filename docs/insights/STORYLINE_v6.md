@@ -6,6 +6,8 @@ success within nonce noise, but it re-rolls which tasks succeed above a numerics
 behavioural fingerprint (H3 confirmed). The fingerprint is generic to fixed weight perturbations, not specific to
 quantizers. Line B is the current proposal. Its open problem is showing that the behavioural change matters.
 
+> **Status 2026-09-30: both lines retired as main lines.** Line A was refuted by pre-registration; Line B lost both ends after W29 (success equivalence untested, no W4 fingerprint detected). Current main line: consequences and sources of quantized action divergence on identical histories; see `docs/insights/EXTERNAL_REVIEW_GPT61_20260930.md` (Round 2).
+
 # Storyline v6: two lines
 
 ## Line A: checkpoint lottery (refuted, kept for the record)

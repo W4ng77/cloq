@@ -192,3 +192,48 @@ executing agents must follow. Section numbers "§x" refer to the reviewer's plan
 - Dynamic Mixed Precision Routing (2602.02711)
 
 Update `docs/insights/SURVEY.md`.
+
+## Round 2 (after W29 corrections), agreed
+
+- **Old main line ended.**
+  - "Success-equivalent, behaviourally distinct" leaves the title, abstract and contribution list. Success equivalence is not established, and no W4 fingerprint was detected.
+  - Random-perturbation result, wording: "The corrected exploratory analysis detected cross-run behavioural consistency in random-perturbation checkpoints; no corresponding evidence was detected for W4 quantized checkpoints." Its RAND-only p = 0.028 is post-hoc and must be read with multiplicity. The pooled result no longer supports any quantization claim.
+  - "Turnover above the noise floor" stays as motivation, restricted to the verified task set, run conditions and comparison.
+- **Main line.** On identical interaction histories: which task consequences do quantized action substitutions cause, and which part comes from the current action, the subsequent execution, and their interaction?
+  - A different full action is not by itself a mechanism finding. Forks must show the consequence, locate it, and give process evidence.
+  - The BF16 action is only a reference. Defects are judged from tool preconditions, task requirements, authorisation and state changes, never from "differs from BF16".
+- **Gates.**
+  - The 10-01 engineering gate stays.
+  - No research go/no-go on the sign of G.
+  - The development evidence gate asks whether divergence consequences are measured clearly enough to yield a specific explanation testable on the holdout.
+
+  | Development deliverable | Question |
+  |---|---|
+  | Divergence coverage | How many tasks in the full pool reach a qualifying first divergence, and at what position |
+  | Consequence composition | Counts and shares of rescue, new damage, both succeed, both fail |
+  | Four-branch decomposition | G and A/C/I with intervals, per model and method |
+  | Process mechanism | Verifiable action defects, evidence of later correction, remaining budget |
+  | Precision | Which effect sizes can be excluded, and which conclusions remain indistinguishable |
+
+  Paths after development:
+  - Stable consequences with mechanism evidence: freeze the mechanism hypothesis and confirm.
+  - Small effect with a narrow interval: report a limited consequence, and check rescue/damage cancellation.
+  - A few critical divergence types: freeze the type definitions and opportunity denominators, then confirm their damage rates.
+  - Wide intervals and few events: report insufficient evidence; no new story.
+- **Per-fork annotation, three independent fields:**
+  1. Does the current action have a verifiable defect?
+  2. Is there a later correction aimed at that defect?
+  3. Which task requirements are satisfied at the end?
+
+  Only "defect, then correction, then satisfied" supports recovery. Otherwise: "not recovered under the tested continuation controllers and the fixed remaining budget". Freeze the tool-type table (source, version, manual check) before confirmation.
+- **Inference.**
+  - Report conclusions for the fixed benchmark task pool and for a new task distribution separately. Nonce repeats reduce run-level uncertainty, not task-sampling uncertainty.
+  - Non-inferiority is not equivalence. A 3 pp margin that the data cannot resolve is reported as inconclusive.
+  - New independent tasks help generalisation more than further repeats.
+- **Submission.** Still possible, but the fork design itself is not the contribution. The contribution has to be one of:
+  - a stable, consequential divergence;
+  - a small average effect with a clear rescue/damage cancellation;
+  - recovery shown with process evidence;
+  - a few predefined divergence types that carry high damage risk.
+
+**Our addition:** include the telecom development split (80 tasks, disjoint from the 34-task holdout) in development forks, to add independent tasks in the confirmation domain. The 22 excluded retail/airline tasks stay out: they were selected on BF16 behaviour.

@@ -10,6 +10,10 @@ Newest first.
 
 ---
 
+## W31 — Review round 2: old main line retired; fork deliverables and annotation fields defined (2026-09-30)
+**TL;DR** "Success-equivalent, behaviourally distinct" retired. The random-perturbation fingerprint is kept as an exploratory, post-hoc finding; no W4 fingerprint was detected. Main line: consequences and sources of quantized action substitutions on identical histories. The BF16 action is only a reference; defects are judged from tool preconditions, task requirements, authorisation and state. No research gate on the sign of G. The development evidence gate needs coverage, consequence composition, G and A/C/I with intervals, process evidence and precision. Per-fork annotation: defect, correction, requirements satisfied. Freeze the tool-type table. Report the fixed pool and new tasks separately. Our addition: telecom dev split (80 tasks) joins development forks.
+Evidence: `docs/insights/EXTERNAL_REVIEW_GPT61_20260930.md` (Round 2), `docs/insights/STORYLINE_v6.md`.
+
 ## W29 — P0 statistics and measurement fixes; corrected H3; audit record (2026-09-30)
 **TL;DR** The review's §B/§C issues were all confirmed in the code; fixes were implemented as new scripts and outputs. The original results are kept as history, and everything below on the 28 runs is a corrected (post-hoc) re-analysis.
 - **H3.** The pre-registered test was invalid: its true-pair scaling rejects 33–42% of exchangeable null datasets. The corrected test (pairing-invariant pooled scale) is calibrated: 4.4% ± 0.3% against a nominal ≤ 4%.
