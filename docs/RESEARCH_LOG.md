@@ -10,6 +10,10 @@ Newest first.
 
 ---
 
+## W29a — Fork development blocks queued; Llama deprioritised (2026-09-30)
+**TL;DR** Primary fork checkpoints fixed by a pre-stated completeness rule (most existing fresh-nonce draws; tie → lowest calibration draw): GPTQ-W4 d1 and AWQ-W4 d1 (calibration c1) on q4 and q8. Development blocks: existing q3–q5 + 17 new nonces f01–f17 (sha256-derived, disjoint from every used nonce) = 20 blocks; queued Q runs for the 4 cells and BF16 on the same nonces (36 tasks, 102 runs, priority −8), which also give paired Q−B success. 28 Llama (l8) tasks moved +40 per the external review's priorities. Workstreams launched: P0 statistics/measurement fixes (→ W29) and fork replay engineering with the 10-01 gate (→ W30).
+Evidence: `manifests/fork/dev_blocks_v1.json`, `queue/todo/a6k2_{q4,q8}_{gptq_w4_d1,awq_w4,bfpair}_fdev*.json`.
+
 ## W28 — External review (GPT-6.1) adopted: fork mechanism study; P0 fixes; BF16 pairing (2026-09-30)
 **TL;DR** New main line: same-state 2×2 fork (current action B/Q × continuation B/Q) to separate current-decision and subsequent-execution effects of quantization; mechanism/measurement paper, no repair method this round; conformal out of the core. Verified in code before adopting: H3 `split_cos` scales by true-pair differences (permutation invalid as implemented), p1 nonce term includes shared nonce main effect (H1 p-value unaffected, φ estimate biased), `p_act` treats tool-start outside top-20 as 0, q8 AWQ d3 +5.29 pp. Queued `a6k2_{q4,q8}_bfpair` (BF16 on the W4 fresh nonces q1–q5; nonces verified from environment.json) for paired non-inferiority. Thresholds 3 pp (g_min, ε, equivalence). Replay go/no-go 10-01 evening; telecom holdout (34 tasks, untouched) for confirmation.
 Evidence: `docs/insights/EXTERNAL_REVIEW_GPT61_20260930.md`, `queue/todo/a6k2_{q4,q8}_bfpair.json`.
