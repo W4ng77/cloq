@@ -53,3 +53,22 @@ Risks:
 Mitigation:
 - Make B7 the deciding analysis.
 - Position against flip / behaviour-fingerprinting / model-equality work (Dutta 2024, AgentProv, Stability Monitor, model equality testing) by being closed-loop, null-referenced and pre-registered.
+
+## Correction (2026-09-30, W29; `docs/insights/METHODOLOGY_REVISION.md`)
+- **B3 withdrawn as worded.** The pre-registered H3 permutation used pairing-dependent scaling; under exchangeable data it rejects 33–42% at α = 0.05. Corrected (pairing-invariant scale, calibrated about 0.044):
+  - pooled F 0.136, p 0.013 (post-hoc);
+  - quantizer recalibrations (RECAL) only 0.025, p 0.30 (not detected);
+  - random checkpoints (RAND) only 0.283, p 0.028 (the minimum attainable).
+
+  Wording now: fixed random weight perturbations leave a persistent behavioural fingerprint (post-hoc corrected test); for W4 quantizer recalibrations a fingerprint was not detected.
+- **B4:** random ≥ quantizer persistence, post-hoc.
+- **B5 largely a selection effect.** The conditional act/talk shift is matched by a sign-symmetric null (q4 RTN-W4 P(act | BF16 talked) 0.014 → 0.088 vs null 0.080). Unconditional ΔP(act) runs from −0.10 to +0.005 on q4/q8, and random controls move it as much or more.
+- **Variance:** "method ≈ 0" becomes "method not estimable" (1 df). Crossed components in signed SD, pp:
+
+  | Model | Checkpoint | Residual | Nonce |
+  |---|---|---|---|
+  | q4 | 3.69 | 2.62 | −0.86 |
+  | q8 | 1.24 | 2.61 | 1.26 |
+
+  The H1 p-value is unchanged (0.744) because the nonce term is invariant under relabelling.
+- **B1 still untested** (paired BF16 runs pending). The new-task interval is about ±4 pp, so 3 pp equivalence for new tasks is unlikely with 85 tasks.
