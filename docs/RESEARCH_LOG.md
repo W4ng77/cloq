@@ -10,6 +10,35 @@ Newest first.
 
 ---
 
+## W61 — Damage regime moved to RTN-W3: stress forks, pivot arms, amended selection population (2026-09-30)
+**TL;DR** RTN-W3 is where the damage is, so the pivot-arm selection population moves there (amendment committed first), and 14 tasks are queued (≈ 30–40 GPU-h).
+- **Why.** Closed-loop success on q3–q5 shows no GPTQ-W3 damage but heavy RTN-W3 damage:
+
+  | | BF16 | GPTQ-W3 | RTN-W3 |
+  |---|---|---|---|
+  | q4 | 35.7% | 36.1% | 13.5% |
+  | q8 | 30.6% | 26.7% | 13.3% |
+
+  The stress forks agree (q4 GPTQ-W3 G_all ≈ −1.2 pp).
+- **FORK_PROTOCOL §13 amendment 1** (commit 0f26f7d2ab2fb8a7f3b42c0cac788504aa5fb95d), committed before any RTN task existed and before any W3 pivot-arm outcome was computed.
+  - The step-3 selection population is now RTN-W3 q4 + q8 (equal weight); the rule is otherwise unchanged. GPTQ-W3 pivot results become secondary.
+  - The q4 GPTQ-W3 pivot-arm files already existed but had not been opened; the pooled statistic had never been computed (q8 GPTQ-W3 had not run). This is stated in the amendment.
+  - `analyze_pivot_arms.py` now selects on RTN-W3 and reports the GPTQ-W3 pooled Δ separately as secondary.
+- **RTN-W3 stress forks** `fork_stress_q{4,8}_rtn_w3` (`make_tasks_fork_p2.py --rtn-w3`), priority −16.
+  - q3–q5 × 85 tasks, mode dev with the 10% no-op quarantine.
+  - Q runs `a6k2_q{4,8}_rtn_w3_q3..q5` admitted in snapshot 20260930T2047Z, nonces equal to their BF16 pairs, spec `{"kind": "rtn", "wbits": 3}`.
+  - Branch steps are capped only by the runs' tau2 max_steps (200); no extra cap.
+  - q8 on 2 GPUs, pinned.
+- **RTN-W3 pivot arms** (12 tasks, priority −15, dependent on the stress forks).
+  - Arms: none, all, early/middle/late/attn/mlp, rand_third/attn/mlp s1, resid α 0.5. No recal arms, because RTN has no inter-layer compensation.
+  - 150 hash-sampled states per cell.
+- **Estimate.** Measured stress throughput is 62–85 states/h, about 3–4 h per 255-unit task.
+  - RTN-W3 stress: ≈ 20–30 GPU-h (2–3× that for looping agents).
+  - RTN-W3 pivot arms: ≈ 10 GPU-h.
+- **Analyses.** analyze_dev's stress family is now gptq_w3 + kvq_int4_rot + rtn_w3, and every cell is also reported on its own. analyze_difficulty and analyze_pivot iterate over all cells, so they pick up rtn_w3 automatically.
+Evidence: `docs/insights/FORK_PROTOCOL.md` §13 amendment 1; `scripts/a6000/{make_tasks_fork_p2,make_tasks_pivot_arms}.py`; `analysis/fork/{analyze_dev,analyze_pivot_arms}.py`;
+`/data/ziyangs/cloq_work/queue/todo/{fork_stress,pivot}_q{4,8}_rtn_w3*.json`.
+
 ## W59 — NFS recovered; node001 back in service (2026-09-30 12:15 PDT)
 **TL;DR** The W56/W57 NFS degradation has cleared:
 - A fresh `import cloq.run_arm, vllm` takes 13–15 s on node001/004/006, down from >300 s at 11:25.

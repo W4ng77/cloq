@@ -25,7 +25,7 @@ Divergence types: act->talk, talk->act, tool name, tool args, user-side device c
 belongs to the user's device toolset), other (tool count / order, stop, parse failure, invalid tool / args).
 
 Pools: equal weight per cell within pre-declared families (W4 = gptq_w4_d1 + awq_w4; KV8 = kvq_int8; stress =
-gptq_w3 + kvq_int4_rot), per model and across models; families are never pooled together.
+gptq_w3 + kvq_int4_rot + rtn_w3; every cell is also reported on its own), per model and across models; families are never pooled together.
 Inputs: every directory under analysis/fork/{dev,kv,stress,restore,holdout}/ that holds search.json + states/ + branches/
 (--include-gate also reads analysis/fork/gate/, whose states were selected, not searched over the full pool, for
 testing only). Cell/model/block come from the Q run id a6k2_<model>_<cell>_<block>. The Q block (run, domain) must be
@@ -54,7 +54,7 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "analysis/fork/out"
 ROOTS = ["analysis/fork/dev", "analysis/fork/kv", "analysis/fork/stress", "analysis/fork/telecom", "analysis/fork/restore", "analysis/fork/holdout"]
 # Pre-declared pooling families (equal weight per cell within a family; families are never pooled together).
-FAMILIES = {"W4": ("gptq_w4_d1", "awq_w4"), "KV8": ("kvq_int8",), "stress": ("gptq_w3", "kvq_int4_rot", "kvq_int4")}
+FAMILIES = {"W4": ("gptq_w4_d1", "awq_w4"), "KV8": ("kvq_int8",), "stress": ("gptq_w3", "kvq_int4_rot", "kvq_int4", "rtn_w3")}
 
 
 def family(cell: str) -> str:

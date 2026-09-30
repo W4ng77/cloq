@@ -29,7 +29,11 @@ CELLS = {  # (model, cell): (base spec, states globs, deps, arms)
                         ["analysis/fork/stress/q4_gptq_w3/states/*.json"], [], PLAIN + RECAL),
     ("q8", "gptq_w3"): ({"kind": "gptq", "wbits": 3, "calib": "manifests/a6k2/q8/calib_fp_traj_c1.json"},
                         ["analysis/fork/stress/q8_gptq_w3/states/*.json"], ["fork_stress_q8_gptq_w3"], PLAIN + RECAL),
+    # W61: the damage regime (FORK_PROTOCOL §13 amendment 1); RTN has no inter-layer compensation -> no recal arms
+    ("q4", "rtn_w3"): ({"kind": "rtn", "wbits": 3}, ["analysis/fork/stress/q4_rtn_w3/states/*.json"], ["fork_stress_q4_rtn_w3"], PLAIN),
+    ("q8", "rtn_w3"): ({"kind": "rtn", "wbits": 3}, ["analysis/fork/stress/q8_rtn_w3/states/*.json"], ["fork_stress_q8_rtn_w3"], PLAIN),
 }
+PRIORITY = {"rtn_w3": -15}  # W61; the rest -14
 
 
 def spec(m: str, base: dict, arm: str) -> dict:
@@ -49,7 +53,7 @@ def main():
             pair = arms[k:k + 2]
             b_arm, q_arm = pair[0], pair[-1]
             t = {"id": f"pivot_{m}_{cell}_{'__'.join(pair)}", "kind": "fork", "model": m, "gpus": 1 if m == "q4" else 2,
-                 **({"gpu_util": 0.44} if m == "q4" else {"node": NODES[i % 3]}), "priority": -14, "deps": deps,
+                 **({"gpu_util": 0.44} if m == "q4" else {"node": NODES[i % 3]}), "priority": PRIORITY.get(cell, -14), "deps": deps,
                  "B": {"ckpt": spec(m, base, b_arm)}, "Q": {"ckpt": spec(m, base, q_arm)},
                  "fork": {"mode": "pivot_arms", "states_globs": globs, "n_states": 150, "salt": "pivot-arms-v1",
                           "arms": {"B": b_arm, "Q": q_arm}, "concurrency": 8, "out": f"analysis/fork/pivot_arms/{m}_{cell}"},

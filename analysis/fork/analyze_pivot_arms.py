@@ -8,7 +8,7 @@ block). Per cell x arm:
   - other P(it equals neither);
   - exact rates.
 Pipeline controls: `none` must reproduce a_Q exactly and `all` must reproduce a_B exactly.
-Selection (only the GPTQ-W3 cells, q4 and q8, equal weight):
+Selection (FORK_PROTOCOL §13 as amended in commit 0f26f7d: the RTN-W3 cells, q4 and q8, equal weight; GPTQ-W3 secondary):
   delta   = r_B(arm) - r_B(byte-matched random seed 1), paired on the same states;
   interval hierarchical bootstrap (tasks, then blocks within task; B = 2000; seed 20261001), with draws shared across the
           two cells (same task ids and nonces);
@@ -38,7 +38,8 @@ ROOT, OUT = AD.ROOT, AD.OUT
 IN = ROOT / "analysis/fork/pivot_arms"
 CTRL = {"early": "rand_third_s1", "middle": "rand_third_s1", "late": "rand_third_s1", "attn": "rand_attn_s1", "mlp": "rand_mlp_s1"}
 CANDIDATES = {**CTRL, **{f"recal_{k}": f"recal_{v}" for k, v in CTRL.items()}}
-SEL_CELLS = ("q4:gptq_w3", "q8:gptq_w3")
+SEL_CELLS = ("q4:rtn_w3", "q8:rtn_w3")  # FORK_PROTOCOL §13 amendment 1 (commit 0f26f7d): damage regime RTN-W3
+SECONDARY_CELLS = ("q4:gptq_w3", "q8:gptq_w3")  # the original §13 population, reported as secondary
 BLOCK_RE = re.compile(r"_(q\d+|f\d\d)$")
 
 
@@ -120,8 +121,13 @@ def main():
                     "verdict": ("queue step 3 with " + ", ".join(chosen)) if chosen else
                     "no module set flips the pivot action above its byte-matched control: step 3 not queued"})
     else:
-        sel["verdict"] = "waiting for both GPTQ-W3 cells"
+        sel["verdict"] = "waiting for both RTN-W3 cells"
     res["selection"] = sel
+    if all(c in draws_delta for c in SECONDARY_CELLS):  # secondary (amendment 1): same statistic on GPTQ-W3, not used for selection
+        res["secondary_gptq_w3_pooled_delta_pp"] = {
+            arm: AD.summarise(float(np.mean([draws_delta[c][arm][0] for c in SECONDARY_CELLS])),
+                              np.mean([draws_delta[c][arm][1] for c in SECONDARY_CELLS], axis=0))
+            for arm in CANDIDATES if all(arm in draws_delta[c] for c in SECONDARY_CELLS)}
     utc = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
     OUT.mkdir(parents=True, exist_ok=True)
     jp = OUT / f"pivot_arms_{utc}.json"

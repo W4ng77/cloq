@@ -12,7 +12,9 @@ hash sample (a mismatch quarantines the task's output, protocol A). Priority -15
 q8 tasks use 2 GPUs (one per server) and are pinned to node004/005/007 (node006's runner ignores task gpus).
 Outputs: analysis/fork/kv/<model>_kvq_int8/g<k>, analysis/fork/stress/<model>_<cell>/ (read by analyze_dev.py).
 
-usage: python scripts/a6000/make_tasks_fork_p2.py [--write]
+  W61: --rtn-w3 writes only the RTN-W3 stress forks (q4, q8 x q3-q5; Q runs a6k2_<m>_rtn_w3_q3..q5 admitted in snapshot
+  20260930T2047Z with BF16-paired nonces), priority -16; steps capped only by the runs' tau2 max_steps (200).
+usage: python scripts/a6000/make_tasks_fork_p2.py [--rtn-w3] [--write]
 """
 from __future__ import annotations
 
@@ -31,10 +33,10 @@ def w3(m):
     return {"ckpt": {"kind": "gptq", "wbits": 3, "calib": f"manifests/a6k2/{m}/calib_fp_traj_c1.json"}}
 
 
-def task(tid, m, qrole, blocks, cell, out, i):
+def task(tid, m, qrole, blocks, cell, out, i, prio=-15):
     pin = {} if m == "q4" else {"node": Q8_NODES[i % len(Q8_NODES)]}
     return {"id": tid, "kind": "fork", "model": m, "gpus": 1 if m == "q4" else 2, **({"gpu_util": 0.44} if m == "q4" else {}),
-            **pin, "priority": -15, "deps": [], "B": {"ckpt": {"kind": "bf16"}}, "Q": qrole,
+            **pin, "priority": prio, "deps": [], "B": {"ckpt": {"kind": "bf16"}}, "Q": qrole,
             "fork": {"mode": "dev", "q_blocks": [[f"a6k2_{m}_{cell}_{b}", d] for b in blocks for d in ("retail", "airline")],
                      "branches": ["BB", "BQ", "QB"], "noop_frac": 0.1, "q_check": True, "concurrency": 8, "out": out},
             "note": "P2 fork (W49): make_tasks_fork_p2.py"}
@@ -43,9 +45,14 @@ def task(tid, m, qrole, blocks, cell, out, i):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--write", action="store_true")
+    ap.add_argument("--rtn-w3", action="store_true", help="W61: only the RTN-W3 stress forks (priority -16)")
     a = ap.parse_args()
     T, i = [], 0
-    for m in ("q4", "q8"):
+    if a.rtn_w3:
+        for j, m in enumerate(("q4", "q8")):
+            T.append(task(f"fork_stress_{m}_rtn_w3", m, {"ckpt": {"kind": "rtn", "wbits": 3}}, ["q3", "q4", "q5"], "rtn_w3",
+                          f"analysis/fork/stress/{m}_rtn_w3", j, prio=-16))
+    for m in (() if a.rtn_w3 else ("q4", "q8")):
         for g in range(0, len(BLOCKS_KV8), 5):
             T.append(task(f"fork_kv_{m}_kvq_int8_g{g // 5 + 1}", m, KV8, BLOCKS_KV8[g:g + 5], "kvq_int8",
                           f"analysis/fork/kv/{m}_kvq_int8/g{g // 5 + 1}", i))
