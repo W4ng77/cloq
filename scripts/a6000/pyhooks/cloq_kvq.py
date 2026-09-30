@@ -26,10 +26,25 @@ import os
 import sys
 
 BITS = int(os.environ.get("CLOQ_KVQ_BITS", "16"))
-ROT = os.environ.get("CLOQ_KVQ_ROT", "0") == "1"
 WHICH = os.environ.get("CLOQ_KVQ_WHICH", "kv")
 ACTIVE_Q = BITS < 16
+# QuaRot mode (docs/insights/METHOD_FIDELITY.md): CLOQ_KVQ_ROT=qk rotates q and k online only (V is rotated offline by a
+# cloq.quarot checkpoint: v_proj output per head, undone in o_proj); CLOQ_KVQ_FMT=quarot uses QuaRot's quantizers
+# (cloq/aq.py): K asymmetric per (token, head) with zero in the range, V asymmetric per group of head_dim, integer zero
+# point, constant clip ratios CLOQ_KVQ_KCLIP / CLOQ_KVQ_VCLIP (QuaRot: 0.95). Defaults keep the W13 behaviour and tag.
+ROT_MODE = os.environ.get("CLOQ_KVQ_ROT", "0")
+assert ROT_MODE in ("0", "1", "qk"), ROT_MODE
+ROT = ROT_MODE != "0"  # q and k rotated online
+ROT_V = ROT_MODE == "1"  # V rotated online and rotated back
+FMT = os.environ.get("CLOQ_KVQ_FMT", "minmax")
+assert FMT in ("minmax", "quarot"), FMT
+KCLIP = float(os.environ.get("CLOQ_KVQ_KCLIP", "1.0"))
+VCLIP = float(os.environ.get("CLOQ_KVQ_VCLIP", "1.0"))
+if FMT == "minmax":
+    assert KCLIP == 1.0 and VCLIP == 1.0, "clip ratios need CLOQ_KVQ_FMT=quarot"
 TAG = f"kvq_b{BITS}_r{int(ROT)}_{WHICH}"
+if ROT_MODE == "qk" or FMT != "minmax":
+    TAG = f"kvq_b{BITS}_r{ROT_MODE}_{WHICH}_{FMT}_kc{KCLIP:g}_vc{VCLIP:g}"
 
 
 def isolate_cache_root():
@@ -52,8 +67,11 @@ def _fwht(x):
     return x * (d ** -0.5)
 
 
-def _qdq(x, bits):
+def _qdq(x, bits, which="k"):
     import torch
+    if FMT == "quarot":
+        from cloq.aq import qdq
+        return qdq(x, bits, "asym_quarot_tok" if which == "k" else "asym_quarot_grp", KCLIP if which == "k" else VCLIP)
     L = float(2 ** bits - 1)
     mn = x.amin(dim=-1, keepdim=True)
     mx = x.amax(dim=-1, keepdim=True)
@@ -66,7 +84,7 @@ def _rot(t, d):
     return _fwht(t.reshape(-1, d).float()).to(t.dtype).reshape(t.shape)
 
 
-def _kv(t, d, rotate, unrotate, quant):
+def _kv(t, d, rotate, unrotate, quant, which="k"):
     if not (rotate or unrotate or (quant and ACTIVE_Q)):
         return t
     shp, dt = t.shape, t.dtype
@@ -74,7 +92,7 @@ def _kv(t, d, rotate, unrotate, quant):
     if rotate:
         x = _fwht(x)
     if quant and ACTIVE_Q:
-        x = _qdq(x, BITS)
+        x = _qdq(x, BITS, which)
     if unrotate:
         x = _fwht(x)
     return x.to(dt).reshape(shp)
@@ -90,13 +108,13 @@ def install(mod):
         if key is not None and value is not None and self.attn_type == "decoder" and (ACTIVE_Q or ROT):
             d, dv = self.head_size, self.head_size_v
             if ROT:
-                assert d & (d - 1) == 0 and dv & (dv - 1) == 0, f"Hadamard needs power-of-2 head_dim, got {d}/{dv}"
+                assert d & (d - 1) == 0 and (dv & (dv - 1) == 0 or not ROT_V), f"Hadamard needs power-of-2 head_dim, got {d}/{dv}"
                 if output_dtype is None:
                     output_dtype = query.dtype
                 query = _rot(query, d)
-            key = _kv(key, d, ROT, False, "k" in WHICH)  # K stays in the rotated basis (matches the rotated q)
+            key = _kv(key, d, ROT, False, "k" in WHICH, "k")  # K stays in the rotated basis (matches the rotated q)
             if "v" in WHICH:
-                value = _kv(value, dv, ROT, ROT, True)
+                value = _kv(value, dv, ROT_V, ROT_V, True, "v")
         return orig(self, query, key, value, output_shape, output_dtype)
 
     Attention.forward = forward
@@ -114,4 +132,5 @@ def install(mod):
 
     Attention.__init__ = __init__
     print(f"[cloq_kvq] pid={os.getpid()} wrapped {mod.__name__}.Attention.forward: bits={BITS} rot={int(ROT)} "
+          f"rot_mode={ROT_MODE} fmt={FMT} kclip={KCLIP:g} vclip={VCLIP:g} tag={TAG} "
           f"which={WHICH} cache_root={os.environ.get('VLLM_CACHE_ROOT')}", file=sys.stderr, flush=True)

@@ -235,6 +235,12 @@ def build_ckpt(task, env, gpus, scratch: Path, log) -> tuple[str, dict | None]:
     elif ck["kind"] in ("rot_bf16", "rot_rtn"):  # QuaRot-style rotation (cloq.rotate), optionally + RTN g128
         cmd = [sys.executable, "-m", "cloq.rotate", "--src", src, "--out", str(out), "--no-sha",
                "--seed", str(ck.get("seed", 0))] + prov + (["--wbits", str(ck["wbits"])] if ck["kind"] == "rot_rtn" else [])
+    elif ck["kind"] == "smoothquant":  # SmoothQuant W8 + smoothing (cloq.smoothquant); A8 via serve_env (pyhooks/cloq_aq.py)
+        cmd = [sys.executable, "-m", "cloq.smoothquant", "--src", src, "--out", str(out), "--no-sha",
+               "--alpha", str(ck.get("alpha", "auto"))] + prov
+    elif ck["kind"] == "quarot":  # QuaRot offline transforms (+ W4 RTN/GPTQ) (cloq.quarot); online half via serve_env
+        cmd = [sys.executable, "-m", "cloq.quarot", "--src", src, "--out", str(out), "--no-sha", "--seed", str(ck.get("seed", 0)),
+               "--wbits", str(ck.get("wbits", 16)), "--wmethod", ck.get("wmethod", "gptq")] + prov + (["--check"] if ck.get("check") else [])
     elif ck["kind"] == "rot_gptq":  # rotate to scratch, then GPTQ on the rotated BF16 model
         rot = scratch / f"ckpt_{task['id']}_rot"
         if rot.exists():
@@ -274,8 +280,24 @@ def run_eval(task, args, st: Status):
         m = MODELS[task["model"]]
         qmeta = dict(qmeta or {"method": "bf16", "source_model": m["hf_id"], "source_revision": m["revision"]},
                      kv_cache={"method": "kvq_fake", "bits": int(senv["CLOQ_KVQ_BITS"]), "rot": senv.get("CLOQ_KVQ_ROT", "0") == "1",
+                               "rot_mode": senv.get("CLOQ_KVQ_ROT", "0"), "fmt": senv.get("CLOQ_KVQ_FMT", "minmax"),
+                               "kclip": float(senv.get("CLOQ_KVQ_KCLIP", 1.0)), "vclip": float(senv.get("CLOQ_KVQ_VCLIP", 1.0)),
                                "which": senv.get("CLOQ_KVQ_WHICH", "kv"), "granularity": "per-token per-head, group=head_dim, asymmetric",
                                "hook": "pyhooks/cloq_kvq.py"})
+    aq = senv.get("CLOQ_PYHOOKS") == "1" and bool(senv.get("CLOQ_AQ_BITS") or senv.get("CLOQ_AQ_HAD", "0") != "0")
+    for k, v in ((qmeta or {}).get("requires_serve_env") or {}).items():  # SmoothQuant / QuaRot ckpts need their online half
+        if str(senv.get(k)) != str(v):
+            raise RuntimeError(f"checkpoint {task['ckpt']['kind']} requires serve_env {k}={v}, task has {senv.get(k)}")
+    for k, v in ((qmeta or {}).get("forbids_serve_env") or {}).items():
+        if str(senv.get(k)) == str(v):
+            raise RuntimeError(f"checkpoint {task['ckpt']['kind']} forbids serve_env {k}={v}")
+    if aq:  # fake activation quantization / QuaRot online Hadamards (scripts/a6000/pyhooks/cloq_aq.py, METHOD_FIDELITY.md)
+        m = MODELS[task["model"]]
+        qmeta = dict(qmeta or {"method": "bf16", "source_model": m["hf_id"], "source_revision": m["revision"]},
+                     activations={"method": "aq_fake", "bits": int(senv.get("CLOQ_AQ_BITS", 16)), "fmt": senv.get("CLOQ_AQ_FMT", "sym_quarot"),
+                                  "clip": float(senv.get("CLOQ_AQ_CLIP", 1.0)), "group": int(senv.get("CLOQ_AQ_GROUP", -1)),
+                                  "only": senv.get("CLOQ_AQ_ONLY", "qkv,o,gate_up,down"), "had": senv.get("CLOQ_AQ_HAD", "0"),
+                                  "granularity": "per token, dynamic", "scale_dtype": "fp32", "hook": "pyhooks/cloq_aq.py"})
     st.set("setup", "starting vLLM")
     slog = open(logdir / f"{task['id']}.vllm.log", "a")
     server = subprocess.Popen([str(ROOT / "scripts/a6000/serve.sh"), args.gpus, str(args.port), path, "agent", str(AGENT_MAXLEN),
@@ -289,10 +311,10 @@ def run_eval(task, args, st: Status):
                 raise RuntimeError("vLLM agent server did not come up in 30 min")
             time.sleep(5)
         # BF16 servers of a model must be bit-identical on every node (quantized ckpts differ by design)
-        if task["ckpt"]["kind"] == "bf16" and not task.get("serve_extra") and not kvq:  # eager/KVQ etc. = different flavour by design
+        if task["ckpt"]["kind"] == "bf16" and not task.get("serve_extra") and not kvq and not aq:  # eager/KVQ/AQ = different flavour by design
             st.set("check", "numerics canary")
             check_canary(args.port, task["model"], "agent")
-        if (qmeta or {}).get("protocol") == derived.PROTOCOL and not task.get("serve_extra") and not kvq:
+        if (qmeta or {}).get("protocol") == derived.PROTOCOL and not task.get("serve_extra") and not kvq and not aq:
             st.set("check", "numerics canary (derived ckpt)")
             qmeta["canary"] = derived.canary_checks(args.port, task["model"], qmeta, check_canary)
         if path.startswith(str(scratch)):  # weights are on the GPU now; free the RAM disk

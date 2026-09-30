@@ -1,0 +1,68 @@
+{
+ "sym_quarot_vs_QuaRot_ActQuantizer": {
+  "b8_c1.0": "exact",
+  "b8_c0.9": "exact",
+  "b4_c1.0": "exact",
+  "b4_c0.9": "exact",
+  "clip_saturation": "ok (+7 / -8 at 4 bits)"
+ },
+ "sym_sq_vs_SmoothQuant_per_token_absmax": "exact (8, 4 bits; zero, tiny (scale floor), tie rows)",
+ "asym_quarot_vs_QuaRot_ActQuantizer": {
+  "b8_c1.0": "exact",
+  "b8_c0.95": "exact",
+  "b4_c1.0": "exact",
+  "b4_c0.95": "exact",
+  "b3_c1.0": "exact",
+  "b3_c0.95": "exact",
+  "constant_group": "reference finite=False (scale 0 -> x/0); ours finite (zero-including range), documented deviation"
+ },
+ "group_tails": "300 = 2x128 + 44: tail group quantized on its own, equals per-chunk loop (4 formats x 8/4 bits)",
+ "row_locality": "prefix / future-token change / permutation invariant for all formats and Hadamards",
+ "weight_quantizers": "QuaRot WeightQuantizer (per-channel, sym/asym, w_clip MSE grid) and SmoothQuant W8 per-channel absmax: exact",
+ "smooth_scales": "SmoothQuant smooth_ln_fcs_llama_like (fp32): exact for alpha 0.5, 0.85",
+ "hadamard": {
+  "128": {
+   "K": 1,
+   "orth_err": 2.220446049250313e-16,
+   "kron_err": 1.3877787807814457e-17,
+   "vs_quarot_matmul_hadU_rel": 1.7114270914237137e-08
+  },
+  "1024": {
+   "K": 1,
+   "orth_err": 0.0,
+   "kron_err": 0.0,
+   "vs_quarot_matmul_hadU_rel": 0.0
+  },
+  "2560": {
+   "K": 20,
+   "orth_err": 4.007905118896815e-14,
+   "kron_err": 0.0
+  },
+  "4096": {
+   "K": 1,
+   "orth_err": 0.0,
+   "kron_err": 0.0,
+   "vs_quarot_matmul_hadU_rel": 0.0
+  },
+  "9728": {
+   "K": 76,
+   "orth_err": 2.426947531830592e-13,
+   "kron_err": 0.0
+  },
+  "12288": {
+   "K": 12,
+   "orth_err": 1.8185453143360064e-13,
+   "kron_err": 1.734723475976807e-18,
+   "vs_quarot_matmul_hadU_rel": 1.7948231450185214e-08
+  },
+  "heads_identity": "(H_nh x I)(I x H_hd) = H_4096 (1e-10)",
+  "offline_online_identity": "down_proj: had(x) . had(w) = x . w (fp64, 1e-12) for 9728 (K=76) and 12288 (K=12)"
+ },
+ "gptq_quarot": "cloq.quarot.gptq_solve == QuaRot GPTQ.fasterquant (W4 per-channel sym, w_clip MSE, blocksize 128, dead column): exact",
+ "quarot_tiny_invariance": {
+  "max_abs_dlogprob_fp32_with_online_had": 4.887054334545837e-07,
+  "without_online_had": 0.897731022116453,
+  "down_had_K": 76
+ },
+ "torch": "2.13.0+cu129"
+}

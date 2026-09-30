@@ -1,0 +1,253 @@
+{
+ "model": "q4",
+ "suite": "sq",
+ "canary_ref": "c7343b60da095480",
+ "ref_run": "a6k2_q4_bf16",
+ "host": "node007",
+ "job": "49673",
+ "configs": {
+  "sq_w8a16": {
+   "env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_AQ_BITS": "16"
+   },
+   "ckpt": "sq",
+   "tests": {
+    "openloop": 150
+   },
+   "ckpt_method": "SmoothQuant-W8A8",
+   "startup_s": 70,
+   "coverage": {
+    "engine_pid": "3319572)",
+    "by_kind_action": {
+     "qkv:pass": 36,
+     "o:pass": 36,
+     "gate_up:pass": 36,
+     "down:pass": 36
+    },
+    "by_kind_class": {
+     "qkv:QKVParallelLinear": 36,
+     "o:RowParallelLinear": 36,
+     "gate_up:MergedColumnParallelLinear": 36,
+     "down:RowParallelLinear": 36
+    },
+    "n_quant": 0,
+    "n_had_only": 0,
+    "n_pass": 144,
+    "n_excluded": 0,
+    "kv_attention_hooked": 0,
+    "wrapped_lines": [
+     "pid=3318209 wrapped vllm.model_executor.layers.linear: LinearBase.__init__, ColumnParallelLinear.forward, RowParallelLinear.forward bits=16 fmt=sym_quarot clip=1 group=-1 only=down,gate_up,o,qkv had=0 tag=aq_b16_sym_quarot_c1_g-1_h0_all cache_root=/tmp/cloq_49673/vllm_cache/aq_b16_sym_quarot_c1_g-1_h0_all",
+     "pid=3319572 wrapped vllm.model_executor.layers.linear: LinearBase.__init__, ColumnParallelLinear.forward, RowParallelLinear.forward bits=16 fmt=sym_quarot clip=1 group=-1 only=down,gate_up,o,qkv had=0 tag=aq_b16_sym_quarot_c1_g-1_h0_all cache_root=/tmp/cloq_49673/vllm_cache/aq_b16_sym_quarot_c1_g-1_h0_all"
+    ]
+   },
+   "provenance": {
+    "vllm": "0.29.0",
+    "attention_backend": "FLASH_ATTN",
+    "flash_attn_version": "2",
+    "tensor_parallel_size": "1",
+    "prefix_caching": "True",
+    "chunked_prefill": "True",
+    "compile_ranges_endpoints": "[2048]",
+    "cudagraph_mode": "FULL_AND_PIECEWISE",
+    "cache_dirs": [
+     "/tmp/cloq_49673/vllm_cache/aq_b16_sym_quarot_c1_g-1_h0_all/torch_compile_cache/0b1e7c076d/rank_0_0/backbone"
+    ]
+   },
+   "canary": "4459339e05e56d20",
+   "canary_eq_bf16": false,
+   "openloop": {
+    "n_decisions": 150,
+    "n_tokens": 12288,
+    "abs_d_mean": 0.01421345370937266,
+    "abs_d_quantiles": {
+     "0.5": 2.3841855067985307e-07,
+     "0.9": 0.027014449701309236,
+     "0.99": 0.28866321087264907
+    },
+    "frac_tokens_shifted": 0.19930013020833334,
+    "flip_rate": 0.010660807291666666,
+    "decision_any_flip": 0.3333333333333333
+   }
+  },
+  "sq_w8a8": {
+   "env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_AQ_BITS": "8",
+    "CLOQ_AQ_FMT": "sym_sq"
+   },
+   "ckpt": "sq",
+   "tests": {
+    "det": true,
+    "chunk": true,
+    "causal": true,
+    "openloop": 150
+   },
+   "ckpt_method": "SmoothQuant-W8A8",
+   "startup_s": 100,
+   "coverage": {
+    "engine_pid": "3329907)",
+    "by_kind_action": {
+     "qkv:quant": 36,
+     "o:quant": 36,
+     "gate_up:quant": 36,
+     "down:quant": 36
+    },
+    "by_kind_class": {
+     "qkv:QKVParallelLinear": 36,
+     "o:RowParallelLinear": 36,
+     "gate_up:MergedColumnParallelLinear": 36,
+     "down:RowParallelLinear": 36
+    },
+    "n_quant": 144,
+    "n_had_only": 0,
+    "n_pass": 0,
+    "n_excluded": 0,
+    "kv_attention_hooked": 0,
+    "wrapped_lines": [
+     "pid=3328562 wrapped vllm.model_executor.layers.linear: LinearBase.__init__, ColumnParallelLinear.forward, RowParallelLinear.forward bits=8 fmt=sym_sq clip=1 group=-1 only=down,gate_up,o,qkv had=0 tag=aq_b8_sym_sq_c1_g-1_h0_all cache_root=/tmp/cloq_49673/vllm_cache/aq_b8_sym_sq_c1_g-1_h0_all",
+     "pid=3329907 wrapped vllm.model_executor.layers.linear: LinearBase.__init__, ColumnParallelLinear.forward, RowParallelLinear.forward bits=8 fmt=sym_sq clip=1 group=-1 only=down,gate_up,o,qkv had=0 tag=aq_b8_sym_sq_c1_g-1_h0_all cache_root=/tmp/cloq_49673/vllm_cache/aq_b8_sym_sq_c1_g-1_h0_all"
+    ]
+   },
+   "provenance": {
+    "vllm": "0.29.0",
+    "attention_backend": "FLASH_ATTN",
+    "flash_attn_version": "2",
+    "tensor_parallel_size": "1",
+    "prefix_caching": "True",
+    "chunked_prefill": "True",
+    "compile_ranges_endpoints": "[2048]",
+    "cudagraph_mode": "FULL_AND_PIECEWISE",
+    "cache_dirs": [
+     "/tmp/cloq_49673/vllm_cache/aq_b8_sym_sq_c1_g-1_h0_all/torch_compile_cache/1973c7b72b/rank_0_0/backbone"
+    ]
+   },
+   "canary": "7b4bb17d0043ab5c",
+   "canary_eq_bf16": false,
+   "det": {
+    "n": 8,
+    "batch_eq_alone": 8,
+    "prefixhit_eq_alone": 8,
+    "ids_only_batch_eq": 8,
+    "mean_len": 49.375
+   },
+   "causal": [
+    {
+     "n_prefix": 1500,
+     "n_full": 2600,
+     "identical_positions": 1500,
+     "n_positions": 1500
+    },
+    {
+     "n_prefix": 1500,
+     "n_full": 2600,
+     "identical_positions": 1500,
+     "n_positions": 1500
+    },
+    {
+     "n_prefix": 1500,
+     "n_full": 2600,
+     "identical_positions": 1500,
+     "n_positions": 1500
+    }
+   ],
+   "openloop": {
+    "n_decisions": 150,
+    "n_tokens": 12288,
+    "abs_d_mean": 0.03026716079283485,
+    "abs_d_quantiles": {
+     "0.5": 3.576278118089249e-07,
+     "0.9": 0.05723548176467435,
+     "0.99": 0.5739769158496856
+    },
+    "frac_tokens_shifted": 0.225341796875,
+    "flip_rate": 0.019612630208333332,
+    "decision_any_flip": 0.41333333333333333
+   },
+   "chunk": {
+    "n": 8,
+    "unchunked_eq_chunked": 8,
+    "ids_only_eq": 8,
+    "max_num_batched_tokens": 34816,
+    "canary_nochunk": "7b4bb17d0043ab5c",
+    "provenance": {
+     "vllm": "0.29.0",
+     "attention_backend": "FLASH_ATTN",
+     "flash_attn_version": "2",
+     "tensor_parallel_size": "1",
+     "prefix_caching": "True",
+     "chunked_prefill": "True",
+     "compile_ranges_endpoints": "[34816]",
+     "cudagraph_mode": "FULL_AND_PIECEWISE",
+     "cache_dirs": [
+      "/tmp/cloq_49673/vllm_cache/aq_b8_sym_sq_c1_g-1_h0_all/torch_compile_cache/4d283a64d4/rank_0_0/backbone"
+     ]
+    }
+   }
+  },
+  "rtn_w8a8_nosmooth": {
+   "env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_AQ_BITS": "8",
+    "CLOQ_AQ_FMT": "sym_sq"
+   },
+   "ckpt": "sq0",
+   "tests": {
+    "openloop": 150
+   },
+   "ckpt_method": "W8A8 per-channel/per-token absmax, no smoothing (SmoothQuant quantizers)",
+   "startup_s": 60,
+   "coverage": {
+    "engine_pid": "3354363)",
+    "by_kind_action": {
+     "qkv:quant": 36,
+     "o:quant": 36,
+     "gate_up:quant": 36,
+     "down:quant": 36
+    },
+    "by_kind_class": {
+     "qkv:QKVParallelLinear": 36,
+     "o:RowParallelLinear": 36,
+     "gate_up:MergedColumnParallelLinear": 36,
+     "down:RowParallelLinear": 36
+    },
+    "n_quant": 144,
+    "n_had_only": 0,
+    "n_pass": 0,
+    "n_excluded": 0,
+    "kv_attention_hooked": 0,
+    "wrapped_lines": [
+     "pid=3354363 wrapped vllm.model_executor.layers.linear: LinearBase.__init__, ColumnParallelLinear.forward, RowParallelLinear.forward bits=8 fmt=sym_sq clip=1 group=-1 only=down,gate_up,o,qkv had=0 tag=aq_b8_sym_sq_c1_g-1_h0_all cache_root=/tmp/cloq_49673/vllm_cache/aq_b8_sym_sq_c1_g-1_h0_all"
+    ]
+   },
+   "provenance": {
+    "vllm": "0.29.0",
+    "attention_backend": "FLASH_ATTN",
+    "flash_attn_version": "2",
+    "tensor_parallel_size": "1",
+    "prefix_caching": "True",
+    "chunked_prefill": "True",
+    "compile_ranges_endpoints": "[2048]",
+    "cudagraph_mode": "FULL_AND_PIECEWISE",
+    "cache_dirs": [
+     "/tmp/cloq_49673/vllm_cache/aq_b8_sym_sq_c1_g-1_h0_all/torch_compile_cache/34cad61de7/rank_0_0/backbone"
+    ]
+   },
+   "canary": "24e274db1149f2f3",
+   "canary_eq_bf16": false,
+   "openloop": {
+    "n_decisions": 150,
+    "n_tokens": 12288,
+    "abs_d_mean": 0.043188870633849664,
+    "abs_d_quantiles": {
+     "0.5": 2.3841855067985307e-07,
+     "0.9": 0.07734128956079493,
+     "0.99": 0.843784212757102
+    },
+    "frac_tokens_shifted": 0.23527018229166666,
+    "flip_rate": 0.024983723958333332,
+    "decision_any_flip": 0.44
+   }
+  }
+ }
+}

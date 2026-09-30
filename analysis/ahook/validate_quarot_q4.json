@@ -1,0 +1,135 @@
+{
+ "model": "q4",
+ "suite": "quarot",
+ "canary_ref": "c7343b60da095480",
+ "ref_run": "a6k2_q4_bf16",
+ "host": "node001",
+ "job": "49670",
+ "configs": {
+  "qr_w16a16": {
+   "env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_AQ_BITS": "16",
+    "CLOQ_AQ_HAD": "quarot"
+   },
+   "ckpt": "qr16",
+   "tests": {
+    "det": true,
+    "openloop": 150
+   },
+   "ckpt_method": "QuaRot-rotation (W16)",
+   "error": "RuntimeError('server died; see /data/ziyangs/cloq_work/logs/ahook/validate_q4_qr_w16a16.vllm.log')"
+  },
+  "qr_w16a8": {
+   "env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_AQ_BITS": "8",
+    "CLOQ_AQ_HAD": "quarot",
+    "CLOQ_AQ_CLIP": "0.9"
+   },
+   "ckpt": "qr16",
+   "tests": {
+    "openloop": 150
+   },
+   "ckpt_method": "QuaRot-rotation (W16)",
+   "error": "RuntimeError('server died; see /data/ziyangs/cloq_work/logs/ahook/validate_q4_qr_w16a8.vllm.log')"
+  },
+  "qr_w16a4": {
+   "env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_AQ_BITS": "4",
+    "CLOQ_AQ_FMT": "sym_quarot",
+    "CLOQ_AQ_CLIP": "0.9",
+    "CLOQ_AQ_HAD": "quarot"
+   },
+   "ckpt": "qr16",
+   "tests": {
+    "openloop": 150
+   },
+   "ckpt_method": "QuaRot-rotation (W16)",
+   "error": "RuntimeError('server died; see /data/ziyangs/cloq_work/logs/ahook/validate_q4_qr_w16a4.vllm.log')"
+  },
+  "qr_w16a16kv4": {
+   "env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_AQ_BITS": "16",
+    "CLOQ_AQ_HAD": "quarot",
+    "CLOQ_KVQ_BITS": "4",
+    "CLOQ_KVQ_ROT": "qk",
+    "CLOQ_KVQ_FMT": "quarot",
+    "CLOQ_KVQ_KCLIP": "0.95",
+    "CLOQ_KVQ_VCLIP": "0.95"
+   },
+   "ckpt": "qr16",
+   "tests": {
+    "openloop": 150
+   },
+   "ckpt_method": "QuaRot-rotation (W16)",
+   "error": "RuntimeError('server died; see /data/ziyangs/cloq_work/logs/ahook/validate_q4_qr_w16a16kv4.vllm.log')"
+  },
+  "qr_w4a16": {
+   "env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_AQ_BITS": "16",
+    "CLOQ_AQ_HAD": "quarot"
+   },
+   "ckpt": "qr4",
+   "tests": {
+    "openloop": 150
+   },
+   "ckpt_method": "QuaRot",
+   "startup_s": 840,
+   "coverage": {
+    "engine_pid": "2792790)",
+    "by_kind_action": {
+     "qkv:pass": 36,
+     "o:had_only": 36,
+     "gate_up:pass": 36,
+     "down:had_only": 36
+    },
+    "by_kind_class": {
+     "qkv:QKVParallelLinear": 36,
+     "o:RowParallelLinear": 36,
+     "gate_up:MergedColumnParallelLinear": 36,
+     "down:RowParallelLinear": 36
+    },
+    "n_quant": 0,
+    "n_had_only": 72,
+    "n_pass": 72,
+    "n_excluded": 0,
+    "kv_attention_hooked": 0,
+    "wrapped_lines": [
+     "pid=2792790 wrapped vllm.model_executor.layers.linear: LinearBase.__init__, ColumnParallelLinear.forward, RowParallelLinear.forward bits=16 fmt=sym_quarot clip=1 group=-1 only=down,gate_up,o,qkv had=quarot tag=aq_b16_sym_quarot_c1_g-1_hquarot_all cache_root=/tmp/cloq_49670/vllm_cache/aq_b16_sym_quarot_c1_g-1_hquarot_all"
+    ]
+   },
+   "provenance": {
+    "vllm": "0.29.0",
+    "attention_backend": "FLASH_ATTN",
+    "flash_attn_version": "2",
+    "tensor_parallel_size": "1",
+    "prefix_caching": "True",
+    "chunked_prefill": "True",
+    "compile_ranges_endpoints": "[2048]",
+    "cudagraph_mode": "FULL_AND_PIECEWISE",
+    "cache_dirs": [
+     "/tmp/cloq_49670/vllm_cache/aq_b16_sym_quarot_c1_g-1_hquarot_all/torch_compile_cache/604a6c4ad0/rank_0_0/backbone"
+    ]
+   },
+   "canary": "e2a6d51f2558fafb",
+   "canary_eq_bf16": false,
+   "openloop": {
+    "n_decisions": 150,
+    "n_tokens": 12288,
+    "abs_d_mean": 0.1128065820975604,
+    "abs_d_quantiles": {
+     "0.5": 4.768370445162873e-07,
+     "0.9": 0.17241897614523774,
+     "0.99": 2.5881525358505213
+    },
+    "frac_tokens_shifted": 0.2609049479166667,
+    "flip_rate": 0.049723307291666664,
+    "decision_any_flip": 0.5466666666666666
+   }
+  }
+ }
+}

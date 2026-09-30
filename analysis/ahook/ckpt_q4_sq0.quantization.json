@@ -1,0 +1,73 @@
+{
+ "method": "W8A8 per-channel/per-token absmax, no smoothing (SmoothQuant quantizers)",
+ "wbits": 8,
+ "abits": 8,
+ "alpha": null,
+ "weight_quant": {
+  "granularity": "per output channel",
+  "sym": true,
+  "rule": "absmax / 127, round half-even",
+  "modules": [
+   "self_attn.q_proj",
+   "self_attn.k_proj",
+   "self_attn.v_proj",
+   "self_attn.o_proj",
+   "mlp.gate_proj",
+   "mlp.up_proj",
+   "mlp.down_proj"
+  ],
+  "storage": "dequantized bf16"
+ },
+ "act_quant": {
+  "granularity": "per token (dynamic)",
+  "sym": true,
+  "rule": "clamp(absmax, 1e-5) / 127, no clip",
+  "applied_by": "scripts/a6000/pyhooks/cloq_aq.py (fmt sym_sq)",
+  "bmm_inputs": "BF16 (quantize_bmm_input=False)"
+ },
+ "smoothing": null,
+ "high_precision": [
+  "embed_tokens",
+  "lm_head",
+  "all RMSNorms (smoothed norm weights bf16)",
+  "softmax",
+  "residual"
+ ],
+ "calibration": {
+  "source": "Pile validation (mit-han-lab/pile-val-backup val.jsonl.zst)",
+  "source_sha256": "264c875d8bbd355d8daa9d032b75fd8fb91606218bb84dd1155b203fcd5fab92",
+  "order": "numpy default_rng(42).permutation (datasets.shuffle(seed=42))",
+  "n_docs": 512,
+  "doc_indices_sha256": "6ab299e54f67e549333aed3e0a79bb82106dd6e21047e0675aaaae1aac1f711a",
+  "max_len": 512,
+  "n_tokens": 183583,
+  "token_ids_sha256": "740ba16e986f1f6e45f0a58e67717a3e5c67a0b89208a8787ab90632413938f1"
+ },
+ "alpha_selection": {
+  "grid": [],
+  "criterion": "W8A8 perplexity (min)",
+  "eval_docs": 64,
+  "eval_doc_positions": [
+   512,
+   576
+  ],
+  "eval_tokens": 22824,
+  "eval_token_ids_sha256": "572592373a16ca60343a44e988b7627070de267ea69b6765f6975c447c9279e0",
+  "ppl": {
+   "bf16": 9.55988139264718,
+   "w8a8_no_smoothing": 9.903147703894241
+  }
+ },
+ "requires_serve_env": {
+  "CLOQ_PYHOOKS": "1",
+  "CLOQ_AQ_BITS": "8",
+  "CLOQ_AQ_FMT": "sym_sq"
+ },
+ "source_model": "Qwen/Qwen3-4B-Instruct-2507",
+ "source_revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+ "source_dir": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+ "storage": "fake-quant bf16",
+ "seconds": 66.0784158706665,
+ "n_expert_tensors_rtn": 0,
+ "build_seconds": 72
+}

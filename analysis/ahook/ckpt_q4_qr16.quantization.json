@@ -1,0 +1,64 @@
+{
+ "method": "QuaRot-rotation (W16)",
+ "wbits": null,
+ "rotation": {
+  "residual": "random Hadamard diag(s) H_d / sqrt(d) (cloq.rotate.random_hadamard)",
+  "seed": 0,
+  "norms_fused": true,
+  "embedding_mean_subtraction": false,
+  "v_proj_out": "per-head Hadamard H_hd",
+  "o_proj_in": "full Hadamard H_{nh*hd} (offline) + H_nh across heads (online)",
+  "down_proj_in": "H_76 kron H_128 (offline + online)",
+  "qk": "per-head Hadamard after RoPE (online, cloq_kvq CLOQ_KVQ_ROT=qk)",
+  "d": 2560,
+  "num_heads": 32,
+  "head_dim": 128,
+  "num_kv_heads": 8,
+  "intermediate": 9728,
+  "down_had_K": 76,
+  "tied_untied": true,
+  "rotated_tensors": 253,
+  "rtn_quantized": 0
+ },
+ "weight_quant": null,
+ "calibration": null,
+ "requires_serve_env": {
+  "CLOQ_PYHOOKS": "1",
+  "CLOQ_AQ_HAD": "quarot"
+ },
+ "forbids_serve_env": {
+  "CLOQ_KVQ_ROT": "1"
+ },
+ "reference_serve_env_W4A4KV4": {
+  "CLOQ_PYHOOKS": "1",
+  "CLOQ_AQ_BITS": "4",
+  "CLOQ_AQ_FMT": "sym_quarot",
+  "CLOQ_AQ_CLIP": "0.9",
+  "CLOQ_AQ_HAD": "quarot",
+  "CLOQ_KVQ_BITS": "4",
+  "CLOQ_KVQ_ROT": "qk",
+  "CLOQ_KVQ_FMT": "quarot",
+  "CLOQ_KVQ_KCLIP": "0.95",
+  "CLOQ_KVQ_VCLIP": "0.95"
+ },
+ "invariance_check_hf": {
+  "float32": {
+   "positions": 2048,
+   "top1_agreement": 0.9951171875,
+   "mean_abs_dlogprob_top1": 0.003996639978140593,
+   "max_abs_dlogprob_top1": 0.04723978042602539
+  },
+  "bfloat16": {
+   "positions": 2048,
+   "top1_agreement": 0.98046875,
+   "mean_abs_dlogprob_top1": 0.02196931093931198,
+   "max_abs_dlogprob_top1": 1.601008653640747
+  }
+ },
+ "source_model": "Qwen/Qwen3-4B-Instruct-2507",
+ "source_revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+ "source_dir": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+ "storage": "fake-quant bf16",
+ "seconds": 81.49152040481567,
+ "build_seconds": 84
+}

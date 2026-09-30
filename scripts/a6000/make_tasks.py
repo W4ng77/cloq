@@ -182,6 +182,33 @@ def kvq(m: str, prefix: str = "a6000", tid: str = "", priority: int = -2) -> lis
     return out
 
 
+# Activation fake quantization (docs/insights/METHOD_FIDELITY.md): A8 hook, SmoothQuant W8A8, QuaRot W4A4KV4. Checkpoint
+# kinds smoothquant / quarot are built by the worker (cloq/smoothquant.py, cloq/quarot.py); the online half is serve_env
+# (scripts/a6000/pyhooks/cloq_aq.py, cloq_kvq.py). The W x A x KV matrix is scheduled by the main session.
+AQ_H = {"CLOQ_PYHOOKS": "1"}
+AQ_QUAROT_ENV = {"CLOQ_AQ_BITS": "4", "CLOQ_AQ_FMT": "sym_quarot", "CLOQ_AQ_CLIP": "0.9", "CLOQ_AQ_HAD": "quarot",
+                 "CLOQ_KVQ_BITS": "4", "CLOQ_KVQ_ROT": "qk", "CLOQ_KVQ_FMT": "quarot", "CLOQ_KVQ_KCLIP": "0.95",
+                 "CLOQ_KVQ_VCLIP": "0.95"}
+AQ_CELLS = {  # cell -> (ckpt, serve_env)
+    "aq_a8": ({"kind": "bf16"}, {**AQ_H, "CLOQ_AQ_BITS": "8"}),
+    "sq_w8a8": ({"kind": "smoothquant", "alpha": "auto"}, {**AQ_H, "CLOQ_AQ_BITS": "8", "CLOQ_AQ_FMT": "sym_sq"}),
+    "quarot_w4a4kv4": ({"kind": "quarot", "wbits": 4, "wmethod": "gptq", "seed": 0}, {**AQ_H, **AQ_QUAROT_ENV}),
+}
+
+
+def aq(m: str, prefix: str = "a6k2", cells=None, n_runs: int = 1, priority: float = -7) -> list[dict]:
+    """Smoke: per cell one eval task with n_runs fresh-nonce runs <prefix>_<m>_<cell>_q1.. (arm 'aq')."""
+    out = []
+    for cell, (ck, senv) in AQ_CELLS.items():
+        if cells and cell not in cells:
+            continue
+        t = eval_task(f"{prefix}_{m}_{cell}", m, "aq", ck,
+                      [run(f"{prefix}_{m}_{cell}_q{i + 1}", nonce=n) for i, n in enumerate(FRESH_NONCES[:n_runs])], priority)
+        t["serve_env"] = dict(senv)
+        out.append(t)
+    return out
+
+
 # W12 (docs/RESEARCH_LOG.md): other weight-only 4-bit formats (COLM 2025 "Quantization Hurts Reasoning?" method list).
 W12_NONCES = ["6d1f0b3e", "f07a5c21", "4c8e1a7f"]  # fresh-nonce stratum q1..q3 (E22)
 
@@ -222,7 +249,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("models", nargs="+")
     ap.add_argument("--retry", action="store_true")
-    ap.add_argument("--only", choices=["det", "matrix", "e5", "e3", "r1", "x1", "kvq", "w12"], default=None)
+    ap.add_argument("--only", choices=["det", "matrix", "e5", "e3", "r1", "x1", "kvq", "w12", "aq"], default=None)
+    ap.add_argument("--runs", type=int, default=1, help="aq: fresh-nonce runs per cell")
     ap.add_argument("--cells", nargs="*", default=None, help="w12: restrict to these cells")
     ap.add_argument("--no-openloop", action="store_true", help="w12: eval tasks only")
     ap.add_argument("--priority", type=float, default=-2, help="w12 priority")
@@ -251,6 +279,8 @@ def main():
             tasks += kvq(m, a.prefix, "" if a.prefix == "a6000" else a.prefix + "_")
         if a.only == "w12":
             tasks += w12(m, a.prefix, a.priority, not a.no_openloop, a.cells)
+        if a.only == "aq":
+            tasks += aq(m, a.prefix, a.cells, a.runs, a.priority)
         if a.only == "e5":
             tid = "" if a.prefix == "a6000" else a.prefix + "_"
             tasks += [dict(t, id=tid + t["id"]) for t in e5(m, a.prefix)]
