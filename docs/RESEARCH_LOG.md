@@ -63,6 +63,11 @@ Newest first.
 - **Throughput (q4 gate, 1 GPU, concurrency 8).**
   - ALFWorld: divergence 100% (t* mostly 0); 26 s wall per branch (episodes run 186 s).
   - BFCL: divergence 65%; 6 s wall per branch; search 37 s per item.
+- **First development result:** q8 AWQ-W4 d1, ALFWorld, 134 unseen games; 48 min on 2 GPUs; 5.2 s wall per branch at concurrency 12.
+  - Coverage: 119 states, 15 without divergence, 0 excluded. QQ no-op 16/16 exact.
+  - Summed effects: ΣG −5, ΣA +1, ΣC −10, ΣI +4. That is 14 rescues vs 19 new damages; G_all −3.7 pp per game.
+  - Branch cells mostly agree: 39 states all-fail and 24 all-succeed.
+  - One block, no interval. The G/A/C/I reading is left to the main analysis.
 - **Gate-state outcomes are not estimates** (12 smoke states each, q4):
   - ALFWorld: ΣG 0, ΣA +1, ΣC +1, ΣI −1.
   - BFCL: all four cells equal in every state.

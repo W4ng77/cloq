@@ -1,0 +1,3761 @@
+{
+ "protocol": "fork-ext-v1",
+ "spec": {
+  "mode": "dev",
+  "q_blocks": [
+   "ext_q8_awq_w4_d1_alfworld_eval:alfworld"
+  ],
+  "noop_frac": 0.1,
+  "concurrency": 12,
+  "out": "analysis/fork/ext/dev/alfworld_q8_awq_w4_d1_all"
+ },
+ "servers": {
+  "B": {
+   "gpu": "4",
+   "port": 8105,
+   "pid": 2943169,
+   "ckpt": {
+    "kind": "bf16"
+   },
+   "path": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "4",
+    "8105",
+    "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.90",
+   "hook_coverage": null,
+   "canary": "e340c7991fa5bc08",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-8B",
+     "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+     "chat_template_kwargs": {
+      "enable_thinking": false
+     }
+    },
+    "weights": "Qwen/Qwen3-8B@b968826d9c46dd6066d109eabc6255188de91218",
+    "ckpt": {
+     "kind": "bf16"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 16,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "0d4bf272db1da1c5",
+   "canary_ref_ok": true
+  },
+  "Q": {
+   "gpu": "5",
+   "port": 8205,
+   "pid": 2943729,
+   "ckpt": {
+    "kind": "awq",
+    "wbits": 4,
+    "calib": "manifests/a6k2/q8/calib_fp_traj_c1.json"
+   },
+   "path": "/tmp/cloq_49727/ckpt_fork_ext_dev_q8_awq_w4_d1_alfworld_all_Q",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "5",
+    "8205",
+    "/tmp/cloq_49727/ckpt_fork_ext_dev_q8_awq_w4_d1_alfworld_all_Q",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.90",
+   "hook_coverage": null,
+   "canary": "db76cab1da9700d1",
+   "ckpt_sha256": "9ce71e4aa7a5b1afcb2a1358e16e673e62313f32e8ca8877d22b87b3622135d9",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-8B",
+     "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+     "chat_template_kwargs": {
+      "enable_thinking": false
+     }
+    },
+    "weights": "sha256:9ce71e4aa7a5b1afcb2a1358e16e673e62313f32e8ca8877d22b87b3622135d9",
+    "ckpt": {
+     "kind": "awq",
+     "wbits": 4,
+     "calib": "manifests/a6k2/q8/calib_fp_traj_c1.json"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 4,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "b8608c0732512633"
+  },
+  "same_effective_config": false,
+  "q_quantization": {
+   "method": "AWQ-style",
+   "wbits": 4,
+   "group_size": 128,
+   "sym": false,
+   "percdamp": 0.01,
+   "blocksize": 128,
+   "act_order": true,
+   "true_sequential": true,
+   "source_model": "Qwen/Qwen3-8B",
+   "source_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+   "storage": "fake-quant bf16",
+   "calibration_manifest": "/data/ziyangs/cloq/manifests/a6k2/q8/calib_fp_traj_c1.json",
+   "moe_experts": null,
+   "calibration": {
+    "protocol": "v1",
+    "arm": "fp_traj",
+    "draw": "c1",
+    "draw_seed": 20260729,
+    "budget_rows": 64000,
+    "total_rows": 64000,
+    "rows_within_budget": true,
+    "n_states": 57,
+    "n_tasks": 57,
+    "rows_per_state_min": 1122,
+    "rows_per_state_max": 1123,
+    "median_context_tokens": 6310.0,
+    "total_context_tokens": 401883,
+    "states_by_source": {
+     "fp": 57
+    },
+    "states_by_depth_quartile": {
+     "0": 15,
+     "1": 14,
+     "2": 13,
+     "3": 15
+    },
+    "states_by_domain": {
+     "retail": 39,
+     "airline": 18
+    },
+    "fp_run": "a6k2_q8_bf16_cal",
+    "q_run": null,
+    "novelty": null,
+    "notes": [],
+    "split_file_sha256": "7d1671154c37375990fd01999df2257e1bef916ee8201158b850846876315a79",
+    "manifest_sha256": "f371bcafe843e95327a3f7bc72325862405ead830bf456fea172656ebb9fc108"
+   },
+   "seconds_quantize": 626.7845270633698,
+   "n_expert_tensors_rtn": 0
+  },
+  "user_base": null,
+  "host": "node001",
+  "job": "49727"
+ },
+ "seconds": 1939.9329783916473,
+ "rows": [
+  {
+   "state_id": "495ddaeba701e6cb",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 20.045789003372192,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 27.41935920715332,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 18.904594659805298,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "f71630ed95c514a9",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 72.07597303390503,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 77.74729084968567,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 76.09090805053711,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "0389e70bb76901c1",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 11.246390342712402,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 11.02344036102295,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 72.91074252128601,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "31c0ce372bdbee36",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 74.46732091903687,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 75.00273084640503,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 67.07702088356018,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "2dbde7e15f0e1480",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 54.082791328430176,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 88.18818068504333,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 42.43030881881714,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "ccbf5c4780e8129a",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 76.98512768745422,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 119.61946153640747,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 13.219496726989746,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "0b721acf4f93fac5",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 75.84970784187317,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 25.330984115600586,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 76.51300835609436,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "412d64d29c9fc6f4",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 67.09921908378601,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 93.44633507728577,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 72.21803498268127,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "1d8ec4dada412e21",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 81.25640869140625,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 93.00204920768738,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 79.57874464988708,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "7cf946be27897355",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 93.52427220344543,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 95.71649074554443,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 87.21163606643677,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "d8fff2b34f3b84d0",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 78.09936881065369,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 74.80082511901855,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 45.42783451080322,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "218361b8e5b80726",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 75.53136539459229,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 79.42565846443176,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 73.90192723274231,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "fde4bdc5a8aca45f",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 18.503679752349854,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 87.51355504989624,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 18.072410345077515,
+     "error": null
+    },
+    "QQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 85.6981303691864,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "7b6f6fbbd58b7799",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 85.7674617767334,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 83.4060447216034,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 72.03577709197998,
+     "error": null
+    },
+    "QQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 51.37533497810364,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "cdedd7c77df7b5a3",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 8.41093921661377,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 8.616855144500732,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 11.341055154800415,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "6f84eb215b7ee54b",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 3.6774797439575195,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 3.768047332763672,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 5.6503190994262695,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "b83ddd1bedfb69e1",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 8.564114332199097,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 10.194738388061523,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 8.888474941253662,
+     "error": null
+    },
+    "QQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 9.023874521255493,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "719850c3724a8b3b",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 12.765540361404419,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 91.22646307945251,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 9.758437395095825,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "8b62331e73012b08",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 96.85877084732056,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 30.78619623184204,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 30.331004858016968,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "c6436f9ed7563d0b",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 22.159719944000244,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 59.0525689125061,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 24.558419227600098,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "23bd53eafdf6ec52",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 66.34907960891724,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 71.38155007362366,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 76.9184308052063,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "0f45385735f99fd3",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 20.64037251472473,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 84.03767156600952,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 39.847432136535645,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "69171016d3aec3d7",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 73.12547254562378,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 69.94753289222717,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 90.66944909095764,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "48122d1ebd2cfb30",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 73.27713799476624,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 100.09970426559448,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 11.250238418579102,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "20ef12dc1b07e975",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 58.26809573173523,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 59.40935564041138,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 54.49696683883667,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "be1b3b0c23564696",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 79.19408535957336,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 77.86691904067993,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 77.63853216171265,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "13251c8dc25bf2c4",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 83.43635439872742,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 78.07871270179749,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 15.234993934631348,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "7ad460887b5691f2",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 64.78269481658936,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 76.12268447875977,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 65.28130006790161,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "b54ee542f137a2ef",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 80.21176505088806,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 67.42582726478577,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 78.83112668991089,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "bec139698cddd17a",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 99.80425500869751,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 96.02269697189331,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 82.62121486663818,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "b0bb641ce33f3d25",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 38.65998196601868,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 50.71330714225769,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 36.82684516906738,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "2171043c1a09c274",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 11.166849613189697,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 11.483505487442017,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 11.036616325378418,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "a507576c0b39d597",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 18.437301635742188,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 20.10133695602417,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 19.44217348098755,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "319889d2dbd9cec9",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 60.061763763427734,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 63.75993227958679,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 77.86871194839478,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "fbc5b8b29ec11d1d",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 76.5779242515564,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 75.05457329750061,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 77.96141386032104,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "be42073078ee9f39",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 12.375904083251953,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 12.319076299667358,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 19.812299966812134,
+     "error": null
+    },
+    "QQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 17.03245973587036,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "fbab47817320836b",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 79.51245617866516,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 70.59550476074219,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 81.57000517845154,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "28fce1a604682260",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 29.914475917816162,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 27.753604888916016,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 90.41012573242188,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "02d61a4765610f9c",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 66.77610182762146,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 80.7270085811615,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 67.52848172187805,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "55e36cd10c0b157c",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 66.38634753227234,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 58.048617362976074,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 70.33580946922302,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "dc669f0dc62339aa",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 17.100663900375366,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 82.35888719558716,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 14.566993236541748,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "f89bb9e2c069b6e7",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 67.00359392166138,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 71.71666622161865,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 71.4572606086731,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "0a706696d6703720",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 77.25405168533325,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 61.66396236419678,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 69.38949275016785,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "996e764ca03a2e6e",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 15.656696081161499,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 61.79870676994324,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 80.64825224876404,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "0a5f6e8735063c33",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 41.293302059173584,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 22.239835262298584,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 16.719862937927246,
+     "error": null
+    },
+    "QQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 17.202845573425293,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "0cb4230cb14a853e",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 81.87489628791809,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 85.24097728729248,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 88.39644360542297,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "5936f65aa7067ecb",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 80.26518416404724,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 73.28688549995422,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 82.2871630191803,
+     "error": null
+    },
+    "QQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 69.84573698043823,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "d52d992abca3b0c3",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 33.18072724342346,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 27.016425371170044,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 40.93889546394348,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "1d27d18852d5976d",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 12.860238313674927,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 13.299830675125122,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 26.694835901260376,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "50b515413b69b217",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 27.658591985702515,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 88.78629899024963,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 28.268855333328247,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "a3eb63f5afdf8380",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 10.317872285842896,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 10.1609046459198,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 11.826547861099243,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "68d5b4f01cec8d71",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 82.51144313812256,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 92.27046084403992,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 87.10969376564026,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "9982c1057ac7727e",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 81.14571285247803,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 110.62619733810425,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 69.3507490158081,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "59d8555b0984cbbb",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 90.44661855697632,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 83.18305110931396,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 13.394959211349487,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "342c0bf072bba2c7",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 100.5290002822876,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 100.42239284515381,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 94.72100687026978,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "5164974ef4929229",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 18.807005167007446,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 28.809938669204712,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 10.837699890136719,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "e6100edd6c0a8fa2",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 24.943428993225098,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 25.756879091262817,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 76.92304563522339,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "fa9396491c29f1a7",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 78.1294276714325,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 75.66805410385132,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 73.10727858543396,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "66f340115743ef60",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 76.71194291114807,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 77.95345950126648,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 51.442992210388184,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "fed8ea78ac0fccc1",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 70.17508053779602,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 93.00693583488464,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 84.71598768234253,
+     "error": null
+    },
+    "QQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 104.33966183662415,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "17d3adcd4cb74040",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 83.56629943847656,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 79.64182591438293,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 48.706828355789185,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "0450572f34b9f564",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 72.67916798591614,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 70.0575201511383,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 82.48491430282593,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "09eda87cef3fbafc",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 66.060870885849,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 17.988988161087036,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 20.840537309646606,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "84c147587ac9718b",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 6.16352915763855,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 7.037286996841431,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 54.91159915924072,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "8d69786076574280",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 82.69063639640808,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 84.2661783695221,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 9.060347080230713,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "a00b80a452c1be81",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 78.08372688293457,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 19.495094537734985,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 44.96161246299744,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "8d14008dfb1e6088",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 90.49393105506897,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 98.43637585639954,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 13.220293045043945,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "b3645cbbef574bd4",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 67.82407307624817,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 87.34696197509766,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 66.00212407112122,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "dfb48b4140b446a0",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 89.81013131141663,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 94.00071811676025,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 84.32065463066101,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "8eb1bea5644d1cb0",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 49.791834115982056,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 53.20414710044861,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 84.54939389228821,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "0b092d5f7c052f1d",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 42.55507779121399,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 15.215955972671509,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 12.54436731338501,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "fdd7d8750631b64e",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 92.8980028629303,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 82.63353657722473,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 81.21151089668274,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "41278aaa59d52d09",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 66.79850244522095,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 24.500478506088257,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 60.99249505996704,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "ef7cffea58f63910",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 15.708444356918335,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 16.37231159210205,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 19.22688055038452,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "0e9577d26d4edec0",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 74.23098087310791,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 46.96000957489014,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 80.3921594619751,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "33f1e2825bab3cc1",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 70.94571113586426,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 83.61887216567993,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 76.4045684337616,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "74b510d5aefdbfc1",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 39.12238430976868,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 48.920714378356934,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 65.8444139957428,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "73e8b5e6c6583c6d",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 54.56079030036926,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 53.8195903301239,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 54.51923871040344,
+     "error": null
+    },
+    "QQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 51.60857677459717,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "918fdb8a30b8e782",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 75.6737539768219,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 50.313705921173096,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 74.93001675605774,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "11c002ce041a7a59",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 29.976058959960938,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 36.25574827194214,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 31.54219388961792,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "4e65958c785ad220",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 55.48229956626892,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 20.76284956932068,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 21.964051961898804,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "564ec16eaa6dbfeb",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 68.39704418182373,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 70.92422747612,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 66.26569628715515,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "4f45a184940a9efd",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 20.617300271987915,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 100.78087115287781,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 83.27385902404785,
+     "error": null
+    },
+    "QQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 55.182175159454346,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "299d06ea25723d8b",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 65.11007761955261,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 84.68388652801514,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 83.23544955253601,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "5c1804072efb001b",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 70.72178936004639,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 70.34360194206238,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 73.76741862297058,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "f552a8c13edd6562",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 67.31189751625061,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 116.47979164123535,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 75.91453504562378,
+     "error": null
+    },
+    "QQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 85.45886015892029,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "e00c93b48258e470",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 22.395632028579712,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 52.38520812988281,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 29.928420782089233,
+     "error": null
+    },
+    "QQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 24.50523543357849,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "254dfd12893dc0a6",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 98.73318719863892,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 101.56482577323914,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 90.11196827888489,
+     "error": null
+    },
+    "QQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 99.90821051597595,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "77517aac037954e3",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 71.29732012748718,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 79.815181016922,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 80.68858885765076,
+     "error": null
+    },
+    "QQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 34.78299307823181,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "7576972aca1b9df5",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 80.45257210731506,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 74.20904612541199,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 9.201735258102417,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "784f5f2714f378a2",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 89.61691522598267,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 75.84249806404114,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 86.12727427482605,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "8dab76686517d799",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 30.40370273590088,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 81.35258722305298,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 35.16574835777283,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "c6b52e526963b156",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 9.858348608016968,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 10.329120397567749,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 9.604862689971924,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "96184c868aad5814",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 9.072664976119995,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 8.759560585021973,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 35.41067624092102,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "9a9061e9c890b326",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 75.87923073768616,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 78.10872411727905,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 66.93138003349304,
+     "error": null
+    },
+    "QQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 79.83768558502197,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "4203e66c5d73f5da",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 85.88421297073364,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 99.91361856460571,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 18.975255250930786,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "e6891c6b87a55973",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 86.24815678596497,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 92.07445454597473,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 84.47533535957336,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "aeeab200302a5aee",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 91.57116484642029,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 79.97852921485901,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 81.02990436553955,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "b90f18cf72d7c2ee",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 14.32336163520813,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 12.099102020263672,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 20.913296222686768,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "6fed75032b526e31",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 84.5065050125122,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 111.20284461975098,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 84.31253862380981,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "fdcf501b01bf429e",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 73.61089611053467,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 80.26521730422974,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 120.9964587688446,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "8192d382bfea193f",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 84.53313159942627,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 82.20886039733887,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 85.32644295692444,
+     "error": null
+    },
+    "QQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 47.376986265182495,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "dbb9bcdfc7caf91e",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 69.98774647712708,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 65.45544743537903,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 101.28366661071777,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "07db6000390e459f",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 20.996622800827026,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 70.11567735671997,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 88.15281844139099,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "54cd97d22c0ce050",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 70.76254463195801,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 60.195427656173706,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 75.47152161598206,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "2341b2990a8904b6",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 6.203851938247681,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 7.131389856338501,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 7.994727849960327,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "fdd030f398bd9c64",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 29.842556953430176,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 80.61656355857849,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 70.09524369239807,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "a2ed4ced361a57f3",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 14.329992532730103,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 89.53955602645874,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 9.05525803565979,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "14ced6b552fa4d5c",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 41.06086802482605,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 42.32726430892944,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 43.302507638931274,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "13a8d669cadaed54",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 75.63924312591553,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 98.46360564231873,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 7.448443651199341,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "ef36b659e15cc108",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 83.23116040229797,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 73.35132098197937,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 76.22949862480164,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "2f8f5e489ce7f071",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 10.848860025405884,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 10.842087030410767,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 27.75191068649292,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "70cc894450394e1d",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 12.808468341827393,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 94.20438408851624,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 9.565707921981812,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "e477279cc809a272",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 75.82362055778503,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 51.792744159698486,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 68.21706199645996,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "1861a020eb92c949",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 42.387094259262085,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 45.7535502910614,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 41.14228081703186,
+     "error": null
+    },
+    "QQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 40.42829489707947,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "a5c7f9f4ee3a26af",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 44.17336988449097,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 54.522828340530396,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 45.226532220840454,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "6be52f1fb723ab6f",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 63.78572750091553,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 62.63363289833069,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 80.88474678993225,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "04752734f0b92218",
+   "outcomes": {
+    "BB": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 56.24444937705994,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "db_match": null,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "duration": 49.25099015235901,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 72.79833126068115,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "c2c8113e60b5392c",
+   "outcomes": {
+    "BB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 71.49273777008057,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_env_steps",
+     "duration": 70.55316853523254,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "duration": 70.74656534194946,
+     "error": null
+    }
+   }
+  }
+ ]
+}
