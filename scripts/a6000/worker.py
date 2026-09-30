@@ -296,9 +296,10 @@ def run_eval(task, args, st: Status):
         if path.startswith(str(scratch)):  # weights are on the GPU now; free the RAM disk
             for f in Path(path).glob("*.safetensors"):
                 f.unlink()
-        ubase = user_base()
+        ext = task.get("env")  # simulator-free external environment (scripts/ext/: "bfcl" | "alfworld"); no user simulator
+        ubase = None if ext else user_base()
         t1 = time.time()
-        while True:  # the simulator may live on another node and still be starting
+        while ubase:  # the simulator may live on another node and still be starting
             try:
                 urllib.request.urlopen(ubase + "/models", timeout=5)
                 break
@@ -338,11 +339,17 @@ def run_eval(task, args, st: Status):
                     e["CLOQ_PROMPT_NONCE"] = r["nonce"]
                 else:
                     e.pop("CLOQ_PROMPT_NONCE", None)
-                ub = user_base()
-                cmd = [sys.executable, "-m", "cloq.run_arm", "--run-id", r["run_id"], "--arm", task["arm"], "--domain", d,
-                       "--task-file", str(ROOT / r["task_file"]), "--agent-base", f"http://127.0.0.1:{args.port}/v1",
-                       "--user-base", ub, "--checkpoint", json.dumps(task["ckpt"])]
-                leases[(r["run_id"], d)] = lease(ub, f"{r['run_id']}/{d}")
+                if ext:  # isolated venv per benchmark (cloq_work/envs/<env>); a manifest subset instead of a tau2 task file
+                    cmd = [str(WORK / "envs" / ext / "bin/python"), str(ROOT / "scripts/ext" / f"{ext}_run.py"), "--run-id", r["run_id"],
+                           "--arm", task["arm"], "--domain", d, "--manifest", r["task_file"], "--subset", r.get("subset", "smoke"),
+                           "--agent-base", f"http://127.0.0.1:{args.port}/v1", "--checkpoint", json.dumps(task["ckpt"])]
+                    cmd += ["--limit", str(r["limit"])] if r.get("limit") else []
+                else:
+                    ub = user_base()
+                    cmd = [sys.executable, "-m", "cloq.run_arm", "--run-id", r["run_id"], "--arm", task["arm"], "--domain", d,
+                           "--task-file", str(ROOT / r["task_file"]), "--agent-base", f"http://127.0.0.1:{args.port}/v1",
+                           "--user-base", ub, "--checkpoint", json.dumps(task["ckpt"])]
+                    leases[(r["run_id"], d)] = lease(ub, f"{r['run_id']}/{d}")
                 running.append(((r["run_id"], d), subprocess.Popen(cmd, cwd=ROOT, env=e, stdout=log, stderr=subprocess.STDOUT)))
             time.sleep(10)
             for lp in leases.values():
