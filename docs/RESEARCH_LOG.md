@@ -10,6 +10,14 @@ Newest first.
 
 ---
 
+## W48 — node001 and node006 runners re-submitted with 8 GPUs (2026-09-30 02:52 PDT)
+**TL;DR** The cluster has 48 A6000s (6 usable nodes × 8), not 42. node001 (job 49670) and node006 (job 49642) had been submitted with `--gres=gpu:A6000:4`, so GPUs 0–3 on both nodes were unallocated and idle. node003 GPUs 0 and 7 fail the NVML probe and stay excluded. With the user's approval I re-submitted both runners with 8 GPUs, submitting the new job before cancelling the old one: node001 → job 49727 (00:19), node006 → job 49731 (02:52).
+- **Before the node006 restart:** its simulator was marked `draining` in simreg, so no new routes went to it, and I waited until it held no leases.
+- **Interrupted tasks** (resume-requeued by the runner): `ext_q8_kvq_int4_alfworld_eval`, `ahook_validate_quarot_q8`.
+- **Usable GPUs:** 38 → 46. node002/008/009 remain blocked: another user's CPU-only jobs hold all 48 CPUs on each.
+- **Also fixed:** the old node006 runner code could hand a 2-GPU task a single card (see the fork agent's allocation guard).
+Evidence: `logs/node_node001_49727.out`, `logs/node_node006_49731.out`, `logs/sim_balancer.log`, `sinfo -O gresused`.
+
 ## W45-ahook — Engineering line 1: A8, SmoothQuant W8A8, QuaRot W4A4KV4 fake-quant hooks accepted on q4 (2026-09-30 01:45 PDT)
 **TL;DR** Activation fake quantization now runs inside the frozen BF16 vLLM path.
 - **Hook** (`pyhooks/cloq_aq.py`): QDQ on the inputs of the fused QKVParallelLinear, MergedColumnParallelLinear gate_up and RowParallelLinear o/down layers, plus QuaRot's online Hadamards.
