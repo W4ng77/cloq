@@ -10,6 +10,26 @@ Newest first.
 
 ---
 
+## W43 — Fork development analysis script and restoration-arm table (2026-09-30)
+**TL;DR** `analysis/fork/analyze_dev.py` is the daemon's fork analysis. It is CPU-only and idempotent (it skips unchanged input fingerprints) and runs in about 15 s at full development scale.
+- **Coverage.** States found per task × block, t* distribution, and the no-op sample pass rate. A fork task with any no-op mismatch is quarantined.
+- **Outcomes.** The rescue / damage / both succeed / both fail table, G_all (primary, over the full task pool, with no-divergence units as zero effect), conditional G, and A/C/I exactly as in the review, where L_QQ − L_BB = A + C + I.
+- **Intervals.** Hierarchical bootstrap: tasks, then blocks within task; B = 2000, seed 20261001. The draws are shared across cells, so the equal-weight pools per model and overall have valid intervals. g_min = ε = 3 pp flags are reported.
+- **Breakdowns.** By divergence type (act→talk, talk→act, tool name, tool args, telecom user-device call, other), with each type's contribution to G_all, and by domain.
+- **Exclusions.** Q blocks not admitted in the snapshot, or whose trajectory sha changed, are excluded and listed by reason.
+- **Options.** `--cells` filters, and an unknown cell is a no-op with a message.
+- **Provenance.** Script sha, git head and snapshot sha are recorded as in success_ni.py.
+- **Checks.**
+  - Run on the gate outputs (`--include-gate`, written as `dev_gatetest_*`, testing only).
+  - 3 states checked by hand (airline 2: G −1, A 0, C +1, I −1; airline 19: 0, −1, 0, +1; retail 101: all 0) and G_all −1/16 = −6.25 pp.
+  - The telecom gate block is correctly reported as not admitted (the snapshot does not scan the old `_tel_` runs).
+  - No fork_dev task has finished yet.
+- **Sibling `analysis/fork/analyze_restore_eval.py`** (W40 arms `a6k2_pert_<m>_<cell>_<arm>_<blk>` vs Q `a6k2_<m>_<cell>_<blk>` vs BF16 `a6k2_<m>_bfpair_<blk>`, nonce-checked):
+  - Reports paired success, arm−Q, BF16−Q, arm−BF16, gap closed, and turnover (fix/break) with the same bootstrap.
+  - Checked with a stand-in arm (q4 AWQ on f01–f03 as the "arm" of GPTQ): 255 units, success Q 43.9 / arm 37.3 / BF16 33.7 and turnover 20.8, each equal to a direct recount.
+  - No arm is admitted yet, so it is a no-op for now.
+Evidence: `analysis/fork/{analyze_dev,analyze_restore_eval}.py`, `analysis/fork/out/dev_gatetest_all_*.{json,md}`.
+
 ## W42 — Decision: deterministic forks (protocol A); development forks queued (2026-09-30 01:00 PDT)
 **TL;DR** The fork engineering gate passed on real divergence states in retail, airline and telecom (W30, `docs/insights/FORK_PROTOCOL.md` §8):
 - no-op QQ 20/20 and BB 10/10 bit-exact;
