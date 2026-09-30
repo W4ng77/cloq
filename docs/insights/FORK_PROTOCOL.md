@@ -412,25 +412,25 @@ rate 60–90%):
     run ends in too_many_errors in 63 of 80 episodes, mostly from the agent calling user-side tools. The error budget is therefore often
     binding in telecom forks and is part of the restored state.
 
-## 12. Difficulty moderators: exploratory on development, draft pre-registration for the telecom holdout (W52)
+## 12. Draft pre-registration for the telecom holdout (W52, revised W63; to be frozen in PREREG_FORK_CONFIRM.md)
 
-Development analysis: `analysis/fork/analyze_difficulty.py`. Everything in it is **exploratory**, because the moderators
-were chosen after the development data was seen. Its effects, units and bootstrap are those of analyze_dev.py.
-
-**Draft moderator list for the telecom holdout** (to be frozen in PREREG_FORK_CONFIRM.md before any holdout outcome, 10-03).
 Cut points and bins are fixed on the telecom development data, never on the holdout.
+Inference is block-level over complete shared blocks (W63): the holdout's nonces are the blocks. With fewer than
+10 blocks the t over block means is primary; the crossed task × block bootstrap is reported for generalisation.
 
-| id | moderator | definition | test |
-|---|---|---|---|
-| M1 (primary moderator) | remaining horizon h | n_decisions(Q episode) − t* at the primary state | slope of C = L_BQ − L_BB on h (pp per 10 decisions, weighted LS under the hierarchical bootstrap). One-sided H1: slope > 0, i.e. harm from the Q continuation compounds with the remaining horizon. α = 0.05. |
-| M2 | BF16 task difficulty | BF16 official success rate of the task over the holdout's paired BF16 blocks | G_all and C within bins {0}, (0, 0.5], (0.5, 1]; trend across bins |
-| M3 | persona | PERSONA Hard / None / Easy from the task id | G_all per level; Hard vs None contrast |
-| M4 | task length | mean agent decisions of the task's BF16 episodes | tertiles with cut points frozen from telecom dev |
-| M5 | fault load | issue type (mms / mobile_data / service) and number of injected faults (from the task id) | G_all per level |
+| role | endpoint | definition / test |
+|---|---|---|
+| **primary** | G_all | E[Y_BQ − Y_QQ] over the full holdout pool (non-divergent units = 0). Tests from EXTERNAL_REVIEW §F: positive gain if the one-sided 95% LB > 0; gain above 3 pp if LB > 3 pp; small effect if the 90% CI is inside ±3 pp. |
+| pre-registered secondary | r, d, M | r = P(Y_BQ=1, Y_QQ=0), d = P(Y_BQ=0, Y_QQ=1), M = r + d, on the same denominator. Question: do two-sided consequences replicate (M > 0 with both r > 0 and d > 0), whatever the sign of G? |
+| pre-registered secondary (stress cells) | C + I = Y_QB − Y_QQ | escalation endpoint: keep Q's action at the pivot, then switch to BF16 |
+| reference only | Y_BB − Y_QQ | total effect of BF16 from the pivot on; not an escalation endpoint |
+| confirmatory strata (known at the fork) | remaining step budget at t* (max_steps − steps used), persona (Hard / None / Easy), BF16 task difficulty bin, task length tertile (cut points from telecom dev), fault load (issue type, number of injected faults) | G_all and r/d/M per stratum; Holm across strata families |
+| exploratory only | M1: slope of C on the realised remaining horizon n_decisions(Q) − t* | uses Q's realised trajectory length, which is confounded by loops and failure; never confirmatory |
 
-- M2–M5 are secondary, with Holm correction across them. All strata and point estimates are reported whatever their significance.
-- Few holdout events mean limited evidence for a mechanism, not its absence (review round 3).
-- The moderator analyses are nested within the primary G_all analysis. They do not replace it.
+- **Scope.** The holdout has 34 tasks, which limits generalisation to new tasks. More blocks reduce run-level uncertainty, not
+  task-sampling uncertainty, so extra blocks do not substitute for more tasks. The crossed interval states the
+  new-task uncertainty honestly. Few holdout events mean limited evidence, not absence.
+- **Development analysis.** `analysis/fork/analyze_difficulty.py` is exploratory; the moderators were chosen after seeing the data.
 
 ## 13. Pivot-time restoration (W55): arm selection rule, fixed before any pivot-arm outcome
 
@@ -496,3 +496,37 @@ It is compared with QQ (G_R = Y_RQ − Y_QQ) and with BQ (the share of the full-
   intervals are reported alongside but do not decide eligibility. Everything else in §13 and amendment 1 is unchanged.
 - **Timing.** At the time of this amendment no RTN-W3 pivot-arm task had run, and the pooled selection statistic had never
   been computed on any W3 population.
+
+## 14. End-to-end escalation evaluation (design only, W63; not queued)
+
+**Why.** The fork contrasts are oracle intervention values at the true pivot. The margin-threshold numbers in
+analyze_pivot are an oracle upper-bound proxy, not a policy value, because false and late triggers are not simulated. An
+actual escalation policy must be evaluated closed loop. The target is "escalation helps", not "B disagrees".
+
+**Design.**
+- **Rule (frozen before evaluation).** It uses only Q-visible signals at decision time: first-token margin, minimum margin, mean
+  token log-probability, and whether the last tool call returned an error. It is fitted on the development forks to predict
+  help, i.e. pivots with Y_BQ − Y_QQ > 0 or Y_QB − Y_QQ > 0, not B-disagreement. The threshold is set so that the expected
+  BF16-call rate equals a budget b (10% of decisions). Rule, features, threshold and b are frozen in a manifest.
+- **Escalation.** When triggered, the decision is taken by BF16 from the identical prompt (one call). Q continues afterwards.
+- **Arms (closed loop, same tasks and nonces):**
+  1. the rule;
+  2. a random trigger at the same realised BF16-call budget (per-decision Bernoulli, seeded by run/task/turn);
+  3. a tool-error trigger (escalate the decision after any tool error);
+  4. always-Q (existing Q runs);
+  5. always-BF16 (existing BF16 runs).
+
+  The primary contrast is rule vs random at a matched budget. Secondary contrasts are rule vs always-Q and rule vs tool-error, with always-BF16 as the ceiling.
+- **Blocks.** New nonces, not the development blocks the rule was fitted on: 5 per cell. Inference is block-level (W63).
+- **Implementation.** An escalating CLOQ agent needs both servers in one worker (the fork task infrastructure) and logs each
+  trigger, the signal values, both actions and the budget used.
+
+**Cost** (closed-loop durations measured on existing runs; B runs alongside Q; RTN-W3 runs loop):
+
+| cell | new runs (3 policies + Q, 5 blocks) + BF16 | GPU-h per run-block (Q + escalations) | total |
+|---|---|---|---|
+| q4 KV4-rot (1 GPU, B+Q) | 20 + 5 BF16 | ≈ 0.3 | ≈ 8 GPU-h |
+| q4 RTN-W3 (1 GPU, B+Q) | 20 (+ shared q4 BF16) | ≈ 2 (retail episodes loop to 34–38 decisions, 7–8 h per retail run) | ≈ 40 GPU-h |
+| q8 RTN-W3 (2 GPUs) | 20 + 5 BF16 | ≈ 3–4 | ≈ 60–85 GPU-h |
+
+KV4-rot costs ≈ 8 GPU-h; KV4-rot + RTN-W3 ≈ 110–135 GPU-h. Escalation may shorten RTN loops, so these figures are upper bounds.
