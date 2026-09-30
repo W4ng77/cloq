@@ -165,6 +165,75 @@ the old write regex misses 5/6 telecom writes. Its sha256 is stored in every ann
 is frozen by hash before confirmation. Annotation runs offline on the saved state and branch files:
 `python -m cloq.fork_annotate --dir <fork out dir>` → `annotations.jsonl`.
 
+Round-3 refinements (fork-annot-v1, `cloq/fork_annotate.py`). The automatic part and the record schema are implemented;
+the LLM and human labels are separate tools, to come later.
+- **Raw records.** Every judgement keeps the records behind it: the call and its arguments, the environment's result
+  text, the schema, the id's presence in the DB at the state and in the conversation, the last user turn and earlier
+  confirmation turns, `changed_by_action` (DB paths changed by the forced step), `env_changing`, `extra_steps_used`,
+  `requirements_at_state` and `requirements.failing` at the end.
+- **Statuses.**
+  - `violation` only where the environment makes it verifiable: invalid tool, schema-invalid args, a call the environment
+    rejected, or an id found neither in the DB nor in the conversation.
+  - `needs_review` where a string rule is not enough:
+    - an id present in only one of the two; a legitimate substitute is possible;
+    - a write whose last user turn has no explicit confirmation; earlier confirmation turns are listed;
+    - an episode-ending action in a failing branch. If the task was already complete at the state, this is
+      `ok_task_already_complete` instead.
+- **LLM and human slots.** Each record carries `manual` and `llm` slots (null for now).
+- **Blinded review export.** `python -m cloq.fork_annotate --dir <out> --review-export` writes `review/packets.jsonl` and a
+  separate `review/KEY_unblinding.jsonl`.
+  - Packets are stripped of model, precision, checkpoint, nonce and branch source, and ordered by
+    sha256(salt|state|branch).
+  - Each packet holds the instructions, the history, the current action, the continuation, the end status and the
+    automatic events.
+  - Label slots `defect`, `correction` and `failed_requirements` each take `value`, `evidence_location` and `cannot_judge`.
+- **Review sampling.** About 80 states, stratified by consequential / non-consequential, tool type and automatic label;
+  about 20 double-reviewed. The stratified sample is drawn from `annotations.jsonl` with a fixed salt, not by hand.
+
+## 6c. Deterministic forks (protocol A, primary) and stochastic forks (protocol B, fallback)
+
+Both are fixed here before any development fork outcome.
+
+**Protocol A: deterministic (primary).**
+- **Condition.** No-op replay is exact: gate (a)–(e) pass, and the per-run QQ no-op sample in development stays exact.
+- **Estimate.** Each branch is run once. Y_XY is a deterministic function of the fork state and the controllers.
+- **Estimands.** G = E[Y_BQ − Y_QQ] and A/C/I (review §E), where the expectation runs over tasks, nonces (blocks) and
+  checkpoints only.
+- **Development checks.** A development QQ no-op that differs from the original is a protocol failure, not noise:
+  - the affected block is quarantined;
+  - the cause is found;
+  - the rate is reported;
+  - it is never subtracted from G.
+
+**Protocol B: stochastic (only if A fails for an identified, repeatable source of randomness in the continuation).**
+- **Preconditions (all verified).**
+  - The start state is identical: history hash, DB/device hashes, budget, and simulator input (the prompt ids of the
+    first user request are logged).
+  - The residual difference comes from a describable, repeatable randomness in the subsequent execution, for example
+    sampling with per-request seeds.
+  - Hidden-state loss, branch contamination and systematic replay bias disqualify protocol B; repeats cannot fix them.
+- **Estimand.** G = E[Y_BQ] − E[Y_QQ], the expectation over the declared continuation randomness (and over tasks, nonces
+  and checkpoints). Each branch expectation is estimated by R repeats.
+- **Repeats, seeds and failures.**
+  - R = 4 per branch, including QQ; no adaptive stopping.
+  - Seed of repeat r: sha256("fork-v1-B|state_id|branch|r")[:8] as an integer, sent per request (agent and simulator).
+  - A repeat that fails for infrastructure reasons is retried once with the same seed. After that it is recorded as
+    missing, never as failure. A state with any missing repeat is excluded from the estimate and counted in the
+    exclusions.
+- **Inference.**
+  - Repeats are nested in task × nonce × state and are not independent samples.
+  - Per state, the branch mean over its R repeats is the unit.
+  - Intervals come from the crossed task/nonce resampling of the main analysis.
+  - Same-configuration replays estimate only repeatability and run variance, reported separately. They are never
+    subtracted from G.
+
+**Current choice.** Protocol A, since the no-op replay is exact on every gate state (§8). Protocol B is not used.
+
+**Decision points.**
+- 10-01 evening: deterministic, stochastic or continued engineering (§8).
+- 10-03: if state restoration still cannot be verified, the paper becomes measurement-only and the causal reading of
+  action interventions is withdrawn.
+
 ## 7. Engineering gate (acceptance, evening of 10-01)
 
 | Check | Definition | Where |
