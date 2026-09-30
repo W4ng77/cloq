@@ -12,14 +12,23 @@ Disposition features (per trajectory = run x domain x task; from trajectory.json
   transfer       1 if transfer_to_human_agents was called
   err_rate       tool messages flagged error / tool calls
   notfound_rate  tool errors whose text contains 'not found' / tool calls (hallucinated or mistyped ID proxy)
-  confirm_bw     fraction of write calls preceded (since the previous write) by an assistant text that asks for
-                 confirmation (contains '?' and one of confirm|proceed|yes|would you like|shall i); NaN if no write
+  confirm_request_proxy
+                 fraction of write calls preceded (since the previous write) by an assistant text that asks for
+                 confirmation (contains '?' and one of confirm|proceed|yes|would you like|shall i); NaN if no write.
+                 A PROXY for "asked before writing" from the agent's own wording only: it does not check the user's
+                 reply, whether authorisation was actually required by the policy, or the state change (renamed from
+                 confirm_bw on 2026-09-30, docs/insights/METHODOLOGY_REVISION.md §C; values unchanged, and the old key
+                 confirm_bw is still emitted as an alias so earlier outputs reproduce)
   ask_rate       fraction of assistant text messages containing '?'
   first_write    position of the first write among assistant messages / n_asst; NaN if no write
   max_steps      termination_reason == max_steps
   too_many_err   termination_reason == too_many_errors
   text_len       mean characters of assistant text messages (/100)
 The first 12 form the declared disposition vector DISP (text_len is exploratory only).
+Tool-type-table features (exploratory, not in DISP; tool_types.TOOL_TYPES from the tau2 @is_tool decorators, per domain):
+  any_write_t / n_write_t   state-changing calls by the table (identical to WRITE_RE on retail/airline; correct on telecom)
+  invalid_rate              calls to a name that is not an agent tool of the domain / tool calls
+  read_rate, handoff        read calls / tool calls; transfer_to_human_agents called (= transfer)
 
 Dose groups (checkpoints are compared only within model x dose group, so shared dose effects are not counted as
 checkpoint-specific): floor {rot_bf16}; small {gauss0.03_s1 fixed}; mid {rtn_w8, rtn_w5, gptq_w5, gauss0.3_s1 fixed};
@@ -36,10 +45,12 @@ from pathlib import Path
 import numpy as np
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "iter_3"))
 sys.path.insert(0, str(HERE.parent / "iter_2"))
 from common import RUNS, SNAP, SNAP_PATH, check_frozen, in_snapshot, outcomes_both  # noqa: E402,F401
 from r_common import classify, load, rnd  # noqa: E402,F401
+from tool_types import tool_type  # noqa: E402
 
 OUT = HERE / "out"
 OUT.mkdir(exist_ok=True)
@@ -48,7 +59,7 @@ CACHE.mkdir(exist_ok=True)
 DOMS = ("retail", "airline")
 WRITE_RE = re.compile(r"^(cancel|modify|return|exchange|book|update|send)")
 CONFIRM_RE = re.compile(r"confirm|proceed|\byes\b|would you like|shall i|do you want", re.I)
-DISP = ["tool_share", "n_asst", "any_write", "n_write", "transfer", "err_rate", "notfound_rate", "confirm_bw",
+DISP = ["tool_share", "n_asst", "any_write", "n_write", "transfer", "err_rate", "notfound_rate", "confirm_request_proxy",
         "ask_rate", "first_write", "max_steps", "too_many_err"]
 FEATS = DISP + ["text_len"]
 MODELS = os.environ.get("CLOQ_MODELS", "q4,q8,q14,q30a3,q32").split(",")
@@ -86,7 +97,10 @@ def dose_group(meta):
     return "w4"
 
 
-def _feat_traj(t):
+FEAT_VERSION = 2  # 2: confirm_request_proxy name + tool-type-table features; cache files are versioned by this
+
+
+def _feat_traj(t, dom=None):
     msgs = t.get("messages") or []
     asst = [m for m in msgs if m.get("role") == "assistant"]
     tools = [m for m in msgs if m.get("role") == "tool"]
@@ -111,6 +125,8 @@ def _feat_traj(t):
                 if first_w is None:
                     first_w = i
     n_calls = len(calls)
+    types = [tool_type(dom, c) for c in calls] if dom else []
+    n_wt = sum(1 for x in types if x == "write")
     errs = [m for m in tools if str(m.get("error")) in ("True", "true", "1")]
     nf = sum(1 for m in errs if "not found" in (m.get("content") or "").lower())
     term = t.get("termination_reason")
@@ -118,7 +134,12 @@ def _feat_traj(t):
         tool_share=n_toolmsg / n_asst if n_asst else np.nan, n_asst=n_asst, any_write=float(writes > 0),
         n_write=writes, transfer=float(any(c.startswith("transfer_to_human") for c in calls)),
         err_rate=len(errs) / n_calls if n_calls else 0.0, notfound_rate=nf / n_calls if n_calls else 0.0,
-        confirm_bw=confirmed / writes if writes else np.nan,
+        confirm_request_proxy=confirmed / writes if writes else np.nan,
+        confirm_bw=confirmed / writes if writes else np.nan,  # deprecated alias (same value)
+        any_write_t=float(n_wt > 0) if dom else np.nan, n_write_t=n_wt if dom else np.nan,
+        invalid_rate=(sum(1 for x in types if x == "invalid") / n_calls if n_calls else 0.0) if dom else np.nan,
+        read_rate=(sum(1 for x in types if x == "read") / n_calls if n_calls else 0.0) if dom else np.nan,
+        handoff=float(any(x == "handoff" for x in types)) if dom else np.nan,
         ask_rate=np.mean(["?" in c for c in texts]) if texts else np.nan,
         first_write=first_w / n_asst if first_w is not None else np.nan,
         max_steps=float(term == "max_steps"), too_many_err=float(term == "too_many_errors"),
@@ -132,7 +153,7 @@ def _parse(args):
         return (run, dom), {}
     check_frozen(run, dom, "trajectory.jsonl")
     st = p.stat()
-    c = CACHE / f"{run}__{dom}.traj.pkl"
+    c = CACHE / f"{run}__{dom}.traj.v{FEAT_VERSION}.pkl"
     if c.exists():
         try:
             key, data = pickle.load(open(c, "rb"))
@@ -148,7 +169,7 @@ def _parse(args):
             continue
         if t.get("termination_reason") == "infrastructure_error":
             continue
-        data[str(t["task_id"])] = _feat_traj(t)
+        data[str(t["task_id"])] = _feat_traj(t, dom)
     pickle.dump(((st.st_size, st.st_mtime), data), open(c, "wb"))
     return (run, dom), data
 

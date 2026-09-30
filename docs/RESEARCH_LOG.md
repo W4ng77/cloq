@@ -10,6 +10,25 @@ Newest first.
 
 ---
 
+## W29 — P0 statistics and measurement fixes; corrected H3; audit record (2026-09-30)
+**TL;DR** The review's §B/§C issues were all confirmed in the code; fixes were implemented as new scripts and outputs. The original results are kept as history, and everything below on the 28 runs is a corrected (post-hoc) re-analysis.
+- **H3.** The pre-registered test was invalid: its true-pair scaling rejects 33–42% of exchangeable null datasets. The corrected test (pairing-invariant pooled scale) is calibrated: 4.4% ± 0.3% against a nominal ≤ 4%.
+  - Corrected H3: pooled F 0.136, p 0.013 (was 0.260, 0.0008); RAND 0.283, p 0.028; q4 0.088, p 0.125; q8 0.184, p 0.049.
+  - RECAL alone: F 0.025, p 0.30 (was 0.118, p 0.005). Random checkpoints carry 90% of the pooled F.
+  - The quantizer fingerprint (STORYLINE_v6 B3) is not detected.
+- **p1/H1 crossed nonce model.** H1 p is unchanged (0.744, exact invariance). φ is 0.33–0.47 against the pre-registered 0.40. Crossed variance components for q4: checkpoint 3.69 pp, residual 2.62 pp; method not estimable (1 df, negative moment estimate).
+- **Success non-inferiority.** The scaffold is ready: ε = 3 pp (5 pp sensitivity), TOST, D/V U-statistics with the Hamming cross-check, and task-clustered generalisation. Real mode waits for `bfpair`; the dev mode uses stand-ins and is not a result.
+- **Measurement.**
+  - `p_act` bounds and a missing flag: means move < 0.001.
+  - `topk_kl` renamed to `approx_topk_kl`; a coarse-grained exact-KL lower bound was added.
+  - `name_mass` is now a proxy with measured error terms; `confirm_bw` is renamed `confirm_request_proxy` (values unchanged).
+  - Tool-type table from the tau2 decorators: the write regex misses 5 of 6 telecom write tools.
+  - Endpoint naming: DB success for retail/airline; tau2's official deterministic basis success for telecom.
+  - `nl_judge` is unused in scoring and not thread-safe; left unchanged.
+- **Act/talk "blurring" (B5).** Mostly a selection effect: the q4 RTN P(act|talked) rise 0.014 → 0.088 is matched by a sign-symmetric null (0.080). The directional part is small (unconditional ΔP(act) −0.10 to +0.005 on q4/q8) and random controls are as large or larger.
+
+Evidence: `docs/insights/METHODOLOGY_REVISION.md`; `analysis/insights/iter_4/{h3_corrected,p1_crossed,success_ni,act_talk_selection,tool_types}.py`; `analysis/insights/iter_4/out/{h3_corrected,h3_corrected_sim*,p1_crossed,success_ni_DEV,act_talk_selection,tool_types_features}_20260930T0044Z.json`, `out/tool_types.json`; `analysis/openloop/a6k2/*/topk/*.v2.json`; `scripts/a6000/openloop_topk.py` (`--schema 2`), `analysis/insights/iter_4/common4.py`, `cloq/metrics.py`; snapshot `analysis/insights/iter_3/out/snapshot_live_20260930T0044Z.json`.
+
 ## W29a — Fork development blocks queued; Llama deprioritised (2026-09-30)
 **TL;DR** Primary fork checkpoints fixed by a pre-stated completeness rule (most existing fresh-nonce draws; tie → lowest calibration draw): GPTQ-W4 d1 and AWQ-W4 d1 (calibration c1) on q4 and q8. Development blocks: existing q3–q5 + 17 new nonces f01–f17 (sha256-derived, disjoint from every used nonce) = 20 blocks; queued Q runs for the 4 cells and BF16 on the same nonces (36 tasks, 102 runs, priority −8), which also give paired Q−B success. 28 Llama (l8) tasks moved +40 per the external review's priorities. Workstreams launched: P0 statistics/measurement fixes (→ W29) and fork replay engineering with the 10-01 gate (→ W30).
 Evidence: `manifests/fork/dev_blocks_v1.json`, `queue/todo/a6k2_{q4,q8}_{gptq_w4_d1,awq_w4,bfpair}_fdev*.json`.

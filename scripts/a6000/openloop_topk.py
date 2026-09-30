@@ -44,6 +44,23 @@ is robust to this because BF16's name then gets ~0). It assumes the rest of T's 
 (an upper bound per token), and it misses alternatives outside the top-k.
 Tool names come from the tool list in the prompt (`"function": {"name": ...}`), cached per domain.
 
+Schema v2 (2026-09-30, docs/insights/METHODOLOGY_REVISION.md §C; `--schema 2`, written to <out>.v2.json so schema-1
+<out>.json files stay byte-identical and reproducible; the default schema stays 1 for the running worker):
+  p_act      a tool-start token outside the returned top-k has unknown probability in [0, p_k] (p_k = the k-th, i.e.
+             smallest returned, probability). Schema 1 counted it as 0 (a lower bound). v2 reports p_act_lo (= schema-1
+             value), p_act_hi (= lo + p_k per missing start token), missing_frac (share of positions with >= 1 start
+             token outside the top-k), and Δlogit bounds [logit(lo_cell) - logit(hi_ref), logit(hi_cell) - logit(lo_ref)].
+  KL         schema-1 `kl_*` / `tv_*` is renamed `approx_topk_kl_*` / `approx_topk_tv_*` (NOT an exact KL: a token missing
+             on one side is imputed at that side's k-th logprob). v2 adds `coarse_kl_*` / `coarse_tv_*`: the exact KL / TV
+             of the coarse-grained distributions over C = tokens whose probability is known on BOTH sides (common top-k
+             tokens, plus the teacher-forced BF16 token) and one residual category (1 - mass(C) on each side). By the
+             data-processing inequality coarse_kl <= the true KL (a lower bound), and it needs no imputation.
+  name_mass  the prefix-tree tool-name estimate is a PROXY (`name_mass_proxy_*`, `name_switch_rate_proxy`). Measurable
+             error terms: `name_mass_unassigned_mean` = 1 - sum_T est(T) (mass at the divergence token that is outside the
+             top-k or inconsistent with every tool name); `name_switch_upper_bound` = share of decisions where
+             P(BF16's name) < 0.5 (P(BF16's name) is exact: the teacher-forced product; a switch is impossible when it is
+             >= 0.5). The main tool metric is the fully generated and parsed tool name and arguments (fork study).
+
 Output: <out>.npz holds these arrays.
   sampled positions (P rows): pos_dec (decision index into the sample), pos_kind (0 first, 1 tool-name), pos_j
     (completion token index), pos_k (name token index, -1 for first), pos_tok (BF16 token), pos_lp (cell logprob of
@@ -187,13 +204,40 @@ def p_act(ids: np.ndarray, lps: np.ndarray, start: list[int]) -> float:
     return float(sum(math.exp(l) for t, l in zip(ids, lps) if t in start and np.isfinite(l)))
 
 
+def p_act_bounds(ids: np.ndarray, lps: np.ndarray, start: list[int]) -> tuple[float, float, bool]:
+    """(lower, upper, missing): a start token outside the returned top-k has probability in [0, p_k]."""
+    fin = [(int(t), float(l)) for t, l in zip(ids, lps) if t >= 0 and np.isfinite(l)]
+    lo = sum(math.exp(l) for t, l in fin if t in start)
+    present = {t for t, _ in fin}
+    n_miss = sum(1 for t in start if t not in present)
+    pk = math.exp(min(l for _, l in fin)) if fin else 1.0
+    return float(lo), float(min(1.0, lo + n_miss * pk)), bool(n_miss > 0)
+
+
+def coarse_kl(ids_p, lp_p, ids_q, lp_q, extra_p=None, extra_q=None) -> tuple[float, float, int]:
+    """Exact KL(P||Q) and TV of the coarse-grained distributions over C = tokens with known probability on BOTH sides
+    (+ one residual category). Lower bound on the true KL / TV (data-processing inequality). Returns (kl, tv, |C|)."""
+    P = {int(t): float(l) for t, l in zip(ids_p, lp_p) if t >= 0 and np.isfinite(l)}
+    Q = {int(t): float(l) for t, l in zip(ids_q, lp_q) if t >= 0 and np.isfinite(l)}
+    for D, x in ((P, extra_p), (Q, extra_q)):
+        if x is not None:
+            D.setdefault(int(x[0]), float(x[1]))
+    C = sorted(set(P) & set(Q))
+    p = np.array([math.exp(P[t]) for t in C]); q = np.array([math.exp(Q[t]) for t in C])
+    p = np.append(p, max(1 - p.sum(), 0.0)); q = np.append(q, max(1 - q.sum(), 0.0))
+    with np.errstate(divide="ignore", invalid="ignore"):
+        terms = np.where(p > 0, p * (np.log(np.maximum(p, 1e-300)) - np.log(np.maximum(q, 1e-12))), 0.0)
+    return float(max(terms.sum(), 0.0)), float(0.5 * np.abs(p - q).sum()), len(C)
+
+
 def logit(p: float) -> float:
     p = min(max(p, EPS), 1 - EPS)
     return math.log(p / (1 - p))
 
 
 def topk_kl(ids_p, lp_p, ids_q, lp_q, extra_p=None, extra_q=None) -> tuple[float, float]:
-    """KL(P||Q) and total variation between two top-k lists (approximation in the module docstring).
+    """APPROXIMATE KL(P||Q) and total variation between two top-k lists (imputation in the module docstring); NOT an
+    exact KL. Kept unchanged for schema-1 reproducibility; schema v2 reports it as approx_topk_kl and adds coarse_kl.
     extra_p / extra_q: exact (token, logprob) known outside the top-k (the teacher-forced BF16 token)."""
     P = {int(t): float(l) for t, l in zip(ids_p, lp_p) if t >= 0 and np.isfinite(l)}
     Q = {int(t): float(l) for t, l in zip(ids_q, lp_q) if t >= 0 and np.isfinite(l)}
@@ -337,6 +381,89 @@ def contrast(z: dict, ref: dict, start: list[int]) -> dict:
     return out
 
 
+def summarize_v2(z: dict, ref: dict | None, start: list[int]) -> dict:
+    """Schema v2 (module docstring): schema-1 quantities under honest names, plus bounds, flags and coarse KL."""
+    s1 = summarize(z, ref, start)
+    first = np.flatnonzero(z["pos_kind"] == 0)
+    fd = z["pos_dec"][first]
+    is_tool = z["dec_is_tool"][fd].astype(bool)
+    b = np.array([p_act_bounds(z["top_ids"][i], z["top_lp"][i], start) for i in first])
+    lo, hi, miss = b[:, 0], b[:, 1], b[:, 2].astype(bool)
+    bf_act_tok = np.isin(z["dec_first_tok"][fd], start)
+    act = dict(s1["act"])
+    act.update({"p_act_lo_mean": float(lo.mean()), "p_act_hi_mean": float(hi.mean()), "p_act_missing_frac": float(miss.mean()),
+                "p_act_by_bf16_type_lo_hi": {"tool": [float(lo[is_tool].mean()), float(hi[is_tool].mean())] if is_tool.any() else None,
+                                             "text": [float(lo[~is_tool].mean()), float(hi[~is_tool].mean())] if (~is_tool).any() else None},
+                "bf16_first_token_class_vs_generated_action_agreement": float((bf_act_tok == is_tool).mean()),
+                "note": "p_act_mean / p_act_by_bf16_type are lower bounds (schema 1 counted a start token outside the top-k as 0)"})
+    out = {"schema": 2, "act": act}
+    if "act_all" in s1:
+        fb = np.array([p_act_bounds(i, l, start) for i, l in zip(z["fa_top_ids"], z["fa_top_lp"])])
+        out["act_all"] = dict(s1["act_all"], p_act_lo_mean=float(fb[:, 0].mean()), p_act_hi_mean=float(fb[:, 1].mean()),
+                              p_act_missing_frac=float(fb[:, 2].mean()),
+                              bf16_first_token_class_vs_generated_action_agreement=float(
+                                  (np.isin(z["fa_first_tok"], start) == z["fa_is_tool"].astype(bool)).mean()) if "fa_first_tok" in z else None)
+    tn = z.get("tool_name_est", {})
+    if tn:
+        pb, un = [], []
+        for di, est in tn.items():
+            pb.append(est[str(z["dec_bf16_name"][int(di)])])
+            un.append(1 - sum(est.values()))
+        t = s1["tool"]
+        out["tool"] = {"n": t["n"], "p_bf16_name_mean": t["p_bf16_name_mean"], "p_bf16_name_median": t["p_bf16_name_median"],
+                       "name_switch_rate_proxy": t["name_switch_rate"], "name_switch_upper_bound": float(np.mean(np.array(pb) < 0.5)),
+                       "name_mass_unassigned_mean": float(np.mean(un)), "name_mass_unassigned_q90": float(np.quantile(un, 0.9)),
+                       "name_mass_proxy_mean": t["p_name_mean"],
+                       "note": "tool-name masses are a prefix-tree PROXY; P(BF16's name) is exact (teacher-forced product)"}
+    if ref is not None and "error" not in s1.get("vs_ref", {}):
+        out["vs_ref"] = contrast_v2(z, ref, start, s1["vs_ref"])
+    return out
+
+
+def contrast_v2(z: dict, ref: dict, start: list[int], c1: dict) -> dict:
+    R = {_key(ref, i): i for i in range(len(ref["pos_kind"]))}
+    out = {}
+    ren = {"kl_mean": "approx_topk_kl_mean", "kl_median": "approx_topk_kl_median", "kl_q90": "approx_topk_kl_q90", "tv_mean": "approx_topk_tv_mean"}
+    for kind, nm in ((0, "first"), (1, "tool_name")):
+        if nm not in c1:
+            continue
+        o = {ren.get(k, k): v for k, v in c1[nm].items()}
+        ck, ct, nc, dlo, dhi, flag = [], [], [], [], [], []
+        for i in np.flatnonzero(z["pos_kind"] == kind):
+            r = R.get(_key(z, i))
+            if r is None:
+                continue
+            a, b = (ref["top_ids"][r], ref["top_lp"][r]), (z["top_ids"][i], z["top_lp"][i])
+            k_, t_, n_ = coarse_kl(*a, *b, (ref["pos_tok"][r], ref["pos_lp"][r]), (z["pos_tok"][i], z["pos_lp"][i]))
+            ck.append(k_); ct.append(t_); nc.append(n_)
+            if kind == 0:
+                rl, rh, rm = p_act_bounds(*a, start)
+                cl, chh, cm = p_act_bounds(*b, start)
+                dlo.append(logit(cl) - logit(rh)); dhi.append(logit(chh) - logit(rl)); flag.append(rm or cm)
+        o.update({"coarse_kl_mean": float(np.mean(ck)), "coarse_kl_median": float(np.median(ck)), "coarse_kl_q90": float(np.quantile(ck, 0.9)),
+                  "coarse_tv_mean": float(np.mean(ct)), "coarse_n_common_tokens_mean": float(np.mean(nc))})
+        if kind == 0:
+            flag = np.array(flag)
+            o.update({"dlogit_act_mean_bounds": [float(np.mean(dlo)), float(np.mean(dhi))], "p_act_missing_frac_either": float(flag.mean()),
+                      "dlogit_act_mean_complete_only": float(np.mean(np.array(dlo)[~flag])) if (~flag).any() else None,
+                      "note": "dlogit_act_mean (schema 1) uses the lower bounds of both P(act); bounds and complete-only mean added"})
+        out[nm] = o
+    if "first_all" in c1:
+        fa = dict(c1["first_all"])
+        fa["approx_topk_kl_mean"] = fa.pop("kl_mean")
+        pr = [p_act_bounds(i, l, start) for i, l in zip(ref["fa_top_ids"], ref["fa_top_lp"])]
+        pc = [p_act_bounds(i, l, start) for i, l in zip(z["fa_top_ids"], z["fa_top_lp"])]
+        ck = [coarse_kl(ref["fa_top_ids"][i], ref["fa_top_lp"][i], z["fa_top_ids"][i], z["fa_top_lp"][i])[0] for i in range(len(pr))]
+        fa.update({"coarse_kl_mean": float(np.mean(ck)), "coarse_kl_median": float(np.median(ck)),
+                   "dp_act_mean_bounds": [float(np.mean([c[0] - r[1] for c, r in zip(pc, pr)])), float(np.mean([c[1] - r[0] for c, r in zip(pc, pr)]))],
+                   "p_act_missing_frac_either": float(np.mean([c[2] or r[2] for c, r in zip(pc, pr)]))})
+        out["first_all"] = fa
+    for k in ("tool_name_dp_mean", "tool_name_dp_bf16_name_mean"):
+        if k in c1:
+            out[k.replace("tool_name_dp", "tool_name_proxy_dp")] = c1[k]
+    return out
+
+
 def load_npz(path: str) -> dict:
     f = np.load(path + ".npz", allow_pickle=False)
     z = {k: f[k] for k in f.files}
@@ -360,7 +487,22 @@ def main():
     ap.add_argument("--ref", help="output prefix of the BF16 top-k cell of this model (KL / Δ contrasts)")
     ap.add_argument("--out")
     ap.add_argument("--resummarize", metavar="OUT", help="recompute <OUT>.json from <OUT>.npz (no server)")
+    ap.add_argument("--schema", type=int, default=1, choices=(1, 2),
+                    help="2: write the v2 summary (bounds, coarse KL, proxy names) to <OUT>.v2.json; <OUT>.json is untouched")
     a = ap.parse_args()
+    if a.resummarize and a.schema == 2:
+        out = ROOT / a.resummarize
+        s1 = json.loads(Path(str(out) + ".json").read_text())
+        start = [int(x) for x in s1["tool_start_ids"]]  # recorded by schema 1; no tokenizer needed
+        ref = load_npz(str(ROOT / a.ref)) if a.ref and Path(ROOT / (a.ref + ".npz")).exists() else None
+        s2 = {k: s1[k] for k in ("ref_runs", "topk", "positions", "seed", "parser", "n_decisions", "n_tool_decisions",
+                                 "tool_start_ids", "n_positions", "n_tool_name_positions", "bf16_consistency") if k in s1}
+        s2.update(summarize_v2(load_npz(str(out)), ref, start))
+        s2["ref"] = a.ref if ref is not None else None
+        s2["schema1_file"] = str(out) + ".json"
+        Path(str(out) + ".v2.json").write_text(json.dumps(s2, indent=1))
+        print(json.dumps({k: s2[k] for k in ("act", "vs_ref") if k in s2})[:1500])
+        return
     tok, parser = tokenizer_for(a.model)
     start = tool_start_ids(tok, parser)
     ref = None
@@ -457,6 +599,12 @@ def main():
     np.savez_compressed(str(out) + ".npz", **{k_: v for k_, v in z.items() if k_ != "tool_name_est"})
     Path(str(out) + ".names.json").write_text(json.dumps(est_all))
     Path(str(out) + ".json").write_text(json.dumps(s, indent=1))
+    if a.schema == 2:  # also write the v2 summary (schema-1 file above is unchanged)
+        s2 = {k_: s[k_] for k_ in ("ref_runs", "topk", "positions", "seed", "parser", "n_decisions", "n_tool_decisions",
+                                  "tool_start_ids", "n_positions", "n_tool_name_positions", "bf16_consistency", "ref") if k_ in s}
+        s2.update(summarize_v2(dict(z), ref, start))
+        s2["schema1_file"] = str(out) + ".json"
+        Path(str(out) + ".v2.json").write_text(json.dumps(s2, indent=1))
     print(json.dumps({k_: s.get(k_) for k_ in ("act", "tool", "vs_ref", "bf16_consistency")})[:3000])
 
 

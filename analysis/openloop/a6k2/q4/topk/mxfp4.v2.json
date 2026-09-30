@@ -1,0 +1,196 @@
+{
+ "ref_runs": [
+  "a6k2_q4_bf16"
+ ],
+ "topk": 20,
+ "positions": [
+  "first",
+  "tool"
+ ],
+ "seed": 0,
+ "parser": "hermes",
+ "n_decisions": 400,
+ "n_tool_decisions": 223,
+ "tool_start_ids": [
+  151657
+ ],
+ "n_positions": 1195,
+ "n_tool_name_positions": 795,
+ "bf16_consistency": {
+  "note": "|logprob here - closed-loop token_logprobs[0]| of BF16's first token; the log rounds to 4 decimals, so the BF16 cell should be <= 5e-5 everywhere",
+  "prompt_logprobs_max": 11.095274111938476,
+  "prompt_logprobs_frac_within_log_rounding": 0.0425,
+  "generation_max": 12.750633647155762,
+  "generation_frac_within_log_rounding": 0.037154989384288746,
+  "generation_missing": 2
+ },
+ "schema": 2,
+ "act": {
+  "p_act_mean": 0.5955130173730636,
+  "p_talk_mean": 0.4044869826269364,
+  "p_act_by_bf16_type": {
+   "tool": 0.9022917546054122,
+   "text": 0.20900647272439826
+  },
+  "bf16_share_tool_decisions": 0.5575,
+  "bf16_share_tool_start_token": 0.5475,
+  "argmax_act_rate": 0.605,
+  "act_flip_vs_bf16_decision": 0.1425,
+  "first_token_flip_rate": 0.225,
+  "p_act_lo_mean": 0.5955130173730636,
+  "p_act_hi_mean": 0.5955134341824528,
+  "p_act_missing_frac": 0.1825,
+  "p_act_by_bf16_type_lo_hi": {
+   "tool": [
+    0.9022917546054122,
+    0.9022917546054122
+   ],
+   "text": [
+    0.20900647272439826,
+    0.20900741466652084
+   ]
+  },
+  "bf16_first_token_class_vs_generated_action_agreement": 0.99,
+  "note": "p_act_mean / p_act_by_bf16_type are lower bounds (schema 1 counted a start token outside the top-k as 0)"
+ },
+ "act_all": {
+  "n": 942,
+  "p_act_mean": 0.5834773540796173,
+  "p_act_by_bf16_type": {
+   "tool": 0.906034268601421,
+   "text": 0.19776244230878928
+  },
+  "argmax_act_rate": 0.589171974522293,
+  "p_act_lo_mean": 0.5834773540796173,
+  "p_act_hi_mean": 0.5834782715342779,
+  "p_act_missing_frac": 0.20063694267515925,
+  "bf16_first_token_class_vs_generated_action_agreement": 0.9904458598726115
+ },
+ "tool": {
+  "n": 223,
+  "p_bf16_name_mean": 0.924233489526116,
+  "p_bf16_name_median": 0.9999873639679664,
+  "name_switch_rate_proxy": 0.07174887892376682,
+  "name_switch_upper_bound": 0.07174887892376682,
+  "name_mass_unassigned_mean": 1.2044914468150723e-05,
+  "name_mass_unassigned_q90": 1.777797687518847e-05,
+  "name_mass_proxy_mean": {
+   "book_reservation": 0.01612883215694757,
+   "calculate": 0.008838393040229497,
+   "cancel_pending_order": 0.04347803511535282,
+   "cancel_reservation": 0.06528036632812734,
+   "exchange_delivered_order_items": 0.06216460133758513,
+   "find_user_id_by_email": 0.043478779680747794,
+   "find_user_id_by_name_zip": 0.12422241559492156,
+   "get_flight_status": 0.016156353818723625,
+   "get_item_details": 0.0025980685561483407,
+   "get_order_details": 0.3731003580740493,
+   "get_product_details": 0.15293896888236566,
+   "get_reservation_details": 0.2722837993763993,
+   "get_user_details": 0.11697852076217329,
+   "list_all_airports": 3.383947796496619e-07,
+   "list_all_product_types": 0.006308358358876175,
+   "modify_pending_order_address": 0.01542113413905083,
+   "modify_pending_order_items": 0.03397152173036133,
+   "modify_pending_order_payment": 0.002957559134358436,
+   "modify_user_address": 0.009168640588123307,
+   "return_delivered_order_items": 0.01857302249667582,
+   "search_direct_flight": 0.1732876287824191,
+   "search_onestop_flight": 0.06833375186662509,
+   "send_certificate": 1.2480409571669314e-11,
+   "transfer_to_human_agents": 0.0179366656782948,
+   "update_reservation_baggages": 0.05530098931257932,
+   "update_reservation_flights": 0.08601757465955133,
+   "update_reservation_passengers": 0.019966012162509088
+  },
+  "note": "tool-name masses are a prefix-tree PROXY; P(BF16's name) is exact (teacher-forced product)"
+ },
+ "vs_ref": {
+  "first": {
+   "n": 400,
+   "approx_topk_kl_mean": 0.7780047779746228,
+   "approx_topk_kl_median": 0.015055672217508038,
+   "approx_topk_kl_q90": 2.8473730508160093,
+   "approx_topk_tv_mean": 0.22112456389322602,
+   "dlogit_act_mean": 0.9908867761449851,
+   "dlogit_act_median": 0.0,
+   "dlogit_act_by_bf16_type": {
+    "tool": -1.0484940890030499,
+    "text": 3.560276227715673
+   },
+   "binary_act_kl_mean": 0.45650582329935074,
+   "coarse_kl_mean": 0.7696568803978586,
+   "coarse_kl_median": 0.015022367736068633,
+   "coarse_kl_q90": 2.7884549701585195,
+   "coarse_tv_mean": 0.22096127704738833,
+   "coarse_n_common_tokens_mean": 10.8375,
+   "dlogit_act_mean_bounds": [
+    0.9391028900089577,
+    1.0676703534220464
+   ],
+   "p_act_missing_frac_either": 0.265,
+   "dlogit_act_mean_complete_only": 0.612918173211415,
+   "note": "dlogit_act_mean (schema 1) uses the lower bounds of both P(act); bounds and complete-only mean added"
+  },
+  "tool_name": {
+   "n": 795,
+   "approx_topk_kl_mean": 0.15212024084459894,
+   "approx_topk_kl_median": 2.5919030571903153e-07,
+   "approx_topk_kl_q90": 5.0619373439456426e-05,
+   "approx_topk_tv_mean": 0.023218669183835482,
+   "coarse_kl_mean": 0.15212016748707152,
+   "coarse_kl_median": 2.591982673070438e-07,
+   "coarse_kl_q90": 5.059771395723412e-05,
+   "coarse_tv_mean": 0.023218667648252464,
+   "coarse_n_common_tokens_mean": 17.738364779874214
+  },
+  "first_all": {
+   "n": 942,
+   "dp_act_mean": 0.05588419703971192,
+   "dlogit_act_mean": 0.9316607274321003,
+   "dlogit_act_median": 0.0,
+   "binary_act_kl_mean": 0.4499487481357417,
+   "argmax_act_change": 0.13906581740976645,
+   "approx_topk_kl_mean": 0.7832966653762766,
+   "coarse_kl_mean": 0.7652602305195214,
+   "coarse_kl_median": 0.016118133185959616,
+   "dp_act_mean_bounds": [
+    0.05588320793612543,
+    0.05588511449437244
+   ],
+   "p_act_missing_frac_either": 0.27070063694267515
+  },
+  "tool_name_proxy_dp_mean": {
+   "book_reservation": -2.569877375106942e-08,
+   "calculate": 0.007862712370525592,
+   "cancel_pending_order": -2.1896734195226313e-08,
+   "cancel_reservation": 0.00021254722369632245,
+   "exchange_delivered_order_items": 0.004515189784738362,
+   "find_user_id_by_email": 4.214841203264497e-07,
+   "find_user_id_by_name_zip": -4.689925974027034e-07,
+   "get_flight_status": 0.00020244291031450194,
+   "get_item_details": -0.0005621945688665051,
+   "get_order_details": 0.011225811214622515,
+   "get_product_details": 0.0025167210511872966,
+   "get_reservation_details": -0.000685525285033719,
+   "get_user_details": -0.025868640751943898,
+   "list_all_airports": 9.384780992155554e-08,
+   "list_all_product_types": 1.1988354769053367e-05,
+   "modify_pending_order_address": 0.0021216067220437224,
+   "modify_pending_order_items": -0.006234357540754521,
+   "modify_pending_order_payment": -0.0013089919113776422,
+   "modify_user_address": 0.002093341168528335,
+   "return_delivered_order_items": 0.004189998098485107,
+   "search_direct_flight": -0.005674834279789705,
+   "search_onestop_flight": 0.0008965324983956103,
+   "send_certificate": 3.2707901303844503e-12,
+   "transfer_to_human_agents": -1.5966532723426336e-07,
+   "update_reservation_baggages": 0.001922308431385579,
+   "update_reservation_flights": 0.0014939219113339441,
+   "update_reservation_passengers": 0.0010671300353642726
+  },
+  "tool_name_proxy_dp_bf16_name_mean": -0.06662688963009566
+ },
+ "ref": "analysis/openloop/a6k2/q4/topk/bf16",
+ "schema1_file": "/data/ziyangs/cloq/analysis/openloop/a6k2/q4/topk/mxfp4.json"
+}

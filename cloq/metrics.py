@@ -102,10 +102,38 @@ def resolved_db_match(traj: dict) -> bool | None:
     return None
 
 
+# Endpoint names (docs/insights/METHODOLOGY_REVISION.md §C, 2026-09-30). What `task_success` returns per domain:
+#   retail   "DB success" = DB end-state match and normal termination. NOT tau2's official retail reward, whose basis is
+#            DB x NL_ASSERTION (112 of 114 tasks): the NL assertions need an LLM judge (cloq.nl_judge, not used by any
+#            a6k2 analysis). official_reward in trajectory.jsonl is the product over the basis without NL (run_arm.py).
+#   airline  "DB success". tau2's official airline reward is DB x COMMUNICATE (all 50 tasks); COMMUNICATE is reported
+#            separately (communicate_all / official_reward), not folded into this endpoint.
+#   telecom  "official task-basis success" = official_reward == 1, the product over the task's own reward_basis
+#            (ENV_ASSERTION for 2253 of 2285 tasks, ENV_ASSERTION x ACTION for 32), deterministic, with premature
+#            termination scored 0: this IS tau2's official telecom success.
+ENDPOINT_NAME = {"retail": "DB success (not tau2 official: basis DB x NL_ASSERTION)",
+                 "airline": "DB success (not tau2 official: basis DB x COMMUNICATE)",
+                 "telecom": "official deterministic task-basis success (tau2 official)"}
+
+
+def db_success(traj: dict) -> bool | None:
+    """DB success: DB end-state match, premature termination scored as failure (= resolved_db_match)."""
+    return resolved_db_match(traj)
+
+
+def official_basis_success(traj: dict) -> bool | None:
+    """tau2's deterministic task-basis success: official_reward == 1 (product over the task's reward_basis, NL
+    assertions excluded; see run_arm.basis_reward). For retail tasks with NL_ASSERTION in the basis this is NOT the
+    full official reward."""
+    r = traj.get("official_reward")
+    return None if r is None else bool(r == 1.0)
+
+
 def task_success(traj: dict) -> bool | None:
-    """Primary per-task endpoint. retail/airline: DB end-state match (frozen v0 primary endpoint).
-    telecom (reward_basis without DB; dual control): tau2's official basis reward, i.e. all env
-    assertions on the user device / agent DB [and the gold actions where ACTION is in the basis]."""
+    """Primary per-task endpoint (name per domain in ENDPOINT_NAME). retail/airline: DB success (DB end-state match,
+    frozen v0 primary endpoint; not tau2's official reward). telecom (reward_basis without DB; dual control): tau2's
+    official deterministic basis reward, i.e. all env assertions on the user device / agent DB [and the gold actions
+    where ACTION is in the basis]. Behaviour unchanged; only the names above were added (2026-09-30)."""
     basis = traj.get("reward_basis_task")
     if basis is None:
         basis = (((traj.get("task") or {}).get("evaluation_criteria") or {}).get("reward_basis")) or ["DB"]
