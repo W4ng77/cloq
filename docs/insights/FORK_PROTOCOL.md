@@ -147,6 +147,24 @@ checked, not assumed, by the equality of the prompt-id hashes (`q_decision.promp
 The server side of each fork run is recorded in `logs/tasks/<fork task>.servers.json`: GPU, port, pid, checkpoint spec, `ckpt_sha256`,
 canary per server, `canary_ref_ok` for BF16, and the simulator URL.
 
+## 6b. Per-fork annotation (review round 2; `cloq/fork_annotate.py`, version fork-annot-v1)
+
+The BF16 action is only a reference. A Q action is never labelled wrong because it differs from a_B. Three independent
+fields are recorded per state × branch. a_Q and a_B are judged by the same checks.
+
+| Field | Automatic content | Manual slot |
+|---|---|---|
+| 1. defect of the current action | invalid tool (tool-type table); invalid args (schema: missing required or unknown keys); execution error (the environment rejected the call: precondition or argument violation, with its text); ungrounded ids (an id-valued argument absent from every earlier message and tool output); `write_unconfirmed_proxy` (write tool with no explicit confirmation in the last user turn; a regex proxy, not an authorisation verdict); malformed (parse failure or empty); ends_episode, and premature_end = ends_episode and the branch fails | `defect.manual` |
+| 2. later correction aimed at it | first later turn that calls the same tool without error (for an invalid tool: any valid tool); a same-tool call with grounded ids; for an unconfirmed write, the user objection turn and later writes (a write is not undone by a retry) | `correction.manual` |
+| 3. requirements at the end | success under its name (retail/airline **DB success**; telecom **official task-basis success**, official_reward == 1); each env assertion, gold action check and communicate check; recursive DB paths that differ from the gold DB (agent and user/device DB) | none |
+
+The remaining step and error budget at the state is attached. Recovery is claimed only for "defect → correction → satisfied".
+Otherwise the result reads "not recovered under the tested continuation controllers and the fixed remaining budget".
+Tool types come from `analysis/insights/iter_4/tool_types.py`. It is verified against the tau2 `@is_tool` decorators by `--check`;
+the old write regex misses 5/6 telecom writes. Its sha256 is stored in every annotation (`tool_types_sha256`), so the table
+is frozen by hash before confirmation. Annotation runs offline on the saved state and branch files:
+`python -m cloq.fork_annotate --dir <fork out dir>` → `annotations.jsonl`.
+
 ## 7. Engineering gate (acceptance, evening of 10-01)
 
 | Check | Definition | Where |
