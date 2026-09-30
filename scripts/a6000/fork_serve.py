@@ -43,13 +43,44 @@ def hooked(cfg: dict) -> bool:
 
 
 def kvq(cfg: dict) -> dict | None:
+    """KV hook config as scripts/a6000/pyhooks/cloq_kvq.py reads it (CLOQ_KVQ_BITS / ROT in {0, 1, qk} / WHICH / FMT /
+    KCLIP / VCLIP). rot "qk" is QuaRot mode: q and k rotated online, V rotated offline by the checkpoint."""
     e = cfg["serve_env"]
     if not (hooked(cfg) and e.get("CLOQ_KVQ_BITS")):
         return None
     bits = int(e["CLOQ_KVQ_BITS"])
-    rot = e.get("CLOQ_KVQ_ROT", "0") == "1"
+    rot_mode = e.get("CLOQ_KVQ_ROT", "0")
     which = e.get("CLOQ_KVQ_WHICH", "kv")
-    return {"bits": bits, "rot": rot, "which": which, "active": bits < 16 or rot, "namespace": f"kvq_b{bits}_r{int(rot)}_{which}"}
+    fmt = e.get("CLOQ_KVQ_FMT", "minmax")
+    kc, vc = float(e.get("CLOQ_KVQ_KCLIP", 1.0)), float(e.get("CLOQ_KVQ_VCLIP", 1.0))
+    rot = rot_mode != "0"
+    ns = f"kvq_b{bits}_r{int(rot)}_{which}"  # mirrors cloq_kvq.TAG; the authoritative value is hook_namespace()
+    if rot_mode == "qk" or fmt != "minmax":
+        ns = f"kvq_b{bits}_r{rot_mode}_{which}_{fmt}_kc{kc:g}_vc{vc:g}"
+    return {"bits": bits, "rot": rot, "rot_mode": rot_mode, "rot_v_online": rot_mode == "1", "which": which, "fmt": fmt,
+            "kclip": kc, "vclip": vc, "active": bits < 16 or rot, "namespace": ns}
+
+
+def hook_namespace(cfg: dict) -> str:
+    """Compile-cache namespace exactly as the hooks set it in the server processes: run sitecustomize (auto-imported
+    from the hooks dir) with this role's serve_env and a dummy VLLM_CACHE_ROOT, and read the subdirectory it chose.
+    vLLM's own compile hash does not see the hook env (A8 and A4 would share a graph), so every hooked config gets its own
+    directory; unhooked roles use the default root."""
+    import os
+    import subprocess
+    import sys
+    if not hooked(cfg):
+        return "default"
+    env = {k: v for k, v in os.environ.items() if not k.startswith("CLOQ_")}
+    env.update(cfg["serve_env"])
+    env["VLLM_CACHE_ROOT"] = "/__ns_root__"
+    env["PYTHONPATH"] = f"{ROOT}:{HOOKS}"  # as env.sh sets it for the servers (cloq_aq imports cloq.aq)
+    r = subprocess.run([sys.executable, "-c", "import os; print(os.environ.get('VLLM_CACHE_ROOT'))"], env=env,
+                       capture_output=True, text=True, timeout=120)
+    out = (r.stdout.strip().splitlines() or [""])[-1]
+    if r.returncode != 0 or not out.startswith("/__ns_root__") or "Error in sitecustomize" in r.stderr:
+        raise RuntimeError(f"hook namespace probe failed: rc={r.returncode} out={out!r} err={r.stderr[-500:]}")
+    return out[len("/__ns_root__"):].strip("/") or "default"
 
 
 def aq(cfg: dict) -> dict | None:
@@ -93,14 +124,16 @@ def weights_id(cfg: dict, model: dict, ckpt_sha: str | None) -> str:
     return f"sha256:{ckpt_sha}"
 
 
-def effective_config(cfg: dict, model: dict, ckpt_sha: str | None, maxlen: int, base_env: dict) -> dict:
-    q = kvq(cfg)
+def effective_config(cfg: dict, model: dict, ckpt_sha: str | None, maxlen: int, base_env: dict, meta: dict | None = None) -> dict:
+    b = bits(cfg)
+    if b["W"] is None and (meta or {}).get("wbits"):  # e.g. smoothquant specs carry no wbits; the build records them
+        b["W"] = int(meta["wbits"])
     eff = {"model": {"hf_id": model["hf_id"], "revision": model["revision"], "chat_template_kwargs": model.get("chat_template_kwargs") or {}},
            "weights": weights_id(cfg, model, ckpt_sha), "ckpt": cfg["ckpt"], "serve_env": cfg["serve_env"],
            "serve_extra": list(cfg["serve_extra"]), "max_model_len": maxlen,
-           "numerics_env": {k: base_env.get(k) for k in NUMERICS_ENV}, "bits": bits(cfg),
+           "numerics_env": {k: base_env.get(k) for k in NUMERICS_ENV}, "bits": b,
            "hook_version": hook_version() if hooked(cfg) else None,
-           "cache_namespace": "/".join(x for x in ((q or {}).get("namespace"), ("aq:" + hashlib.sha256(json.dumps(aq(cfg), sort_keys=True).encode()).hexdigest()[:8]) if aq(cfg) else None) if x) or "default"}
+           "cache_namespace": hook_namespace(cfg)}
     return eff
 
 

@@ -442,13 +442,34 @@ def throughput(res: dict, out: Path) -> dict:
             "note": "wall times under concurrency 8 on one node, shared simulator; branch = BB/BQ/QB (QQ excluded)"}
 
 
+def crosscheck(bases: dict, blocks: list, n: int) -> dict:
+    """Same-config handles without an original run of that config: both servers regenerate n recorded prompts (of
+    another config's block) and must produce identical completion ids."""
+    pool = [(b, d) for b in blocks for v in b.dec.values() for d in v if d.get("completion_token_ids")]
+    pool.sort(key=lambda x: hsel(f"x|{x[0].run_id}|{x[0].domain}|{x[1]['task_id']}|{x[1]['decision_idx']}"))
+    rows = []
+    for b, d in pool[:n]:
+        seed = b.traj[d["task_id"]]["seed"]
+        ids = [complete_ids(bases[h], d["prompt_token_ids"], 256, seed) for h in ("B", "Q")]
+        rows.append({"task_id": d["task_id"], "t": d["decision_idx"], "match": ids[0] == ids[1], "n": len(ids[0] or [])})
+    res = {"label": "cross-handle (same config, foreign prompts)", "n": len(rows), "n_match": sum(r["match"] for r in rows), "rows": rows}
+    res["ok"] = res["n"] > 0 and res["n_match"] == res["n"]
+    log(f"crosscheck: {res['n_match']}/{res['n']}")
+    return res
+
+
 def gate_same(spec: dict, bases: dict, user_base: str, servers: dict, out: Path) -> dict:
     """(b): both handles serve the same checkpoint (two servers). At states along Q's trajectory, the 'B' shadow must
     reproduce a_Q, and all four branches must agree with each other and with the original continuation."""
     qb = load_blocks(spec["q_blocks"])
-    res = {"protocol": F.PROTOCOL, "spec": spec, "servers": servers, "bases": bases}
-    res["idcheck_Q"] = idcheck(bases["Q"], qb, spec.get("idcheck_n", 8), "Q")
-    res["idcheck_Bhandle"] = idcheck(bases["B"], qb, spec.get("idcheck_n", 8), "B-handle (same ckpt)")
+    foreign = bool(spec.get("foreign_states"))  # states from another config's block (no original run of this config yet)
+    res = {"protocol": F.PROTOCOL, "spec": spec, "servers": servers, "bases": bases, "foreign_states": foreign}
+    if foreign:
+        res["idcheck_Q"] = crosscheck(bases, qb, spec.get("idcheck_n", 8))
+        res["idcheck_Bhandle"] = res["idcheck_Q"]
+    else:
+        res["idcheck_Q"] = idcheck(bases["Q"], qb, spec.get("idcheck_n", 8), "Q")
+        res["idcheck_Bhandle"] = idcheck(bases["B"], qb, spec.get("idcheck_n", 8), "B-handle (same ckpt)")
     cand = []
     for b in qb:
         for tid in pick_tasks(b, spec.get("n_per_block", 3), b.domain == "telecom"):
@@ -461,23 +482,34 @@ def gate_same(spec: dict, bases: dict, user_base: str, servers: dict, out: Path)
         st = F.make_state(b, tid, t)
         a_b, rec_b = F.shadow(st, bases["B"], f"sameB-{st['state_id']}")
         st["a_B"] = {"message": a_b, "source": "shadow via B handle (same checkpoint)"}
+        if foreign:  # this config's own current action from the Q handle; must equal the B handle's, token for token
+            a_q, rec_q = F.shadow(st, bases["Q"], f"sameQ-{st['state_id']}")
+            shadow_eq = F.canon_msg(a_b) == F.canon_msg(a_q) and rec_b.get("completion_token_ids") == rec_q.get("completion_token_ids")
+            st["a_Q"] = {"message": a_q, "source": "shadow via Q handle (foreign state)"}
+        else:
+            shadow_eq = F.canon_msg(a_b) == F.canon_msg(st["a_Q"]["message"])
         r4 = run_4(st, bases, user_base, order, "same")
         dump(out / "branches" / f"{st['state_id']}_same.json", r4)
         sig = {k: F.branch_signature(v) for k, v in r4.items()}
-        oh = orig_final_hash(st, b)
-        return {"state_id": st["state_id"], "domain": b.domain, "task_id": tid, "t": t,
-                "shadow_eq_aQ": F.canon_msg(a_b) == F.canon_msg(st["a_Q"]["message"]),
-                "shadow_prompt_ok": F.ids_sha(rec_b["prompt_token_ids"]) == st["q_decision"]["prompt_ids_sha"],
-                "all_four_equal": all(sig[k] == sig["QQ"] for k in order),
-                "noop_vs_orig": {k: noop_check(st, r4[k], oh)["ok"] for k in order},
-                "differs": [k for k in order if sig[k] != sig["QQ"]]}
+        row = {"state_id": st["state_id"], "domain": b.domain, "task_id": tid, "t": t, "shadow_eq_aQ": shadow_eq,
+               "shadow_prompt_ok": F.ids_sha(rec_b["prompt_token_ids"]) == st["q_decision"]["prompt_ids_sha"],
+               "all_four_equal": all(sig[k] == sig["QQ"] for k in order),
+               "differs": [k for k in order if sig[k] != sig["QQ"]],
+               "budget_ok": all(budget_check(st, r4[k])["ok"] for k in order)}
+        if foreign:
+            row["noop_vs_orig"] = {"not_applicable": True}  # no original run of this config
+        else:
+            oh = orig_final_hash(st, b)
+            row["noop_vs_orig"] = {k: noop_check(st, r4[k], oh)["ok"] for k in order}
+        return row
 
     with ThreadPoolExecutor(spec.get("concurrency", 8)) as ex:
         rows = list(ex.map(lambda x: _safe(one, x), cand))
     res["rows"] = rows
     ok = [r for r in rows if "error" not in r]
     res["verdict"] = {"b_same_ckpt": bool(ok) and len(ok) == len(rows)
-                      and all(r["all_four_equal"] and r["shadow_eq_aQ"] and r["shadow_prompt_ok"] and all(r["noop_vs_orig"].values()) for r in ok),
+                      and all(r["all_four_equal"] and r["shadow_eq_aQ"] and r["shadow_prompt_ok"] and r["budget_ok"]
+                              and all(r["noop_vs_orig"].values()) for r in ok),
                       "n_states": len(ok), "n_errors": len(rows) - len(ok), "domains": sorted({r["domain"] for r in ok}),
                       "idcheck": res["idcheck_Q"]["ok"] and res["idcheck_Bhandle"]["ok"]}
     res["verdict"]["pass"] = res["verdict"]["b_same_ckpt"] and res["verdict"]["idcheck"]

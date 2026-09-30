@@ -493,6 +493,14 @@ def run_fork(task, args, st: Status):
     st.set("quantize" if q_ck["kind"] in ("gptq", "awq") else "setup", f"fork: build Q {q_ck['kind']}")
     q_path, q_meta = build_ckpt({"id": task["id"] + "_Q", "model": task["model"], "ckpt": q_ck}, env, gpus, scratch, log)
     b_path, b_meta = (q_path, q_meta) if same_w else build_ckpt({"id": task["id"] + "_B", "model": task["model"], "ckpt": b_ck}, env, gpus, scratch, log)
+    for role, meta in (("B", b_meta), ("Q", q_meta)):  # SmoothQuant / QuaRot ckpts need their online half (as run_eval)
+        senv_r = cfg[role]["serve_env"]
+        for k, v in ((meta or {}).get("requires_serve_env") or {}).items():
+            if str(senv_r.get(k)) != str(v):
+                raise RuntimeError(f"fork {role}: checkpoint {cfg[role]['ckpt']['kind']} requires serve_env {k}={v}, role has {senv_r.get(k)}")
+        for k, v in ((meta or {}).get("forbids_serve_env") or {}).items():
+            if str(senv_r.get(k)) == str(v):
+                raise RuntimeError(f"fork {role}: checkpoint {cfg[role]['ckpt']['kind']} forbids serve_env {k}={v}")
     one_gpu = len(gpus) == 1
     plan = {"B": (gpus[0], args.port + 100, b_path, b_ck), "Q": (gpus[-1], args.port + 200, q_path, q_ck)}
     servers, procs = {}, {}
@@ -531,9 +539,13 @@ def run_fork(task, args, st: Status):
         if same_w:
             servers["B"]["ckpt_sha256"] = servers["Q"].get("ckpt_sha256")
         for role in ("B", "Q"):
-            eff = FS.effective_config(cfg[role], MODELS[task["model"]], servers[role].get("ckpt_sha256"), AGENT_MAXLEN, env)
+            eff = FS.effective_config(cfg[role], MODELS[task["model"]], servers[role].get("ckpt_sha256"), AGENT_MAXLEN, env,
+                                      q_meta if role == "Q" else b_meta)
             servers[role]["effective_config"] = eff
             servers[role]["effective_config_sha"] = FS.config_hash(eff)
+            roots = (servers[role].get("hook_coverage") or {}).get("cache_roots") or []
+            if any(Path(r).name != eff["cache_namespace"] for r in roots):  # the hooks' own namespace must match the record
+                raise RuntimeError(f"fork {role}: hook cache roots {roots} != recorded namespace {eff['cache_namespace']}")
         same_cfg = servers["B"]["effective_config_sha"] == servers["Q"]["effective_config_sha"]
         servers["same_effective_config"] = same_cfg
         for role in ("B", "Q"):  # BF16 reference canary only for the plain BF16 path (as run_eval: hooks/extra = other flavour)
