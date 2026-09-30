@@ -152,7 +152,9 @@ def lease(url: str, run: str):
     a draining replica stops only after every lease on it is gone, so running episodes keep their endpoint."""
     try:
         import simreg
-        return simreg.lease_open(f"{socket.gethostname().split('.')[0]}_{os.getpid()}_{run.replace('/', '_')}", url, run)
+        node = socket.gethostname().split('.')[0]
+        url = url.replace("://127.0.0.1:", f"://{node}:").replace("://localhost:", f"://{node}:")  # registry URLs use the host name
+        return simreg.lease_open(f"{node}_{os.getpid()}_{run.replace('/', '_')}", url, run)
     except Exception:
         return None
 
