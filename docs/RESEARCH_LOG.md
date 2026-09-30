@@ -10,6 +10,15 @@ Newest first.
 
 ---
 
+## W35 — Old line stopped; experiment registry, automatic analysis daemon, board main-line view (2026-09-30)
+**TL;DR**
+- **Old line stopped.** 10 running old-line tasks (high-dose Gaussian redos, W3 on q32/l8, q30a3 k=3, old telecom BF16) were stopped through their run processes (clean server shutdown) and 51 queued old-line tasks moved to `queue/deferred/`. Finished episodes are kept and resumable.
+- **New batch queued (priority −7/−6, 26 tasks, 74 runs).** KV8 Q blocks on the development nonces, plus telecom development blocks (80 dev tasks, holdout untouched) for BF16 / GPTQ-W4 d1 / AWQ-W4 d1 on 6 nonces.
+- **Experiment registry.** `docs/insights/EXPERIMENT_REGISTRY.json` records each experiment's role (main / support / background / engineering / retired), its fit to the main line (critique), task patterns, and analysis.
+- **Analysis daemon.** `scripts/a6000/analysis_daemon.py` runs on the login node, niced. Every 10 min it counts progress and runs CPU analyses when their data are complete, on a fresh gated snapshot; GPU analyses stay single-GPU queue tasks. It writes `analysis/status/board_feed.json` and `analysis_runs.jsonl`.
+- **Board.** The new "Main line & experiments" tab groups experiments into running / waiting / not started / completed / retired, synced every 30 min.
+Evidence: `docs/insights/EXPERIMENT_REGISTRY.json`, `scripts/a6000/analysis_daemon.py`, `scripts/a6000/make_tasks_fork_dev2.py`, `queue/deferred/`.
+
 ## W34 — Executor instructions (§20) adopted: fork config bug, simulator registry, three engineering lines (2026-09-30)
 **TL;DR** External review of e72b93e, verified in code before acting:
 - **Fork config bug.** `run_fork` launches B/Q servers with `env` + GPU_UTIL only and ignores the task's `serve_env`/`serve_extra`, so KV/A forks would silently run unquantized Q servers. No such fork has run yet. The fork agent will fix per-role configs, effective-config hashes, hook coverage counts and acceptance before any P2 fork.

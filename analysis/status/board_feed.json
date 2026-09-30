@@ -1,0 +1,434 @@
+{
+ "updated": "2026-09-30T04:56:12Z",
+ "mainline": {
+  "title": "Tracing the Consequences of Quantization in Closed-Loop Agents",
+  "question": "On identical interaction histories, which task consequences do quantization-induced local action changes cause, and do they come from the current action, the subsequent execution, or their interaction? Can local precision restoration guide precision allocation?",
+  "evidence_layers": [
+   "W/A/KV quantization comparison (reproducible)",
+   "same-state action x continuation-controller forks (G, A/C/I, rescue/damage)",
+   "local computation/precision restoration linked to closed-loop consequences, validated on independent tasks"
+  ],
+  "not_claimed": [
+   "success equivalence",
+   "W4 behavioural fingerprint",
+   "checkpoint lottery",
+   "real speed or memory savings (fake quantization)"
+  ]
+ },
+ "queue": {
+  "todo": 31,
+  "running": 27,
+  "done": 509,
+  "failed": 2,
+  "deferred": 103
+ },
+ "experiments": [
+  {
+   "id": "fork_gate",
+   "title": "Replay acceptance gate (q4, q8, telecom)",
+   "role": "engineering",
+   "fit": "Prerequisite for every causal fork result; q4 passed all checks (8 states), q8/telecom and per-role hook configs pending.",
+   "done_note": null,
+   "tasks": {
+    "todo": 0,
+    "running": 1,
+    "done": 2,
+    "failed": 0,
+    "deferred": 0
+   },
+   "runs": {
+    "todo": 0,
+    "running": 0,
+    "done": 0,
+    "failed": 0,
+    "deferred": 0
+   },
+   "analysis": "gate verdicts",
+   "analysis_mode": "agent",
+   "last_analysis": null,
+   "analysis_state": "engineering agent"
+  },
+  {
+   "id": "dev_blocks",
+   "title": "Development blocks: Q runs GPTQ/AWQ-W4 d1 + BF16 on 20 shared nonces (q4, q8)",
+   "role": "main",
+   "fit": "The Q histories the four-branch forks start from; also paired Q-B success. Blocks = complete shared-nonce sets, not queue jobs.",
+   "done_note": null,
+   "tasks": {
+    "todo": 5,
+    "running": 24,
+    "done": 7,
+    "failed": 0,
+    "deferred": 0
+   },
+   "runs": {
+    "todo": 14,
+    "running": 69,
+    "done": 19,
+    "failed": 0,
+    "deferred": 0
+   },
+   "analysis": "fork development analysis (coverage, rescue/damage, G, A/C/I)",
+   "analysis_mode": "cpu",
+   "last_analysis": null,
+   "analysis_state": "waiting for script analysis/fork/analyze_dev.py"
+  },
+  {
+   "id": "bfpair",
+   "title": "Paired BF16 on W4 fresh nonces q1-q5 (q4, q8)",
+   "role": "support",
+   "fit": "Success non-inferiority at 3 pp (measurement section). Non-inferiority is not equivalence; development evidence only (W4 results were already seen).",
+   "done_note": null,
+   "tasks": {
+    "todo": 0,
+    "running": 2,
+    "done": 0,
+    "failed": 0,
+    "deferred": 0
+   },
+   "runs": {
+    "todo": 0,
+    "running": 10,
+    "done": 0,
+    "failed": 0,
+    "deferred": 0
+   },
+   "analysis": "Q-B non-inferiority / TOST / D",
+   "analysis_mode": "cpu",
+   "last_analysis": null,
+   "analysis_state": "waiting for data"
+  },
+  {
+   "id": "kv8_blocks",
+   "title": "KV8 Q blocks on development nonces (q4, q8)",
+   "role": "main",
+   "fit": "KV axis of the fork study (P2). Forks blocked until run_fork applies per-role hook configs (W34).",
+   "done_note": null,
+   "tasks": {
+    "todo": 14,
+    "running": 0,
+    "done": 0,
+    "failed": 0,
+    "deferred": 0
+   },
+   "runs": {
+    "todo": 38,
+    "running": 0,
+    "done": 0,
+    "failed": 0,
+    "deferred": 0
+   },
+   "analysis": "KV fork analysis",
+   "analysis_mode": "cpu",
+   "last_analysis": null,
+   "analysis_state": "waiting for script analysis/fork/analyze_dev.py"
+  },
+  {
+   "id": "tel_dev",
+   "title": "Telecom development blocks (80 dev tasks; holdout untouched)",
+   "role": "support",
+   "fit": "Cross-domain development and mapping the mechanism taxonomy onto telecom tools before the holdout is frozen.",
+   "done_note": null,
+   "tasks": {
+    "todo": 12,
+    "running": 0,
+    "done": 0,
+    "failed": 0,
+    "deferred": 0
+   },
+   "runs": {
+    "todo": 36,
+    "running": 0,
+    "done": 0,
+    "failed": 0,
+    "deferred": 0
+   },
+   "analysis": "telecom taxonomy mapping",
+   "analysis_mode": "agent",
+   "last_analysis": null,
+   "analysis_state": "engineering agent"
+  },
+  {
+   "id": "forks",
+   "title": "Same-state four-branch forks",
+   "role": "main",
+   "fit": "Core evidence: G = rescue - damage, A/C/I, per-fork annotation (defect, correction, requirements).",
+   "done_note": null,
+   "tasks": {
+    "todo": 0,
+    "running": 0,
+    "done": 0,
+    "failed": 0,
+    "deferred": 0
+   },
+   "runs": {
+    "todo": 0,
+    "running": 0,
+    "done": 0,
+    "failed": 0,
+    "deferred": 0
+   },
+   "analysis": "fork analysis + automatic event extraction",
+   "analysis_mode": "cpu",
+   "last_analysis": null,
+   "analysis_state": "waiting for script analysis/fork/analyze_dev.py"
+  },
+  {
+   "id": "restoration",
+   "title": "Layer/module BF16 restoration (byte-matched random controls) and alpha residual dose",
+   "role": "main",
+   "fit": "Local computation intervention and the deployment (precision allocation) test; checkpoints being built (engineering line 3).",
+   "done_note": null,
+   "tasks": {
+    "todo": 0,
+    "running": 0,
+    "done": 0,
+    "failed": 0,
+    "deferred": 0
+   },
+   "runs": {
+    "todo": 0,
+    "running": 0,
+    "done": 0,
+    "failed": 0,
+    "deferred": 0
+   },
+   "analysis": "restoration effect on actions and task consequences",
+   "analysis_mode": "agent",
+   "last_analysis": null,
+   "analysis_state": "engineering agent"
+  },
+  {
+   "id": "ahook",
+   "title": "A8 -> SmoothQuant W8A8 -> QuaRot W4A4 (fake quant)",
+   "role": "support",
+   "fit": "Activation axis for the W x A x KV comparison; named methods only after fidelity checks; excluded from main text if not accepted by 10-02 evening.",
+   "done_note": null,
+   "tasks": {
+    "todo": 0,
+    "running": 0,
+    "done": 0,
+    "failed": 0,
+    "deferred": 0
+   },
+   "runs": {
+    "todo": 0,
+    "running": 0,
+    "done": 0,
+    "failed": 0,
+    "deferred": 0
+   },
+   "analysis": "method fidelity + closed-loop matrix",
+   "analysis_mode": "agent",
+   "last_analysis": null,
+   "analysis_state": "engineering agent"
+  },
+  {
+   "id": "external",
+   "title": "BFCL multi-turn and ALFWorld",
+   "role": "support",
+   "fit": "External validity without an LLM user simulator; accepted by 10-02 evening or listed as a limitation.",
+   "done_note": null,
+   "tasks": {
+    "todo": 0,
+    "running": 0,
+    "done": 0,
+    "failed": 0,
+    "deferred": 0
+   },
+   "runs": {
+    "todo": 0,
+    "running": 0,
+    "done": 0,
+    "failed": 0,
+    "deferred": 0
+   },
+   "analysis": "external benchmark scores",
+   "analysis_mode": "agent",
+   "last_analysis": null,
+   "analysis_state": "engineering agent"
+  },
+  {
+   "id": "holdout",
+   "title": "Telecom holdout confirmation (34 tasks)",
+   "role": "main",
+   "fit": "Independent cross-domain confirmation under PREREG_FORK_CONFIRM.md (frozen 10-03 before any holdout outcome).",
+   "done_note": null,
+   "tasks": {
+    "todo": 0,
+    "running": 0,
+    "done": 0,
+    "failed": 0,
+    "deferred": 0
+   },
+   "runs": {
+    "todo": 0,
+    "running": 0,
+    "done": 0,
+    "failed": 0,
+    "deferred": 0
+   },
+   "analysis": "confirmatory analysis",
+   "analysis_mode": "cpu",
+   "last_analysis": null,
+   "analysis_state": "waiting for script analysis/fork/confirm_holdout.py"
+  },
+  {
+   "id": "openloop",
+   "title": "Open-loop probes (E3, top-20 E4-2; ~50 cells)",
+   "role": "background",
+   "fit": "Background measurement only: the act/talk shift conditional on BF16 is mostly a selection effect; not quantizer-specific evidence.",
+   "done_note": null,
+   "tasks": {
+    "todo": 0,
+    "running": 0,
+    "done": 200,
+    "failed": 0,
+    "deferred": 22
+   },
+   "runs": {
+    "todo": 0,
+    "running": 0,
+    "done": 0,
+    "failed": 0,
+    "deferred": 0
+   },
+   "analysis": "act/talk selection-corrected",
+   "analysis_mode": "cpu",
+   "last_analysis": {
+    "when": "2026-09-30T04:56:12Z",
+    "rc": 0,
+    "seconds": 4,
+    "snapshot": "/data/ziyangs/cloq/analysis/insights/iter_3/out/snapshot_auto_20260930T0456Z.json",
+    "cmd": "python analysis/insights/iter_4/act_talk_selection.py --snapshot /data/ziyangs/cloq/analysis/insights/iter_3/out/snapshot_auto_20260930T0456Z.json",
+    "tail": "4 dlogit -1.3677 | xchk 1.0 133\nq8 gptq_w4_d1   quantizer cond act/talk 0.9087 0.0197 | sym-exp 0.9428 0.058 | excess {'act': -0.034, 'talk': -0.0383} | uncond dP -0.0389 dlogit -0.8991 | xchk None None\nq8 gptq_w4_d2   quantizer cond act/talk 0.9179 0.0192 | sym-exp 0.9472 0.056 | excess {'act': -0.0292, 'talk': -0.0368} | uncond dP -0.0337 dlogit -0.6498 | xchk None None\nq8 gptq_w4_d3   quantizer cond act/talk 0.9307 0.0264 | sym-exp 0.9489 0.0526 | excess {'act': -0.0181, 'talk': -0.0263} | uncond dP -0.0232 dlogit -0.4492 | xchk None None\nq8 gptq_w4_d4   quantizer cond act/talk 0.9526 0.0415 | sym-exp 0.9538 0.0532 | excess {'act': -0.0012, 'talk': -0.0117} | uncond dP -0.004 dlogit 0.1694 | xchk None None\nq8 gshape_w4    control ( cond act/talk 0.9179 0.0778 | sym-exp 0.9295 0.0662 | excess {'act': -0.0116, 'talk': 0.0116} | uncond dP -0.0099 dlogit 0.4611 | xchk None None\nq8 rtn_w3       quantizer cond act/talk 0.7958 0.1374 | sym-exp 0.8739 0.1031 | excess {'act': -0.0782, 'talk': 0.0343} | uncond dP -0.0584 dlogit -1.1623 | xchk None None\nq8 rtn_w4       quantizer cond act/talk 0.9122 0.0608 | sym-exp 0.9316 0.0754 | excess {'act': -0.0194, 'talk': -0.0146} | uncond dP -0.0202 dlogit -0.7085 | xchk None None\nq8 rtnsign_w4   control ( cond act/talk 0.8075 0.0259 | sym-exp 0.893 0.0692 | excess {'act': -0.0856, 'talk': -0.0433} | uncond dP -0.0967 dlogit -2.4684 | xchk None None\nwrote /data/ziyangs/cloq/analysis/insights/iter_4/out/act_talk_selection_20260930T0456Z.json\n"
+   },
+   "analysis_state": "ran ok"
+  },
+  {
+   "id": "turnover",
+   "title": "Turnover above the numerics floor (W4 RTN/GPTQ/AWQ)",
+   "role": "background",
+   "fit": "Motivation only, restricted to the verified task set and run conditions.",
+   "done_note": "pooled excess lambda RTN +0.19 [0.10, 0.30], GPTQ +0.15, AWQ +0.16 (Holm)",
+   "tasks": {
+    "todo": 0,
+    "running": 0,
+    "done": 0,
+    "failed": 0,
+    "deferred": 0
+   },
+   "runs": {
+    "todo": 0,
+    "running": 0,
+    "done": 0,
+    "failed": 0,
+    "deferred": 0
+   },
+   "analysis": "r10 turnover",
+   "analysis_mode": "done",
+   "last_analysis": null,
+   "analysis_state": "done"
+  },
+  {
+   "id": "damage",
+   "title": "Damage anchors (RTN-W3; plain KV INT4/INT3)",
+   "role": "background",
+   "fit": "Stress anchors for the matrix; implementation and scoring to be rechecked.",
+   "done_note": "RTN-W3 -16.7 pp q8, -14.5 pp q14; plain KV INT4/INT3 flips 79%/90% of tokens",
+   "tasks": {
+    "todo": 0,
+    "running": 0,
+    "done": 0,
+    "failed": 0,
+    "deferred": 0
+   },
+   "runs": {
+    "todo": 0,
+    "running": 0,
+    "done": 0,
+    "failed": 0,
+    "deferred": 0
+   },
+   "analysis": "r07 damage",
+   "analysis_mode": "done",
+   "last_analysis": null,
+   "analysis_state": "done"
+  },
+  {
+   "id": "newmethods",
+   "title": "New methods on q4 (NF4, MXFP4, rotation, stochastic rounding) and E17 controls",
+   "role": "background",
+   "fit": "Coverage background; the size-vs-structure claim is retired (r08 contradicts equality).",
+   "done_note": null,
+   "tasks": {
+    "todo": 0,
+    "running": 0,
+    "done": 56,
+    "failed": 0,
+    "deferred": 1
+   },
+   "runs": {
+    "todo": 0,
+    "running": 0,
+    "done": 73,
+    "failed": 0,
+    "deferred": 1
+   },
+   "analysis": "r01/r10",
+   "analysis_mode": "done",
+   "last_analysis": null,
+   "analysis_state": "done"
+  },
+  {
+   "id": "prereg_iter4",
+   "title": "Pre-registered checkpoint lottery and fingerprint (H1-H4)",
+   "role": "retired",
+   "fit": "Kept as a transparent record: lottery not replicated; H3 invalid as implemented, W4 fingerprint not detected after correction.",
+   "done_note": null,
+   "tasks": {
+    "todo": 0,
+    "running": 0,
+    "done": 30,
+    "failed": 0,
+    "deferred": 0
+   },
+   "runs": {
+    "todo": 0,
+    "running": 0,
+    "done": 28,
+    "failed": 0,
+    "deferred": 0
+   },
+   "analysis": "prereg + corrected H3",
+   "analysis_mode": "done",
+   "last_analysis": null,
+   "analysis_state": "done"
+  },
+  {
+   "id": "old_line",
+   "title": "Old-line matrix (Llama, q14/q30a3/q32 cells, high-dose Gaussian, old telecom cells)",
+   "role": "retired",
+   "fit": "Not needed for the current main line; stopped/deferred 2026-09-30 (W35), finished episodes kept and resumable.",
+   "done_note": null,
+   "tasks": {
+    "todo": 0,
+    "running": 0,
+    "done": 224,
+    "failed": 0,
+    "deferred": 95
+   },
+   "runs": {
+    "todo": 0,
+    "running": 0,
+    "done": 214,
+    "failed": 0,
+    "deferred": 101
+   },
+   "analysis": "none",
+   "analysis_mode": "none",
+   "last_analysis": null,
+   "analysis_state": "none"
+  }
+ ]
+}
