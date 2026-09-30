@@ -411,3 +411,23 @@ rate 60–90%):
 10. **Telecom error budget.** User-side tool errors count against max_errors, as in tau2 (`_execute_tool_calls`). The q8 BF16 telecom
     run ends in too_many_errors in 63 of 80 episodes, mostly from the agent calling user-side tools. The error budget is therefore often
     binding in telecom forks and is part of the restored state.
+
+## 12. Difficulty moderators: exploratory on development, draft pre-registration for the telecom holdout (W52)
+
+Development analysis: `analysis/fork/analyze_difficulty.py`. Everything in it is **exploratory**, because the moderators
+were chosen after the development data was seen. Its effects, units and bootstrap are those of analyze_dev.py.
+
+**Draft moderator list for the telecom holdout** (to be frozen in PREREG_FORK_CONFIRM.md before any holdout outcome, 10-03).
+Cut points and bins are fixed on the telecom development data, never on the holdout.
+
+| id | moderator | definition | test |
+|---|---|---|---|
+| M1 (primary moderator) | remaining horizon h | n_decisions(Q episode) − t* at the primary state | slope of C = L_BQ − L_BB on h (pp per 10 decisions, weighted LS under the hierarchical bootstrap). One-sided H1: slope > 0, i.e. harm from the Q continuation compounds with the remaining horizon. α = 0.05. |
+| M2 | BF16 task difficulty | BF16 official success rate of the task over the holdout's paired BF16 blocks | G_all and C within bins {0}, (0, 0.5], (0.5, 1]; trend across bins |
+| M3 | persona | PERSONA Hard / None / Easy from the task id | G_all per level; Hard vs None contrast |
+| M4 | task length | mean agent decisions of the task's BF16 episodes | tertiles with cut points frozen from telecom dev |
+| M5 | fault load | issue type (mms / mobile_data / service) and number of injected faults (from the task id) | G_all per level |
+
+- M2–M5 are secondary, with Holm correction across them. All strata and point estimates are reported whatever their significance.
+- Few holdout events mean limited evidence for a mechanism, not its absence (review round 3).
+- The moderator analyses are nested within the primary G_all analysis. They do not replace it.

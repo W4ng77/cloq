@@ -50,7 +50,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "analysis/fork/out"
-ROOTS = ["analysis/fork/dev", "analysis/fork/kv", "analysis/fork/stress", "analysis/fork/restore", "analysis/fork/holdout"]
+ROOTS = ["analysis/fork/dev", "analysis/fork/kv", "analysis/fork/stress", "analysis/fork/telecom", "analysis/fork/restore", "analysis/fork/holdout"]
 # Pre-declared pooling families (equal weight per cell within a family; families are never pooled together).
 FAMILIES = {"W4": ("gptq_w4_d1", "awq_w4"), "KV8": ("kvq_int8",), "stress": ("gptq_w3", "kvq_int4_rot", "kvq_int4")}
 

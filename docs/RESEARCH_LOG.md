@@ -10,6 +10,30 @@ Newest first.
 
 ---
 
+## W52 — Difficulty moderators (exploratory) and telecom development forks queued (2026-09-30)
+**TL;DR** The preliminary telecom signal is smaller under the official criterion, and none of the post hoc difficulty moderators is significant on the development forks.
+- **Preliminary signal, recomputed with official telecom success** (official_reward == 1; the preliminary numbers used db_match/reward):
+  - q8, f01–f06: BF16 11.0%, AWQ-W4 8.3% (−2.7 pp, not −4.8), GPTQ-W4 14.2%.
+  - PERSONA:Hard: BF16 11.3%, AWQ 4.0%, GPTQ 20.7% (not 18% vs 4%).
+  - q4: BF16 16.9%, GPTQ 16.7%.
+- **`analysis/fork/analyze_difficulty.py`** (EXPLORATORY; registrable as `python analysis/fork/analyze_difficulty.py --snapshot {snapshot} --include-gate-telecom`). Moderators:
+  - (a) remaining horizon h = n_decisions(Q) − t*, tertiles plus a bootstrap slope of C (and G, A, I) on h, the compounding test;
+  - (b) BF16 task length, tertiles;
+  - (c) BF16 difficulty, bins {0, (0, 0.5], (0.5, 1]};
+  - (d) domain;
+  - (e) telecom persona.
+
+  It uses analyze_dev's units, exclusions and hierarchical bootstrap. It takes about 30 s on the current 4,810 fork states (7 cells, partial W4, KV8 and stress outputs, plus the telecom gate block).
+- **First exploratory read.** No compounding signal: the slope of C on h is small and not significant in every cell (q4 GPTQ-W4 −0.8 pp per 10 decisions, p 0.36; q8 AWQ +0.5, p 0.73; the largest is q4 KV4-rot +3.3, p 0.15). The difficulty and length strata all have intervals covering 0.
+- **Telecom development forks queued** at priority −12 by `scripts/a6000/make_tasks_fork_tel.py`:
+  - q8 AWQ-W4 c1 and q8 GPTQ-W4 c1 on telecom dev blocks f01–f06, 2 blocks per task, 6 tasks.
+  - All 18 Q and BF16 runs are admitted (snapshot 20260930T1319Z) with equal nonces, only dev tasks, and 0 of the 34 holdout tasks (asserted at generation).
+  - 2 GPUs per task, pinned to node004/005/007, with the 10% no-op quarantine.
+  - Estimate from the gate's telecom throughput: ≈ 11–12 GPU-h per cell × block, ≈ 135–145 GPU-h in total, below the 200 GPU-h budget. analyze_dev now reads `analysis/fork/telecom/`.
+- **Draft pre-registration of moderators for the holdout** (FORK_PROTOCOL.md §12). M1, the primary moderator, is the one-sided slope of C on remaining horizon. M2–M5 (BF16 difficulty, persona, task length, fault load) are secondary under Holm. Cut points are fixed on telecom dev.
+Evidence: `analysis/fork/analyze_difficulty.py`, `analysis/fork/out/difficulty_20260930T132741Z.{json,md}`, `scripts/a6000/make_tasks_fork_tel.py`,
+`/data/ziyangs/cloq_work/queue/todo/fork_tel_q8_*.json`, `docs/insights/FORK_PROTOCOL.md` §12.
+
 ## W51 — External-fork analysis script (`analysis/fork/analyze_ext.py`) and the first ALFWorld estimate (2026-09-30)
 **TL;DR** `analysis/fork/analyze_ext.py` (registry id `ext_forks`) reproduces the τ² fork analysis on ALFWorld/BFCL forks. On the first finished cell, q8 AWQ-W4 d1 ALFWorld (134 games), G_all is −3.7 [−11.9, +4.5] pp. The τ² W4 pool is +0.2 [−2.8, +3.2] pp, and BFCL is not in yet.
 - **First cell, q8 AWQ-W4 d1 ALFWorld (134 games).** 119 divergent (89%): 14 rescues, 19 new damages, 30 both succeed, 56 both fail.
