@@ -10,6 +10,10 @@ Newest first.
 
 ---
 
+## W26 — Storyline v6 (two lines) and review packet update (2026-09-30)
+**TL;DR** `docs/insights/STORYLINE_v6.md` records Line A (checkpoint lottery, refuted by the pre-registered H1/H2, W25) and Line B (success-equivalent but behaviourally distinct: B1 success equivalence, B2 turnover above the floor, B3 persistent fingerprint (confirmed), B4 fingerprint generic to fixed perturbations, B5 what changes, B6 damage regime; open B7 "does it matter"). `docs/REVIEW_PACKET.md` updated for the external reviewer (new §4b pre-registered result, both lines, experiment record, revised questions).
+Evidence: `docs/insights/STORYLINE_v6.md`, `docs/REVIEW_PACKET.md`.
+
 ## W25 — Pre-registered confirmatory result (2026-09-30)
 **TL;DR** Ran `prereg_h1_h4.py` once on snapshot 20260930T0044Z (all 28 confirmatory runs admitted). H1 recalibration lottery NOT supported (pooled φ 0.40, p 0.74; q4 φ −0.30, q8 0.94). H2 net effect replicating across nonces NOT supported (r 0.42, p_holm 0.42; q4 r −0.52, q8 0.94). H3 split-task behavioural fingerprint SUPPORTED (F_split 0.26, p_holm 0.0024; q4 0.19, q8 0.33). Random fixed checkpoints have fingerprints at least as persistent as quantizers (same-checkpoint cosine RAND 0.51/0.77 vs RECAL 0.32/0.38). H4 not detected (−0.83 [−7.1, 4.2]). Secondary: new q4 recalibrations d3/d4 all land at net +1.5 to +3.9 pp; including d1/d2, checkpoint SD 3.65 pp vs nonce 2.51 pp, method ≈ 0. Per PREREG §6: the checkpoint lottery is dropped as a headline (the exploratory q4 d1 vs d2 gap did not replicate on new checkpoints); the paper leads with turnover above the numerics floor plus a persistent behavioural fingerprint that is generic to fixed weight perturbations.
 Evidence: `analysis/insights/iter_4/out/prereg_h1_h4_CONF_20260930T0044Z.json`, `analysis/insights/iter_3/out/snapshot_live_20260930T0044Z.json`, `docs/insights/PREREG_iter4.md`.

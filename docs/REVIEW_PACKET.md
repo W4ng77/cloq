@@ -1,16 +1,17 @@
-**TL;DR** Entry point for an external reviewer (2026-09-29). This repo measures what weight quantization does to
-closed-loop LLM agents (τ²-bench, Qwen3 4B–32B), judged against the model's own perturbation noise rather than a
-single BF16 run. Solid so far: W4 quantization re-rolls task outcomes above a numerics floor, and fixed perturbed
-checkpoints have reproducible behavioural fingerprints. Not yet solid: whether quantizers differ from matched random
-perturbations, and whether net effects are a "checkpoint lottery". Two internal reviews score the current storyline
-2.5/5. We ask for critique and better ideas on the storyline, methodology and statistics (§8). Target: ARR October
-2026 (NAACL), 8 pages, experiments freeze 2026-10-05, submission 2026-10-12.
+**TL;DR** Entry point for an external reviewer (updated 2026-09-30). This repo measures what weight quantization does
+to closed-loop LLM agents (τ²-bench, Qwen3 4B–32B), judged against the model's own perturbation noise rather than a
+single BF16 run. A pre-registered test on new checkpoints (W25) REFUTED the "checkpoint lottery" storyline (Line A),
+and CONFIRMED that fixed checkpoints carry a persistent behavioural fingerprint. The evidence now supports Line B:
+W4 quantization is success-equivalent but behaviourally distinct (turnover above a numerics floor, persistent
+fingerprint), and the fingerprint is generic to fixed weight perturbations. We ask for critique and better ideas on
+the storyline, methodology and statistics (§8). Target: ARR October 2026 (NAACL), 8 pages, experiments freeze
+2026-10-05, submission 2026-10-12.
 
 # Review packet: quantization and closed-loop LLM agents
 
 Read this file first; every claim below points to the file that backs it. Numbers are from the integrity-gated
 snapshot `analysis/insights/iter_3/out/snapshot_live_20260929T1937Z.json` unless marked otherwise. The project log,
-newest first, is `docs/RESEARCH_LOG.md` (entries W1–W20, V*).
+newest first, is `docs/RESEARCH_LOG.md` (entries W1–W25, V*). The two storylines are in `docs/insights/STORYLINE_v6.md`.
 
 ## 1. Question and motivation
 
@@ -120,12 +121,33 @@ Code:
 | R4 | W4 methods (RTN/GPTQ/AWQ) have similar λ, but equivalence at ±0.10 is not established (p 0.12–0.63) | inconclusive | W17 |
 | R5 | Landing c cannot be identified for RTN on any model (λ too small), so "c depends on method" is untestable | unidentified | W17 |
 | R6 | A fixed checkpoint's behavioural fingerprint persists across nonce draws: F=0.44, perm p=0.001, 48 checkpoints. The review shows it halves (0.22, still p=0.0005) when draws are computed on disjoint task halves, and that fixed *random* checkpoints are as persistent as quantizers | established for any fixed perturbation | W18, `iter_4/out/p2_*`, `paper/review_storyline_v5.md` |
-| R7 | Net effects are coherent across tasks on q4. W4 φ 5.6; q32 3.1 (3 checkpoints, p 0.155); q8/q30a3 about 1. Retail only (φ 3.81) vs airline 1.07. Same-method recalibration pairs φ 4.65 (p 0.013, df 7, exploratory); q4 GPTQ d1 vs d2 net +9.6 pp [1.8, 17.4] | q4 only, exploratory | W17, W18 |
+| R7 | Net effects are coherent across tasks on q4. W4 φ 5.6; q32 3.1 (3 checkpoints, p 0.155); q8/q30a3 about 1. Retail only (φ 3.81) vs airline 1.07. Same-method recalibration pairs φ 4.65 (p 0.013, df 7, exploratory); q4 GPTQ d1 vs d2 net +9.6 pp [1.8, 17.4] | exploratory; **not confirmed** by the pre-registered test (§4b) | W17, W18, W25 |
 | R8 | Open-loop act-vs-talk contrast predicts the closed-loop act share on q4 (partial ρ 0.62 given flip rate, Holm p=0.012), but not net Δ. Open-loop flip rate predicts λ mostly through dose (partial ρ given dose 0.39 [−0.03, 0.73]) | q4 only | W18, W17 |
 | R9 | Capability damage: RTN-W3 −16.7 pp on q8 and −14.5 pp on q14. Plain KV INT4/INT3 destroys the model; KV INT8 and INT4 with rotation are mild | established | W14, W13 |
 | R10 | New methods on q4 (3 fresh-nonce draws each): NF4, MXFP4, rotation, stochastic rounding. Rotated BF16 has λ 0.12, at the serving floor | descriptive | W12, W15 |
 
-## 5. Current storyline (v5) and its reviews
+## 4b. Pre-registered confirmation (2026-09-30)
+
+- **Pre-registration:** `docs/insights/PREREG_iter4.md`, committed while the confirmatory runs were running (W22). Amendment 1 (W24) records 18 implementation clarifications made on stand-in data before any outcome was seen, including the correct unit count: 28 runs, not 40.
+- **Units:** 14 new checkpoints × 2 fresh nonces on q4/q8.
+  - RECAL: GPTQ/AWQ-W4 on new calibration draws d3/d4.
+  - RAND: Gaussian k=1 fixed seeds s2/s4/s5.
+- **Analysis:** `analysis/insights/iter_4/prereg_h1_h4.py`, run once on snapshot 20260930T0044Z. Output: `analysis/insights/iter_4/out/prereg_h1_h4_CONF_20260930T0044Z.json`.
+
+| id | Hypothesis | Estimate | p (Holm) | Verdict |
+|---|---|---|---|---|
+| H1 | Recalibration lottery: φ_RECAL > 1 | φ 0.40 (q4 −0.30, q8 0.94) | 0.74 | not supported |
+| H2 | Net Δ replicates across nonces | r 0.42 (q4 −0.52, q8 0.94) | 0.42 | not supported |
+| H3 | Fingerprint persists on disjoint task halves | F_split 0.26 (q4 0.19, q8 0.33) | 0.0024 | supported |
+| H4 | φ_RECAL − φ_RAND ≠ 0 (secondary) | −0.83 [−7.1, 4.2] | 0.70 (raw) | not detected (underpowered) |
+
+Secondary results:
+- New q4 recalibrations all land at net +1.5 to +3.9 pp.
+- Pooling d1–d4, q4 checkpoint SD is 3.65 pp, nonce SD 2.51 pp and method SD 0.
+- Random fixed checkpoints have fingerprints at least as persistent as quantizers: same-checkpoint cosine 0.51/0.77 vs 0.32/0.38.
+- The exploratory q4 d1 vs d2 gap (+9.6 pp) did not replicate.
+
+## 5. Storylines and reviews
 
 - **v5** (`docs/insights/STORYLINE_v5.md`): "A quantized agent is a different agent". Quantized checkpoints are reproducible behavioural variants: a coherent net effect and a persistent fingerprint. Prompt nonces, Gaussian noise and sampling only re-roll outcomes. The conformal/exchangeability test is the instrument that separates the two.
 - **Review of v4** (`paper/review_storyline_v4.md`): 2.5/5. It removed four v4 claims:
@@ -142,24 +164,38 @@ Code:
   6. No held-out test set exists: the 85 tasks are development data, and the 57 calibration tasks feed GPTQ/AWQ.
 
   Suggested reframing: lead with the "checkpoint lottery" (same method, different calibration draw → different agent, different net effect), and present the fingerprint as generic to any fixed perturbation.
+- **Line A, checkpoint lottery** (the v5-review recommendation): refuted by the pre-registered H1/H2 (§4b).
+- **Line B, success-equivalent but behaviourally distinct** (current proposal; `docs/insights/STORYLINE_v6.md`). Six claims:
+  - B1: success-equivalence (small, stable net Δ; confirmed null).
+  - B2: turnover above the floor.
+  - B3: a persistent fingerprint (confirmed).
+  - B4: the fingerprint is generic to fixed weight perturbations.
+  - B5: what changes — act-vs-talk blurring and tool-name switches.
+  - B6: the damage regime (W3, plain KV INT4/INT3).
 
-## 6. Experiments queued or running (iteration 4)
+  Open problem B7: show that the behavioural change matters. Candidates: pass^k reliability, policy violations or extra writes, cost, a stricter grader.
+
+  Conformal role in Line B: one exchangeability test, two outcome spaces. Success vectors are exchangeable with the null (accept ε-equivalence); behaviour vectors are not (reject).
+
+## 6. Experiment record (iteration 4)
 
 | id | What | Status |
 |---|---|---|
-| E4-1 | Open-loop E3 for existing checkpoints on q8/q14/q30a3/q32 | queued, high priority |
-| E4-2 | Top-20 open-loop (act vs talk, tool name) for 49 cells on q4/q8/q14/q32 | smoke done, rest queued |
-| E4-3 | New calibration draws c3/c4 → GPTQ/AWQ-W4 d3/d4 on q4/q8, 2 fresh nonces each | queued (the confirmatory units for the lottery) |
-| E4-4 | Fixed Gaussian k=1 seeds s2/s4/s5 on q4/q8, 2 fresh nonces each | queued |
-| S | Sampling baseline (BF16, T>0) | pulled; per-request seeding to be fixed first |
+| E4-1 | Open-loop E3 for existing checkpoints on q8/q14/q30a3/q32 | running |
+| E4-2 | Top-20 open-loop (act vs talk, tool name) for 49 cells on q4/q8/q14/q32 | q4 smoke + d3/d4 done, rest running |
+| E4-3 | New calibration draws c3/c4 → GPTQ/AWQ-W4 d3/d4 on q4/q8, 2 fresh nonces each | done; confirmatory units (§4b) |
+| E4-4 | Fixed Gaussian k=1 seeds s2/s4/s5 on q4/q8, 2 fresh nonces each | done; confirmatory units (§4b) |
+| S | Sampling baseline (BF16, T>0) | pulled (vLLM per-request seeding makes a fixed seed a fixed perturbation); not rerun |
 | M-cells | q30a3/q32 core quantizer cells, Llama slice, telecom (third domain, dual control) | running / low priority |
+| X1, KVQ, new methods | official FP8/AWQ checkpoints; fake KV-cache INT8, INT4+rotation; NF4, MXFP4, QuaRot rotation, stochastic rounding | q4 done, q8/q14 partly done (W12–W15) |
+
+Full chronological record with evidence paths: `docs/RESEARCH_LOG.md`. Per-run results are the queue records under
+`/data/ziyangs/cloq_work/queue/done/` (not in git) and the gated snapshots in `analysis/insights/iter_3/out/snapshot_live_*.json`.
 
 Scale:
 - Each closed-loop run (85 tasks) costs 1–10 GPU-hours; the user simulator is the bottleneck.
 - About 40 GPUs are available until 10-05.
 - Open-loop cells take about 10 minutes.
-
-Pre-registration of the confirmatory tests on the new checkpoints (H1 recalibration lottery φ>1, H2 net effect replicates across nonces, H3 split-task fingerprint; H4 quantizer-vs-random coherence secondary): `docs/insights/PREREG_iter4.md`, committed while those runs were still running (RESEARCH_LOG W22). Suggestions on it are welcome; changes will be logged as amendments.
 
 ## 7. Repository map
 
@@ -167,7 +203,7 @@ Pre-registration of the confirmatory tests on the new checkpoints (H1 recalibrat
   - `paper/latex/`: ACL template; still the older "perturbation equivalence" framing, not updated.
   - `paper/perturbation-equivalence-closed-loop.md`: older draft.
   - `paper/review*.md`: internal reviews.
-- **Plans and insights:** `docs/insights/` (PLAN_iter3/4, STORYLINE_v4/v5, NULL_RULE, SURVEY, iter_*_*.md) and `docs/FINAL_EXPERIMENTS.md`.
+- **Plans and insights:** `docs/insights/` (PLAN_iter3/4, STORYLINE_v4/v5/v6, PREREG_iter4, NULL_RULE, SURVEY, iter_*_*.md) and `docs/FINAL_EXPERIMENTS.md`.
 - **Analysis:**
   - `analysis/insights/iter_{2,3,4}/`: scripts plus `out/`.
   - `analysis/openloop/`: E3 and E4-2 outputs.
@@ -177,17 +213,22 @@ Pre-registration of the confirmatory tests on the new checkpoints (H1 recalibrat
 
 ## 8. What we would like from you
 
-1. **Storyline.** Given §4–5, what is the strongest *true* story with high impact? Is there a better framing than "checkpoint lottery" or "quantized agent = different agent"? Is anything in the data more important than we realise?
-2. **Is the central distinction well posed?** Is "systematic variant vs re-roll noise" the right distinction, and how should it be operationalised? Candidates include exchangeability levels, variance components (method / checkpoint / nonce / task), and size-matched controls. How should size be matched across perturbation types (weight error, turnover λ, open-loop KL)?
+1. **Storyline.** Line A is refuted. Is Line B (success-equivalent, behaviourally distinct) strong enough for NAACL, or is there a better true story in this data? Is anything more important than we realise?
+2. **B7: does the behavioural change matter?** Which consequence would convince reviewers? Candidates, all computable from existing runs:
+   - pass^k reliability;
+   - policy violations or unnecessary writes;
+   - cost / conversation length;
+   - a stricter grader;
+   - user-visible errors.
 3. **Statistics.**
-   - Critique the λ–c estimator, the φ overdispersion test, the fingerprint F (and its split-task version), and the hierarchical bootstrap.
-   - With few units per level (2–5 checkpoints per method, 2–8 draws per checkpoint, 85 tasks), what analysis would you pre-register?
-   - What can conformal/exchangeability methods deliver that is genuinely load-bearing here? For example, a conformal interval for the next checkpoint's Δ, or an acceptance test for a single deployed checkpoint.
+   - Critique the λ–c estimator, the fingerprint F / F_split, the hierarchical bootstrap and the pre-registration.
+   - How should success-equivalence be stated: ε-TOST, a conformal acceptance test, or a hierarchical model?
+   - How can the "one test, two outcome spaces" conformal framing be made rigorous with 8 null draws, 2–5 checkpoints per method and 85 tasks?
 4. **Experiments before 10-05.**
    - Which additions give the most evidence per GPU-hour?
-   - How to fix the sampling baseline (per-request seeds).
    - A clean held-out test set (telecom? the 22 excluded tasks?).
    - A simulator swap.
+   - A corrected sampling baseline.
    - Which queued items to drop.
-5. **Positioning.** Missing related work, and how to differentiate from flip / behaviour-fingerprinting / model-equality-testing papers and from agent-evaluation noise papers.
+5. **Positioning.** How to differentiate B3/B4 from flip, behaviour-fingerprinting and model-equality-testing work (Dutta 2024, AgentProv, Stability Monitor, logit fingerprinting) and from agent-evaluation noise papers.
 6. **Title, abstract and Figure 1** for an 8-page NAACL paper.
