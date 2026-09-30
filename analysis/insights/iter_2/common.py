@@ -23,6 +23,9 @@ from pathlib import Path
 
 import numpy as np
 
+# infra_causes.json labels that are the agent's own behaviour (count as task failure, not missing): W10, W27
+AGENT_SIDE = {"context_overflow", "agent_parse_error"}
+
 ROOT = Path("/data/ziyangs/cloq")
 RUNS = ROOT / "runs"
 HERE = Path(__file__).resolve().parent
@@ -163,7 +166,7 @@ def outcomes(run, dom, with_reason=False):
     cp = RUNS / run / dom / "infra_causes.json"
     if cp.exists():
         causes = json.load(open(cp))
-        rows = [(t, 0, "context_overflow") if tr == INFRA and causes.get(t) == "context_overflow" else (t, y, tr)
+        rows = [(t, 0, causes[t]) if tr == INFRA and causes.get(t) in AGENT_SIDE else (t, y, tr)
                 for t, y, tr in rows]
     if with_reason:
         return {t: (y, tr) for t, y, tr in rows}

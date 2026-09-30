@@ -314,7 +314,8 @@ def run_eval(task, args, st: Status):
                             for sim in json.load(open(res)).get("simulations", []):
                                 if str(sim.get("termination_reason")) == "infrastructure_error":
                                     err = str((sim.get("info") or {}).get("error", ""))
-                                    causes[str(sim["task_id"])] = "context_overflow" if "ContextWindowExceeded" in err else "outage"
+                                    causes[str(sim["task_id"])] = ("context_overflow" if "ContextWindowExceeded" in err else
+                                                                   "agent_parse_error" if "only supports single tool-calls" in err else "outage")
                         (ROOT / "runs" / rid / d / "infra_causes.json").write_text(json.dumps(causes, indent=1))
                         n_out = sum(v == "outage" for v in causes.values()) if causes else tr["infrastructure_error"]
                         if n_out:
