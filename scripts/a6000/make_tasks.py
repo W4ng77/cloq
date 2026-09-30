@@ -196,6 +196,44 @@ AQ_CELLS = {  # cell -> (ckpt, serve_env)
 }
 
 
+# W x A x KV 2^3 matrix (W47): every cell in the QuaRot-rotated model (online Hadamards always on), bits only vary.
+# KV16 cells leave the KV hook off (QuaRot rotates q/k only when K is quantized). Anchors on the same blocks: A8, SQ W8A8
+# (plain BF16 = a6k2_<m>_bfpair_f0k and GPTQ-W4 = a6k2_<m>_gptq_w4_d1_f0k already exist).
+WAKV_A4 = {"CLOQ_AQ_BITS": "4", "CLOQ_AQ_FMT": "sym_quarot", "CLOQ_AQ_CLIP": "0.9"}
+WAKV_KV4 = {"CLOQ_KVQ_BITS": "4", "CLOQ_KVQ_ROT": "qk", "CLOQ_KVQ_FMT": "quarot", "CLOQ_KVQ_KCLIP": "0.95", "CLOQ_KVQ_VCLIP": "0.95"}
+
+
+def wakv_cells() -> dict:
+    out = {}
+    for w in (16, 4):
+        ck = {"kind": "quarot", "wbits": w, "seed": 0} if w == 16 else {"kind": "quarot", "wbits": 4, "wmethod": "gptq", "seed": 0}
+        for a_ in (16, 4):
+            for kv in (16, 4):
+                env = {**AQ_H, "CLOQ_AQ_BITS": "16", "CLOQ_AQ_HAD": "quarot"}
+                if a_ == 4:
+                    env.update(WAKV_A4)
+                if kv == 4:
+                    env.update(WAKV_KV4)
+                out[f"quarot_w{w}a{a_}kv{kv}"] = (ck, env)
+    out["aq_a8"] = AQ_CELLS["aq_a8"]
+    out["sq_w8a8"] = AQ_CELLS["sq_w8a8"]
+    return out
+
+
+def wakv(m: str, prefix: str = "a6k2", cells=None, priority: float = -8, blocks=("f01", "f02", "f03")) -> list[dict]:
+    """One task per cell with one run per dev block (nonces: manifests/fork/dev_blocks_v1.json new_blocks), paired with
+    <prefix>_<m>_bfpair_<block> and <prefix>_<m>_gptq_w4_d1_<block>."""
+    nb = json.load(open(Path(__file__).resolve().parents[2] / "manifests/fork/dev_blocks_v1.json"))["new_blocks"]
+    out = []
+    for cell, (ck, senv) in wakv_cells().items():
+        if cells and cell not in cells:
+            continue
+        t = eval_task(f"{prefix}_{m}_{cell}_fdev", m, "wakv", ck, [run(f"{prefix}_{m}_{cell}_{b}", nonce=nb[b]) for b in blocks], priority)
+        t["serve_env"] = dict(senv)
+        out.append(t)
+    return out
+
+
 def aq(m: str, prefix: str = "a6k2", cells=None, n_runs: int = 1, priority: float = -7) -> list[dict]:
     """Smoke: per cell one eval task with n_runs fresh-nonce runs <prefix>_<m>_<cell>_q1.. (arm 'aq')."""
     out = []
@@ -249,7 +287,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("models", nargs="+")
     ap.add_argument("--retry", action="store_true")
-    ap.add_argument("--only", choices=["det", "matrix", "e5", "e3", "r1", "x1", "kvq", "w12", "aq"], default=None)
+    ap.add_argument("--only", choices=["det", "matrix", "e5", "e3", "r1", "x1", "kvq", "w12", "aq", "wakv"], default=None)
     ap.add_argument("--runs", type=int, default=1, help="aq: fresh-nonce runs per cell")
     ap.add_argument("--cells", nargs="*", default=None, help="w12: restrict to these cells")
     ap.add_argument("--no-openloop", action="store_true", help="w12: eval tasks only")
@@ -281,6 +319,8 @@ def main():
             tasks += w12(m, a.prefix, a.priority, not a.no_openloop, a.cells)
         if a.only == "aq":
             tasks += aq(m, a.prefix, a.cells, a.runs, a.priority)
+        if a.only == "wakv":
+            tasks += wakv(m, a.prefix, a.cells, a.priority)
         if a.only == "e5":
             tid = "" if a.prefix == "a6000" else a.prefix + "_"
             tasks += [dict(t, id=tid + t["id"]) for t in e5(m, a.prefix)]
