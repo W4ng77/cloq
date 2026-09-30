@@ -10,6 +10,10 @@ Newest first.
 
 ---
 
+## W32 — Review round 3: paper fixed as "Tracing the Consequences of Quantization in Closed-Loop Agents" (2026-09-30)
+**TL;DR** The goal is a complete, submittable paper; results set claim strength, not continuation. Decision points: 10-01 (deterministic vs stochastic forks vs engineering) and 10-03 (measurement-paper freeze if restoration is unverifiable). Stochastic estimand G = E[Y_BQ] − E[Y_QQ] with nested repeats, no no-op subtraction. Annotation: automatic events + LLM labels with evidence locations + ~80 human-blinded states (~20 double). Blocks sized by simulator throughput. Telecom holdout = independent cross-domain confirmation with a pre-mapped taxonomy. LaTeX rewrite starts now.
+Evidence: `docs/insights/EXTERNAL_REVIEW_GPT61_20260930.md` (Round 3).
+
 ## W31 — Review round 2: old main line retired; fork deliverables and annotation fields defined (2026-09-30)
 **TL;DR** "Success-equivalent, behaviourally distinct" retired. The random-perturbation fingerprint is kept as an exploratory, post-hoc finding; no W4 fingerprint was detected. Main line: consequences and sources of quantized action substitutions on identical histories. The BF16 action is only a reference; defects are judged from tool preconditions, task requirements, authorisation and state. No research gate on the sign of G. The development evidence gate needs coverage, consequence composition, G and A/C/I with intervals, process evidence and precision. Per-fork annotation: defect, correction, requirements satisfied. Freeze the tool-type table. Report the fixed pool and new tasks separately. Our addition: telecom dev split (80 tasks) joins development forks.
 Evidence: `docs/insights/EXTERNAL_REVIEW_GPT61_20260930.md` (Round 2), `docs/insights/STORYLINE_v6.md`.

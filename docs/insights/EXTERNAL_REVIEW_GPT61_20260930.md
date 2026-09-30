@@ -237,3 +237,53 @@ Update `docs/insights/SURVEY.md`.
   - a few predefined divergence types that carry high damage risk.
 
 **Our addition:** include the telecom development split (80 tasks, disjoint from the 34-task holdout) in development forks, to add independent tasks in the confirmation domain. The 22 excluded retail/airline tasks stay out: they were selected on BF16 behaviour.
+
+## Round 3: paper target and fork protocol details (agreed)
+
+- **Deliverable.** A complete, submittable paper: *Tracing the Consequences of Quantization in Closed-Loop Agents*.
+  - The results decide how strong the claims are, not whether the project continues.
+  - Organisation: action divergence → local consequence → subsequent execution and final outcome. Fingerprints, open-loop probabilities and aggregate success are background measurements.
+  - Every outcome of the four-branch experiment is an answer to the same question:
+    - a stable gain;
+    - many rescues and many breaks with a small net effect;
+    - few consequences with a narrow interval;
+    - verified recovery;
+    - damage concentrated in a few types.
+
+    The failure mode to avoid is a wide interval with unlabelled process; compute goes there first.
+- **Decision points.**
+  - 10-01: choose deterministic forks, stochastic forks, or continued engineering.
+  - 10-03: if state restoration still cannot be verified, freeze as a measurement paper and withdraw the causal interpretation of action interventions.
+- **Stochastic fallback, allowed only when:**
+  - the fork start state (environment, history, remaining budget) is verifiably identical;
+  - the differences come from a describable, repeatable randomness in subsequent execution.
+
+  Hidden-state loss, branch contamination or systematic replay bias are not fixable by repeats. Rules:
+  - Estimand: G = E[Y_BQ] − E[Y_QQ], the expectation over the declared subsequent randomness.
+  - Branch repeats estimate these expectations. Same-configuration replays check repeatability and estimate run variance. Never subtract the no-op flip rate from G.
+  - Repeats are nested in task, nonce and fork state, not independent samples.
+  - Repeat count, seed rule, failure handling and inference are fixed in the protocol in advance.
+- **Annotation.**
+  - Automatic extraction of verifiable events on all trajectories, keeping the raw records behind each judgement.
+  - An LLM labels corrections and failed requirements under fixed rules. Every label carries its evidence location; "cannot judge" is allowed.
+  - "Wrong ID", "write without consent" and "premature end" need rule support or review; legitimate substitutes, existing authorisation and completed tasks exist.
+  - Human blinded review of about 80 fork states, stratified by consequential / non-consequential, tool type and automatic label. About 20 are reviewed independently by two people.
+  - Blinding strips model, precision and branch source, and randomises order.
+  - Report confusion matrices for the key error and recovery labels, stratified. Enriched samples do not give whole-data accuracy.
+  - Case studies come only from human-verified states.
+- **Scale.** The simulator's throughput sets the number of blocks; the fixed 20/40 blocks are withdrawn. Priority:
+  1. four-branch acceptance;
+  2. all 85 development tasks and the preset configurations;
+  3. complete, balanced blocks;
+  4. reserved capacity for full confirmation runs;
+  5. extra models, checkpoints and simulator robustness.
+
+  The confirmation sample size and stopping rule are frozen before the holdout is seen.
+- **Telecom holdout (34 tasks).** Kept, positioned as an independent cross-domain confirmation.
+  - Map the retail/airline mechanism categories to telecom tools and requirements before the holdout opens. Telecom dev may be used to debug the tool table and to check category fit, with every rule change logged and frozen before the holdout.
+  - Few holdout events mean limited evidence for that mechanism, not its absence.
+- **Paper.**
+  - Order: question and related work → run conditions and measurement definitions → same-state four branches → consequence composition and mechanism annotation → independent confirmation → limits and deployment implications.
+  - Result tables include G, A/C/I, divergence coverage, rescue / damage / both succeed / both fail, and intervals.
+  - Contribution wording stays at "what evaluation we build and run" until results are confirmed.
+  - The P0 audit goes in the appendix; corrections that affect method interpretation (success definitions, tool-type table, scaling) are stated in the main text.
