@@ -1,5 +1,9 @@
-"""success_ni: paired quantized-vs-BF16 success differences with non-inferiority / equivalence (TOST) / ordinary tests,
+"""success_ni (population of calibration draws; W64 label): paired quantized-vs-BF16 success differences with non-inferiority / equivalence (TOST) / ordinary tests,
 and task-level difference effect sizes (Delta, D, V), per model x method x checkpoint and pre-declared equal-weight pools.
+
+W64 (GPT-6.1 code review): the model x method pools here average checkpoints d1-d4, i.e. they describe the population
+of calibration draws. They are not an equivalence statement about d1, the checkpoint every fork uses; the fork-aligned
+analysis is success_ni_aligned.py (d1 only, fork tasks x nonce blocks, crossed bootstrap, joint across models).
 
 Plan: docs/insights/EXTERNAL_REVIEW_GPT61_20260930.md §B "Success" and §F; decisions and the epsilon justification in
 docs/insights/METHODOLOGY_REVISION.md §Success (epsilon = 3 pp fixed on 2026-09-30, before any a6k2_*_bfpair outcome
@@ -411,6 +415,8 @@ def main():
     gen["all_models:all"] = ci_from(allm)
     res["generalisation_task_clustered_crossed"] = dict(B=B_BOOT, note="separate analysis: population = new tasks from the "
                                                         "same distribution; task ids crossed with checkpoints and nonces", ci=gen)
+    res["population_label"] = ("population of calibration draws: method pools average the d1-d4 checkpoints, so they are "
+                               "NOT an equivalence statement about d1 (the fork checkpoint); see success_ni_aligned.py (W64)")
     p = HERE / "out" / f"success_ni_{tag}.json"
     json.dump(res, open(p, "w"), indent=1, default=lambda x: x.item() if hasattr(x, "item") else (x.tolist() if hasattr(x, "tolist") else str(x)))
     print(res["mode"])

@@ -13,6 +13,7 @@ build+serve+canary. Everything else prints only.
 --tel [f123 f456] [--write]: W53 telecom set, 9 arms on q8 AWQ-W4 c1, telecom dev blocks (priority -9).
 
 --rtn3 [--write]: W60 primary damage regime, 17 arms x q4/q8 on RTN-W3, blocks q3-q5 (priority -16).
+--awq3 [--write]: W64 AWQ-W3 d1 closed-loop baselines, q4/q8 on q3-q5 (priority -12).
 --recal [--write]: W54 restore_recal arms (8 per model) on the W3 cell, blocks q3-q5 (priority -14).
 
 usage: python scripts/a6000/make_tasks_perturb.py [--smoke | --w3 | --rtn3 | --tel [groups] | --recal] [--write]
@@ -149,6 +150,18 @@ def tel_tasks(groups=("f123", "f456")) -> tuple[list[dict], list[str]]:
     return tasks, problems
 
 
+def awq3_baseline_tasks() -> list[dict]:
+    """W64: AWQ-W3 d1 (calibration c1) closed-loop baselines on q3-q5 (method coverage; paired with bfpair_q3..q5). No
+    restoration matrix. Same spec style as the existing awq cells, wbits 3; same layout as a6k2_<m>_gptq_w3_qx."""
+    return [{"id": f"a6k2_{m}_awq_w3_qx", "kind": "eval", "model": m, "arm": "awq",
+             "ckpt": {"kind": "awq", "wbits": 3, "calib": f"manifests/a6k2/{m}/calib_fp_traj_c1.json"},
+             "runs": [{"run_id": f"a6k2_{m}_awq_w3_{b}", "task_file": "manifests/eval_tasks_v0.json", "nonce": n}
+                      for b, n in W3_BLOCKS.items()],
+             "priority": -12, "deps": [f"a6k2_{m}_calib_c1"],
+             "note": "W64: AWQ-W3 d1 closed-loop baseline (method coverage, storage-matched comparison for restoration)"}
+            for m in ("q4", "q8")]
+
+
 RECAL_ARMS = ["restore_recal_" + a for a in ("early", "middle", "late", "attn", "mlp", "rand_third_s1", "rand_attn_s1",
                                              "rand_mlp_s1")]
 
@@ -177,8 +190,16 @@ def main():
     ap.add_argument("--rtn3", action="store_true", help="W60 primary damage regime: RTN-W3 base, blocks q3-q5, priority -16")
     ap.add_argument("--tel", nargs="*", default=None, help="W53 telecom arms; groups f123 / f456 (default both)")
     ap.add_argument("--recal", action="store_true", help="W54 restore_recal arms on the W3 cell")
+    ap.add_argument("--awq3", action="store_true", help="W64 AWQ-W3 d1 baselines on q3-q5 (priority -12)")
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args()
+    if a.awq3:
+        for t in awq3_baseline_tasks():
+            print(t["id"], [r["run_id"] for r in t["runs"]])
+            if a.write and not any((Q / d / f"{t['id']}.json").exists() for d in ("todo", "running", "done", "failed")):
+                json.dump(t, open(Q / "todo" / f"{t['id']}.json", "w"), indent=1)
+                print("queued", t["id"])
+        return
     if a.recal:
         ts, problems = recal_tasks()
         for p in problems:

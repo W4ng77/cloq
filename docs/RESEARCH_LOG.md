@@ -10,6 +10,47 @@ Newest first.
 
 ---
 
+## W64 — GPT-6.1 code review: fork-aligned success NI, storage-matched restoration baseline, AWQ-W3 baselines (2026-09-30)
+**TL;DR** Three fixes from the GPT-6.1 code review.
+
+**1. Fork-aligned success**
+- `success_ni.py` averages the calibration draws d1–d4. It is now labelled "population of calibration draws", because it is not an equivalence statement about d1, the fork checkpoint.
+- The new `success_ni_aligned.py` measures Q − BF16 on exactly the forks' d1 checkpoints, tasks and 20 nonce blocks. Units are paired on nonce, with a crossed task × complete-block bootstrap drawn jointly across q4/q8 and GPTQ/AWQ (shared task ids and nonces).
+- The local bootstrap should be swapped for `analyze_dev.Boot` once agent a5468c1 pushes its complete-block fix.
+- **Results (crossed CIs):**
+
+  | cell | Q − BF16 | 95 % CI |
+  |---|---|---|
+  | q4 GPTQ-W4 d1 | +4.2 pp | [−2.4, +10.5] |
+  | q4 AWQ-W4 d1 | +0.9 pp | [−5.8, +7.5] |
+  | q8 GPTQ-W4 d1 | −0.2 pp | [−7.7, +6.8] |
+  | q8 AWQ-W4 d1 | +1.2 pp | [−5.3, +7.6] |
+  | pool, all four | +1.5 pp | [−2.7, +5.6] |
+
+- **Tests at 3 pp:** non-inferiority passes for q4 GPTQ and for the GPTQ, AWQ, q4 and all-four pools. TOST at 3 pp passes nowhere, because task resampling makes the 90 % intervals about ±6 pp wide. With a fixed task set (block resampling only), q4 GPTQ d1 is +4.2 [+2.2, +6.1] (90 %): d1 is better than BF16 on these tasks.
+
+**2. Storage-matched deployment baseline**
+- New `analyze_restore_eval.py` table for the RTN-W3 cell. Each arm gets simulated bits/param (manifest `budget_w3.rtn`) and paired success vs RTN-W3 Q, BF16, GPTQ-W3 d1, GPTQ-W4 d1, AWQ-W4 d1, and AWQ-W3 d1 once it exists.
+- A success-vs-bits frontier PNG (`restore_eval_<UTC>_frontier.png`) sits next to the md.
+- RTN-W3 restoration is labelled a **mechanism stress test**. The deployment claim stays open until an arm beats whole-model quantizers at matched storage.
+- **Reference points on the RTN-W3 cell's units (aliased-arm check):**
+
+  | model | BF16 (16 b) | RTN-W3 (3.15 b) | GPTQ-W3 d1 (3.16 b) | GPTQ-W4 d1 (4.16 b) | AWQ-W4 d1 |
+  |---|---|---|---|---|---|
+  | q4 | 35.3 | 13.7 | 36.5 | 40.8 | 40.4 |
+  | q8 | 30.6 | 13.3 | 26.7 | 31.0 | 30.6 |
+
+- A restoration arm at ~7.4 b therefore has to exceed 36–41 % (q4) to be competitive.
+- GPTQ-W4 d1 runs on q3–q5 exist and are admitted for both models.
+
+**3. AWQ-W3 d1 baselines**
+- Queued `a6k2_{q4,q8}_awq_w3_qx`: 2 tasks, 6 runs on q3–q5 with nonces paired to `bfpair_q3..q5`, priority −12, spec `{"kind": "awq", "wbits": 3, "calib": c1}`. No restoration matrix.
+- **Estimated 3–16 GPU-h, not ~20.** GPTQ-W3 3-run tasks took about 1 h; a damaged model like RTN-W3 took 5–8 h.
+
+**Evidence**
+- Code: `analysis/insights/iter_4/success_ni_aligned.py`, `analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.json` (+ `.md`), `analysis/insights/iter_4/success_ni.py` (label), `analysis/fork/analyze_restore_eval.py` (storage table and frontier), `scripts/a6000/make_tasks_perturb.py --awq3`.
+- Queue: `/data/ziyangs/cloq_work/queue/todo/a6k2_{q4,q8}_awq_w3_qx.json`.
+
 ## W62 — node002 joins (job 49599) (2026-09-30 14:20 PDT)
 **TL;DR** The admin now reserves CPUs for GPU jobs. As a result, our long-pending runner 49599 (submitted 09-28 with `-w node002 --gres=gpu:A6000:8 -c 16`) started on node002 at 14:19.
 - All 8 GPUs passed the probe.

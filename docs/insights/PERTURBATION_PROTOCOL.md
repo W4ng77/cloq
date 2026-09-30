@@ -211,6 +211,14 @@ Random arms with Δ = 0 match their structured arm exactly.
 
 **GPTQ-W3 is secondary.** Its plain and recal arms now measure only the compensation effect.
 
+## 3e. Storage-matched deployment baseline (W64)
+
+**What an arm must beat.** An RTN-W3 restoration arm is a *mechanism stress test*. It becomes a candidate precision-allocation method only if it beats whole-model quantizers at the same or lower simulated storage: GPTQ-W3 d1 (3.16 b), AWQ-W3 d1, GPTQ-W4 d1 and AWQ-W4 d1 (4.16 b).
+
+**How it is compared.** Arms are compared on the same tasks × q3–q5 blocks, paired. The table and the frontier plot come from `analyze_restore_eval.py`. For example, a third of the linears in BF16 costs 7.43 b/param and must exceed GPTQ-W4 d1's success to support a deployment claim.
+
+**Residual-dose arms** are not storage configurations and have no bits.
+
 ## 4. What each arm can and cannot show
 
 | Arm | Can show | Cannot show |

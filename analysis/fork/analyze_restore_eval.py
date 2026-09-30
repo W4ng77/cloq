@@ -58,12 +58,13 @@ from analyze_dev import Boot, SEED, B_BOOT, sha256, success, summarise  # noqa: 
 OUT = ROOT / "analysis/fork/out"
 ARM_RE = re.compile(r"^a6k2_pert_(q\d+)_((?:tel_)?(?:gptq_w4_d1|awq_w4|gptq_w3|rtn_w3))_(.+)_(f\d\d|q\d+)$")
 PERSONAS = ("Hard", "Easy", "None")
-SHORT_REGIME = {"rtn_w3": "RTN-W3 damage (primary)", "gptq_w3": "GPTQ-W3 (secondary)", "tel_awq_w4": "W4 telecom damage",
+SHORT_REGIME = {"rtn_w3": "RTN-W3 damage (primary; mechanism stress test)", "gptq_w3": "GPTQ-W3 (secondary)", "tel_awq_w4": "W4 telecom damage",
                 "gptq_w4_d1": "W4 equivalence", "awq_w4": "W4 equivalence"}  # telecom task ids end in [PERSONA:<level>]
 REGIME = {"gptq_w4_d1": "W4 equivalence (behavioural endpoint primary)", "awq_w4": "W4 equivalence (behavioural endpoint primary)",
           "gptq_w3": "GPTQ-W3: little closed-loop damage on q3-q5 (q4 +0.4, q8 -3.9 pp); secondary, compensation-effect testbed (W60)",
-          "rtn_w3": "RTN-W3 PRIMARY damage regime (success and behavioural endpoints co-primary; no sequential compensation, "
-                    "so plain restore is unconfounded) (W60)",
+          "rtn_w3": "RTN-W3 PRIMARY damage regime, MECHANISM STRESS TEST (W64: not a deployment method until it beats "
+                    "whole-model quantizers at matched storage; success and behavioural endpoints co-primary; no sequential "
+                    "compensation, so plain restore is unconfounded) (W60)",
           "tel_awq_w4": "W4 telecom damage (success and behavioural endpoints co-primary; Hard-persona breakdown)"}
 
 
@@ -148,6 +149,56 @@ def episodes(run_id: str, dom: str, fr: dict, det: dict) -> dict[str, int] | Non
             continue
         out[f"{dom}:{t['task_id']}"] = success(dom, t)
     return out
+
+
+# W64 storage-matched deployment baseline: whole-model quantizers on the same blocks as an RTN-W3 restoration cell
+BASELINES = {"GPTQ-W3 d1": ("gptq_w3", "budget_w3", "gptq"), "AWQ-W3 d1": ("awq_w3", "budget_w3", "awq"),
+             "GPTQ-W4 d1": ("gptq_w4_d1", "budget", "gptq"), "AWQ-W4 d1": ("awq_w4", "budget", "awq")}
+
+
+def manifest_bits(model: str, arm_manifest: str, key: str, meth: str) -> float | None:
+    p = ROOT / "manifests/perturb/restore_v1" / model / f"{arm_manifest}.json"
+    if not p.exists():
+        return None
+    return float(json.load(open(p))[key][meth]["sim_bits_per_linear_param"])
+
+
+def frontier_plot(path: Path, rows_by_model: dict) -> None:
+    """Success vs simulated bits/param, one panel per model (static PNG next to the md; the md table is the table view)."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    col = {"structured": "#2a78d6", "random": "#eb6834", "quantizer": "#1baf7a", "reference": "#eda100"}
+    mk = {"structured": "o", "random": "s", "quantizer": "D", "reference": "^"}
+    fig, axes = plt.subplots(1, len(rows_by_model), figsize=(6.2 * len(rows_by_model), 4.6), squeeze=False)
+    for ax, (m, rows) in zip(axes[0], sorted(rows_by_model.items())):
+        placed = []  # label anchors already used: nearby points get their labels stacked downwards
+        for kind in ("reference", "quantizer", "random", "structured"):
+            pts = [r for r in rows if r["kind"] == kind and r["bits"] is not None]
+            if not pts:
+                continue
+            ax.scatter([r["bits"] for r in pts], [r["success"] for r in pts], s=56, c=col[kind], marker=mk[kind],
+                       edgecolors="#fcfcfb", linewidths=1.5, label=kind, zorder=3)
+            for r in sorted(pts, key=lambda r: -r["success"]):
+                if kind == "random":
+                    continue
+                n = sum(1 for (b, y) in placed if abs(np.log2(b) - np.log2(r["bits"])) < 0.25 and abs(y - r["success"]) < 3)
+                placed.append((r["bits"], r["success"]))
+                ax.annotate(r["label"], (r["bits"], r["success"]), textcoords="offset points", xytext=(6, 4 - 11 * n),
+                            fontsize=7.5, color="#52514e")
+        ax.set_xscale("log", base=2)
+        ax.set_xticks([3, 4, 6, 8, 12, 16])
+        ax.set_xticklabels(["3", "4", "6", "8", "12", "16"])
+        ax.set_xlabel("simulated storage, bits per linear parameter", color="#52514e")
+        ax.set_ylabel("closed-loop success, % (same tasks x blocks)", color="#52514e")
+        ax.set_title(f"{m}: RTN-W3 restoration (mechanism stress test) vs whole-model quantizers", fontsize=9.5, color="#0b0b0b")
+        ax.grid(True, color="#e6e5e0", linewidth=0.6, zorder=0)
+        for sp in ("top", "right"):
+            ax.spines[sp].set_visible(False)
+        ax.legend(frameon=False, fontsize=8, loc="lower right")
+    fig.tight_layout()
+    fig.savefig(path, dpi=150, facecolor="#fcfcfb")
+    plt.close(fig)
 
 
 def main():
@@ -306,6 +357,58 @@ def main():
             # sanity: identical to BF16 but a different outcome would mean non-reproducible scoring/simulation
             r[name]["identical_but_outcome_differs"] = sum(1 for u in ud if u[fld]["arm"][0] is None and u["Y"]["arm"] != u["Y"]["B"])
         res_arms[f"{m}:{c}:{arm}"] = r
+    # W64 storage-matched deployment baseline (RTN-W3 restoration = mechanism stress test until this comparison is made)
+    storage = {}
+    for m in sorted({k[0] for k in units if k[1] == "rtn_w3"}):
+        cell_units = {k[2]: us for k, us in units.items() if k[0] == m and k[1] == "rtn_w3"}
+        blks = sorted({u["block"] for us in cell_units.values() for u in us})
+        comp = {}  # baseline -> {(task, block): y}
+        for name, (cell, _, _) in BASELINES.items():
+            ys = {}
+            for b in blks:
+                rid = f"a6k2_{m}_{cell}_{b}"
+                for dom in ("retail", "airline"):
+                    fr = (fz.get(rid) or {}).get(dom)
+                    bf = (fz.get(f"a6k2_{m}_bfpair_{b}") or {}).get(dom)
+                    if not fr or not bf or fr.get("prompt_nonce") != bf.get("prompt_nonce"):
+                        continue
+                    ep = episodes(rid, dom, fr, (det.get(rid) or {}).get(dom))
+                    if ep is None:
+                        continue
+                    files[f"runs/{rid}/{dom}/trajectory.jsonl"] = fr["files"]["trajectory.jsonl"]["sha256"]
+                    ys.update({(t, b): y for t, y in ep.items()})
+            if ys:
+                comp[name] = ys
+        boot = boots["main"]
+        rows = {}
+        for arm, us in sorted(cell_units.items()):
+            if arm.startswith("resid_"):
+                bits = None  # a residual intervention is not a storage configuration
+            else:
+                bits = manifest_bits(m, arm[len("restore_"):] if arm.startswith("restore_") else arm, "budget_w3", "rtn")
+            r = {"bits_per_param": bits, "n_units": len(us), "success_arm": summarise(*stat(us, lambda y: y["arm"])),
+                 "vs": {"Q (RTN-W3)": summarise(*stat(us, lambda y: y["arm"] - y["Q"])),
+                        "BF16": summarise(*stat(us, lambda y: y["arm"] - y["B"]))}}
+            for name, ys in comp.items():
+                j = [dict(u, Y=dict(u["Y"], C=ys[(u["task"], u["block"])])) for u in us if (u["task"], u["block"]) in ys]
+                if j:
+                    r["vs"][name] = dict(summarise(*stat(j, lambda y: y["arm"] - y["C"])), n_units=len(j))
+            rows[arm] = r
+        # reference / baseline success on the union of the cell's units
+        ref_units = {(u["task"], u["block"]): u for us in cell_units.values() for u in us}
+        refs = {"BF16": (16.0, {k: u["Y"]["B"] for k, u in ref_units.items()}),
+                "RTN-W3 (Q)": (manifest_bits(m, "none", "budget_w3", "rtn"), {k: u["Y"]["Q"] for k, u in ref_units.items()})}
+        for name, ys in comp.items():
+            cell, key, meth = BASELINES[name]
+            refs[name] = (manifest_bits(m, "none", key, meth), {k: ys[k] for k in ref_units if k in ys})
+        ref_out = {}
+        for name, (bits, ys) in refs.items():
+            us_ = [{"task": t, "block": b, "Y": {"x": y}} for (t, b), y in ys.items()]
+            ref_out[name] = {"bits_per_param": bits, "n_units": len(us_), "success": summarise(*stat(us_, lambda y: y["x"]))}
+        storage[m] = {"label": "RTN-W3 restoration = mechanism stress test; deployment claim open until it beats "
+                               "whole-model quantizers at matched storage", "arms": rows, "references": ref_out,
+                      "baselines_missing": sorted(set(BASELINES) - set(comp))}
+
     # W54 compensation effect: restore_recal_<X> (rebuilt mixed precision) vs restore_<X> (post-hoc swap), paired units
     compensation = {}
     for (m, c, arm), us in sorted(units.items()):
@@ -337,7 +440,7 @@ def main():
            "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
            "bootstrap": {"B": a.B, "seed": SEED, "scheme": "tasks, then blocks within task; draws shared by all arms"},
            "success_definition": {"retail/airline": "DB success", "telecom": "official task-basis success"},
-           "arms": res_arms, "compensation": compensation, "skipped": skipped, "input_files": files, "seconds": round(time.time() - t0, 1)}
+           "arms": res_arms, "compensation": compensation, "storage_matched": storage, "skipped": skipped, "input_files": files, "seconds": round(time.time() - t0, 1)}
     utc = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
     jp = OUT / f"restore_eval_{utc}.json"
     jp.write_text(json.dumps(res, indent=1, default=lambda o: o.item() if hasattr(o, "item") else str(o)))
@@ -395,6 +498,38 @@ def main():
             L.append(f"| {k} | {v['n_units']} | {v['plain']['success']['est']:.1f} | {v['recal']['success']['est']:.1f} | "
                      f"{f(p['recal_minus_plain'])} | {v['plain']['gap_closed']} / {v['recal']['gap_closed']} | "
                      f"{g(v['plain']['turnover_closed'])} / {g(v['recal']['turnover_closed'])} | {f(p['turnover_B_recal_minus_plain'])} |")
+    if storage:
+        png = OUT / f"restore_eval_{utc}_frontier.png"
+        pts = {}
+        for m, st in storage.items():
+            pr = [{"kind": "reference" if n in ("BF16", "RTN-W3 (Q)") else "quantizer", "label": n, "bits": v["bits_per_param"],
+                   "success": v["success"]["est"]} for n, v in st["references"].items()]
+            pr += [{"kind": "random" if "rand_" in a else "structured", "label": a.replace("restore_", ""),
+                    "bits": v["bits_per_param"], "success": v["success_arm"]["est"]} for a, v in st["arms"].items()]
+            pts[m] = pr
+        try:
+            frontier_plot(png, pts)
+        except Exception as e:  # the table below is the primary record
+            png = None
+            print(f"analyze_restore_eval: frontier plot failed: {e!r}")
+        L += ["", "## Storage-matched deployment baseline (W64): RTN-W3 restoration = mechanism stress test", "",
+              "Does restoring RTN-W3 modules beat whole-model quantizers at the same storage? Bits = pre-declared simulated "
+              "storage per linear parameter (manifest budgets). Differences are paired on the same tasks x blocks (pp, 95% CI). "
+              "Until a restoration arm beats GPTQ/AWQ at matched or lower storage, it is a mechanism probe, not an allocation "
+              "method." + (f" Frontier plot: `{png.name}`." if png else ""), ""]
+        for m, st in storage.items():
+            L += [f"**{m}** reference success on the cell's units: " + "; ".join(
+                f"{n} {v['success']['est']:.1f}% at {v['bits_per_param']:.2f} b" if v["bits_per_param"] else f"{n} {v['success']['est']:.1f}%"
+                for n, v in st["references"].items()) + (f". Missing baselines: {', '.join(st['baselines_missing'])}." if st["baselines_missing"] else "."), ""]
+            names = [n for n in BASELINES if n not in st["baselines_missing"]]
+            L += ["| arm | bits/param | success | vs RTN-W3 Q | vs BF16 | " + " | ".join(f"vs {n}" for n in names) + " |",
+                  "|---|---|---|---|---|" + "---|" * len(names)]
+            for a, v in st["arms"].items():
+                cells = [f(v["vs"][n]) if n in v["vs"] else "n/a" for n in names]
+                bits = f"{v['bits_per_param']:.2f}" if v["bits_per_param"] else "n/a (resid)"
+                L.append(f"| {a} | {bits} | {v['success_arm']['est']:.1f} | {f(v['vs']['Q (RTN-W3)'])} | {f(v['vs']['BF16'])} | "
+                         + " | ".join(cells) + " |")
+            L.append("")
     tel = {k: v for k, v in res_arms.items() if v.get("persona")}
     if tel:
         L += ["", "## Telecom cell(s), by persona (W53)", "",
