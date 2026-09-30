@@ -116,6 +116,38 @@
    }
   },
   {
+   "id": "pivot_detect",
+   "title": "Pivot detectability from Q's own uncertainty + escalation-policy value (exploratory, W55)",
+   "role": "main",
+   "patterns": [
+    "^fork_(dev|kv|stress|tel)_"
+   ],
+   "fit": "Can the fork state be detected at run time (AUROC of margin/logprob), and what does escalate-to-BF16 at low margin buy?",
+   "analysis": {
+    "name": "pivot AUROC + escalation value",
+    "run": "cpu",
+    "script": "analysis/fork/analyze_pivot.py",
+    "cmd": "python analysis/fork/analyze_pivot.py --snapshot {snapshot}",
+    "trigger": "script_exists_and_new_done"
+   }
+  },
+  {
+   "id": "pivot_arms",
+   "title": "Which module set flips the pivot action (restore arms at frozen fork states; step-3 selection rule FORK_PROTOCOL \u00a713)",
+   "role": "main",
+   "patterns": [
+    "^pivot_"
+   ],
+   "fit": "Pivot-time localisation for the rescue story: reversion-to-B rate of structured vs byte-matched random arms (plain and recal), W4 and W3.",
+   "analysis": {
+    "name": "pivot-arm reversion + step-3 selection",
+    "run": "cpu",
+    "script": "analysis/fork/analyze_pivot_arms.py",
+    "cmd": "python analysis/fork/analyze_pivot_arms.py",
+    "trigger": "script_exists_and_new_done"
+   }
+  },
+  {
    "id": "tel_dev",
    "title": "Telecom development blocks (80 dev tasks; holdout untouched)",
    "role": "support",
