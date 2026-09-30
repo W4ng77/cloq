@@ -8,6 +8,7 @@ each run start, W16) is rewritten atomically so that the node's NEXT runs use a 
   - the current route is a dead/draining/unknown instance -> move now (no hysteresis);
   - current load > BUSY and some replica <= FREE           -> move (a free local replica first);
   - routed away from home and a local replica is <= FREE    -> back home.
+  - two local replicas and the current one carries > FREE more load than the other -> the other.
 Hysteresis: a node's route changes at most once per HOLD seconds. No herding: a move adds BUSY/2 to the target's
 expected load for the rest of the pass. Running episodes are never moved (route is read at run start; leases keep a
 draining replica up until its clients finish). Every change is appended to logs/sim_balancer.log. The balancer also
@@ -141,6 +142,8 @@ def one_pass(dry: bool):
             new = home if home and load[home] <= FREE else best
         elif home and inst[cur]["host"] != n and load[home] <= FREE:
             new = home
+        elif home and cur != home and inst[cur]["host"] == n and load[cur] - load[home] > FREE:
+            new = home  # two replicas on this node: send the next runs to the less loaded one
         if new == cur:
             continue
         msg = (f"{n}: {cur or cur_url + ' (not live)'} ({load.get(cur, -1):.1f}) -> {new} ({load[new]:.1f}); "

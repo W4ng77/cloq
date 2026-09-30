@@ -39,7 +39,7 @@ ROOT = Path("/data/ziyangs/cloq")
 WORK = Path(os.environ.get("CLOQ_SIMREG_WORK", "/data/ziyangs/cloq_work"))  # override only for tests
 SIMS = WORK / "sims"
 LEASES = SIMS / "leases"
-HEALTH_STALE = 180    # s: an owner heartbeat older than this is not healthy
+HEALTH_STALE = 660    # s: a health record older than this is not healthy (owners: every 30-60 s; adopted: balancer pass, 300 s)
 LEASE_STALE = 600     # s: a lease not refreshed for this long belongs to a dead process
 NODE = socket.gethostname().split(".")[0]
 
