@@ -509,9 +509,10 @@ def run_fork(task, args, st: Status):
                 for f in Path(path).glob("*.safetensors"):
                     f.unlink()
         servers["q_quantization"] = {k: v for k, v in (q_meta or {}).items() if k not in ("per_tensor", "stats")}
-        ubase = user_base()
+        ext = task.get("env")  # simulator-free external environment fork (scripts/ext/fork_ext.py, W39-extfork)
+        ubase = None if ext else user_base()
         t1 = time.time()
-        while True:
+        while ubase:
             try:
                 urllib.request.urlopen(ubase + "/models", timeout=5)
                 break
@@ -526,11 +527,16 @@ def run_fork(task, args, st: Status):
         sfile = logdir / f"{task['id']}.servers.json"
         sfile.write_text(json.dumps(servers, indent=1))
         st.set("eval", f"fork {task['fork']['mode']}")
-        cmd = [sys.executable, str(ROOT / "scripts/a6000/fork_driver.py"), "--task", args.task,
-               "--b-base", f"http://127.0.0.1:{plan['B'][1]}/v1", "--q-base", f"http://127.0.0.1:{plan['Q'][1]}/v1",
-               "--user-base", ubase, "--servers", str(sfile)]
+        if ext:
+            cmd = [str(WORK / "envs" / ext / "bin/python"), str(ROOT / "scripts/ext/fork_ext.py"), "--task", args.task,
+                   "--b-base", f"http://127.0.0.1:{plan['B'][1]}/v1", "--q-base", f"http://127.0.0.1:{plan['Q'][1]}/v1",
+                   "--servers", str(sfile)]
+        else:
+            cmd = [sys.executable, str(ROOT / "scripts/a6000/fork_driver.py"), "--task", args.task,
+                   "--b-base", f"http://127.0.0.1:{plan['B'][1]}/v1", "--q-base", f"http://127.0.0.1:{plan['Q'][1]}/v1",
+                   "--user-base", ubase, "--servers", str(sfile)]
         drv = subprocess.Popen(cmd, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT)
-        drv_lease = lease(ubase, f"fork/{task['id']}")
+        drv_lease = lease(ubase, f"fork/{task['id']}") if ubase else None
         while drv.poll() is None:
             time.sleep(10)
             lease_touch(drv_lease)

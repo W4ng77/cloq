@@ -23,6 +23,7 @@ import argparse
 import copy
 import json
 import os
+import re
 import sys
 import threading
 import time
@@ -32,7 +33,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import ROOT, ChatError, RunDir, assistant_history_message, chat, common_args, decision_record, summarize, write_headers  # noqa: E402
+from common import (ROOT, ChatError, RunDir, assistant_history_message, canonical_json, chat, common_args, decision_record,  # noqa: E402
+                    sha256_text, summarize, write_headers)  # noqa: E402
 
 from bfcl_eval.constants.default_prompts import MAXIMUM_STEP_LIMIT  # noqa: E402
 from bfcl_eval.constants.enums import ModelStyle  # noqa: E402
@@ -44,9 +46,41 @@ from bfcl_eval.utils import load_dataset_entry, load_ground_truth_entry, make_js
 MODEL_NAME = "cloq_agent"  # BFCL uses it only to name the per-entry backend instances
 
 
+def state_sha(model_name_u: str, test_entry_id: str) -> str:
+    """Hash of the live backend instances of one entry (fork replay fidelity; scripts/ext/fork_ext.py)."""
+    import bfcl_eval.eval_checker.multi_turn_eval.multi_turn_utils as MU
+    pre = re.sub(r"[-./:]", "_", f"{model_name_u}_{test_entry_id}_")
+    objs = {k[len(pre):]: v for k, v in list(vars(MU).items()) if k.startswith(pre) and k.endswith("_instance")}
+    return sha256_text(canonical_json(canon(objs)))
+
+
+def canon(o, seen=None):
+    """Deterministic plain-data view of backend state (no memory addresses; parent back-references and cycles cut)."""
+    seen = set() if seen is None else seen
+    if o is None or isinstance(o, (bool, int, float, str)):
+        return o
+    if isinstance(o, dict):
+        return {str(k): canon(v, seen) for k, v in sorted(o.items(), key=lambda kv: str(kv[0]))}
+    if isinstance(o, (list, tuple)):
+        return [canon(v, seen) for v in o]
+    if isinstance(o, (set, frozenset)):
+        return sorted((canon(v, seen) for v in o), key=lambda x: json.dumps(x, sort_keys=True, default=str))
+    if hasattr(o, "__dict__"):
+        if id(o) in seen:
+            return "<cycle>"
+        seen = seen | {id(o)}
+        d = {"__cls__": type(o).__name__, **{k: canon(v, seen) for k, v in sorted(vars(o).items())
+                                              if not k.startswith("_") and k != "parent"}}
+        if hasattr(o, "_random") and hasattr(o._random, "getstate"):  # seeded backend RNG: its position is state too
+            d["_random"] = sha256_text(repr(o._random.getstate()))
+        return d
+    return repr(o) if " at 0x" not in repr(o) else type(o).__name__
+
+
 class CloqFCHandler(OpenAICompletionsHandler):
-    def __init__(self, base: str, meta: dict, task_id: str):
-        BaseHandler.__init__(self, MODEL_NAME, 0.0, MODEL_NAME + "-FC", True)  # no OpenAI client
+    def __init__(self, base: str, meta: dict, task_id: str, policy=None, model_name: str = MODEL_NAME, track_state: bool = False):
+        BaseHandler.__init__(self, model_name, 0.0, model_name + "-FC", True)  # no OpenAI client
+        self.policy, self.track_state = policy, track_state  # fork replay (scripts/ext/fork_ext.py); None = live agent
         self.model_style = ModelStyle.OPENAI_COMPLETIONS
         self.base, self.meta, self.task_id = base, meta, task_id
         self.trajectory_id = str(uuid.uuid4())
@@ -72,12 +106,19 @@ class CloqFCHandler(OpenAICompletionsHandler):
         self._flush()
         self.history = inference_data["message"]
         messages, tools = list(inference_data["message"]), inference_data["tools"]
-        raw, dt = chat(self.base, messages, tools)
+        ssha = state_sha(self.model_name_underline_replaced, self.task_id) if self.track_state else None
+        if self.policy is not None:
+            self.policy.state_sha = ssha  # fork search freezes the backend-state hash at the divergence
+            raw, dt = self.policy(len(self.decisions), messages, tools)
+        else:
+            raw, dt = chat(self.base, messages, tools)
         rec = decision_record(self.meta, self.task_id, self.trajectory_id, len(self.decisions), messages, tools, raw, dt)
         names = [t["function"]["name"] for t in tools]
         tcs = rec["tool_calls"] or []
         rec.update(turn_idx=self.turn, step_idx=self.step, available_tools=names,
                    actions_known_tool=[tc["function"]["name"] in names for tc in tcs])
+        if self.track_state:
+            rec["state_sha_before"] = ssha
         mr = self._parse_query_response_FC(raw)["model_responses"]
         try:
             rec["parsed_actions"], rec["decode_error"] = self.decode_execute(mr, has_tool_call_tag=False), None
@@ -110,8 +151,9 @@ class CloqFCHandler(OpenAICompletionsHandler):
         return super()._add_execution_results_FC(inference_data, execution_results, model_response_data)
 
 
-def run_item(entry: dict, prompt_entry: dict, gt: list, category: str, base: str, meta: dict) -> tuple[dict, list[dict]]:
-    h = CloqFCHandler(base, meta, entry["id"])
+def run_item(entry: dict, prompt_entry: dict, gt: list, category: str, base: str, meta: dict, policy=None,
+             model_name: str = MODEL_NAME, track_state: bool = False) -> tuple[dict, list[dict]]:
+    h = CloqFCHandler(base, meta, entry["id"], policy=policy, model_name=model_name, track_state=track_state)
     t0 = time.time()
     term, err = "completed", None
     try:
@@ -125,7 +167,12 @@ def run_item(entry: dict, prompt_entry: dict, gt: list, category: str, base: str
         result, md = f"Error during inference: {e}", {"traceback": traceback.format_exc()[-4000:]}
     h._flush()
     infer_s = time.time() - t0
-    ev = _evaluate_single_multi_turn_entry(h, entry["id"], result, gt, copy.deepcopy(prompt_entry), MODEL_NAME, category)
+    final_state = state_sha(h.model_name_underline_replaced, entry["id"]) if track_state else None
+    ev = _evaluate_single_multi_turn_entry(h, entry["id"], result, gt, copy.deepcopy(prompt_entry), model_name, category)
+    if model_name != MODEL_NAME:  # fork branches: drop this branch's backend instances (inference and _eval)
+        import bfcl_eval.eval_checker.multi_turn_eval.multi_turn_utils as MU
+        for k in [k for k in list(vars(MU)) if k.startswith(re.sub(r"[-./:]", "_", model_name + "_"))]:
+            vars(MU).pop(k, None)
     ok = bool(ev.get("valid"))
     traj = {
         "task_id": entry["id"], "trajectory_id": h.trajectory_id, "test_category": category,
@@ -136,6 +183,8 @@ def run_item(entry: dict, prompt_entry: dict, gt: list, category: str, base: str
         "messages": h.history or [], "bfcl_result": make_json_serializable(result), "bfcl_metadata": make_json_serializable(md),
         "duration": time.time() - t0, "inference_seconds": infer_s,
     }
+    if track_state:
+        traj["final_state_sha"] = final_state
     return traj, h.decisions
 
 

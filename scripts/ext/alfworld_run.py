@@ -33,7 +33,8 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import ROOT, ChatError, RunDir, assistant_history_message, chat, common_args, decision_record, summarize, write_headers  # noqa: E402
+from common import (ROOT, ChatError, RunDir, assistant_history_message, canonical_json, chat, common_args, decision_record,  # noqa: E402
+                    sha256_text, summarize, write_headers)
 
 ALF_DATA = Path(os.environ.get("ALFWORLD_DATA", "/data/ziyangs/cloq_work/data/alfworld"))
 os.environ["ALFWORLD_DATA"] = str(ALF_DATA)
@@ -78,11 +79,11 @@ TOOLS = [{"type": "function", "function": {
 CONTINUE_MSG = "Please continue: make an `act` tool call with your next command."
 
 
-def make_env(game: str):
+def make_env(game: str, facts: bool = False):
     import textworld
     import textworld.gym
     from alfworld.agents.environment.alfred_tw_env import AlfredDemangler, AlfredInfos
-    ri = textworld.EnvInfos(won=True, admissible_commands=True, extras=["gamefile"])
+    ri = textworld.EnvInfos(won=True, admissible_commands=True, extras=["gamefile"], facts=facts)  # facts: fork state hash only
     eid = textworld.gym.register_games([str(ALF_DATA / game)], ri, batch_size=1, asynchronous=False,
                                        max_episode_steps=MAX_ENV_STEPS, wrappers=[AlfredDemangler(shuffle=False), AlfredInfos])
     return textworld.gym.make(eid)
@@ -92,11 +93,20 @@ def strip_banner(obs: str) -> str:
     return "\n".join(obs.split("\n\n")[1:]) if obs.startswith("-= Welcome") else obs
 
 
+def facts_sha(info) -> str:
+    return sha256_text(canonical_json(sorted(str(f) for f in info["facts"][0])))
+
+
 def run_episode(job: tuple) -> tuple[dict | None, list[dict], str | None]:
-    game, base, meta = job
+    return episode(*job)
+
+
+def episode(game: str, base: str, meta: dict, policy=None, track_state: bool = False) -> tuple[dict | None, list[dict], str | None]:
+    """One game. policy(idx, messages, tools) -> (raw, seconds) replaces the server call (fork replay, fork_ext.py);
+    track_state records the PDDL-facts hash before every decision and at the end."""
     t0 = time.time()
     tid = str(uuid.uuid4())
-    env = make_env(game)
+    env = make_env(game, facts=track_state)
     obs, info = env.reset()
     first = strip_banner(obs[0])
     admissible = list(info["admissible_commands"][0])
@@ -109,8 +119,11 @@ def run_episode(job: tuple) -> tuple[dict | None, list[dict], str | None]:
                 term = "max_decisions"
                 break
             sent = list(messages)
+            ssha = facts_sha(info) if track_state else None
             try:
-                raw, dt = chat(base, sent, TOOLS)
+                if policy is not None:
+                    policy.state_sha = ssha  # fork search freezes the PDDL-facts hash at the divergence
+                raw, dt = policy(len(decisions), sent, TOOLS) if policy is not None else chat(base, sent, TOOLS)
             except ChatError as e:
                 if e.kind == "outage":
                     return None, [], str(e)
@@ -155,6 +168,8 @@ def run_episode(job: tuple) -> tuple[dict | None, list[dict], str | None]:
                 messages.append({"role": "tool", "tool_call_id": tc.get("id"), "content": o})
             rec.update(parsed_actions=parsed, actions_admissible=legal, actions_known_tool=known, observations=obs_list,
                        admissible_commands_after=admissible, n_env_steps=n_env, won=won)
+            if track_state:
+                rec["state_sha_before"] = ssha
             decisions.append(rec)
             if won:
                 term = "won"
@@ -172,6 +187,8 @@ def run_episode(job: tuple) -> tuple[dict | None, list[dict], str | None]:
             "n_inadmissible": sum(not a["admissible"] for a in actions), "inadmissible_rate": (sum(not a["admissible"] for a in actions) / n_act) if n_act else None,
             "n_no_tool_call": sum(not d["tool_calls"] for d in decisions),
             "actions": actions, "messages": messages, "duration": time.time() - t0}
+    if track_state:
+        traj["final_state_sha"] = facts_sha(info)
     return traj, decisions, None
 
 
