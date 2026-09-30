@@ -6,13 +6,14 @@ no expert), one game per episode, max_episode_steps = 50 environment actions (th
 Evaluator: infos['won'] (the game's PDDL goal condition), unchanged.
 
 Agent interface (fixed before any model run; identical for every checkpoint): native tool calling with one tool,
-act(command). System prompt = task framing + the environment's own `help` command list (alfred.twl2) + the rule that
+act(command). System prompt (v5) = task framing (commands are values of act's argument, not tools) + the command templates of the environment's own `help`
+command (alfred.twl2) + the rule that
 'Nothing happens.' means an invalid or ineffective command. The first user message is the initial observation
 without the TextWorld banner (as ReAct strips it). Each act call returns the observation as the tool result. The
 admissible-command list is never shown to the agent; it is logged per action for the legal-action check.
   - several act calls in one reply are executed in order (each is one environment action);
   - a reply without a tool call gets the fixed user message CONTINUE_MSG (it still costs one decision);
-  - a malformed call (unknown tool / no command string) gets an error tool result and no environment action;
+  - a malformed call (unknown tool / no command string) gets an error tool result naming act and no environment action;
   - the episode ends when the game is won, after 50 environment actions, or after 50 agent decisions.
 reward = success = won.
 
@@ -39,25 +40,30 @@ os.environ["ALFWORLD_DATA"] = str(ALF_DATA)
 MAX_ENV_STEPS = 50
 MAX_DECISIONS = 50
 
-HELP = ("Available commands:\n"
-        "  look:                             look around your current location\n"
-        "  inventory:                        check your current inventory\n"
-        "  go to (receptacle):               move to a receptacle\n"
-        "  open (receptacle):                open a receptacle\n"
-        "  close (receptacle):               close a receptacle\n"
-        "  take (object) from (receptacle):  take an object from a receptacle\n"
-        "  move (object) to (receptacle):  place an object in or on a receptacle\n"
-        "  examine (something):              examine a receptacle or an object\n"
-        "  use (object):                     use an object\n"
-        "  heat (object) with (receptacle):  heat an object using a receptacle\n"
-        "  clean (object) with (receptacle): clean an object using a receptacle\n"
-        "  cool (object) with (receptacle):  cool an object using a receptacle\n"
-        "  slice (object) with (object):     slice an object using a sharp object\n")
+# The command set of the environment's own `help` command (alfred.twl2), written as command templates.
+COMMANDS = ["look", "inventory", "go to (receptacle)", "open (receptacle)", "close (receptacle)",
+            "take (object) from (receptacle)", "move (object) to (receptacle)", "examine (something)", "use (object)",
+            "heat (object) with (receptacle)", "clean (object) with (receptacle)", "cool (object) with (receptacle)",
+            "slice (object) with (object)"]
+EXAMPLE_ARG = '"command": "go to countertop 1"'
 
+PROMPT_VERSION = "alfworld-prompt-v5"
+# v1 (dev only): help list shown as "look: ..." -> the model called commands as tools (name "look", "open").
+# v2 (dev only): example written as act(command="...") -> the model typed that text instead of making a tool call.
+# v3 (dev only): tool calls fine; the agent tried to place objects on a receptacle it had not gone to (engine rule unstated).
+# v4 (dev only): adds the engine's locality rule; the raw-JSON example made the model type the call as text.
+# v5 = v4 without any call-syntax example (the tool schema alone defines the call). FROZEN: no further dev tuning.
 SYSTEM = ("You are an agent in a household environment. You will be given a description of the room and a task to "
-          "complete. Interact with the environment only by calling the `act` tool with exactly one text command per "
-          "call; the tool returns what you observe after the command.\n\n" + HELP +
-          "\nRefer to objects and receptacles exactly as they are named in the observations, including their number "
+          "complete. You interact with the environment through a single tool named `act`, which takes one argument, "
+          "`command`: the text command to execute. The commands listed below are values for that argument, not tools. "
+          "Each tool call executes one command and returns what you observe afterwards. You may write "
+          "a short thought before the tool call in the same reply, but a reply without a tool call does not change the "
+          "environment and still uses up one of your turns. Keep making `act` tool calls until the task is done.\n\n"
+          "Valid commands follow these templates (fill in objects and receptacles):\n"
+          + "".join(f"- {c}\n" for c in COMMANDS) +
+          "\nYou can only interact with a receptacle, or with objects in or on it, after you have gone to it (go to ...); "
+          "an object you are carrying stays with you. "
+          "Refer to objects and receptacles exactly as they are named in the observations, including their number "
           "(for example \"apple 1\" or \"countertop 2\"). If the environment answers \"Nothing happens.\", the command "
           "was invalid or had no effect. The episode ends as soon as the task is completed, or after "
           f"{MAX_ENV_STEPS} commands.")
@@ -69,7 +75,7 @@ TOOLS = [{"type": "function", "function": {
         "type": "string", "description": "One command, e.g. \"go to countertop 1\" or \"take apple 1 from countertop 1\"."}},
         "required": ["command"]}}}]
 
-CONTINUE_MSG = "Please continue by calling the act tool with your next command."
+CONTINUE_MSG = "Please continue: make an `act` tool call with your next command."
 
 
 def make_env(game: str):
@@ -130,7 +136,9 @@ def run_episode(job: tuple) -> tuple[dict | None, list[dict], str | None]:
                     o = "Error: the episode has ended; no further commands are executed."
                     parsed.append(None); legal.append(None)
                 elif cmd is None:
-                    o = ("Error: unknown tool." if fn["name"] != "act" else "Error: act requires a 'command' string argument.")
+                    o = (f"Error: there is no tool named '{fn['name']}'. The only tool is `act`; put the command text in its "
+                         f"`command` argument ({EXAMPLE_ARG})." if fn["name"] != "act"
+                         else f"Error: `act` requires a `command` string argument ({EXAMPLE_ARG}).")
                     parsed.append(None); legal.append(None)
                 else:
                     c = cmd.strip()
@@ -181,7 +189,7 @@ def main():
         print(f"{rd.dir} already completed; skipping")
         return
     rd.prune_partial()
-    bench = {"env": "alfworld", "name": "ALFWorld text (TextWorld)", "max_env_steps": MAX_ENV_STEPS, "max_decisions": MAX_DECISIONS,
+    bench = {"env": "alfworld", "name": "ALFWorld text (TextWorld)", "prompt_version": PROMPT_VERSION, "max_env_steps": MAX_ENV_STEPS, "max_decisions": MAX_DECISIONS,
              "system_prompt": SYSTEM, "tools": TOOLS, "continue_message": CONTINUE_MSG,
              "wrappers": "AlfredDemangler(shuffle=False), AlfredInfos", "evaluator": "infos['won']"}
     write_headers(rd, args, bench, ids, ["alfworld", "textworld", "fast_downward_textworld", "tatsu"], mpath)
