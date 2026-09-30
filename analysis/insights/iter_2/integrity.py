@@ -40,7 +40,7 @@ RUNS = ROOT / "runs"
 Q = Path("/data/ziyangs/cloq_work/queue")
 CANARY = Path("/data/ziyangs/cloq_work/logs/canary.log")
 HERE = Path(__file__).resolve().parent
-DOMS = ("retail", "airline")
+DOMS = ("retail", "airline", "telecom")  # telecom: *_tel_* runs only (W44); consumers keep their own DOMS
 INFRA = "infrastructure_error"
 R_HEAD = re.compile(r'\{"run_id": "([^"]*)".*?"task_id": "([^"]*)", "trajectory_id": "([^"]*)", "decision_idx": (\d+)')
 R_SYS = re.compile(r'"system_sha256": "([0-9a-f]+)"')
@@ -252,8 +252,9 @@ def main():
     frozen, excluded = {}, {}
     for run, doms in sorted(per.items()):
         fails = [f"{d}: {x}" for d, r in doms.items() for x in r["fail"]]
-        if len(doms) < 2 and not run.endswith("_cal") and "_det_" not in run:
-            fails.append(f"missing domain(s): has {sorted(doms)}")
+        need = {"telecom"} if "_tel_" in run else {"retail", "airline"}  # W44: telecom runs are single-domain by design
+        if set(doms) != need and not run.endswith("_cal") and "_det_" not in run:
+            fails.append(f"domain set {sorted(doms)} != expected {sorted(need)}")
         if fails:
             excluded[run] = fails
         else:

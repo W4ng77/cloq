@@ -123,8 +123,11 @@
    ],
    "fit": "Local computation intervention and the deployment (precision allocation) test. Checkpoints verified (W39-pert). Closed-loop arms on dev blocks f01-f03 queued (W40): 17 arms x q4 GPTQ-W4 / q8 AWQ-W4, paired with the Q and BF16 runs on the same nonces. Fork versions of these arms wait for the fork gate.",
    "analysis": {
-    "name": "restoration effect on actions and task consequences",
-    "run": "agent"
+    "name": "restoration / residual-dose arms vs Q vs BF16 (success, gap closed, turnover)",
+    "run": "cpu",
+    "script": "analysis/fork/analyze_restore_eval.py",
+    "cmd": "python analysis/fork/analyze_restore_eval.py --snapshot {snapshot}",
+    "trigger": "script_exists_and_new_done"
    },
    "exclude": [
     "^pert_smoke_"

@@ -10,6 +10,16 @@ Newest first.
 
 ---
 
+## W44 — Integrity snapshot covers telecom; restoration analysis registered (2026-09-30 01:10 PDT)
+**TL;DR** `analyze_dev.py` (W43) reported that telecom fork units were "not admitted" because `iter_2/integrity.py` scanned only retail and airline, so no telecom run ever entered a snapshot. That would also have silently excluded the telecom holdout.
+- **Change to integrity.py:**
+  - It now scans telecom too.
+  - The expected domain set is {telecom} for `*_tel_*` runs and {retail, airline} otherwise. Before, it only checked that a run had at least 2 domains.
+  - Consumers (`common4`, `success_ni`, `prereg_h1_h4`) keep their own DOMS, so their inputs are unchanged.
+- **Test snapshot:** 730 runs scanned, 639 frozen, 16 of them telecom. Every run admitted before is still admitted. The 2 domain-set exclusions (`a6000_q{4,8}_null_*`, retail only) were already excluded under the old rule.
+- **Registry:** `restoration` now auto-runs `analysis/fork/analyze_restore_eval.py --snapshot {snapshot}` when new pert_* runs land.
+Evidence: `analysis/insights/iter_2/integrity.py`, `docs/insights/EXPERIMENT_REGISTRY.json`, W43.
+
 ## W43 — Fork development analysis script and restoration-arm table (2026-09-30)
 **TL;DR** `analysis/fork/analyze_dev.py` is the daemon's fork analysis. It is CPU-only and idempotent (it skips unchanged input fingerprints) and runs in about 15 s at full development scale.
 - **Coverage.** States found per task × block, t* distribution, and the no-op sample pass rate. A fork task with any no-op mismatch is quarantined.
