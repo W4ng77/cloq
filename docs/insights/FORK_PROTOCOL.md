@@ -431,3 +431,33 @@ Cut points and bins are fixed on the telecom development data, never on the hold
 - M2–M5 are secondary, with Holm correction across them. All strata and point estimates are reported whatever their significance.
 - Few holdout events mean limited evidence for a mechanism, not its absence (review round 3).
 - The moderator analyses are nested within the primary G_all analysis. They do not replace it.
+
+## 13. Pivot-time restoration (W55): arm selection rule, fixed before any pivot-arm outcome
+
+**Step 2: which modules flip the action at the pivot.**
+- **States:** 150 frozen primary states per cell, hash-sampled (`sha256("pivot-arms-v1"|state_id)`). Cells are q4
+  GPTQ-W4 c1, q8 AWQ-W4 c1, q4 GPTQ-W3 c1 and q8 GPTQ-W3 c1.
+- **Arms:** each serves as the Q handle and makes one decision from the identical prompt (prompt ids checked against Q's
+  record):
+  - controls `none` (= Q) and `all` (= BF16);
+  - structured `early`, `middle`, `late`, `attn`, `mlp`;
+  - byte-matched random `rand_third_s1`, `rand_attn_s1`, `rand_mlp_s1`;
+  - `resid α=0.5`;
+  - in the W3 cells, also the eight `restore_recal` arms (W54).
+- **Endpoint:** the action reversion rate r_B(arm) = P(arm's full action semantically equals a_B). P(equals a_Q) and
+  P(neither) are reported alongside. Comparison uses the same `compare_actions` as the search.
+
+**Selection rule for step 3** (uses only step-2 action data, never outcomes):
+- **Candidates:** the structured arms early, middle, late, attn and mlp, plain and recal. Each is paired with its byte-matched random
+  control (seed 1): early/middle/late with rand_third_s1, attn with rand_attn_s1, mlp with rand_mlp_s1. Recal arms are paired
+  with the recal random of the same set. resid α=0.5 is a dose reference, not a candidate.
+- **Statistic:** Δ = r_B(arm) − r_B(matched random), paired on the same states. It is pooled over the two GPTQ-W3 cells
+  (q4, q8) with equal weight, using the hierarchical bootstrap (tasks, then blocks within task; B = 2000; seed 20261001).
+- **Eligible** if the one-sided 95% lower bound of Δ is > 0 **and** the point Δ ≥ 5 pp.
+- **Chosen:** the eligible arm with the largest point Δ. A second eligible arm is added if its lower bound is also > 0,
+  at most 2 in total. Ties go to fewer restored bytes. The byte-matched random control of each chosen arm is run with it.
+- **If none is eligible,** step 3 is not queued, and the result is reported as "no module set flips the pivot action above
+  its byte-matched control".
+
+**Step 3 (queued only if step 2 selects an arm):** the branch "R at t*, then Q", on the GPTQ-W3 stress-fork states of q4 and q8.
+It is compared with QQ (G_R = Y_RQ − Y_QQ) and with BQ (the share of the full-BF16-at-pivot effect it recovers).
