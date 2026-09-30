@@ -10,6 +10,13 @@ Newest first.
 
 ---
 
+## W37 — External-benchmark full eval queued; long_context overflow decision (2026-09-29 23:50 PDT)
+**TL;DR** After W36-ext passed dev and smoke, I queued the full eval split: 12 simulator-free tasks at priority −9, behind the fork line, covering q4 and q8 × {BF16, GPTQ-W4 d1, AWQ-W4 d1} × {BFCL multi-turn 788 items, ALFWorld unseen 134 games}.
+- **Cost:** about 1.8 GPU-hours per checkpoint, or about 11 GPU-hours in total. It fills cards that would otherwise wait on the simulator.
+- **Decision:** BFCL long_context keeps the frozen served context (33,792 tokens). An overflow is scored as a failure identically in every arm, and the overflow rate is reported per arm as its own column. Enlarging the context would change the served config shared with τ².
+- **Caveat:** q4 ALFWorld is near the floor (10–15% on smoke). For ALFWorld, q8 is the primary comparison and q4 is reported only as a floor case.
+- **Disclosure:** the ALFWorld prompt went through five versions on valid_seen dev games (W36-ext); this goes in the appendix.
+Evidence: `scripts/ext/make_tasks_ext.py` (eval mode), queue `todo/ext_q{4,8}_*_eval.json`, W36-ext.
 ## W36-ext — Engineering line 2: BFCL multi-turn and ALFWorld adapters (no user simulator); dev validated, q4 smoke done (2026-09-30)
 **TL;DR** Both benchmarks run through the queue on the same served agent as tau2 (worker.py eval task + `"env"` field; the checkpoint specs are unchanged, and the BF16 canary is checked). Deterministic re-run: 12/12 BFCL and 6/6 ALFWorld dev items are token-identical. q4 smoke pass counts, BF16 vs GPTQ-W4 d1 (keep categories separate; never average across benchmarks):
 - BFCL: base 4/10 vs 3/10; miss_param 2/10 vs 2/10; miss_func 2/10 vs 2/10; long_context 2/10 vs 2/10.
