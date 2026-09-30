@@ -10,6 +10,16 @@ Newest first.
 
 ---
 
+## W34 — Executor instructions (§20) adopted: fork config bug, simulator registry, three engineering lines (2026-09-30)
+**TL;DR** External review of e72b93e, verified in code before acting:
+- **Fork config bug.** `run_fork` launches B/Q servers with `env` + GPU_UTIL only and ignores the task's `serve_env`/`serve_extra`, so KV/A forks would silently run unquantized Q servers. No such fork has run yet. The fork agent will fix per-role configs, effective-config hashes, hook coverage counts and acceptance before any P2 fork.
+- **Simulator routing.** `sim_balancer.py` route writes are now atomic. Multi-replica support (instance registry, runner N simulators, drain-then-add rollout, no all-node restart) is its own infrastructure line.
+- **GPU sharing.** Two independent workers per GPU are unsafe (`stop_server` kills all GPU processes); only one fork worker hosting B+Q per card.
+- **Counting.** Replicate blocks are complete shared-nonce sets (3 + 17 = 20), not the 36 queue jobs.
+- **Engineering lines started:** (1) A8 → SmoothQuant → QuaRot fake-quant hooks with fidelity checks; (2) BFCL multi-turn + ALFWorld adapters (no user simulator); (3) layer/module restoration (byte-matched random controls) + α residual-dose checkpoints; (4) multi-simulator infrastructure.
+- **Acceptance:** evening of 10-02; anything not accepted goes to Limitations.
+Evidence: `scripts/a6000/worker.py` (run_fork), `scripts/a6000/sim_balancer.py`, `docs/EXECUTION_PLAN_20260930.md`.
+
 ## W33 — Paper rewritten as "Tracing the Consequences of Quantization in Closed-Loop Agents" (2026-09-30)
 **TL;DR** `paper/latex/` is rewritten to the Round-3 target. The question: on identical interaction histories, which task consequences do quantization-induced local action changes cause, and do they come from the current action, the continuation controller, or their interaction?
 - **Structure:** Intro; Related work (Dutta, Flat Score, AgentProv, Model Equality Testing, Replay Gap, Dynamic MP Routing, agent-eval noise); Run conditions and measurement definitions; the same-state four-branch design (G = h − b, A/C/I, G_all, replay gate, stochastic fallback, paired-block inference, fixed-pool vs new-task); Consequence composition and mechanism annotation; Telecom holdout confirmation (g_min = ε = 3 pp); Discussion (pending); Limitations.

@@ -1,4 +1,4 @@
-"""Load-aware user-simulator routing for new tasks (docs/EXECUTION_PLAN_20260930.md §4.1).
+"""Load-aware user-simulator routing (single replica per node on port 8000; multi-replica needs the instance registry, W34) for new tasks (docs/EXECUTION_PLAN_20260930.md §4.1).
 
 Every PERIOD seconds, read each node's latest gpumon sample for the simulator (port 8000: running, waiting, KV use) and
 rewrite queue/USER_BASE.<node>, which worker.py reads at task start (W16), so that an overloaded node's NEXT tasks use
@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import time
 from pathlib import Path
 
@@ -84,7 +85,9 @@ def one_pass(dry: bool):
         if new == n:
             f.unlink(missing_ok=True)
         else:
-            f.write_text(f"http://{new}:8000/v1\n")
+            tmp = f.with_suffix(f".tmp{os.getpid()}")  # atomic replace: a worker never reads a half-written route
+            tmp.write_text(f"http://{new}:8000/v1\n")
+            os.replace(tmp, f)
         last_change[n] = now
         load[new] += BUSY / 2  # expected extra load, so one pass does not herd every busy node onto the same replica
         log(msg)
