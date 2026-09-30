@@ -71,7 +71,8 @@
    "title": "KV8 Q blocks on development nonces (q4, q8)",
    "role": "main",
    "patterns": [
-    "kvq_int8_fdev"
+    "kvq_int8_fdev",
+    "^fork_kv_"
    ],
    "fit": "KV axis of the fork study (P2). Forks blocked until run_fork applies per-role hook configs (W34).",
    "analysis": {
@@ -79,6 +80,22 @@
     "run": "cpu",
     "script": "analysis/fork/analyze_dev.py",
     "cmd": "python analysis/fork/analyze_dev.py --snapshot {snapshot} --cells kvq_int8",
+    "trigger": "script_exists_and_new_done"
+   }
+  },
+  {
+   "id": "stress_forks",
+   "title": "Stress forks: GPTQ-W3 and KV INT4+Hadamard (q4, q8; 85 tasks x 3 blocks)",
+   "role": "main",
+   "patterns": [
+    "^fork_stress_"
+   ],
+   "fit": "Damage regime of the fork decomposition: where A vs C carries the harm when quantization clearly hurts (W49).",
+   "analysis": {
+    "name": "stress fork analysis",
+    "run": "cpu",
+    "script": "analysis/fork/analyze_dev.py",
+    "cmd": "python analysis/fork/analyze_dev.py --snapshot {snapshot} --cells gptq_w3 kvq_int4_rot",
     "trigger": "script_exists_and_new_done"
    }
   },
@@ -110,7 +127,11 @@
     "script": "analysis/fork/analyze_dev.py",
     "cmd": "python analysis/fork/analyze_dev.py --snapshot {snapshot}",
     "trigger": "script_exists_and_new_done"
-   }
+   },
+   "exclude": [
+    "^fork_kv_",
+    "^fork_stress_"
+   ]
   },
   {
    "id": "restoration",
