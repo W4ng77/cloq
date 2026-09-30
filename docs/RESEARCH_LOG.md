@@ -10,6 +10,16 @@ Newest first.
 
 ---
 
+## W38 — Simulator-free breadth on BFCL and ALFWorld (2026-09-30 00:10 PDT)
+**TL;DR** The user asked for more cost-effective runs beyond τ². I queued 32 more external eval tasks at priority −10, behind W37's eval. None needs the user simulator.
+- **Model scale and MoE:** q14 / q30a3 / q32 × {BF16, GPTQ-W4 d1, AWQ-W4 d1} × {BFCL, ALFWorld}.
+- **Method, dose, recalibration and KV axis on q8:** {RTN-W4, GPTQ-W3, GPTQ-W4 d2, KV8, KV4} × both benchmarks.
+- **q4:** the same four stress/KV arms, BFCL only.
+- **Cost:** about 90 GPU-hours. It fills the gaps behind the fork line.
+- **Why:** it tests whether the τ² picture (W4 small aggregate change but real turnover, damage at W3 and KV4, lottery absent) holds on two benchmarks with a deterministic, non-LLM environment. That removes the user-simulator confound reviewers will raise.
+- **Next:** the same-state fork protocol on ALFWorld and BFCL (deterministic environments, no simulator), assigned to an engineering agent. It will be used only if it passes the same replay gate as τ².
+Evidence: `scripts/ext/make_tasks_ext.py` (eval2), queue `todo/ext_*_eval.json`.
+
 ## W37 — External-benchmark full eval queued; long_context overflow decision (2026-09-29 23:50 PDT)
 **TL;DR** After W36-ext passed dev and smoke, I queued the full eval split: 12 simulator-free tasks at priority −9, behind the fork line, covering q4 and q8 × {BF16, GPTQ-W4 d1, AWQ-W4 d1} × {BFCL multi-turn 788 items, ALFWorld unseen 134 games}.
 - **Cost:** about 1.8 GPU-hours per checkpoint, or about 11 GPU-hours in total. It fills cards that would otherwise wait on the simulator.
