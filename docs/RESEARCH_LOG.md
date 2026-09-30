@@ -10,6 +10,44 @@ Newest first.
 
 ---
 
+## W65 — W×A×KV confound fixed: matched KV16 cells with Q/K rotation (kv16r), paired interaction contrasts (2026-09-30 16:30 PDT)
+**TL;DR** GPT-6.1 was right. In `wakv_cells()` the online Q/K Hadamard was on only for KV4, so kv16 → kv4 changed
+rotation and quantization together. The KV4 × A4/W4 "interactions" in the first matrix are not identified.
+
+**Pass-through check.** First I checked that KV16 plus the rotation is a pure pass-through (`validate_kvr_q4.json`):
+- coverage is 36 attention layers plus 144 linear modules;
+- batch, prefix-hit and unchunked are identical 8/8, and causality is 4500/4500;
+- at W16A16 it differs from the unrotated cell only at the numerics floor (paired |Δlogprob| 0.0055, flip disagreement 0.34%);
+- at W4A4 the rotation alone changes 7% of flip outcomes. Same distribution vs BF16 (0.358 vs 0.359), but A4 amplifies rounding differences at quantization boundaries, so the unrotated KV16 cell is a genuinely mismatched control.
+
+**Queued.** Four matched cells at priority −14, 3 runs each (~1,020 q4 episodes, ~3.5 GPU-h at the q4 cell rate):
+`a6k2_q4_quarot_w{16,4}a{16,4}kv16r_fdev` on f01–f03. The four KV4 cells are reused.
+
+**analyze_wakv.**
+- **Primary factorial:** uses kv16r as the KV reference.
+- **Paired contrasts, each on the units that have all its cells:**
+  - the single axes, each with an interval;
+  - I_AK | W16 and I_AK | W4, i.e. Y_A4K4 − Y_A4K16r − Y_A16K4 + Y_A16K16r;
+  - I_WK | A, I_WA | KV, and I_WAK;
+  - the additivity gap.
+- **For the record:** the kv16 factorial is labelled confounded, and a rotation-only contrast (kv16r − kv16) is reported per W×A.
+- **Inference:** the W63 `analyze_dev.Boot`. With 3 blocks the primary interval is t over the block means; the crossed task × block interval is reported alongside.
+
+**Current q4 (confounded legacy contrasts, k = 3 blocks).**
+- I_WK | A16 = −14.9 pp, t CI [−23.8, −6.0], crossed [−27.1, −2.7].
+- single W +2.0 [+0.3, +3.6]; single A −5.1 [−15.4, +5.2]; single KV +1.2 [−15.1, +17.4].
+- A non-significant single axis is not evidence of harmlessness; the intervals are wide.
+- Two KV4 / A4 cells are still incomplete (1–2 blocks).
+
+**Scope:** any claim is "among these QuaRot-rotated 4-bit axes", not "harm needs combinations". RTN-W3 alone is heavily damaging.
+
+**q8 plan (not queued; awaiting the kv16r contrasts).** Re-test the largest matched q4 interaction on q8 at priority −12 with its four cells on f01–f03.
+- If it is still I_WK | A16, the cells are `a6k2_q8_quarot_{w16a16kv16r, w4a16kv16r, w16a16kv4, w4a16kv4}_fdev`.
+- That is 1,020 episodes, ≈ 4.5–6 GPU-h: q8 QuaRot GPTQ build 21 min per W4 task, eval ≈ 0.7–1.1 h per task.
+- f01–f06 would cost ≈ 9–12 GPU-h.
+
+Evidence: `analysis/ahook/validate_kvr_q4.json`, `analysis/ahook/out/wakv_*.{json,md}`, `analysis/ahook/analyze_wakv.py`, `scripts/a6000/make_tasks.py --only wakv`, METHOD_FIDELITY §6.
+
 ## W63 — Fork inference corrected (block-level, crossed secondary), two-sided consequences r/d/M headline, holdout guard (2026-09-30)
 **TL;DR** The GPT-6.1 review of 7528f2e was right that the fork bootstrap resampled nonces independently inside each task, breaking the shared-block dependence. Inference is now over complete shared blocks, with a crossed task × block bootstrap as the new-task secondary. r / d / M (rescue / new damage / either) are the headline next to G.
 

@@ -153,6 +153,17 @@ q8 (Qwen3-8B, H_12 for 12288 = QuaRot's own `get_had12`; hidden 4096 Sylvester) 
 - mean |Δlogprob| / flip: W16A16 0.0044 / 0.27%, W16A8 0.012 / 0.78%, W16A4 0.157 / 5.3%, W16A16KV4 0.043 / 2.2%,
   W4A16 0.080 / 3.1%, W4A4KV4 0.218 / 6.6%, and plain A4 without rotation 7.63 / 97%. All monotone.
 
+KV16 with the online Q/K rotation (W65, "kv16r": `CLOQ_KVQ_BITS=16 CLOQ_KVQ_ROT=qk`), `analysis/ahook/validate_kvr_q4.json`:
+the hook rotates q and k and quantizes nothing (V untouched).
+- Coverage: 36/36 attention layers plus the 144 linear modules. qr_w16a16kv16r passes batch, prefix-hit and unchunked
+  checks 8/8, and causality 4500/4500.
+- Open loop vs BF16: 0.0067 / 0.55% flips, vs 0.0065 / 0.55% without the rotation.
+- Paired per token against the unrotated KV16 cell, at W16A16: mean |Δlogprob| 0.0055, flip disagreement 0.34%, i.e.
+  bf16 rounding of the rotated q/k.
+- At W4A4 the same rotation changes 7.0% of flip outcomes (mean |Δlogprob| 0.32), with an unchanged distribution
+  (0.358 vs 0.359 vs BF16). A4 amplifies rounding differences at quantization boundaries, so KV16 cells with and without
+  the rotation are not interchangeable controls.
+
 Not covered / unsupported: MoE models (q30a3; refused); TP > 1 with online Hadamards (refused); static (calibrated) activation scales (SmoothQuant O2/O3) not implemented, only the
 dynamic per-token variant used by the reference fake-quant code.
 

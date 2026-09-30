@@ -191,7 +191,7 @@ def main():
            "script": {"path": str(Path(__file__).resolve()), "sha256": script_sha,
                       "git_head": subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()},
            "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-           "bootstrap": {"B": a.B, "seed": SEED, "scheme": "tasks, then blocks within task; draws shared by all statistics"},
+           "bootstrap": {"B": a.B, "seed": SEED, "scheme": "analyze_dev.Boot (W63): per-block statistic, block bootstrap / t over block means (t when < 10 blocks), crossed task x block secondary"},
            "coding": ("primary: KV reference = kv16r (Q/K rotation on, no KV quant). Named contrasts are paired unit-level "
                       "differences (e.g. I_AK|W16 = Y_A4K4 - Y_A4K16r - Y_A16K4 + Y_A16K16r), each on the units with all its cells. "
                       "averaged_effects: s = +1 at 4 bits, -1 at 16 bits, effect = (1/4) sum s Y over the 8 cells. "
@@ -202,12 +202,15 @@ def main():
     jp = OUT / f"wakv_{utc}.json"
     jp.write_text(json.dumps(res, indent=1, default=lambda o: o.item() if hasattr(o, "item") else str(o)))
 
-    def f(x):
-        return f"{x['est']:+.1f} [{x['ci95'][0]:+.1f}, {x['ci95'][1]:+.1f}]"
+    def f(x):  # primary interval (block bootstrap with >= 10 blocks, else t over block means; analyze_dev W63), k = blocks
+        k = x.get("n_blocks")
+        tail = f" k={k}" if k else " k<2 (no interval)"
+        cr = f"; crossed [{x['crossed_ci95'][0]:+.1f}, {x['crossed_ci95'][1]:+.1f}]" if x.get("crossed_ci95") else ""
+        return f"{x['est']:+.1f} [{x['ci95'][0]:+.1f}, {x['ci95'][1]:+.1f}]{tail}{cr}"
     L = [f"**TL;DR** W x A x KV matrix (QuaRot-rotated) vs BF16 on shared nonces; snapshot {res['snapshot']['id']}; "
          f"{len(skipped)} run-domains skipped. Primary KV reference = kv16r (Q/K rotation on, no KV quant); the kv16 factorial "
          f"is confounded (rotation and quantization change together) and kept for the record. Scope: {res['scope']}.", "", f"# W x A x KV closed-loop matrix ({res['utc']})", "",
-         f"Full numbers: `{jp.relative_to(ROOT)}`. pp; 95% hierarchical bootstrap.", ""]
+         f"Full numbers: `{jp.relative_to(ROOT)}`. pp; primary 95% interval per analyze_dev (W63): t over block means with k < 10 blocks; crossed task x block interval for new-task generalisation.", ""]
     for model, r in res_models.items():
         L += [f"## {model}", "", "| cell | units | success | BF16 | cell - BF16 | turnover vs BF16 (fix/break) |", "|---|---|---|---|---|---|"]
         for c, v in r["cells"].items():
