@@ -39,10 +39,45 @@ from analyze_dev import B_BOOT, SEED, Boot, sha256, summarise  # noqa: E402
 from analyze_restore_eval import episodes  # noqa: E402
 
 OUT = ROOT / "analysis/ahook/out"
-CELL_RE = re.compile(r"^a6k2_(q\d+)_(quarot_w(16|4)a(16|4)kv(16|4)|aq_a8|sq_w8a8|gptq_w4_d1)_(f\d\d)$")
-FACT = [f"quarot_w{w}a{a}kv{k}" for w in (16, 4) for a in (16, 4) for k in (16, 4)]
-SIGN = {c: {"W": 1 if "_w4" in c else -1, "A": 1 if "a4kv" in c else -1, "KV": 1 if c.endswith("kv4") else -1} for c in FACT}
+CELL_RE = re.compile(r"^a6k2_(q\d+)_(quarot_w(16|4)a(16|4)kv(16r|16|4)|aq_a8|sq_w8a8|gptq_w4_d1)_(f\d\d)$")
+# W65: the KV16 reference with the online Q/K rotation on and no KV quantization (CLOQ_KVQ_BITS=16, ROT=qk) = "kv16r".
+# The original kv16 cells have the Q/K rotation off, so kv16 -> kv4 changes rotation and quantization together
+# (confounded); the primary factorial uses kv16r as the KV reference level.
+KV_LEVELS = {"primary": ("16r", "4"), "legacy_confounded": ("16", "4")}
 TERMS = ["W", "A", "KV", "W:A", "W:KV", "A:KV", "W:A:KV"]
+
+
+def cname(w, a_, k):
+    return f"quarot_w{w}a{a_}kv{k}"
+
+
+def design(kv_ref: str) -> tuple[list[str], dict]:
+    fact = [cname(w, a_, k) for w in (16, 4) for a_ in (16, 4) for k in (kv_ref, "4")]
+    sign = {c: {"W": 1 if "_w4a" in c else -1, "A": 1 if "a4kv" in c else -1, "KV": 1 if c.endswith("kv4") else -1} for c in fact}
+    return fact, sign
+
+
+def contrasts(kv_ref: str) -> dict:
+    """Named paired contrasts (coefficient dicts over cells) within the given KV reference level."""
+    L = lambda w, a_, k: cname(w, a_, kv_ref if k == 16 else "4")  # noqa: E731
+    c = {}
+    ref = L(16, 16, 16)
+    c["single_W (W4 at A16,KV16)"] = {L(4, 16, 16): 1, ref: -1}
+    c["single_A (A4 at W16,KV16)"] = {L(16, 4, 16): 1, ref: -1}
+    c["single_KV (KV4 at W16,A16)"] = {L(16, 16, 4): 1, ref: -1}
+    for w in (16, 4):
+        c[f"I_AK | W{w}"] = {L(w, 4, 4): 1, L(w, 4, 16): -1, L(w, 16, 4): -1, L(w, 16, 16): 1}
+    for a_ in (16, 4):
+        c[f"I_WK | A{a_}"] = {L(4, a_, 4): 1, L(4, a_, 16): -1, L(16, a_, 4): -1, L(16, a_, 16): 1}
+    for k in (16, 4):
+        c[f"I_WA | KV{k if k == 4 else 16}"] = {L(4, 4, k): 1, L(4, 16, k): -1, L(16, 4, k): -1, L(16, 16, k): 1}
+    three = {}
+    for (cc, v) in list(c["I_AK | W4"].items()) + [(k2, -v2) for k2, v2 in c["I_AK | W16"].items()]:
+        three[cc] = three.get(cc, 0) + v
+    c["I_WAK (I_AK|W4 - I_AK|W16)"] = three
+    c["additivity gap W4A4KV4 (full - ref - sum singles)"] = {L(4, 4, 4): 1, ref: 2, L(4, 16, 16): -1, L(16, 4, 16): -1,
+                                                              L(16, 16, 4): -1}
+    return c
 
 
 def main():
@@ -114,7 +149,8 @@ def main():
             return boot.task_mean(X, M)
 
         cells = {}
-        for cell in FACT + ["aq_a8", "sq_w8a8", "gptq_w4_d1"]:
+        allcells = sorted({c for u in units for c in u["Y"] if c.startswith("quarot_")}) + ["aq_a8", "sq_w8a8", "gptq_w4_d1"]
+        for cell in allcells:
             us = [u for u in units if cell in u["Y"]]
             if not us:
                 continue
@@ -123,27 +159,44 @@ def main():
                    "break_vs_B": lambda y: int(y[cell] == 0 and y["B"] == 1)}
             cells[cell] = {"n_units": len(us), "n_tasks": len({u["task"] for u in us}), "blocks": sorted({u["block"] for u in us}),
                            "pp": {k: summarise(*stat(us, f)) for k, f in fns.items()}}
-        full = [u for u in units if all(c in u["Y"] for c in FACT)]
-        fact = None
-        if full:
-            def contrast(term):
-                fs = term.split(":")
-                return lambda y: sum(y[c] * math.prod(SIGN[c][f] for f in fs) for c in FACT) / 4
-            fact = {"n_units": len(full), "n_tasks": len({u["task"] for u in full}),
-                    "effects_pp": {t: summarise(*stat(full, contrast(t))) for t in TERMS}}
-            base = "quarot_w16a16kv16"
-            single = {"W": "quarot_w4a16kv16", "A": "quarot_w16a4kv16", "KV": "quarot_w16a16kv4"}
-            fact["additivity_gap_pp"] = summarise(*stat(full, lambda y: (y["quarot_w4a4kv4"] - y[base])
-                                                         - sum(y[c] - y[base] for c in single.values())))
-            fact["rotated_control_minus_B_pp"] = summarise(*stat(full, lambda y: y[base] - y["B"]))
-        res_models[model] = {"n_units": len(units), "cells": cells, "factorial": fact}
+        facts = {}
+        for level, (kv_ref, _) in KV_LEVELS.items():
+            FACT, SIGN = design(kv_ref)
+            fr = {"kv_reference_cell_suffix": f"kv{kv_ref}", "contrasts_pp": {}}
+            for name, coef in contrasts(kv_ref).items():  # each on the units that have all its cells
+                us = [u for u in units if all(c in u["Y"] for c in coef)]
+                if us:
+                    fr["contrasts_pp"][name] = {"n_units": len(us), **summarise(*stat(us, lambda y, co=coef: sum(v * y[c] for c, v in co.items())))}
+            full = [u for u in units if all(c in u["Y"] for c in FACT)]
+            if full:
+                def contrast(term, FACT=FACT, SIGN=SIGN):
+                    fs = term.split(":")
+                    return lambda y: sum(y[c] * math.prod(SIGN[c][f] for f in fs) for c in FACT) / 4
+                fr["n_units_all8"] = len(full)
+                fr["averaged_effects_pp"] = {t: summarise(*stat(full, contrast(t))) for t in TERMS}
+                ref = cname(16, 16, kv_ref)
+                fr["reference_minus_B_pp"] = summarise(*stat(full, lambda y: y[ref] - y["B"]))
+            if fr["contrasts_pp"] or full:
+                facts[level] = fr
+        rot = {}
+        for w in (16, 4):
+            for a_ in (16, 4):
+                x, y0 = cname(w, a_, "16r"), cname(w, a_, "16")
+                us = [u for u in units if x in u["Y"] and y0 in u["Y"]]
+                if us:
+                    rot[f"W{w}A{a_}: kv16r - kv16 (Q/K rotation only)"] = {"n_units": len(us), **summarise(*stat(us, lambda y, x=x, y0=y0: y[x] - y[y0]))}
+        res_models[model] = {"n_units": len(units), "cells": cells, "factorial": facts, "rotation_only_pp": rot}
     res = {"analysis": "analysis/ahook/analyze_wakv.py", "input_fingerprint": fp,
            "snapshot": {"id": snap.get("snapshot_id"), "path": str(Path(a.snapshot).resolve()), "sha256": sha256(a.snapshot)},
            "script": {"path": str(Path(__file__).resolve()), "sha256": script_sha,
                       "git_head": subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()},
            "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
            "bootstrap": {"B": a.B, "seed": SEED, "scheme": "tasks, then blocks within task; draws shared by all statistics"},
-           "coding": "s = +1 at 4 bits, -1 at 16 bits; effect = (1/4) sum s Y over the 8 cells",
+           "coding": ("primary: KV reference = kv16r (Q/K rotation on, no KV quant). Named contrasts are paired unit-level "
+                      "differences (e.g. I_AK|W16 = Y_A4K4 - Y_A4K16r - Y_A16K4 + Y_A16K16r), each on the units with all its cells. "
+                      "averaged_effects: s = +1 at 4 bits, -1 at 16 bits, effect = (1/4) sum s Y over the 8 cells. "
+                      "legacy_confounded: the same with kv16 (rotation off), reported only for the record."),
+           "scope": "effects among these QuaRot-rotated 4-bit axes on q4; not a statement about other formats (RTN-W3 alone is heavily damaging)",
            "models": res_models, "skipped": skipped, "input_files": files, "seconds": round(time.time() - t0, 1)}
     utc = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
     jp = OUT / f"wakv_{utc}.json"
@@ -152,7 +205,8 @@ def main():
     def f(x):
         return f"{x['est']:+.1f} [{x['ci95'][0]:+.1f}, {x['ci95'][1]:+.1f}]"
     L = [f"**TL;DR** W x A x KV matrix (QuaRot-rotated) vs BF16 on shared nonces; snapshot {res['snapshot']['id']}; "
-         f"{len(skipped)} run-domains skipped.", "", f"# W x A x KV closed-loop matrix ({res['utc']})", "",
+         f"{len(skipped)} run-domains skipped. Primary KV reference = kv16r (Q/K rotation on, no KV quant); the kv16 factorial "
+         f"is confounded (rotation and quantization change together) and kept for the record. Scope: {res['scope']}.", "", f"# W x A x KV closed-loop matrix ({res['utc']})", "",
          f"Full numbers: `{jp.relative_to(ROOT)}`. pp; 95% hierarchical bootstrap.", ""]
     for model, r in res_models.items():
         L += [f"## {model}", "", "| cell | units | success | BF16 | cell - BF16 | turnover vs BF16 (fix/break) |", "|---|---|---|---|---|---|"]
@@ -160,12 +214,16 @@ def main():
             p = v["pp"]
             L.append(f"| {c} | {v['n_units']} | {p['success_cell']['est']:.1f} | {p['success_B']['est']:.1f} | {f(p['cell_minus_B'])} | "
                      f"{p['turnover_vs_B']['est']:.1f} ({p['fix_vs_B']['est']:.1f}/{p['break_vs_B']['est']:.1f}) |")
-        if r["factorial"]:
-            fa = r["factorial"]
-            L += ["", f"Factorial ({fa['n_units']} units with all 8 cells):", "", "| term | effect (pp) |", "|---|---|"]
-            L += [f"| {t} | {f(fa['effects_pp'][t])} |" for t in TERMS]
-            L += [f"| additivity gap (W4A4KV4) | {f(fa['additivity_gap_pp'])} |",
-                  f"| rotated control - BF16 | {f(fa['rotated_control_minus_B_pp'])} |"]
+        for level, fa in r["factorial"].items():
+            L += ["", f"### {level} (KV reference {fa['kv_reference_cell_suffix']})", "", "| contrast | units | pp [95%] |", "|---|---|---|"]
+            L += [f"| {n} | {v['n_units']} | {f(v)} |" for n, v in fa["contrasts_pp"].items()]
+            if fa.get("averaged_effects_pp"):
+                L += ["", f"Averaged factorial effects ({fa['n_units_all8']} units with all 8 cells):", "", "| term | pp |", "|---|---|"]
+                L += [f"| {t} | {f(fa['averaged_effects_pp'][t])} |" for t in TERMS]
+                L += [f"| reference cell - BF16 | {f(fa['reference_minus_B_pp'])} |"]
+        if r["rotation_only_pp"]:
+            L += ["", "| rotation-only contrast | units | pp |", "|---|---|---|"]
+            L += [f"| {n} | {v['n_units']} | {f(v)} |" for n, v in r["rotation_only_pp"].items()]
         L.append("")
     (OUT / f"wakv_{utc}.md").write_text("\n".join(L) + "\n")
     print(f"analyze_wakv: wrote {jp.relative_to(ROOT)} ({res['seconds']} s)")

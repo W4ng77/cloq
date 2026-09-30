@@ -67,7 +67,14 @@ SUITES = {
         "qr_w4a4kv4": ({**H, **QR_A4, **QR_KV4}, "qr4", FULL),
         "noqr_w16a4": ({**H, "CLOQ_AQ_BITS": "4", "CLOQ_AQ_CLIP": "0.9"}, None, dict(openloop=150)),
     },
+    "kvr": {  # W65: online Q/K rotation with KV16 (CLOQ_KVQ_BITS=16, ROT=qk) must be a pure pass-through of rotated q/k
+        "qr_w16a16": ({**H, **QR_A16}, "qr16", dict(det=True, openloop=150)),
+        "qr_w16a16kv16r": ({**H, **QR_A16, **QR_KV4, "CLOQ_KVQ_BITS": "16"}, "qr16", FULL),
+        "qr_w4a4kv16": ({**H, **QR_A4}, "qr4", dict(openloop=150)),
+        "qr_w4a4kv16r": ({**H, **QR_A4, **QR_KV4, "CLOQ_KVQ_BITS": "16"}, "qr4", dict(det=True, openloop=150)),
+    },
 }
+PAIRS = {"kvr": [("qr_w16a16kv16r", "qr_w16a16"), ("qr_w4a4kv16r", "qr_w4a4kv16")]}
 CKPTS = {  # name -> cloq builder argv (after --src/--out)
     "sq": ["-m", "cloq.smoothquant", "--alpha", "auto"],
     "sq0": None,  # SmoothQuant's W8 per-channel without smoothing: built by cloq.smoothquant --alpha none
@@ -240,6 +247,21 @@ def main():
         res["configs"][name] = r
         out.write_text(json.dumps(res, indent=1))
         print(name, json.dumps({k: v for k, v in r.items() if k not in ("provenance",)}), flush=True)
+    for x, y in PAIRS.get(a.suite, []):  # per-token comparison of two configs on the same teacher-forced tokens
+        try:
+            import numpy as np
+            zx = np.load(ROOT / f"analysis/ahook/openloop_{a.model}_{x}.npz")
+            zy = np.load(ROOT / f"analysis/ahook/openloop_{a.model}_{y}.npz")
+            assert (zx["decision"] == zy["decision"]).all()
+            dd = np.abs(zx["d"] - zy["d"])
+            res.setdefault("pairs", {})[f"{x}_vs_{y}"] = {
+                "n_tokens": int(dd.size), "mean_abs_dlogprob": float(dd.mean()), "max_abs_dlogprob": float(dd.max()),
+                "frac_tokens_differing": float((dd > 0).mean()), "flip_disagreement": float((zx["flip"] != zy["flip"]).mean()),
+                "canary_equal": res["configs"][x].get("canary") == res["configs"][y].get("canary")}
+        except Exception as e:
+            res.setdefault("pairs", {})[f"{x}_vs_{y}"] = {"error": repr(e)}
+        out.write_text(json.dumps(res, indent=1))
+        print("pair", x, y, json.dumps(res["pairs"][f"{x}_vs_{y}"]), flush=True)
     for ck, (path, _) in built.items():
         shutil.rmtree(path, ignore_errors=True)
 

@@ -197,7 +197,8 @@ AQ_CELLS = {  # cell -> (ckpt, serve_env)
 
 
 # W x A x KV 2^3 matrix (W47): every cell in the QuaRot-rotated model (online Hadamards always on), bits only vary.
-# KV16 cells leave the KV hook off (QuaRot rotates q/k only when K is quantized). Anchors on the same blocks: A8, SQ W8A8
+# KV16 cells leave the KV hook off (QuaRot rotates q/k only when K is quantized); kv16r cells (W65) keep the Q/K
+# rotation with CLOQ_KVQ_BITS=16, the matched reference for the KV axis. Anchors on the same blocks: A8, SQ W8A8
 # (plain BF16 = a6k2_<m>_bfpair_f0k and GPTQ-W4 = a6k2_<m>_gptq_w4_d1_f0k already exist).
 WAKV_A4 = {"CLOQ_AQ_BITS": "4", "CLOQ_AQ_FMT": "sym_quarot", "CLOQ_AQ_CLIP": "0.9"}
 WAKV_KV4 = {"CLOQ_KVQ_BITS": "4", "CLOQ_KVQ_ROT": "qk", "CLOQ_KVQ_FMT": "quarot", "CLOQ_KVQ_KCLIP": "0.95", "CLOQ_KVQ_VCLIP": "0.95"}
@@ -215,6 +216,8 @@ def wakv_cells() -> dict:
                 if kv == 4:
                     env.update(WAKV_KV4)
                 out[f"quarot_w{w}a{a_}kv{kv}"] = (ck, env)
+                if kv == 16:  # W65: matched KV16 reference, online Q/K rotation on, no KV quantization
+                    out[f"quarot_w{w}a{a_}kv16r"] = (ck, {**env, **WAKV_KV4, "CLOQ_KVQ_BITS": "16"})
     out["aq_a8"] = AQ_CELLS["aq_a8"]
     out["sq_w8a8"] = AQ_CELLS["sq_w8a8"]
     return out
