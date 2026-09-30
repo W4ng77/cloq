@@ -10,6 +10,10 @@ Newest first.
 
 ---
 
+## W28 — External review (GPT-6.1) adopted: fork mechanism study; P0 fixes; BF16 pairing (2026-09-30)
+**TL;DR** New main line: same-state 2×2 fork (current action B/Q × continuation B/Q) to separate current-decision and subsequent-execution effects of quantization; mechanism/measurement paper, no repair method this round; conformal out of the core. Verified in code before adopting: H3 `split_cos` scales by true-pair differences (permutation invalid as implemented), p1 nonce term includes shared nonce main effect (H1 p-value unaffected, φ estimate biased), `p_act` treats tool-start outside top-20 as 0, q8 AWQ d3 +5.29 pp. Queued `a6k2_{q4,q8}_bfpair` (BF16 on the W4 fresh nonces q1–q5; nonces verified from environment.json) for paired non-inferiority. Thresholds 3 pp (g_min, ε, equivalence). Replay go/no-go 10-01 evening; telecom holdout (34 tasks, untouched) for confirmation.
+Evidence: `docs/insights/EXTERNAL_REVIEW_GPT61_20260930.md`, `queue/todo/a6k2_{q4,q8}_bfpair.json`.
+
 ## W27 — Llama multi-tool-call parse errors are agent failures, not outages (2026-09-30)
 **TL;DR** `a6k2_l8_gauss0.03_s2` failed on 1 "outage": vLLM's llama3_json parser rejects a turn with several tool calls ("This model only supports single tool-calls at once!"). That is the agent's own output, so like context overflow (W10) it now counts as a task failure: worker labels it `agent_parse_error` in infra_causes.json (not an outage, no task abort) and `iter_2/common.py` relabels `AGENT_SIDE = {context_overflow, agent_parse_error}` as failures, keeping the true cause as the termination reason. Task resume-requeued.
 Evidence: `scripts/a6000/worker.py` (W6/W10 guard), `analysis/insights/iter_2/common.py` (AGENT_SIDE), `runs/a6k2_l8_gauss0.03_s2/airline/tau2_results.json` task 14.
