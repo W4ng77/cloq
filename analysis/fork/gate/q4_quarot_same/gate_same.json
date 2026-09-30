@@ -1,0 +1,527 @@
+{
+ "protocol": "fork-v1",
+ "spec": {
+  "mode": "gate_same",
+  "foreign_states": true,
+  "q_blocks": [
+   [
+    "a6k2_q4_gptq_w4_d1_q3",
+    "retail"
+   ],
+   [
+    "a6k2_q4_gptq_w4_d1_q3",
+    "airline"
+   ]
+  ],
+  "n_per_block": 2,
+  "idcheck_n": 6,
+  "concurrency": 8,
+  "out": "analysis/fork/gate/q4_quarot_same"
+ },
+ "servers": {
+  "B": {
+   "gpu": "5",
+   "port": 8106,
+   "pid": 3528911,
+   "ckpt": {
+    "kind": "quarot",
+    "wbits": 4,
+    "wmethod": "gptq",
+    "seed": 0
+   },
+   "path": "/tmp/cloq_49694/ckpt_fork_accept_quarot_same_q4_Q",
+   "serve_env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_AQ_BITS": "4",
+    "CLOQ_AQ_FMT": "sym_quarot",
+    "CLOQ_AQ_CLIP": "0.9",
+    "CLOQ_AQ_HAD": "quarot",
+    "CLOQ_KVQ_BITS": "4",
+    "CLOQ_KVQ_ROT": "qk",
+    "CLOQ_KVQ_FMT": "quarot",
+    "CLOQ_KVQ_KCLIP": "0.95",
+    "CLOQ_KVQ_VCLIP": "0.95"
+   },
+   "serve_extra": [],
+   "launch_args": [
+    "5",
+    "8106",
+    "/tmp/cloq_49694/ckpt_fork_accept_quarot_same_q4_Q",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.44",
+   "hook_coverage": {
+    "kvq": {
+     "bits": 4,
+     "rot": true,
+     "rot_mode": "qk",
+     "rot_v_online": false,
+     "which": "kv",
+     "fmt": "quarot",
+     "kclip": 0.95,
+     "vclip": 0.95,
+     "active": true,
+     "namespace": "kvq_b4_rqk_kv_quarot_kc0.95_vc0.95"
+    },
+    "aq": {
+     "bits": 4,
+     "fmt": "sym_quarot",
+     "clip": "0.9",
+     "group": "-1",
+     "only": [
+      "down",
+      "gate_up",
+      "o",
+      "qkv"
+     ],
+     "had": "quarot",
+     "quant": true
+    },
+    "cache_roots": [
+     "/tmp/cloq_49694/vllm_cache/kvq_b4_rqk_kv_quarot_kc0.95_vc0.95__aq_b4_sym_quarot_c0.9_g-1_hquarot_all"
+    ],
+    "n_wrapped_processes": 1,
+    "decoder_attention_hooked": 36,
+    "expected_layers": 36,
+    "aq_modules": {
+     "quant": 144,
+     "had_only": 0,
+     "pass": 0
+    },
+    "aq_expected_quant": 144,
+    "ok": true
+   },
+   "canary": "cc24839800f43b96",
+   "ckpt_sha256": "cc5a6ce28808f7c950fd48dbfd36d80eab55887d941206812e48c49984a7d67b",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+     "chat_template_kwargs": {}
+    },
+    "weights": "sha256:cc5a6ce28808f7c950fd48dbfd36d80eab55887d941206812e48c49984a7d67b",
+    "ckpt": {
+     "kind": "quarot",
+     "wbits": 4,
+     "wmethod": "gptq",
+     "seed": 0
+    },
+    "serve_env": {
+     "CLOQ_PYHOOKS": "1",
+     "CLOQ_AQ_BITS": "4",
+     "CLOQ_AQ_FMT": "sym_quarot",
+     "CLOQ_AQ_CLIP": "0.9",
+     "CLOQ_AQ_HAD": "quarot",
+     "CLOQ_KVQ_BITS": "4",
+     "CLOQ_KVQ_ROT": "qk",
+     "CLOQ_KVQ_FMT": "quarot",
+     "CLOQ_KVQ_KCLIP": "0.95",
+     "CLOQ_KVQ_VCLIP": "0.95"
+    },
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 4,
+     "A": 4,
+     "K": 4,
+     "V": 4
+    },
+    "hook_version": "ca3e42d2ba543122",
+    "cache_namespace": "kvq_b4_rqk_kv_quarot_kc0.95_vc0.95__aq_b4_sym_quarot_c0.9_g-1_hquarot_all"
+   },
+   "effective_config_sha": "28a766a57f9da170"
+  },
+  "Q": {
+   "gpu": "5",
+   "port": 8206,
+   "pid": 3532289,
+   "ckpt": {
+    "kind": "quarot",
+    "wbits": 4,
+    "wmethod": "gptq",
+    "seed": 0
+   },
+   "path": "/tmp/cloq_49694/ckpt_fork_accept_quarot_same_q4_Q",
+   "serve_env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_AQ_BITS": "4",
+    "CLOQ_AQ_FMT": "sym_quarot",
+    "CLOQ_AQ_CLIP": "0.9",
+    "CLOQ_AQ_HAD": "quarot",
+    "CLOQ_KVQ_BITS": "4",
+    "CLOQ_KVQ_ROT": "qk",
+    "CLOQ_KVQ_FMT": "quarot",
+    "CLOQ_KVQ_KCLIP": "0.95",
+    "CLOQ_KVQ_VCLIP": "0.95"
+   },
+   "serve_extra": [],
+   "launch_args": [
+    "5",
+    "8206",
+    "/tmp/cloq_49694/ckpt_fork_accept_quarot_same_q4_Q",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.44",
+   "hook_coverage": {
+    "kvq": {
+     "bits": 4,
+     "rot": true,
+     "rot_mode": "qk",
+     "rot_v_online": false,
+     "which": "kv",
+     "fmt": "quarot",
+     "kclip": 0.95,
+     "vclip": 0.95,
+     "active": true,
+     "namespace": "kvq_b4_rqk_kv_quarot_kc0.95_vc0.95"
+    },
+    "aq": {
+     "bits": 4,
+     "fmt": "sym_quarot",
+     "clip": "0.9",
+     "group": "-1",
+     "only": [
+      "down",
+      "gate_up",
+      "o",
+      "qkv"
+     ],
+     "had": "quarot",
+     "quant": true
+    },
+    "cache_roots": [
+     "/tmp/cloq_49694/vllm_cache/kvq_b4_rqk_kv_quarot_kc0.95_vc0.95__aq_b4_sym_quarot_c0.9_g-1_hquarot_all"
+    ],
+    "n_wrapped_processes": 1,
+    "decoder_attention_hooked": 36,
+    "expected_layers": 36,
+    "aq_modules": {
+     "quant": 144,
+     "had_only": 0,
+     "pass": 0
+    },
+    "aq_expected_quant": 144,
+    "ok": true
+   },
+   "canary": "cc24839800f43b96",
+   "ckpt_sha256": "cc5a6ce28808f7c950fd48dbfd36d80eab55887d941206812e48c49984a7d67b",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+     "chat_template_kwargs": {}
+    },
+    "weights": "sha256:cc5a6ce28808f7c950fd48dbfd36d80eab55887d941206812e48c49984a7d67b",
+    "ckpt": {
+     "kind": "quarot",
+     "wbits": 4,
+     "wmethod": "gptq",
+     "seed": 0
+    },
+    "serve_env": {
+     "CLOQ_PYHOOKS": "1",
+     "CLOQ_AQ_BITS": "4",
+     "CLOQ_AQ_FMT": "sym_quarot",
+     "CLOQ_AQ_CLIP": "0.9",
+     "CLOQ_AQ_HAD": "quarot",
+     "CLOQ_KVQ_BITS": "4",
+     "CLOQ_KVQ_ROT": "qk",
+     "CLOQ_KVQ_FMT": "quarot",
+     "CLOQ_KVQ_KCLIP": "0.95",
+     "CLOQ_KVQ_VCLIP": "0.95"
+    },
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 4,
+     "A": 4,
+     "K": 4,
+     "V": 4
+    },
+    "hook_version": "ca3e42d2ba543122",
+    "cache_namespace": "kvq_b4_rqk_kv_quarot_kc0.95_vc0.95__aq_b4_sym_quarot_c0.9_g-1_hquarot_all"
+   },
+   "effective_config_sha": "28a766a57f9da170"
+  },
+  "same_effective_config": true,
+  "q_quantization": {
+   "method": "QuaRot",
+   "wbits": 4,
+   "rotation": {
+    "residual": "random Hadamard diag(s) H_d / sqrt(d) (cloq.rotate.random_hadamard)",
+    "seed": 0,
+    "norms_fused": true,
+    "embedding_mean_subtraction": false,
+    "v_proj_out": "per-head Hadamard H_hd",
+    "o_proj_in": "full Hadamard H_{nh*hd} (offline) + H_nh across heads (online)",
+    "down_proj_in": "H_76 kron H_128 (offline + online)",
+    "qk": "per-head Hadamard after RoPE (online, cloq_kvq CLOQ_KVQ_ROT=qk)",
+    "d": 2560,
+    "num_heads": 32,
+    "head_dim": 128,
+    "num_kv_heads": 8,
+    "intermediate": 9728,
+    "down_had_K": 76,
+    "tied_untied": true,
+    "rotated_tensors": 253,
+    "rtn_quantized": 0
+   },
+   "weight_quant": {
+    "bits": 4,
+    "method": "GPTQ",
+    "granularity": "per output channel",
+    "sym": true,
+    "maxq": 7,
+    "clip": "MSE grid search (norm 2.4, grid 100, maxshrink 0.8) = --w_clip",
+    "gptq": {
+     "percdamp": 0.01,
+     "blocksize": 128,
+     "act_order": false,
+     "groupsize": -1,
+     "sequential": [
+      [
+       "self_attn.k_proj",
+       "self_attn.v_proj",
+       "self_attn.q_proj"
+      ],
+      [
+       "self_attn.o_proj"
+      ],
+      [
+       "mlp.up_proj",
+       "mlp.gate_proj"
+      ],
+      [
+       "mlp.down_proj"
+      ]
+     ]
+    },
+    "modules": [
+     "self_attn.q_proj",
+     "self_attn.k_proj",
+     "self_attn.v_proj",
+     "self_attn.o_proj",
+     "mlp.gate_proj",
+     "mlp.up_proj",
+     "mlp.down_proj"
+    ],
+    "storage": "dequantized bf16",
+    "mean_rel_weight_err": 0.018281098566062394
+   },
+   "calibration": {
+    "source": "WikiText-2 raw v1 train (Salesforce/wikitext arrow)",
+    "source_sha256": "57947bc7b58df4b19662c0609cc30651bc84328dab5fd588860b752072911789",
+    "rule": "'\\n\\n'.join(text) tokenized; random.seed(seed); randint windows",
+    "seed": 0,
+    "n_samples": 128,
+    "seq_len": 2048,
+    "n_tokens": 262144,
+    "token_ids_sha256": "ec0a043b2c48080ebb5cce82773928c13562007527fc443b1fd8f651a02820d8"
+   },
+   "requires_serve_env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_AQ_HAD": "quarot"
+   },
+   "forbids_serve_env": {
+    "CLOQ_KVQ_ROT": "1"
+   },
+   "reference_serve_env_W4A4KV4": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_AQ_BITS": "4",
+    "CLOQ_AQ_FMT": "sym_quarot",
+    "CLOQ_AQ_CLIP": "0.9",
+    "CLOQ_AQ_HAD": "quarot",
+    "CLOQ_KVQ_BITS": "4",
+    "CLOQ_KVQ_ROT": "qk",
+    "CLOQ_KVQ_FMT": "quarot",
+    "CLOQ_KVQ_KCLIP": "0.95",
+    "CLOQ_KVQ_VCLIP": "0.95"
+   },
+   "invariance_check_hf": null,
+   "source_model": "Qwen/Qwen3-4B-Instruct-2507",
+   "source_revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+   "source_dir": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+   "storage": "fake-quant bf16",
+   "seconds": 1187.8061027526855
+  },
+  "user_base": "http://node001:8000/v1",
+  "host": "node003",
+  "job": "49694"
+ },
+ "bases": {
+  "B": "http://127.0.0.1:8106/v1",
+  "Q": "http://127.0.0.1:8206/v1"
+ },
+ "foreign_states": true,
+ "idcheck_Q": {
+  "label": "cross-handle (same config, foreign prompts)",
+  "n": 6,
+  "n_match": 6,
+  "rows": [
+   {
+    "task_id": "4",
+    "t": 6,
+    "match": true,
+    "n": 74
+   },
+   {
+    "task_id": "37",
+    "t": 10,
+    "match": true,
+    "n": 89
+   },
+   {
+    "task_id": "59",
+    "t": 4,
+    "match": true,
+    "n": 256
+   },
+   {
+    "task_id": "61",
+    "t": 3,
+    "match": true,
+    "n": 164
+   },
+   {
+    "task_id": "31",
+    "t": 8,
+    "match": true,
+    "n": 195
+   },
+   {
+    "task_id": "23",
+    "t": 3,
+    "match": true,
+    "n": 46
+   }
+  ],
+  "ok": true
+ },
+ "idcheck_Bhandle": {
+  "label": "cross-handle (same config, foreign prompts)",
+  "n": 6,
+  "n_match": 6,
+  "rows": [
+   {
+    "task_id": "4",
+    "t": 6,
+    "match": true,
+    "n": 74
+   },
+   {
+    "task_id": "37",
+    "t": 10,
+    "match": true,
+    "n": 89
+   },
+   {
+    "task_id": "59",
+    "t": 4,
+    "match": true,
+    "n": 256
+   },
+   {
+    "task_id": "61",
+    "t": 3,
+    "match": true,
+    "n": 164
+   },
+   {
+    "task_id": "31",
+    "t": 8,
+    "match": true,
+    "n": 195
+   },
+   {
+    "task_id": "23",
+    "t": 3,
+    "match": true,
+    "n": 46
+   }
+  ],
+  "ok": true
+ },
+ "rows": [
+  {
+   "state_id": "1665090184c954fe",
+   "domain": "retail",
+   "task_id": "11",
+   "t": 5,
+   "shadow_eq_aQ": true,
+   "shadow_prompt_ok": true,
+   "all_four_equal": true,
+   "differs": [],
+   "budget_ok": true,
+   "noop_vs_orig": {
+    "not_applicable": true
+   }
+  },
+  {
+   "state_id": "cf2a079408760767",
+   "domain": "retail",
+   "task_id": "110",
+   "t": 2,
+   "shadow_eq_aQ": true,
+   "shadow_prompt_ok": true,
+   "all_four_equal": true,
+   "differs": [],
+   "budget_ok": true,
+   "noop_vs_orig": {
+    "not_applicable": true
+   }
+  },
+  {
+   "state_id": "cae6058444eaee24",
+   "domain": "airline",
+   "task_id": "19",
+   "t": 3,
+   "shadow_eq_aQ": true,
+   "shadow_prompt_ok": true,
+   "all_four_equal": true,
+   "differs": [],
+   "budget_ok": true,
+   "noop_vs_orig": {
+    "not_applicable": true
+   }
+  },
+  {
+   "state_id": "309ff0c59fbc3b95",
+   "domain": "airline",
+   "task_id": "17",
+   "t": 6,
+   "shadow_eq_aQ": true,
+   "shadow_prompt_ok": true,
+   "all_four_equal": true,
+   "differs": [],
+   "budget_ok": true,
+   "noop_vs_orig": {
+    "not_applicable": true
+   }
+  }
+ ],
+ "verdict": {
+  "b_same_ckpt": true,
+  "n_states": 4,
+  "n_errors": 0,
+  "domains": [
+   "airline",
+   "retail"
+  ],
+  "idcheck": true,
+  "pass": true
+ }
+}

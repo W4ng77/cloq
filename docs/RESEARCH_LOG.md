@@ -10,6 +10,22 @@ Newest first.
 
 ---
 
+## W46 — Fork serving for activation / SmoothQuant / QuaRot roles (2026-09-30)
+**TL;DR** `fork_serve` now matches the W45 hooks, and plain W and KV roles are unchanged.
+- **Hook config read by the hooks' own rules.** `CLOQ_AQ_*` (bits, fmt, clip, group, only, had) and `CLOQ_KVQ_*` (ROT 0 / 1 / qk, where qk = QuaRot mode with V rotated offline; FMT; K and V clips).
+- **Compile-cache namespace.** It is probed per role by running the hooks' own sitecustomize with that role's serve_env, and run_fork asserts that the cache roots the hooks report equal the recorded namespace. Resulting namespaces: A8 `aq_b8_…`, A4 `aq_b4_…`, SmoothQuant `aq_b8_sym_sq_…`, QuaRot `kvq_b4_rqk_…__aq_b4_…_hquarot_all`, plain `default`, legacy KV unchanged.
+- **Per-role refusals.** run_fork applies the checkpoint's `requires_serve_env` / `forbids_serve_env` per role, as run_eval does.
+- **W bits** come from the build metadata when the checkpoint spec lacks them.
+- **gate_same `foreign_states` mode.** It tests a configuration that has no original run yet: handle cross-check, identical shadow actions, four-branch agreement and budget.
+- **Validation.**
+  - `fork_accept_quarot_same_q4`: both handles on quarot_w4a4kv4 (W4 A4 K4 V4, same config hash `28a766a57f9da170`, same canary `cc24839800f43b96`). KV coverage is 36/36 decoder layers and A coverage 144/144 linears. Cross-handle regeneration 6/6; 4/4 states have identical shadow actions, all four branches equal and budget consistent.
+  - `fork_accept_noop_w_q4` (plain GPTQ, 3 gate states): every gate check passes, including the Q→Q no-op. Hashes are B `efce043e33600dcc` and Q `29ba0176bfc6a4e0`, identical to the running fork_dev tasks.
+  - Recomputing the effective config for every recorded role reproduces every plain-W and BF16 hash. KV roles differ only in `hook_version`, because the pyhooks files were edited by W45; their namespaces are unchanged.
+- **Found on the way.** My AQ rewrite of the KV coverage parser had dropped the `AttentionType.DECODER` spelling, and the first quarot run failed at startup (coverage 0). Fixed and requeued.
+- **Rebuild reproducibility.** The q4 GPTQ checkpoint rebuilt by 4 fork_dev tasks on different nodes has the same sha (`e6c24bc…`).
+Evidence: `scripts/a6000/{fork_serve,fork_driver,worker}.py`; `analysis/fork/gate/{q4_quarot_same/gate_same.json,q4_noop_w_w46/gate.json}`;
+`/data/ziyangs/cloq_work/logs/tasks/fork_accept_{quarot_same,noop_w}_q4.servers.json`.
+
 ## W48 — node001 and node006 runners re-submitted with 8 GPUs (2026-09-30 02:52 PDT)
 **TL;DR** The cluster has 48 A6000s (6 usable nodes × 8), not 42. node001 (job 49670) and node006 (job 49642) had been submitted with `--gres=gpu:A6000:4`, so GPUs 0–3 on both nodes were unallocated and idle. node003 GPUs 0 and 7 fail the NVML probe and stay excluded. With the user's approval I re-submitted both runners with 8 GPUs, submitting the new job before cancelling the old one: node001 → job 49727 (00:19), node006 → job 49731 (02:52).
 - **Before the node006 restart:** its simulator was marked `draining` in simreg, so no new routes went to it, and I waited until it held no leases.

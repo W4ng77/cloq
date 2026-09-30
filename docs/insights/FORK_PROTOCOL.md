@@ -145,6 +145,12 @@ For t = 0, 1, … along Q's decisions (`fork_driver.search_task`):
   base (`ckpt_cache/base`).
 - **Activation hook (`cloq_aq`).** A bits come from `CLOQ_AQ_BITS`. Coverage: with bits < 16 the number of quantized linear
   modules in the engine process must equal len(`CLOQ_AQ_ONLY`) × layers. The hook-reported compile-cache roots are recorded.
+- **Activation, SmoothQuant and QuaRot roles (W46).**
+  - Hook configs are read as the hooks read them (`CLOQ_AQ_*`; `CLOQ_KVQ_ROT` 0 / 1 / qk).
+  - The compile-cache namespace is probed from the hooks' own sitecustomize and asserted against the cache roots they
+    report. vLLM's compile hash does not see the hook env, so every hooked config gets its own directory.
+  - `requires_serve_env` / `forbids_serve_env` are enforced per role.
+  - A config with no original run is tested with `gate_same` `foreign_states`: cross-handle equality, not replay.
 - **Allocation guard.** q8 needs one GPU per server; two 8B servers do not fit one A6000 at max_len 33792.
   `fork_gate_q8_telecom_iso` first failed this way on node006, whose runner (job 49642, pre-424df02) ignores
   `task["gpus"]`. `run_fork` now refuses a wrong allocation before building. The dev generator pins q8 tasks to
