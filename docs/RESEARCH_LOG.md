@@ -10,6 +10,16 @@ Newest first.
 
 ---
 
+## W23 — Confirmatory analysis script for PREREG iter4 (2026-09-29)
+**TL;DR** `analysis/insights/iter_4/prereg_h1_h4.py` implements PREREG_iter4 §2–§4:
+- **Primary.** H1 (φ, P1 estimator unchanged, B = 5000), H2 (r, exact within-model relabelling) and H3 (F_split, 100 task halves, 12 P2 features), with Holm over H1–H3.
+- **Secondary.** H4 two-sided with a CI; per-model and per-domain versions; max_steps and overflow sensitivity; variance components.
+- **Guards.** The script asserts PREREG sha16 0d5e8385c911824f. It refuses unless all 28 confirmatory runs are admitted with their registered nonces, the script was committed before the snapshot, no earlier snapshot already admitted them, and the analysis has not run before. `--deadline-mode` is accepted only on or after 10-05.
+- **Development.** Built only on non-confirmatory stand-ins (`--dev`). No confirmatory outcome was opened. Stand-in Δ matches P2 exactly, and the permutation tests are calibrated on synthetic nulls.
+- **Ambiguities.** A1–A18 need to be logged as §7 amendments. The most important is A1: §1 says 40 runs but enumerates 28. A16: amending §7 changes the hash, so `PREREG_SHA16` must be updated in a commit before the confirmatory snapshot.
+
+Evidence: `docs/insights/PREREG_iter4_analysis.md`, `analysis/insights/iter_4/prereg_h1_h4.py`, `analysis/insights/iter_4/out/prereg_h1_h4_DEV.{json,log}`.
+
 ## W22 — Iteration-4 pre-registration (2026-09-29)
 **TL;DR** Pre-registered H1 (recalibration lottery, φ>1), H2 (net effect replicates across nonces), H3 (split-task fingerprint), Holm over H1–H3; H4 (quantizer vs random coherence) secondary. Confirmatory units: GPTQ/AWQ-W4 d3/d4 and Gaussian k=1 seeds s2/s4/s5 on q4/q8 × nonces q1/q2 (40 runs). Written while these runs were running; no closed-loop outcome of them had been analysed (q4 churnctl_k1_s2 had finished, not opened). sha256[:16] of the registered file: 0d5e8385c911824f.
 Evidence: `docs/insights/PREREG_iter4.md`.
