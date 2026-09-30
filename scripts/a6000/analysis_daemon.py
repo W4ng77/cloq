@@ -28,7 +28,7 @@ Q = Path("/data/ziyangs/cloq_work/queue")
 REG = ROOT / "docs/insights/EXPERIMENT_REGISTRY.json"
 OUT = ROOT / "analysis/status"
 STATE = OUT / "analysis_daemon_state.json"
-PERIOD, TIMEOUT = 600, 3600
+PERIOD, TIMEOUT = int(__import__("os").environ.get("CLOQ_DAEMON_PERIOD", 600)), 3600  # W57: raise during NFS degradation
 DIRS = ("todo", "running", "done", "failed", "deferred")
 
 
@@ -55,7 +55,7 @@ def snapshot(cache):
         return cache["path"]
     utc = time.strftime("%Y%m%dT%H%MZ", time.gmtime())
     path = ROOT / f"analysis/insights/iter_3/out/snapshot_auto_{utc}.json"
-    r = subprocess.run(["nice", "-n", "10", "python", "analysis/insights/iter_2/integrity.py", "--out", str(path), "--procs", "6"],
+    r = subprocess.run(["nice", "-n", "10", "python", "analysis/insights/iter_2/integrity.py", "--out", str(path), "--procs", __import__("os").environ.get("CLOQ_DAEMON_PROCS", "6")],
                        cwd=ROOT, capture_output=True, text=True, timeout=TIMEOUT)
     cache["path"] = str(path) if r.returncode == 0 and path.exists() else None
     return cache["path"]

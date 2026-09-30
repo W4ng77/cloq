@@ -10,6 +10,14 @@ Newest first.
 
 ---
 
+## W57 — Cluster-wide NFS degradation; analysis daemon throttled (2026-09-30 10:55 PDT)
+**TL;DR** The NFS stalls from W56 are now on every node, not just node001. A metadata `ls` of the env takes 1.0–7.3 s, against 0.2–0.5 s in the morning. Processes sit in `rpc_wait_bit_killable` on node004, node005 and node006 (vLLM start, run_arm, fork_driver).
+- **Impact:** at 10:49, 16 of 40 monitored GPUs were busy with 113 tasks queued. 13 tasks finished in the last hour.
+- **Our own share of the load:** the analysis daemon built an integrity snapshot every 15–20 min, reading and hashing every run (about 10 min per cycle with 6 processes) and running the fork analyses on top of that. The daemon now takes `CLOQ_DAEMON_PERIOD` and `CLOQ_DAEMON_PROCS`. I restarted it with a 3600 s period and 2 integrity processes (pid 959917).
+- **Undo:** restart the daemon without those environment variables once NFS latency is normal again.
+- **Still open:** node003 is down (W56) and node001 is drained (W56). The storage server is the cluster admin's side.
+Evidence: srun timings in this session, `ps` wchan on node004/005/006, `analysis/status/analysis_runs.jsonl`.
+
 ## W56 — node003 rebooted; node001 NFS stalls, drained (2026-09-30 09:45 PDT)
 **TL;DR** Two infrastructure problems appeared within minutes of each other, around 08:40.
 
