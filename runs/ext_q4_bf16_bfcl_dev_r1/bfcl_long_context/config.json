@@ -1,0 +1,35 @@
+{
+  "run_id": "ext_q4_bf16_bfcl_dev_r1",
+  "arm": "bf16",
+  "domain": "bfcl_long_context",
+  "checkpoint": "{\"kind\": \"bf16\"}",
+  "adapter": "ext-v1",
+  "env": "bfcl",
+  "benchmark": {
+    "env": "bfcl",
+    "name": "BFCL v3 multi-turn",
+    "test_category": "multi_turn_long_context",
+    "max_steps_per_turn": 20,
+    "handler": "OpenAICompletionsHandler FC (transport/logging overrides only, see scripts/ext/bfcl_run.py)",
+    "evaluator": "eval_runner._evaluate_single_multi_turn_entry (official)",
+    "exclude_state_log": false
+  },
+  "generation_agent": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_tokens": 1024,
+    "seed": 0,
+    "presence_penalty": 0.0,
+    "frequency_penalty": 0.0,
+    "top_k": -1,
+    "repetition_penalty": 1.0,
+    "return_token_ids": true,
+    "logprobs": true,
+    "top_logprobs": 5
+  },
+  "frozen_generation_source": "configs/frozen_v0.json generation_agent",
+  "manifest": "manifests/bfcl/bfcl_mt_v1.json",
+  "manifest_sha256": "d8b090007463c9ca1ead13f1d9172267926d62154c51b6493ec10cdcef7cfcba",
+  "subset": "dev",
+  "max_concurrency": 8
+}

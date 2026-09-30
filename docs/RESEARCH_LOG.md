@@ -10,6 +10,47 @@ Newest first.
 
 ---
 
+## W36-ext — Engineering line 2: BFCL multi-turn and ALFWorld adapters (no user simulator); dev validated, q4 smoke done (2026-09-30)
+**TL;DR** Both benchmarks run through the queue on the same served agent as tau2 (worker.py eval task + `"env"` field; the checkpoint specs are unchanged, and the BF16 canary is checked). Deterministic re-run: 12/12 BFCL and 6/6 ALFWorld dev items are token-identical. q4 smoke pass counts, BF16 vs GPTQ-W4 d1 (keep categories separate; never average across benchmarks):
+- BFCL: base 4/10 vs 3/10; miss_param 2/10 vs 2/10; miss_func 2/10 vs 2/10; long_context 2/10 vs 2/10.
+- ALFWorld (valid_unseen smoke): 1/12 vs 2/12.
+
+The smoke subsets are far too small for any comparison; this is a plumbing check only.
+- **Versions.**
+  - BFCL: bfcl-eval 2026.3.23 (wheel sha256 3bb6dfa5…). Its `BFCL_v4_multi_turn_*` files are the v3 multi-turn categories; per-file sha256 are in the manifest. Venv: `cloq_work/envs/bfcl` (+ soundfile, a missing qwen-agent import).
+  - ALFWorld: alfworld 0.4.2 and textworld 1.7.0. Data: json_2.1.1 json/pddl plus the tw-pddl 2.1.2 zips; zip sha256 are in the manifest, and the MRCNN detector is not downloaded (591 MB on disk). Venv: `cloq_work/envs/alfworld`.
+  - Frozen package lists: `env/ext_{bfcl,alfworld}.freeze.txt`.
+- **Manifests (committed before any model run; selection by sha256(salt+id) only).**
+  - `manifests/bfcl/bfcl_mt_v1.json`: 4 categories × 200 items. dev 3/category, smoke 10/category, eval = 197/category (smoke ⊂ eval).
+  - `manifests/alfworld/alfworld_text_v1.json`: dev = 1 valid_seen game per task type. eval = the official eval_out_of_distribution split (valid_unseen, 134 games, same filter as AlfredTWEnv). smoke = 2 per task type (12).
+- **BFCL adapter** (`scripts/ext/bfcl_run.py`).
+  - Inference runs BFCL's own `inference_multi_turn_FC` loop: 20 steps/turn, then force-quit; miss_func holdout injection is done by the loop.
+  - The handler is `OpenAICompletionsHandler` FC, with overrides for transport and logging only.
+  - Scoring uses the official per-entry evaluator (`_evaluate_single_multi_turn_entry` → `multi_turn_checker`), unchanged.
+  - Decoding is the frozen agent decoding from `frozen_v0` (greedy, seed 0, max_tokens 1024), with top-5 logprobs.
+- **ALFWorld adapter** (`scripts/ext/alfworld_run.py`).
+  - Environment: the official TW env, built as AlfredTWEnv.init_env builds it for eval.
+  - Budget: 50 env actions and 50 decisions.
+  - Scoring: `infos['won']`.
+  - Interface: one native tool `act(command)`. Admissible commands are never shown to the agent; they are logged per action as the legal-action check.
+  - **Prompt v5 frozen after 4 dev-only revisions** on valid_seen (disjoint from eval):
+    - v1: commands were called as tools.
+    - v2: the example `act(command=…)` was typed as text.
+    - v3: the engine's locality rule was not stated.
+    - v4: the raw-JSON example was typed as text.
+  - Dev pass counts for v1–v5: 1, 0, 0, 1, and 3 of 6. The prompt-tuning history is part of the record.
+- **Run layout.** `runs/<run_id>/<domain>/` has the run_arm file set. `decisions.jsonl` records, per decision: messages, tools, server prompt ids, completion ids, logprobs/margins, parsed actions, legality and the observations. `trajectory.jsonl` holds per item the full messages, the official evaluator output and the wall time. Domains are `bfcl_{base,miss_param,miss_func,long_context}` and `alfworld`, and run ids use the `ext_` prefix (not `a6k2_`).
+- **Runtime** (q4, one A6000, 8 items concurrent × 4 categories in parallel).
+  - BFCL: the 40-item smoke took about 150 s wall, i.e. ≈4 s/item amortised. Per-item latency averaged 50–73 s, with a max of 129 s.
+  - ALFWorld: 12 games in 232–262 s wall, i.e. ≈20 s/game amortised. Per-game latency averaged 80–101 s, with a max of 186 s.
+  - Task overhead: server start plus canary ≈1–2 min; a GPTQ build adds ≈6–8 min.
+  - Full-eval estimate per checkpoint: BFCL 788 items ≈ 1 GPU-h; ALFWorld 134 games ≈ 0.8 GPU-h.
+- **Caveats.**
+  - BFCL long_context: 3/10 smoke items (and 1/3 dev) hit the served context (33,792 tokens; prompt > 32,768 with max_tokens 1024). These are recorded as `context_overflow` and scored as BFCL inference errors, identically for all arms. A larger `max_model_len` would change the served config, so that decision belongs to the main session.
+  - ALFWorld q4 success is low (≈10–15% on unseen smoke), and about 30% of decisions carry no tool call.
+
+Evidence: `scripts/ext/{common,bfcl_run,alfworld_run,make_manifests,make_tasks_ext,compare_runs}.py`, `scripts/a6000/worker.py` (`env` field), `manifests/{bfcl,alfworld}/`, `analysis/ext/rerun_*.json`, `analysis/ext/smoke_q4_summary.json`, `runs/ext_q4_*_{smoke,dev*}/`, queue `done/ext_q4_*.json`.
+
 ## W30 — Same-state fork pipeline built; engineering gate passed (deterministic forks) (2026-09-29/30)
 **TL;DR** fork-v1 is implemented and passes every gate check, so development forks use deterministic protocol A.
 - **Mechanism.** A fork state is Q's saved history before decision t. tau2 rebuilds the DB, the telecom device DB and the user-simulator

@@ -1,0 +1,58 @@
+{
+  "run_id": "ext_q4_bf16_alfworld_dev_p2_r2",
+  "arm": "bf16",
+  "domain": "alfworld",
+  "checkpoint": "{\"kind\": \"bf16\"}",
+  "adapter": "ext-v1",
+  "env": "alfworld",
+  "benchmark": {
+    "env": "alfworld",
+    "name": "ALFWorld text (TextWorld)",
+    "prompt_version": "alfworld-prompt-v2",
+    "max_env_steps": 50,
+    "max_decisions": 50,
+    "system_prompt": "You are an agent in a household environment. You will be given a description of the room and a task to complete. You have exactly one tool, `act`. Every command is a text string passed as the `command` argument of `act`, for example act(command=\"go to countertop 1\"); the commands are not tools themselves. Call `act` with exactly one command per call; it returns what you observe after the command. You may write a short thought before the call in the same reply, but a reply without an `act` call does not change the environment and still uses up one of your turns. Keep calling `act` until the task is done.\n\nThe environment's own list of commands:\nAvailable commands:\n  look:                             look around your current location\n  inventory:                        check your current inventory\n  go to (receptacle):               move to a receptacle\n  open (receptacle):                open a receptacle\n  close (receptacle):               close a receptacle\n  take (object) from (receptacle):  take an object from a receptacle\n  move (object) to (receptacle):  place an object in or on a receptacle\n  examine (something):              examine a receptacle or an object\n  use (object):                     use an object\n  heat (object) with (receptacle):  heat an object using a receptacle\n  clean (object) with (receptacle): clean an object using a receptacle\n  cool (object) with (receptacle):  cool an object using a receptacle\n  slice (object) with (object):     slice an object using a sharp object\n\nRefer to objects and receptacles exactly as they are named in the observations, including their number (for example \"apple 1\" or \"countertop 2\"). If the environment answers \"Nothing happens.\", the command was invalid or had no effect. The episode ends as soon as the task is completed, or after 50 commands.",
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "act",
+          "description": "Execute one text command in the household environment and return the resulting observation.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "command": {
+                "type": "string",
+                "description": "One command, e.g. \"go to countertop 1\" or \"take apple 1 from countertop 1\"."
+              }
+            },
+            "required": [
+              "command"
+            ]
+          }
+        }
+      }
+    ],
+    "continue_message": "Please continue by calling the act tool with your next command.",
+    "wrappers": "AlfredDemangler(shuffle=False), AlfredInfos",
+    "evaluator": "infos['won']"
+  },
+  "generation_agent": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_tokens": 1024,
+    "seed": 0,
+    "presence_penalty": 0.0,
+    "frequency_penalty": 0.0,
+    "top_k": -1,
+    "repetition_penalty": 1.0,
+    "return_token_ids": true,
+    "logprobs": true,
+    "top_logprobs": 5
+  },
+  "frozen_generation_source": "configs/frozen_v0.json generation_agent",
+  "manifest": "manifests/alfworld/alfworld_text_v1.json",
+  "manifest_sha256": "4b92d8b799396f4cdb7a603c708be2d80fcdefbdad29b061d5dd7a2b67c7616c",
+  "subset": "dev",
+  "max_concurrency": 8
+}
