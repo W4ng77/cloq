@@ -30,6 +30,8 @@ Intervals come from the hierarchical bootstrap of analysis/fork/analyze_dev.py (
 seed 20261001; draws shared by every arm of a population, so arm contrasts are paired). Telecom cells (W53,
 a6k2_pert_<m>_tel_<cell>_<arm>_<blk>, paired with a6k2_<m>_tel_<cell>_<blk> and a6k2_<m>_tel_bfpair_<blk>) get their own
 bootstrap population and a persona breakdown (Hard / Easy / None from the task id).
+W54: arms restore_recal_<X> (kept modules BF16, the rest re-calibrated sequentially) are paired like any arm and, where
+the plain restore_<X> of the same cell exists, compared with it on joint units (compensation effect = recal - plain).
 Idempotent: an output with the same input fingerprint (script, snapshot, every run file sha) is not rewritten.
 
 usage: python analysis/fork/analyze_restore_eval.py --snapshot <snapshot.json> [--models q4 q8]
@@ -300,6 +302,30 @@ def main():
             # sanity: identical to BF16 but a different outcome would mean non-reproducible scoring/simulation
             r[name]["identical_but_outcome_differs"] = sum(1 for u in ud if u[fld]["arm"][0] is None and u["Y"]["arm"] != u["Y"]["B"])
         res_arms[f"{m}:{c}:{arm}"] = r
+    # W54 compensation effect: restore_recal_<X> (rebuilt mixed precision) vs restore_<X> (post-hoc swap), paired units
+    compensation = {}
+    for (m, c, arm), us in sorted(units.items()):
+        if not arm.startswith("restore_recal_"):
+            continue
+        plain = arm.replace("restore_recal_", "restore_", 1)
+        if (m, c, plain) not in units:
+            continue
+        boot = boots[group(c)]
+        pl = {(u["task"], u["block"]): u for u in units[(m, c, plain)]}
+        joint = [{"task": u["task"], "block": u["block"],
+                  "Y": {"recal": u["Y"]["arm"], "plain": pl[(u["task"], u["block"])]["Y"]["arm"], "Q": u["Y"]["Q"], "B": u["Y"]["B"]}}
+                 for u in us if (u["task"], u["block"]) in pl]
+        if not joint:
+            continue
+        cf = {"recal_minus_plain": lambda y: y["recal"] - y["plain"],
+              "turnover_B_recal_minus_plain": lambda y: int(y["recal"] != y["B"]) - int(y["plain"] != y["B"]),
+              "recal_vs_plain_turnover": lambda y: int(y["recal"] != y["plain"])}
+        compensation[f"{m}:{c}:{plain[len('restore_'):]}"] = {
+            "n_units": len(joint), "pp": {k: summarise(*stat(joint, f)) for k, f in cf.items()},
+            "recal": {"success": res_arms[f"{m}:{c}:{arm}"]["pp"]["success_arm"], "gap_closed": res_arms[f"{m}:{c}:{arm}"]["gap_closed"]["est"],
+                      "turnover_closed": res_arms[f"{m}:{c}:{arm}"]["turnover_closed"]},
+            "plain": {"success": res_arms[f"{m}:{c}:{plain}"]["pp"]["success_arm"], "gap_closed": res_arms[f"{m}:{c}:{plain}"]["gap_closed"]["est"],
+                      "turnover_closed": res_arms[f"{m}:{c}:{plain}"]["turnover_closed"]}}
     res = {"analysis": "analysis/fork/analyze_restore_eval.py", "input_fingerprint": fp,
            "snapshot": {"id": snap.get("snapshot_id"), "path": str(Path(a.snapshot).resolve()), "sha256": sha256(a.snapshot)},
            "script": {"path": str(Path(__file__).resolve()), "sha256": script_sha,
@@ -307,7 +333,7 @@ def main():
            "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
            "bootstrap": {"B": a.B, "seed": SEED, "scheme": "tasks, then blocks within task; draws shared by all arms"},
            "success_definition": {"retail/airline": "DB success", "telecom": "official task-basis success"},
-           "arms": res_arms, "skipped": skipped, "input_files": files, "seconds": round(time.time() - t0, 1)}
+           "arms": res_arms, "compensation": compensation, "skipped": skipped, "input_files": files, "seconds": round(time.time() - t0, 1)}
     utc = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
     jp = OUT / f"restore_eval_{utc}.json"
     jp.write_text(json.dumps(res, indent=1, default=lambda o: o.item() if hasattr(o, "item") else str(o)))
@@ -351,6 +377,18 @@ def main():
         else:
             row += "n/a | n/a | n/a | n/a | n/a | n/a |"
         L.append(row)
+    if compensation:
+        L += ["", "## restore (post-hoc swap) vs restore_recal (rebuilt mixed precision), W54", "",
+              "Plain restore swaps BF16 modules into the finished Q, so downstream quantized layers see inputs they were not "
+              "calibrated for. restore_recal re-runs the sequential GPTQ/AWQ around the kept modules. Compensation effect = "
+              "recal - plain on paired units (pp).", "",
+              "| cell:arm | units | success plain | success recal | recal - plain | gap closed plain / recal | "
+              "turnover closed plain / recal | T(BF16) recal - plain |", "|---|---|---|---|---|---|---|---|"]
+        for k, v in compensation.items():
+            p = v["pp"]
+            L.append(f"| {k} | {v['n_units']} | {v['plain']['success']['est']:.1f} | {v['recal']['success']['est']:.1f} | "
+                     f"{f(p['recal_minus_plain'])} | {v['plain']['gap_closed']} / {v['recal']['gap_closed']} | "
+                     f"{g(v['plain']['turnover_closed'])} / {g(v['recal']['turnover_closed'])} | {f(p['turnover_B_recal_minus_plain'])} |")
     tel = {k: v for k, v in res_arms.items() if v.get("persona")}
     if tel:
         L += ["", "## Telecom cell(s), by persona (W53)", "",

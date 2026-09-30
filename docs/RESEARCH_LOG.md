@@ -10,6 +10,35 @@ Newest first.
 
 ---
 
+## W54 — `restore_recal`: rebuilt mixed precision around the kept modules (fixes the sequential-compensation confound); 16 W3 tasks queued (2026-09-30)
+**TL;DR** Plain `restore` arms swap BF16 modules into a finished true-sequential GPTQ/AWQ checkpoint. The downstream quantized modules were calibrated on quantized-upstream inputs, so the swap breaks their compensation, and the absolute recovery is confounded (the user caught this; confirmed in `cloq/quantize.py`).
+- **New kind `restore_recal`:** the arm's modules stay BF16, and the base's sequential GPTQ/AWQ is re-run for all other modules (same c1 manifest, settings, seed).
+- **Queued:** 16 tasks, 48 runs, on q4/q8 GPTQ-W3 × {early, middle, late, attn, mlp, rand_third_s1, rand_attn_s1, rand_mlp_s1}, blocks q3–q5, priority −14 (the same as the W3 plain arms). Estimated **~16 GPU-h** (range 10–25; W3 Q tasks with 3 runs took 0.9–1.0 GPU-h, and the recal build adds 7–11 min).
+- **Reporting:** `analyze_restore_eval.py` reports the compensation effect `restore_recal` − `restore` per arm.
+
+**Code**
+- `cloq/quantize.py`: `quantize_model(keep=…)` and `--keep <arm manifest>`. With no keep set the code path is unchanged, and rtn with `--keep` is refused.
+- `scripts/a6000/derived.py`: `build_recal`, built in node-local scratch and not cached, because the 16 arms would need ~190 GB. It has a per-tag registry on the files sha.
+- `scripts/a6000/worker.py`: `--keep` is passed through (1 hunk).
+- `scripts/a6000/make_tasks_perturb.py --recal`.
+
+**Tests** (`tests/test_perturb.py`, CPU tiny Qwen3, W3, GPTQ and AWQ): ALL PASS.
+- An empty keep set equals Q bit for bit, and two runs are deterministic.
+- keep = all equals BF16.
+- With layer 1 kept, layer 0 equals Q, and the downstream modules differ from the plain-restore arm: GPTQ 14/14; AWQ 13/14, where the unchanged module is one whose best AWQ exponent is 0, i.e. input-independent RTN.
+- With a single k_proj kept, its q/v siblings equal Q and o_proj changes.
+- Worker path: the base spec is re-run with `keep_manifest`, and the registry is written and re-checked.
+
+**Analysis**
+- New "restore vs restore_recal" table: success of each family, recal − plain, gap closed and turnover closed for both, and the T(BF16) difference.
+- Pairing was verified with an aliased recal arm (= plain late): 255 units, difference 0.
+
+**Interpretation rule:** plain-family structured vs random comparisons stay fair (same kind of mismatch). Absolute recovery is read from `restore_recal`.
+
+**Evidence**
+- `docs/insights/PERTURBATION_PROTOCOL.md` §3c.
+- Queue: `/data/ziyangs/cloq_work/queue/todo/pert_q{4,8}_gptq_w3_restore_recal_*_q345.json`.
+
 ## W53 — Telecom W4-damage restoration cell (q8 AWQ-W4 c1): 9 arms queued on telecom dev f01–f06 (2026-09-30)
 **TL;DR** This adds a second damage regime and the only one at W4 bits: q8 AWQ-W4 d1 on telecom dev blocks. 9 arms, cached AWQ base, priority −9, 18 tasks / 54 runs, estimated **~41 GPU-h (range 32–66)**; `analyze_restore_eval.py` reports the telecom cell separately, with a persona breakdown.
 - **Arms:** early, middle, late, attn, mlp; `rand_{third,attn,mlp}_s1`; resid α 0.5.

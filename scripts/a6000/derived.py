@@ -35,7 +35,7 @@ ROOT = Path("/data/ziyangs/cloq")
 WORK = Path("/data/ziyangs/cloq_work")
 CACHE = Path(os.environ.get("CLOQ_CKPT_CACHE", str(WORK / "ckpt_cache")))
 MAX_GB = float(os.environ.get("CLOQ_CKPT_CACHE_MAX_GB", "100"))  # refuse to add a base beyond this (1 TB user quota)
-KINDS = ("restore", "resid")
+KINDS = ("restore", "resid", "restore_recal")
 BASE_KINDS = ("gptq", "awq", "rtn")
 PROTOCOL = "perturb-v1"
 STALE_LOCK = 3 * 3600
@@ -46,14 +46,14 @@ def canon(o) -> str:
 
 
 def manifest_sha(ck: dict) -> str | None:
-    if ck["kind"] != "restore":
+    if ck["kind"] not in ("restore", "restore_recal"):
         return None
     return json.load(open(ROOT / ck["manifest"]))["modules_sha256"]
 
 
 def spec_tag(model: str, revision: str, ck: dict) -> str:
     return hashlib.sha256(canon({"protocol": PROTOCOL, "model": model, "revision": revision, "ckpt": ck,
-                                 "manifest_modules_sha256": manifest_sha(ck) if ck.get("kind") == "restore" else None}
+                                 "manifest_modules_sha256": manifest_sha(ck) if ck.get("kind") in ("restore", "restore_recal") else None}
                                 ).encode()).hexdigest()[:12]
 
 
@@ -120,9 +120,51 @@ def cached_base(model: str, revision: str, base: dict, env, gpus, log, build_fn,
                 pass
 
 
+def build_recal(task: dict, revision: str, env, gpus, scratch: Path, log, build_fn, sha_fn) -> tuple[str, dict]:
+    """W54 restore_recal: re-run the base's sequential GPTQ/AWQ (same manifest, settings, seed) with the arm's modules
+    kept BF16, so every downstream quantized module is calibrated on the mixed-precision upstream. Built per task in
+    node-local scratch (one GPTQ/AWQ run: q4 ~7 min, q8 ~11 min); NOT kept in the persistent base cache, which would
+    need ~190 GB for the 16 W3 arms. Reproducibility is enforced by the per-tag registry (files sha) instead."""
+    ck, model = task["ckpt"], task["model"]
+    assert ck["base"]["kind"] in ("gptq", "awq"), "restore_recal needs a sequential (gptq/awq) base"
+    man = json.load(open(ROOT / ck["manifest"]))
+    assert man["model"] == model and man["source_revision"] == revision, f"manifest {ck['manifest']} is for another model"
+    assert ck.get("arm", man["arm"]) == man["arm"], f"ckpt arm {ck.get('arm')} != manifest arm {man['arm']}"
+    tag = spec_tag(model, revision, ck)
+    spec = dict(ck["base"], keep_manifest=ck["manifest"])
+    path, qmeta = build_fn({"id": task["id"], "model": model, "ckpt": spec}, env, gpus, scratch, log)
+    files = sha_fn(path)
+    wb = ck["base"].get("wbits", 4)
+    fam = "gptq" if ck["base"]["kind"] == "gptq" else "awq"
+    meta = {k: v for k, v in (qmeta or {}).items() if k not in ("per_tensor", "stats")}
+    meta.update({"protocol": PROTOCOL, "method": "restore_recal", "base_method": meta.get("method"), "spec": ck, "tag": tag,
+                 "arm": man["arm"], "family": man["family"], "seed": man.get("seed"), "manifest": ck["manifest"],
+                 "manifest_modules_sha256": man["modules_sha256"], "n_restored": len(man["modules"]),
+                 "budget": man["budget" if wb == 4 else f"budget_w{wb}"][fam], "content_sha256": files, "files_sha256": files,
+                 "equals": None, "base_cache": {"key": base_key(model, revision, ck["base"])},
+                 "note": "rebuilt mixed precision: kept linears BF16, all others re-calibrated sequentially (W54)"})
+    reg = CACHE / "registry" / f"{model}_{tag}.json"
+    reg.parent.mkdir(parents=True, exist_ok=True)
+    rec = {"tag": tag, "spec": ck, "content_sha256": files, "files_sha256": files, "equals": None,
+           "base_key": meta["base_cache"]["key"], "base_files_sha256": None, "host": socket.gethostname(), "time": time.time(),
+           "task": task["id"]}
+    if reg.exists():
+        want = json.load(open(reg))
+        if want["files_sha256"] != files:
+            raise RuntimeError(f"restore_recal {tag} not reproduced: files {files[:16]} vs registry {want['files_sha256'][:16]}")
+    else:
+        reg.write_text(json.dumps(rec, indent=1))
+    with open(CACHE / "registry.log", "a") as f:
+        f.write(json.dumps(rec) + "\n")
+    (Path(path) / "quantization.json").write_text(json.dumps(meta, indent=1))
+    return path, meta
+
+
 def build(task: dict, src: str, revision: str, env, gpus, scratch: Path, log, build_fn, sha_fn) -> tuple[str, dict]:
     ck, model = task["ckpt"], task["model"]
     assert ck["kind"] in KINDS
+    if ck["kind"] == "restore_recal":
+        return build_recal(task, revision, env, gpus, scratch, log, build_fn, sha_fn)
     if ck["kind"] == "restore":
         man = json.load(open(ROOT / ck["manifest"]))
         assert man["model"] == model and man["source_revision"] == revision, f"manifest {ck['manifest']} is for another model"

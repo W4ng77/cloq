@@ -325,6 +325,19 @@ def test_worker_path(tmp: Path):
         raise AssertionError("registry mismatch not detected")
     except RuntimeError as e:
         assert "not reproduced" in str(e)
+    # W54 restore_recal: the base spec is re-run with keep_manifest (fake builder here); registry written and re-checked
+    specs_seen = []
+
+    def fake_recal(task, env, gpus, scratch, log):
+        specs_seen.append(task["ckpt"])
+        return fake_build(task, env, gpus, scratch, log)
+    rc = {"kind": "restore_recal", "base": base, "arm": "late", "manifest": str(man_dir / "late.json")}
+    for tid in ("t_rc1", "t_rc2"):
+        path, meta = derived.build({"id": tid, "model": "tiny", "ckpt": rc}, str(W), "r0", ENV, ["0"], tmp / "scratch", log,
+                                   fake_recal, sha_fn)
+    assert specs_seen[0] == dict(base, keep_manifest=str(man_dir / "late.json")) and len(specs_seen) == 2
+    assert meta["method"] == "restore_recal" and meta["tag"] != out["t_late"][1] and meta["n_restored"] == 14
+    assert (tmp / "cache/registry" / f"tiny_{meta['tag']}.json").exists()
     RESULTS["worker_path"] = {"base_builds": len(calls), "tags": {k: v[1] for k, v in out.items()}}
 
 
@@ -349,6 +362,60 @@ def test_cli_w3_budget(tmp: Path):
     RESULTS["cli_w3_budget"] = {"sim_bits": meta["budget"]["sim_bits_per_linear_param"]}
 
 
+def _tiny_model():
+    from transformers import AutoModelForCausalLM, Qwen3Config
+    torch.manual_seed(0)
+    cfg = Qwen3Config(vocab_size=512, hidden_size=128, intermediate_size=256, num_hidden_layers=4, num_attention_heads=4,
+                      num_key_value_heads=2, head_dim=32, tie_word_embeddings=True, max_position_embeddings=256)
+    m = AutoModelForCausalLM.from_config(cfg).to(torch.bfloat16).eval()
+    m.config.use_cache = False
+    return m
+
+
+def test_restore_recal():
+    """W54: sequential re-calibration around a BF16 keep-set (cloq.quantize.quantize_model keep=...)."""
+    from cloq.quantize import quantize_model
+    g = torch.Generator().manual_seed(1)
+    seqs = [torch.randint(0, 512, (96,), generator=g).tolist() for _ in range(6)]
+    names = [f"model.layers.{l}.{m}.weight" for l in range(4) for m in P.MODULES]
+    out = {}
+    for method in ("gptq", "awq"):
+        def run(keep):
+            m = _tiny_model()
+            bf = {n: t.detach().clone() for n, t in m.state_dict().items() if n in names}
+            _, new = quantize_model(m, seqs, method=method, wbits=3, groupsize=128, percdamp=0.01, blocksize=128,
+                                    actorder=True, sym=False, device="cpu", awq_rows=256, keep=keep)
+            return bf, {n: new.get(n, bf[n]) for n in names}  # mixed checkpoint: kept (absent) linears stay BF16
+        bf, q = run(None)
+        _, q_empty = run(set())
+        assert all(bits_eq(q[n], q_empty[n]) for n in names), "empty keep-set must equal Q bit-exactly"
+        _, q_again = run(None)
+        assert all(bits_eq(q[n], q_again[n]) for n in names), "GPTQ/AWQ not deterministic on CPU"
+        _, q_all = run(set(names))
+        assert all(bits_eq(q_all[n], bf[n]) for n in names), "keep-set = all must equal BF16"
+        # keep layer 1 (a 'middle' block): layer 0 identical to Q, layers 2-3 differ from Q (= from plain restore)
+        keep = {n for n in names if ".layers.1." in n}
+        _, rc = run(keep)
+        plain = {n: (bf[n] if n in keep else q[n]) for n in names}
+        assert all(bits_eq(rc[n], bf[n]) for n in keep)
+        assert all(bits_eq(rc[n], q[n]) for n in names if ".layers.0." in n), "upstream must equal Q"
+        down = [n for n in names if ".layers.2." in n or ".layers.3." in n]
+        n_diff = sum(not bits_eq(rc[n], plain[n]) for n in down)
+        # GPTQ: every downstream module changes. AWQ: a module whose best scale exponent is 0 is plain RTN, which does not
+        # depend on its inputs, so it can legitimately equal Q; require that most change.
+        need = len(down) if method == "gptq" else (len(down) + 1) // 2
+        assert n_diff >= need, f"{method}: only {n_diff}/{len(down)} downstream modules re-calibrated"
+        # keep a single k_proj (random-arm style): same-group siblings q/v identical to Q, o_proj onwards differ
+        k1 = {"model.layers.1.self_attn.k_proj.weight"}
+        _, rk = run(k1)
+        for sib in ("q_proj", "v_proj"):
+            assert bits_eq(rk[f"model.layers.1.self_attn.{sib}.weight"], q[f"model.layers.1.self_attn.{sib}.weight"])
+        assert not bits_eq(rk["model.layers.1.self_attn.o_proj.weight"], q["model.layers.1.self_attn.o_proj.weight"])
+        assert all(bits_eq(rk[n], q[n]) for n in names if ".layers.0." in n)
+        out[method] = {"downstream_changed": f"{n_diff}/{len(down)}"}
+    RESULTS["restore_recal"] = out
+
+
 def main():
     test_bytes()
     for fn in (test_resid, test_restore, test_determinism, test_guard, test_worker_path, test_resid_w3, test_restore_w3,
@@ -358,6 +425,8 @@ def main():
         print("ok", fn.__name__, flush=True)
     test_real_manifests()
     print("ok test_real_manifests")
+    test_restore_recal()
+    print("ok test_restore_recal")
     od = ROOT / "tests/out"
     od.mkdir(exist_ok=True)
     (od / "test_perturb.json").write_text(json.dumps(RESULTS, indent=1))

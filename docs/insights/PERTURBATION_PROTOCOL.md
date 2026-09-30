@@ -162,6 +162,27 @@ The action level is not a same-state comparison once the wording has diverged; s
 - **Reporting:** `analyze_restore_eval.py` gives this cell its own bootstrap population and a persona breakdown (Hard / Easy / None). Success and behaviour are co-primary here.
 - **Caveat:** on f01–f06 the Q–BF16 gap itself is not significant (+2.7 pp [−2.9, +9.2]; Hard +7.3 [−2.6, +19.0]), and on f01–f03 it is exactly 0.
 
+## 3c. Plain restore vs `restore_recal` (W54)
+
+**Plain `restore` is a post-hoc swap.** It takes the finished Q and copies the chosen modules back to BF16. GPTQ and AWQ in `cloq/quantize.py` run true-sequential: every module is calibrated on inputs produced by the already-quantized upstream modules, so part of each module's quantization error is compensated downstream.
+
+**Why that matters.** After a swap, the downstream quantized modules see BF16-upstream inputs they were not calibrated for. Their compensation no longer matches, and the absolute recovery of a plain restore arm is confounded by this mismatch. It penalises early and middle arms most, since they have the most downstream modules. The byte-matched random arms carry the same kind of mismatch, so the structured vs random comparison within the plain family stays fair. The absolute "gap closed" does not.
+
+**`restore_recal` is the rebuilt mixed-precision checkpoint** a practitioner would build.
+- The chosen modules stay BF16.
+- The base's sequential GPTQ/AWQ is re-run for every remaining module: same calibration manifest (c1), same settings, same seed (`cloq.quantize --keep <arm manifest>`).
+- Downstream modules are therefore calibrated on the mixed-precision upstream.
+- Bits accounting is identical to the plain arm (`budget` / `budget_w3`).
+- Exactness (CPU tests on a tiny Qwen3):
+  - an empty keep set equals Q bit for bit;
+  - keep = all equals BF16;
+  - modules before the first kept module, and its same-group siblings, equal Q;
+  - GPTQ re-calibrates every downstream module (14/14 in the test). AWQ re-calibrates most: a module whose best scale exponent is 0 is plain RTN and legitimately does not change (13/14).
+- Cost: one GPTQ/AWQ run per arm (q4 ~7 min, q8 ~11 min).
+- Storage: built per task in node-local scratch. They are not added to the persistent base cache, where the 16 W3 arms would need ~190 GB. Reproducibility is enforced by the per-tag registry (files sha).
+
+**Compensation effect.** `analyze_restore_eval.py` reports `restore_recal_<X>` − `restore_<X>` on paired units, for success and for turnover to BF16.
+
 ## 4. What each arm can and cannot show
 
 | Arm | Can show | Cannot show |

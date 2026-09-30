@@ -12,7 +12,9 @@ build+serve+canary. Everything else prints only.
 
 --tel [f123 f456] [--write]: W53 telecom set, 9 arms on q8 AWQ-W4 c1, telecom dev blocks (priority -9).
 
-usage: python scripts/a6000/make_tasks_perturb.py [--smoke | --w3 | --tel [groups]] [--write]
+--recal [--write]: W54 restore_recal arms (8 per model) on the W3 cell, blocks q3-q5 (priority -14).
+
+usage: python scripts/a6000/make_tasks_perturb.py [--smoke | --w3 | --tel [groups] | --recal] [--write]
 """
 from __future__ import annotations
 
@@ -46,6 +48,10 @@ def specs(model: str, cell: str) -> dict[str, dict]:
                                     "manifest": str(p.relative_to(ROOT))}
     for a in ALPHAS:
         out[f"resid_a{a:g}"] = {"kind": "resid", "base": b, "alpha": a}
+    if b["kind"] in ("gptq", "awq"):  # W54: rebuilt mixed precision (kept modules BF16, the rest re-calibrated)
+        for p in sorted((ROOT / "manifests/perturb/restore_v1" / model).glob("*.json")):
+            out[f"restore_recal_{p.stem}"] = {"kind": "restore_recal", "base": b, "arm": p.stem,
+                                              "manifest": str(p.relative_to(ROOT))}
     return out
 
 
@@ -139,13 +145,49 @@ def tel_tasks(groups=("f123", "f456")) -> tuple[list[dict], list[str]]:
     return tasks, problems
 
 
+RECAL_ARMS = ["restore_recal_" + a for a in ("early", "middle", "late", "attn", "mlp", "rand_third_s1", "rand_attn_s1",
+                                             "rand_mlp_s1")]
+
+
+def recal_tasks() -> tuple[list[dict], list[str]]:
+    """W54: restore_recal arms on the W3 damage cell (same blocks/pairing as w3_tasks), priority -14."""
+    base_tasks, problems = w3_tasks()
+    blocks = {t["model"]: [(r["run_id"].rsplit("_", 1)[1], r["nonce"]) for r in t["runs"]] for t in base_tasks}
+    tasks = []
+    for m, bl in sorted(blocks.items()):
+        sp = specs(m, "gptq_w3")
+        for arm in RECAL_ARMS:
+            tasks.append({"id": f"pert_{m}_gptq_w3_{arm}_q345", "kind": "eval", "model": m, "arm": arm, "ckpt": sp[arm],
+                          "runs": [{"run_id": f"a6k2_pert_{m}_gptq_w3_{arm}_{b}", "task_file": "manifests/eval_tasks_v0.json",
+                                    "nonce": n} for b, n in bl],
+                          "priority": -14, "deps": [f"a6k2_{m}_calib_c1"],
+                          "note": "W54: restore_recal (kept modules BF16, remaining modules re-calibrated sequentially, "
+                                  "GPTQ-W3 c1) on q3-q5; compare with the plain restore arm of the same name"})
+    return tasks, problems
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--w3", action="store_true", help="W50 damage-regime arms (GPTQ-W3 base, blocks q3-q5)")
     ap.add_argument("--tel", nargs="*", default=None, help="W53 telecom arms; groups f123 / f456 (default both)")
+    ap.add_argument("--recal", action="store_true", help="W54 restore_recal arms on the W3 cell")
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args()
+    if a.recal:
+        ts, problems = recal_tasks()
+        for p in problems:
+            print("MISSING", p)
+        for t in ts:
+            print(t["id"], [r["run_id"] for r in t["runs"]])
+        if a.write:
+            for t in ts:
+                if not any((Q / d / f"{t['id']}.json").exists() for d in ("todo", "running", "done", "failed")):
+                    json.dump(t, open(Q / "todo" / f"{t['id']}.json", "w"), indent=1)
+                    print("queued", t["id"])
+        else:
+            print(f"{len(ts)} restore_recal tasks (dry run)")
+        return
     if a.tel is not None:
         ts, problems = tel_tasks(tuple(a.tel) or ("f123", "f456"))
         for p in problems:

@@ -187,8 +187,13 @@ def awq_search(lin: nn.Linear, xmean: torch.Tensor, X: torch.Tensor, wbits: int,
 @torch.no_grad()
 def quantize_model(model, seqs, method: str, wbits: int, groupsize: int, percdamp: float, blocksize: int,
                    actorder: bool, sym: bool, device: str = "cuda", row_idx=None, awq_rows: int = 4096,
-                   offload: bool | None = None) -> tuple[dict, dict]:
-    """Sequential layer-wise GPTQ / AWQ. Returns (stats, {disk tensor name: new bf16 weight})."""
+                   offload: bool | None = None, keep: set[str] | None = None) -> tuple[dict, dict]:
+    """Sequential layer-wise GPTQ / AWQ. Returns (stats, {disk tensor name: new bf16 weight}).
+
+    keep (W54 restore_recal): disk names of linears that stay BF16. They are neither observed nor quantized, and every
+    later module is calibrated on inputs produced by this mixed-precision upstream. keep=None or empty: identical code
+    path to plain GPTQ / AWQ."""
+    keep = set(keep or ())
     layers = model.model.layers
     n_tokens = sum(len(s) for s in seqs)
     hidden = model.config.get_text_config().hidden_size
@@ -210,7 +215,10 @@ def quantize_model(model, seqs, method: str, wbits: int, groupsize: int, percdam
     for li, layer in enumerate(layers):
         layer.to(device)
         layer_stats = {}
-        for group in groups_for(layer):
+        for full_group in groups_for(layer):
+            group = [n for n in full_group if f"model.layers.{li}.{n}.weight" not in keep]
+            if not group:  # the whole group stays BF16: nothing to calibrate
+                continue
             seq_pos = {"i": 0}
             handles = []
             if method == "gptq":
@@ -266,7 +274,7 @@ def quantize_model(model, seqs, method: str, wbits: int, groupsize: int, percdam
         layer.cpu()
         torch.cuda.empty_cache()
         stats[f"layers.{li}"] = layer_stats
-        mean_rel = sum(v["rel_weight_err"] for v in layer_stats.values()) / len(layer_stats)
+        mean_rel = sum(v["rel_weight_err"] for v in layer_stats.values()) / max(len(layer_stats), 1)
         logger.info(f"layer {li:2d} done ({time.time() - t_start:.0f}s) mean rel weight err {mean_rel:.4f}")
     del inputs
     gc.collect()
@@ -328,6 +336,8 @@ def main():
     ap.add_argument("--awq-rows", type=int, default=4096)
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--no-sha", action="store_true")
+    ap.add_argument("--keep", default=None, help="W54 restore_recal: arm manifest (cloq.perturb) whose modules stay BF16 "
+                    "while every other linear is calibrated sequentially on the mixed-precision upstream")
     ap.add_argument("--src", default=None, help="local BF16 checkpoint dir to quantize instead of the pinned source "
                     "model (e.g. a cloq.rotate output); its quantization.json is recorded as pre_transform")
     args = ap.parse_args()
@@ -356,6 +366,7 @@ def main():
                 meta["method"] = "QuaRot-" + meta["method"]
     t0 = time.time()
     if method == "rtn":
+        assert not args.keep, "--keep needs a sequential method (rtn has no calibration; use cloq.perturb restore)"
         stats, new = {}, {}
         for li, layer in enumerate(model.model.layers):
             for group in groups_for(layer):
@@ -365,13 +376,20 @@ def main():
                     new[f"model.layers.{li}.{name}.weight"] = lin.weight.detach().clone()
         meta["stats"] = {"per_linear": stats}
     else:
+        keep = None
+        if args.keep:
+            km = json.load(open(args.keep))
+            assert hashlib.sha256("\n".join(km["modules"]).encode()).hexdigest() == km["modules_sha256"], "keep manifest corrupted"
+            keep = set(km["modules"])
+            meta["restore_recal"] = {"manifest": args.keep, "arm": km.get("arm"), "modules_sha256": km["modules_sha256"],
+                                     "n_kept": len(keep), "note": "kept linears BF16; all others re-calibrated sequentially"}
         seqs, rows, man = load_calib_sequences(Path(args.calib))
         meta["calibration"] = {k: v for k, v in man.items() if k != "contexts"}
         meta["calibration"]["manifest_sha256"] = _sha256_file(Path(args.calib))
         meta["stats"], new = quantize_model(
             model, seqs, method=method, wbits=args.wbits, groupsize=q["group_size"], percdamp=q["percdamp"],
             blocksize=q["blocksize"], actorder=q["act_order"], sym=q["sym"], device=args.device,
-            row_idx=rows, awq_rows=args.awq_rows,
+            row_idx=rows, awq_rows=args.awq_rows, keep=keep,
         )
     del model
     gc.collect()

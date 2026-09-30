@@ -254,6 +254,8 @@ def build_ckpt(task, env, gpus, scratch: Path, log) -> tuple[str, dict | None]:
     else:
         cmd = [sys.executable, "-m", "cloq.quantize", "--method", ck["kind"], "--wbits", str(ck["wbits"]),
                "--calib", str(ROOT / ck["calib"]), "--out", str(out), "--no-sha"]
+        if ck.get("keep_manifest"):  # W54 restore_recal: these linears stay BF16, the rest re-calibrated (derived.py)
+            cmd += ["--keep", str(ROOT / ck["keep_manifest"])]
     r = subprocess.run(cmd, cwd=ROOT, env=e, stdout=log, stderr=subprocess.STDOUT)
     if rot is not None:
         shutil.rmtree(rot, ignore_errors=True)
