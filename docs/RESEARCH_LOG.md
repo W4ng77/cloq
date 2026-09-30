@@ -10,6 +10,22 @@ Newest first.
 
 ---
 
+## W66 — q8 W×K replication queued after pre-declaring the target (2026-09-30 16:45 PDT)
+**TL;DR** The q8 target contrast was committed before any q8 W×A×KV run existed:
+- **Commit:** `docs/insights/WAKV_PREREG.md`, **27a3802**; `analysis/ahook/analyze_wakv.py` sha256 7a60cfc455156832… at that commit.
+- **Contrast:** I_WK|A16 = Y_W4K4 − Y_W4K16r − Y_W16K4 + Y_W16K16r, two-sided.
+- **Intervals:** t over 6 block means is primary; crossed task × block is secondary.
+
+**Pairing check.** `a6k2_q8_bfpair_f01..f06` are all admitted with nonces matching `new_blocks` (snapshot 20260930T2311Z), so f01–f06 are used.
+
+**Queued at priority −12:** 8 tasks (4 cells × 2 block groups), 3 runs each, about 2,040 episodes, ≈ 9–12 GPU-h.
+- Cells: `a6k2_q8_quarot_{w16a16kv16r,w4a16kv16r,w16a16kv4,w4a16kv4}_fdev{123,456}`.
+- Each W4 task rebuilds the q8 QuaRot GPTQ checkpoint (21 min).
+
+**If the matched q4 kv16r cells show a different largest interaction,** that goes to q8 as exploratory and the q8 target is unchanged.
+Code: `make_tasks.py --only wakv` gains `--blocks` / `--suffix`.
+Evidence: `docs/insights/WAKV_PREREG.md`; `/data/ziyangs/cloq_work/queue/todo/a6k2_q8_quarot_*_fdev{123,456}.json`.
+
 ## W65 — W×A×KV confound fixed: matched KV16 cells with Q/K rotation (kv16r), paired interaction contrasts (2026-09-30 16:30 PDT)
 **TL;DR** GPT-6.1 was right. In `wakv_cells()` the online Q/K Hadamard was on only for KV4, so kv16 → kv4 changed
 rotation and quantization together. The KV4 × A4/W4 "interactions" in the first matrix are not identified.

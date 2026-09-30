@@ -223,7 +223,7 @@ def wakv_cells() -> dict:
     return out
 
 
-def wakv(m: str, prefix: str = "a6k2", cells=None, priority: float = -8, blocks=("f01", "f02", "f03")) -> list[dict]:
+def wakv(m: str, prefix: str = "a6k2", cells=None, priority: float = -8, blocks=("f01", "f02", "f03"), suffix: str = "") -> list[dict]:
     """One task per cell with one run per dev block (nonces: manifests/fork/dev_blocks_v1.json new_blocks), paired with
     <prefix>_<m>_bfpair_<block> and <prefix>_<m>_gptq_w4_d1_<block>."""
     nb = json.load(open(Path(__file__).resolve().parents[2] / "manifests/fork/dev_blocks_v1.json"))["new_blocks"]
@@ -231,7 +231,7 @@ def wakv(m: str, prefix: str = "a6k2", cells=None, priority: float = -8, blocks=
     for cell, (ck, senv) in wakv_cells().items():
         if cells and cell not in cells:
             continue
-        t = eval_task(f"{prefix}_{m}_{cell}_fdev", m, "wakv", ck, [run(f"{prefix}_{m}_{cell}_{b}", nonce=nb[b]) for b in blocks], priority)
+        t = eval_task(f"{prefix}_{m}_{cell}_fdev{suffix}", m, "wakv", ck, [run(f"{prefix}_{m}_{cell}_{b}", nonce=nb[b]) for b in blocks], priority)
         t["serve_env"] = dict(senv)
         out.append(t)
     return out
@@ -292,6 +292,8 @@ def main():
     ap.add_argument("--retry", action="store_true")
     ap.add_argument("--only", choices=["det", "matrix", "e5", "e3", "r1", "x1", "kvq", "w12", "aq", "wakv"], default=None)
     ap.add_argument("--runs", type=int, default=1, help="aq: fresh-nonce runs per cell")
+    ap.add_argument("--blocks", default="f01,f02,f03", help="wakv: dev blocks per task (comma list)")
+    ap.add_argument("--suffix", default="", help="wakv: task-id suffix, e.g. 456 for a second block group")
     ap.add_argument("--cells", nargs="*", default=None, help="w12: restrict to these cells")
     ap.add_argument("--no-openloop", action="store_true", help="w12: eval tasks only")
     ap.add_argument("--priority", type=float, default=-2, help="w12 priority")
@@ -323,7 +325,7 @@ def main():
         if a.only == "aq":
             tasks += aq(m, a.prefix, a.cells, a.runs, a.priority)
         if a.only == "wakv":
-            tasks += wakv(m, a.prefix, a.cells, a.priority)
+            tasks += wakv(m, a.prefix, a.cells, a.priority, tuple(a.blocks.split(",")), a.suffix)
         if a.only == "e5":
             tid = "" if a.prefix == "a6000" else a.prefix + "_"
             tasks += [dict(t, id=tid + t["id"]) for t in e5(m, a.prefix)]
