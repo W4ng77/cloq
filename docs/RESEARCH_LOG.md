@@ -10,6 +10,37 @@ Newest first.
 
 ---
 
+## W47 — q4 W×A×KV 2³ closed-loop matrix queued (QuaRot-rotated), A8/SQ anchors; q8 QuaRot validated (2026-09-30 05:00 PDT)
+**TL;DR** The three smoke evals finished with no errors and plausible success, so the matrix is queued.
+
+Smoke results, db_match over 85 tasks, run `_q1` (nonce 6d1f0b3e):
+
+| cell | db_match | notes |
+|---|---|---|
+| A8 | 0.341 | |
+| SmoothQuant W8A8 | 0.412 | |
+| QuaRot W4A4KV4 | 0.259 | 8/85 episodes hit max_steps; the task took 125 min |
+
+For comparison, the W12 q* references are RTN-W4 0.306, GPTQ-W4 0.408 and the null 0.359.
+
+Queued at priority −8, one task per cell with 3 runs on dev blocks f01–f03 (nonces from `manifests/fork/dev_blocks_v1.json`):
+- `a6k2_q4_quarot_w{16,4}a{16,4}kv{16,4}_fdev`: every cell is the QuaRot-rotated model with the online Hadamards on.
+  - W16 is the rotated BF16 model; W4 is QuaRot GPTQ.
+  - A4 means clip 0.9.
+  - KV4 means `CLOQ_KVQ_ROT=qk`, QuaRot format, clip 0.95. KV16 cells run without the KV hook, as in QuaRot, which rotates q/k only when K is quantized.
+- Anchors: `a6k2_q4_{aq_a8,sq_w8a8}_fdev`.
+
+Every run pairs with `a6k2_q4_bfpair_f0k` and `a6k2_q4_gptq_w4_d1_f0k` on the same nonces.
+- **Rotated control:** W16A16KV16 is not canary-equal to BF16 by construction (rotated weights). Its open-loop floor on q4 is mean |Δlogprob| 0.0065, flip 0.55%. The closed-loop paired contrast "rotated control − BF16" is reported by the analysis.
+- **Expect long tails in the A4 cells.** The W4A4KV4 smoke looped at the 32k context in one task for ~90 min.
+- **Analysis:** `python analysis/ahook/analyze_wakv.py --snapshot {snapshot}` writes `analysis/ahook/out/wakv_<UTC>.{json,md}`. It is idempotent by input fingerprint and tested with synthetic cells. It reports:
+  - per cell: success, cell − BF16 and turnover vs BF16 (fix/break);
+  - the factorial main effects and interactions of W, A and KV (s = ±1, effect = ¼Σ s·Y);
+  - the additivity gap and the rotated-control contrast;
+  - intervals from the analyze_dev hierarchical bootstrap (B 2000, seed 20261001).
+- **q8 QuaRot** (H_12 path) had never run on a GPU, so I queued `ahook_validate_quarot_q8` (priority −8.5). It passes; see METHOD_FIDELITY §6. q8 cells are unblocked but not queued.
+Evidence: `/data/ziyangs/cloq_work/queue/done/a6k2_q4_{aq_a8,sq_w8a8,quarot_w4a4kv4}.json`, `scripts/a6000/make_tasks.py --only wakv`, `analysis/ahook/analyze_wakv.py`, `analysis/ahook/validate_quarot_q8.json`.
+
 ## W49 — P2 fork tasks queued: KV8 core and stress cells (2026-09-30)
 **TL;DR** 14 fork tasks queued at priority −15 by `scripts/a6000/make_tasks_fork_p2.py`, estimated at ≈ 86–136 GPU-h in total (under the 150 GPU-h cut, so all stress cells are kept).
 - **KV8 core.** q4 and q8 × kvq_int8 (BF16 weights with the KV INT8 hook, same serve_env as the closed-loop runs) on 22 blocks per model: q1–q5 plus f01–f17, every block with an admitted Q run and an admitted nonce-paired BF16 run. 5 tasks per model, groups of 5, 5, 5, 5 and 2 blocks.

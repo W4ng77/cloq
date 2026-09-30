@@ -145,8 +145,15 @@ K-block mix was then changed from an unrolled 76x76 sum (14-minute compile) to a
 All QuaRot numbers above come from the rerun with the final code. Superseded partial rerun:
 `analysis/ahook/superseded/validate_quarot_w16_q4.json`.
 
-Not covered / unsupported: MoE models (q30a3; refused); TP > 1 with online Hadamards (refused); q8 validation not run
-(H_12 path unit-tested only); static (calibrated) activation scales (SmoothQuant O2/O3) not implemented, only the
+q8 (Qwen3-8B, H_12 for 12288 = QuaRot's own `get_had12`; hidden 4096 Sylvester) QuaRot suite, `analysis/ahook/validate_quarot_q8.json`
+(task `ahook_validate_quarot_q8`, 2026-09-30): passes.
+- coverage 144/144 and KV 36/36;
+- qr_w4a4kv4: 8/8 batch, 8/8 prefix-hit and 8/8 unchunked identical; causal 4500/4500;
+- HF invariance check: fp32 top-1 agreement 99.6%, bf16 98.4%;
+- mean |Δlogprob| / flip: W16A16 0.0044 / 0.27%, W16A8 0.012 / 0.78%, W16A4 0.157 / 5.3%, W16A16KV4 0.043 / 2.2%,
+  W4A16 0.080 / 3.1%, W4A4KV4 0.218 / 6.6%, and plain A4 without rotation 7.63 / 97%. All monotone.
+
+Not covered / unsupported: MoE models (q30a3; refused); TP > 1 with online Hadamards (refused); static (calibrated) activation scales (SmoothQuant O2/O3) not implemented, only the
 dynamic per-token variant used by the reference fake-quant code.
 
 ## 7 Evidence

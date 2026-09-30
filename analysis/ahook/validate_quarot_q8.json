@@ -1,0 +1,540 @@
+{
+ "model": "q8",
+ "suite": "quarot",
+ "canary_ref": "e340c7991fa5bc08",
+ "ref_run": "a6k2_q8_bf16",
+ "host": "node006",
+ "job": "49731",
+ "configs": {
+  "qr_w16a16": {
+   "env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_AQ_BITS": "16",
+    "CLOQ_AQ_HAD": "quarot"
+   },
+   "ckpt": "qr16",
+   "tests": {
+    "det": true,
+    "openloop": 150
+   },
+   "ckpt_method": "QuaRot-rotation (W16)",
+   "startup_s": 115,
+   "coverage": {
+    "engine_pid": "736890)",
+    "by_kind_action": {
+     "qkv:pass": 36,
+     "o:had_only": 36,
+     "gate_up:pass": 36,
+     "down:had_only": 36
+    },
+    "by_kind_class": {
+     "qkv:QKVParallelLinear": 36,
+     "o:RowParallelLinear": 36,
+     "gate_up:MergedColumnParallelLinear": 36,
+     "down:RowParallelLinear": 36
+    },
+    "n_quant": 0,
+    "n_had_only": 72,
+    "n_pass": 72,
+    "n_excluded": 0,
+    "kv_attention_hooked": 0,
+    "wrapped_lines": [
+     "pid=736623 wrapped vllm.model_executor.layers.linear: LinearBase.__init__, ColumnParallelLinear.forward, RowParallelLinear.forward bits=16 fmt=sym_quarot clip=1 group=-1 only=down,gate_up,o,qkv had=quarot tag=aq_b16_sym_quarot_c1_g-1_hquarot_all cache_root=/tmp/cloq_49731/vllm_cache/aq_b16_sym_quarot_c1_g-1_hquarot_all",
+     "pid=736890 wrapped vllm.model_executor.layers.linear: LinearBase.__init__, ColumnParallelLinear.forward, RowParallelLinear.forward bits=16 fmt=sym_quarot clip=1 group=-1 only=down,gate_up,o,qkv had=quarot tag=aq_b16_sym_quarot_c1_g-1_hquarot_all cache_root=/tmp/cloq_49731/vllm_cache/aq_b16_sym_quarot_c1_g-1_hquarot_all"
+    ]
+   },
+   "provenance": {
+    "vllm": "0.29.0",
+    "attention_backend": "FLASH_ATTN",
+    "flash_attn_version": "2",
+    "tensor_parallel_size": "1",
+    "prefix_caching": "True",
+    "chunked_prefill": "True",
+    "compile_ranges_endpoints": "[2048]",
+    "cudagraph_mode": "FULL_AND_PIECEWISE",
+    "cache_dirs": [
+     "/tmp/cloq_49731/vllm_cache/aq_b16_sym_quarot_c1_g-1_hquarot_all/torch_compile_cache/0327fbf3c5/rank_0_0/backbone"
+    ]
+   },
+   "canary": "41da4d3b4f9f94de",
+   "canary_eq_bf16": false,
+   "det": {
+    "n": 8,
+    "batch_eq_alone": 8,
+    "prefixhit_eq_alone": 8,
+    "ids_only_batch_eq": 8,
+    "mean_len": 41.5
+   },
+   "openloop": {
+    "n_decisions": 150,
+    "n_tokens": 8106,
+    "abs_d_mean": 0.004370085333549,
+    "abs_d_quantiles": {
+     "0.5": 0.0,
+     "0.9": 0.0022941802851855755,
+     "0.99": 0.10182286020517346
+    },
+    "frac_tokens_shifted": 0.1149765605724155,
+    "flip_rate": 0.002714038983469035,
+    "decision_any_flip": 0.11333333333333333
+   }
+  },
+  "qr_w16a8": {
+   "env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_AQ_BITS": "8",
+    "CLOQ_AQ_HAD": "quarot",
+    "CLOQ_AQ_CLIP": "0.9"
+   },
+   "ckpt": "qr16",
+   "tests": {
+    "openloop": 150
+   },
+   "ckpt_method": "QuaRot-rotation (W16)",
+   "startup_s": 130,
+   "coverage": {
+    "engine_pid": "738693)",
+    "by_kind_action": {
+     "qkv:quant": 36,
+     "o:quant": 36,
+     "gate_up:quant": 36,
+     "down:quant": 36
+    },
+    "by_kind_class": {
+     "qkv:QKVParallelLinear": 36,
+     "o:RowParallelLinear": 36,
+     "gate_up:MergedColumnParallelLinear": 36,
+     "down:RowParallelLinear": 36
+    },
+    "n_quant": 144,
+    "n_had_only": 0,
+    "n_pass": 0,
+    "n_excluded": 0,
+    "kv_attention_hooked": 0,
+    "wrapped_lines": [
+     "pid=738417 wrapped vllm.model_executor.layers.linear: LinearBase.__init__, ColumnParallelLinear.forward, RowParallelLinear.forward bits=8 fmt=sym_quarot clip=0.9 group=-1 only=down,gate_up,o,qkv had=quarot tag=aq_b8_sym_quarot_c0.9_g-1_hquarot_all cache_root=/tmp/cloq_49731/vllm_cache/aq_b8_sym_quarot_c0.9_g-1_hquarot_all",
+     "pid=738693 wrapped vllm.model_executor.layers.linear: LinearBase.__init__, ColumnParallelLinear.forward, RowParallelLinear.forward bits=8 fmt=sym_quarot clip=0.9 group=-1 only=down,gate_up,o,qkv had=quarot tag=aq_b8_sym_quarot_c0.9_g-1_hquarot_all cache_root=/tmp/cloq_49731/vllm_cache/aq_b8_sym_quarot_c0.9_g-1_hquarot_all"
+    ]
+   },
+   "provenance": {
+    "vllm": "0.29.0",
+    "attention_backend": "FLASH_ATTN",
+    "flash_attn_version": "2",
+    "tensor_parallel_size": "1",
+    "prefix_caching": "True",
+    "chunked_prefill": "True",
+    "compile_ranges_endpoints": "[2048]",
+    "cudagraph_mode": "FULL_AND_PIECEWISE",
+    "cache_dirs": [
+     "/tmp/cloq_49731/vllm_cache/aq_b8_sym_quarot_c0.9_g-1_hquarot_all/torch_compile_cache/0327fbf3c5/rank_0_0/backbone"
+    ]
+   },
+   "canary": "278716aaf3334b12",
+   "canary_eq_bf16": false,
+   "openloop": {
+    "n_decisions": 150,
+    "n_tokens": 8106,
+    "abs_d_mean": 0.01158411310880543,
+    "abs_d_quantiles": {
+     "0.5": 0.0,
+     "0.9": 0.011490837495028987,
+     "0.99": 0.24930166114330293
+    },
+    "frac_tokens_shifted": 0.15766099185788304,
+    "flip_rate": 0.007772020725388601,
+    "decision_any_flip": 0.25333333333333335
+   }
+  },
+  "qr_w16a4": {
+   "env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_AQ_BITS": "4",
+    "CLOQ_AQ_FMT": "sym_quarot",
+    "CLOQ_AQ_CLIP": "0.9",
+    "CLOQ_AQ_HAD": "quarot"
+   },
+   "ckpt": "qr16",
+   "tests": {
+    "openloop": 150
+   },
+   "ckpt_method": "QuaRot-rotation (W16)",
+   "startup_s": 130,
+   "coverage": {
+    "engine_pid": "740370)",
+    "by_kind_action": {
+     "qkv:quant": 36,
+     "o:quant": 36,
+     "gate_up:quant": 36,
+     "down:quant": 36
+    },
+    "by_kind_class": {
+     "qkv:QKVParallelLinear": 36,
+     "o:RowParallelLinear": 36,
+     "gate_up:MergedColumnParallelLinear": 36,
+     "down:RowParallelLinear": 36
+    },
+    "n_quant": 144,
+    "n_had_only": 0,
+    "n_pass": 0,
+    "n_excluded": 0,
+    "kv_attention_hooked": 0,
+    "wrapped_lines": [
+     "pid=740102 wrapped vllm.model_executor.layers.linear: LinearBase.__init__, ColumnParallelLinear.forward, RowParallelLinear.forward bits=4 fmt=sym_quarot clip=0.9 group=-1 only=down,gate_up,o,qkv had=quarot tag=aq_b4_sym_quarot_c0.9_g-1_hquarot_all cache_root=/tmp/cloq_49731/vllm_cache/aq_b4_sym_quarot_c0.9_g-1_hquarot_all",
+     "pid=740370 wrapped vllm.model_executor.layers.linear: LinearBase.__init__, ColumnParallelLinear.forward, RowParallelLinear.forward bits=4 fmt=sym_quarot clip=0.9 group=-1 only=down,gate_up,o,qkv had=quarot tag=aq_b4_sym_quarot_c0.9_g-1_hquarot_all cache_root=/tmp/cloq_49731/vllm_cache/aq_b4_sym_quarot_c0.9_g-1_hquarot_all"
+    ]
+   },
+   "provenance": {
+    "vllm": "0.29.0",
+    "attention_backend": "FLASH_ATTN",
+    "flash_attn_version": "2",
+    "tensor_parallel_size": "1",
+    "prefix_caching": "True",
+    "chunked_prefill": "True",
+    "compile_ranges_endpoints": "[2048]",
+    "cudagraph_mode": "FULL_AND_PIECEWISE",
+    "cache_dirs": [
+     "/tmp/cloq_49731/vllm_cache/aq_b4_sym_quarot_c0.9_g-1_hquarot_all/torch_compile_cache/0327fbf3c5/rank_0_0/backbone"
+    ]
+   },
+   "canary": "807d163c16a748fd",
+   "canary_eq_bf16": false,
+   "openloop": {
+    "n_decisions": 150,
+    "n_tokens": 8106,
+    "abs_d_mean": 0.15711799388971562,
+    "abs_d_quantiles": {
+     "0.5": 0.0,
+     "0.9": 0.1517598406478763,
+     "0.99": 3.7723665146064724
+    },
+    "frac_tokens_shifted": 0.23131014063656552,
+    "flip_rate": 0.052553663952627686,
+    "decision_any_flip": 0.5066666666666667
+   }
+  },
+  "qr_w16a16kv4": {
+   "env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_AQ_BITS": "16",
+    "CLOQ_AQ_HAD": "quarot",
+    "CLOQ_KVQ_BITS": "4",
+    "CLOQ_KVQ_ROT": "qk",
+    "CLOQ_KVQ_FMT": "quarot",
+    "CLOQ_KVQ_KCLIP": "0.95",
+    "CLOQ_KVQ_VCLIP": "0.95"
+   },
+   "ckpt": "qr16",
+   "tests": {
+    "openloop": 150
+   },
+   "ckpt_method": "QuaRot-rotation (W16)",
+   "startup_s": 150,
+   "coverage": {
+    "engine_pid": "742057)",
+    "by_kind_action": {
+     "qkv:pass": 36,
+     "o:had_only": 36,
+     "gate_up:pass": 36,
+     "down:had_only": 36
+    },
+    "by_kind_class": {
+     "qkv:QKVParallelLinear": 36,
+     "o:RowParallelLinear": 36,
+     "gate_up:MergedColumnParallelLinear": 36,
+     "down:RowParallelLinear": 36
+    },
+    "n_quant": 0,
+    "n_had_only": 72,
+    "n_pass": 72,
+    "n_excluded": 0,
+    "kv_attention_hooked": 36,
+    "wrapped_lines": [
+     "pid=741791 wrapped vllm.model_executor.layers.linear: LinearBase.__init__, ColumnParallelLinear.forward, RowParallelLinear.forward bits=16 fmt=sym_quarot clip=1 group=-1 only=down,gate_up,o,qkv had=quarot tag=aq_b16_sym_quarot_c1_g-1_hquarot_all cache_root=/tmp/cloq_49731/vllm_cache/kvq_b4_rqk_kv_quarot_kc0.95_vc0.95__aq_b16_sym_quarot_c1_g-1_hquarot_all",
+     "pid=741791 wrapped vllm.model_executor.layers.attention.attention.Attention.forward: bits=4 rot=1 rot_mode=qk fmt=quarot kclip=0.95 vclip=0.95 tag=kvq_b4_rqk_kv_quarot_kc0.95_vc0.95 which=kv cache_root=/tmp/cloq_49731/vllm_cache/kvq_b4_rqk_kv_quarot_kc0.95_vc0.95__aq_b16_sym_quarot_c1_g-1_hquarot_all",
+     "pid=742057 wrapped vllm.model_executor.layers.linear: LinearBase.__init__, ColumnParallelLinear.forward, RowParallelLinear.forward bits=16 fmt=sym_quarot clip=1 group=-1 only=down,gate_up,o,qkv had=quarot tag=aq_b16_sym_quarot_c1_g-1_hquarot_all cache_root=/tmp/cloq_49731/vllm_cache/kvq_b4_rqk_kv_quarot_kc0.95_vc0.95__aq_b16_sym_quarot_c1_g-1_hquarot_all",
+     "pid=742057 wrapped vllm.model_executor.layers.attention.attention.Attention.forward: bits=4 rot=1 rot_mode=qk fmt=quarot kclip=0.95 vclip=0.95 tag=kvq_b4_rqk_kv_quarot_kc0.95_vc0.95 which=kv cache_root=/tmp/cloq_49731/vllm_cache/kvq_b4_rqk_kv_quarot_kc0.95_vc0.95__aq_b16_sym_quarot_c1_g-1_hquarot_all"
+    ]
+   },
+   "provenance": {
+    "vllm": "0.29.0",
+    "attention_backend": "FLASH_ATTN",
+    "flash_attn_version": "2",
+    "tensor_parallel_size": "1",
+    "prefix_caching": "True",
+    "chunked_prefill": "True",
+    "compile_ranges_endpoints": "[2048]",
+    "cudagraph_mode": "FULL_AND_PIECEWISE",
+    "cache_dirs": [
+     "/tmp/cloq_49731/vllm_cache/kvq_b4_rqk_kv_quarot_kc0.95_vc0.95__aq_b16_sym_quarot_c1_g-1_hquarot_all/torch_compile_cache/5a7d29416b/rank_0_0/backbone"
+    ]
+   },
+   "canary": "97c76a05b7ad1c8e",
+   "canary_eq_bf16": false,
+   "openloop": {
+    "n_decisions": 150,
+    "n_tokens": 8106,
+    "abs_d_mean": 0.043102984153244685,
+    "abs_d_quantiles": {
+     "0.5": 0.0,
+     "0.9": 0.04685628164410591,
+     "0.99": 0.825970824193954
+    },
+    "frac_tokens_shifted": 0.20910436713545522,
+    "flip_rate": 0.02171231186775228,
+    "decision_any_flip": 0.36666666666666664
+   }
+  },
+  "qr_w4a16": {
+   "env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_AQ_BITS": "16",
+    "CLOQ_AQ_HAD": "quarot"
+   },
+   "ckpt": "qr4",
+   "tests": {
+    "openloop": 150
+   },
+   "ckpt_method": "QuaRot",
+   "startup_s": 65,
+   "coverage": {
+    "engine_pid": "751577)",
+    "by_kind_action": {
+     "qkv:pass": 36,
+     "o:had_only": 36,
+     "gate_up:pass": 36,
+     "down:had_only": 36
+    },
+    "by_kind_class": {
+     "qkv:QKVParallelLinear": 36,
+     "o:RowParallelLinear": 36,
+     "gate_up:MergedColumnParallelLinear": 36,
+     "down:RowParallelLinear": 36
+    },
+    "n_quant": 0,
+    "n_had_only": 72,
+    "n_pass": 72,
+    "n_excluded": 0,
+    "kv_attention_hooked": 0,
+    "wrapped_lines": [
+     "pid=751577 wrapped vllm.model_executor.layers.linear: LinearBase.__init__, ColumnParallelLinear.forward, RowParallelLinear.forward bits=16 fmt=sym_quarot clip=1 group=-1 only=down,gate_up,o,qkv had=quarot tag=aq_b16_sym_quarot_c1_g-1_hquarot_all cache_root=/tmp/cloq_49731/vllm_cache/aq_b16_sym_quarot_c1_g-1_hquarot_all"
+    ]
+   },
+   "provenance": {
+    "vllm": "0.29.0",
+    "attention_backend": "FLASH_ATTN",
+    "flash_attn_version": "2",
+    "tensor_parallel_size": "1",
+    "prefix_caching": "True",
+    "chunked_prefill": "True",
+    "compile_ranges_endpoints": "[2048]",
+    "cudagraph_mode": "FULL_AND_PIECEWISE",
+    "cache_dirs": [
+     "/tmp/cloq_49731/vllm_cache/aq_b16_sym_quarot_c1_g-1_hquarot_all/torch_compile_cache/f8975796bc/rank_0_0/backbone"
+    ]
+   },
+   "canary": "9280f6298ee27d98",
+   "canary_eq_bf16": false,
+   "openloop": {
+    "n_decisions": 150,
+    "n_tokens": 8106,
+    "abs_d_mean": 0.07958292444173821,
+    "abs_d_quantiles": {
+     "0.5": 0.0,
+     "0.9": 0.06082583504915237,
+     "0.99": 1.7397348382949829
+    },
+    "frac_tokens_shifted": 0.20453984702689365,
+    "flip_rate": 0.03145817912657291,
+    "decision_any_flip": 0.47333333333333333
+   }
+  },
+  "qr_w4a4kv4": {
+   "env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_AQ_BITS": "4",
+    "CLOQ_AQ_FMT": "sym_quarot",
+    "CLOQ_AQ_CLIP": "0.9",
+    "CLOQ_AQ_HAD": "quarot",
+    "CLOQ_KVQ_BITS": "4",
+    "CLOQ_KVQ_ROT": "qk",
+    "CLOQ_KVQ_FMT": "quarot",
+    "CLOQ_KVQ_KCLIP": "0.95",
+    "CLOQ_KVQ_VCLIP": "0.95"
+   },
+   "ckpt": "qr4",
+   "tests": {
+    "det": true,
+    "chunk": true,
+    "causal": true,
+    "openloop": 150
+   },
+   "ckpt_method": "QuaRot",
+   "startup_s": 155,
+   "coverage": {
+    "engine_pid": "754297)",
+    "by_kind_action": {
+     "qkv:quant": 36,
+     "o:quant": 36,
+     "gate_up:quant": 36,
+     "down:quant": 36
+    },
+    "by_kind_class": {
+     "qkv:QKVParallelLinear": 36,
+     "o:RowParallelLinear": 36,
+     "gate_up:MergedColumnParallelLinear": 36,
+     "down:RowParallelLinear": 36
+    },
+    "n_quant": 144,
+    "n_had_only": 0,
+    "n_pass": 0,
+    "n_excluded": 0,
+    "kv_attention_hooked": 36,
+    "wrapped_lines": [
+     "pid=753985 wrapped vllm.model_executor.layers.linear: LinearBase.__init__, ColumnParallelLinear.forward, RowParallelLinear.forward bits=4 fmt=sym_quarot clip=0.9 group=-1 only=down,gate_up,o,qkv had=quarot tag=aq_b4_sym_quarot_c0.9_g-1_hquarot_all cache_root=/tmp/cloq_49731/vllm_cache/kvq_b4_rqk_kv_quarot_kc0.95_vc0.95__aq_b4_sym_quarot_c0.9_g-1_hquarot_all",
+     "pid=753985 wrapped vllm.model_executor.layers.attention.attention.Attention.forward: bits=4 rot=1 rot_mode=qk fmt=quarot kclip=0.95 vclip=0.95 tag=kvq_b4_rqk_kv_quarot_kc0.95_vc0.95 which=kv cache_root=/tmp/cloq_49731/vllm_cache/kvq_b4_rqk_kv_quarot_kc0.95_vc0.95__aq_b4_sym_quarot_c0.9_g-1_hquarot_all",
+     "pid=754297 wrapped vllm.model_executor.layers.linear: LinearBase.__init__, ColumnParallelLinear.forward, RowParallelLinear.forward bits=4 fmt=sym_quarot clip=0.9 group=-1 only=down,gate_up,o,qkv had=quarot tag=aq_b4_sym_quarot_c0.9_g-1_hquarot_all cache_root=/tmp/cloq_49731/vllm_cache/kvq_b4_rqk_kv_quarot_kc0.95_vc0.95__aq_b4_sym_quarot_c0.9_g-1_hquarot_all",
+     "pid=754297 wrapped vllm.model_executor.layers.attention.attention.Attention.forward: bits=4 rot=1 rot_mode=qk fmt=quarot kclip=0.95 vclip=0.95 tag=kvq_b4_rqk_kv_quarot_kc0.95_vc0.95 which=kv cache_root=/tmp/cloq_49731/vllm_cache/kvq_b4_rqk_kv_quarot_kc0.95_vc0.95__aq_b4_sym_quarot_c0.9_g-1_hquarot_all"
+    ]
+   },
+   "provenance": {
+    "vllm": "0.29.0",
+    "attention_backend": "FLASH_ATTN",
+    "flash_attn_version": "2",
+    "tensor_parallel_size": "1",
+    "prefix_caching": "True",
+    "chunked_prefill": "True",
+    "compile_ranges_endpoints": "[2048]",
+    "cudagraph_mode": "FULL_AND_PIECEWISE",
+    "cache_dirs": [
+     "/tmp/cloq_49731/vllm_cache/kvq_b4_rqk_kv_quarot_kc0.95_vc0.95__aq_b4_sym_quarot_c0.9_g-1_hquarot_all/torch_compile_cache/13821b774c/rank_0_0/backbone"
+    ]
+   },
+   "canary": "053e3d60a5357f8e",
+   "canary_eq_bf16": false,
+   "det": {
+    "n": 8,
+    "batch_eq_alone": 8,
+    "prefixhit_eq_alone": 8,
+    "ids_only_batch_eq": 8,
+    "mean_len": 42.75
+   },
+   "causal": [
+    {
+     "n_prefix": 1500,
+     "n_full": 2600,
+     "identical_positions": 1500,
+     "n_positions": 1500
+    },
+    {
+     "n_prefix": 1500,
+     "n_full": 2600,
+     "identical_positions": 1500,
+     "n_positions": 1500
+    },
+    {
+     "n_prefix": 1500,
+     "n_full": 2600,
+     "identical_positions": 1500,
+     "n_positions": 1500
+    }
+   ],
+   "openloop": {
+    "n_decisions": 150,
+    "n_tokens": 8106,
+    "abs_d_mean": 0.21766644105360372,
+    "abs_d_quantiles": {
+     "0.5": 0.0,
+     "0.9": 0.24907756164222955,
+     "0.99": 4.754970733528137
+    },
+    "frac_tokens_shifted": 0.2551196644460893,
+    "flip_rate": 0.06575376264495436,
+    "decision_any_flip": 0.6466666666666666
+   },
+   "chunk": {
+    "n": 8,
+    "unchunked_eq_chunked": 8,
+    "ids_only_eq": 8,
+    "max_num_batched_tokens": 34816,
+    "canary_nochunk": "053e3d60a5357f8e",
+    "provenance": {
+     "vllm": "0.29.0",
+     "attention_backend": "FLASH_ATTN",
+     "flash_attn_version": "2",
+     "tensor_parallel_size": "1",
+     "prefix_caching": "True",
+     "chunked_prefill": "True",
+     "compile_ranges_endpoints": "[34816]",
+     "cudagraph_mode": "FULL_AND_PIECEWISE",
+     "cache_dirs": [
+      "/tmp/cloq_49731/vllm_cache/kvq_b4_rqk_kv_quarot_kc0.95_vc0.95__aq_b4_sym_quarot_c0.9_g-1_hquarot_all/torch_compile_cache/60cc8bb480/rank_0_0/backbone"
+     ]
+    }
+   }
+  },
+  "noqr_w16a4": {
+   "env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_AQ_BITS": "4",
+    "CLOQ_AQ_CLIP": "0.9"
+   },
+   "ckpt": null,
+   "tests": {
+    "openloop": 150
+   },
+   "startup_s": 95,
+   "coverage": {
+    "engine_pid": "759465)",
+    "by_kind_action": {
+     "qkv:quant": 36,
+     "o:quant": 36,
+     "gate_up:quant": 36,
+     "down:quant": 36
+    },
+    "by_kind_class": {
+     "qkv:QKVParallelLinear": 36,
+     "o:RowParallelLinear": 36,
+     "gate_up:MergedColumnParallelLinear": 36,
+     "down:RowParallelLinear": 36
+    },
+    "n_quant": 144,
+    "n_had_only": 0,
+    "n_pass": 0,
+    "n_excluded": 0,
+    "kv_attention_hooked": 0,
+    "wrapped_lines": [
+     "pid=759188 wrapped vllm.model_executor.layers.linear: LinearBase.__init__, ColumnParallelLinear.forward, RowParallelLinear.forward bits=4 fmt=sym_quarot clip=0.9 group=-1 only=down,gate_up,o,qkv had=0 tag=aq_b4_sym_quarot_c0.9_g-1_h0_all cache_root=/tmp/cloq_49731/vllm_cache/aq_b4_sym_quarot_c0.9_g-1_h0_all",
+     "pid=759465 wrapped vllm.model_executor.layers.linear: LinearBase.__init__, ColumnParallelLinear.forward, RowParallelLinear.forward bits=4 fmt=sym_quarot clip=0.9 group=-1 only=down,gate_up,o,qkv had=0 tag=aq_b4_sym_quarot_c0.9_g-1_h0_all cache_root=/tmp/cloq_49731/vllm_cache/aq_b4_sym_quarot_c0.9_g-1_h0_all"
+    ]
+   },
+   "provenance": {
+    "vllm": "0.29.0",
+    "attention_backend": "FLASH_ATTN",
+    "flash_attn_version": "2",
+    "tensor_parallel_size": "1",
+    "prefix_caching": "True",
+    "chunked_prefill": "True",
+    "compile_ranges_endpoints": "[2048]",
+    "cudagraph_mode": "FULL_AND_PIECEWISE",
+    "cache_dirs": [
+     "/tmp/cloq_49731/vllm_cache/aq_b4_sym_quarot_c0.9_g-1_h0_all/torch_compile_cache/903ac20c49/rank_0_0/backbone"
+    ]
+   },
+   "canary": "8662f534067175ca",
+   "canary_eq_bf16": false,
+   "openloop": {
+    "n_decisions": 150,
+    "n_tokens": 8106,
+    "abs_d_mean": 7.630323384566365,
+    "abs_d_quantiles": {
+     "0.5": 7.144094467163086,
+     "0.9": 12.990792990875244,
+     "0.99": 16.55344014434814
+    },
+    "frac_tokens_shifted": 1.0,
+    "flip_rate": 0.9668147051566741,
+    "decision_any_flip": 1.0
+   }
+  }
+ }
+}
