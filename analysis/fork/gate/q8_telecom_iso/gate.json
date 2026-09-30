@@ -1,0 +1,1502 @@
+{
+ "protocol": "fork-v1",
+ "spec": {
+  "mode": "gate",
+  "q_blocks": [
+   [
+    "a6k2_q8_tel_awq_w4_q1",
+    "telecom"
+   ]
+  ],
+  "b_blocks": [
+   [
+    "a6k2_tel_det_q8_a",
+    "telecom"
+   ]
+  ],
+  "search_tasks_per_block": 6,
+  "n_states": 3,
+  "n_iso": 3,
+  "n_bb_noop": 2,
+  "idcheck_n": 8,
+  "concurrency": 8,
+  "out": "analysis/fork/gate/q8_telecom_iso"
+ },
+ "servers": {
+  "B": {
+   "gpu": "4",
+   "port": 8105,
+   "pid": 4173218,
+   "ckpt": {
+    "kind": "bf16"
+   },
+   "path": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "4",
+    "8105",
+    "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.90",
+   "hook_coverage": null,
+   "canary": "e340c7991fa5bc08",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-8B",
+     "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+     "chat_template_kwargs": {
+      "enable_thinking": false
+     }
+    },
+    "weights": "Qwen/Qwen3-8B@b968826d9c46dd6066d109eabc6255188de91218",
+    "ckpt": {
+     "kind": "bf16"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 16,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "0d4bf272db1da1c5",
+   "canary_ref_ok": true
+  },
+  "Q": {
+   "gpu": "5",
+   "port": 8205,
+   "pid": 4178857,
+   "ckpt": {
+    "kind": "awq",
+    "wbits": 4,
+    "calib": "manifests/a6k2/q8/calib_fp_traj_c1.json"
+   },
+   "path": "/tmp/cloq_49672/ckpt_fork_gate_q8_telecom_iso_Q",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "5",
+    "8205",
+    "/tmp/cloq_49672/ckpt_fork_gate_q8_telecom_iso_Q",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.90",
+   "hook_coverage": null,
+   "canary": "db76cab1da9700d1",
+   "ckpt_sha256": "9ce71e4aa7a5b1afcb2a1358e16e673e62313f32e8ca8877d22b87b3622135d9",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-8B",
+     "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+     "chat_template_kwargs": {
+      "enable_thinking": false
+     }
+    },
+    "weights": "sha256:9ce71e4aa7a5b1afcb2a1358e16e673e62313f32e8ca8877d22b87b3622135d9",
+    "ckpt": {
+     "kind": "awq",
+     "wbits": 4,
+     "calib": "manifests/a6k2/q8/calib_fp_traj_c1.json"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 4,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "b8608c0732512633"
+  },
+  "same_effective_config": false,
+  "q_quantization": {
+   "method": "AWQ-style",
+   "wbits": 4,
+   "group_size": 128,
+   "sym": false,
+   "percdamp": 0.01,
+   "blocksize": 128,
+   "act_order": true,
+   "true_sequential": true,
+   "source_model": "Qwen/Qwen3-8B",
+   "source_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+   "storage": "fake-quant bf16",
+   "calibration_manifest": "/data/ziyangs/cloq/manifests/a6k2/q8/calib_fp_traj_c1.json",
+   "moe_experts": null,
+   "calibration": {
+    "protocol": "v1",
+    "arm": "fp_traj",
+    "draw": "c1",
+    "draw_seed": 20260729,
+    "budget_rows": 64000,
+    "total_rows": 64000,
+    "rows_within_budget": true,
+    "n_states": 57,
+    "n_tasks": 57,
+    "rows_per_state_min": 1122,
+    "rows_per_state_max": 1123,
+    "median_context_tokens": 6310.0,
+    "total_context_tokens": 401883,
+    "states_by_source": {
+     "fp": 57
+    },
+    "states_by_depth_quartile": {
+     "0": 15,
+     "1": 14,
+     "2": 13,
+     "3": 15
+    },
+    "states_by_domain": {
+     "retail": 39,
+     "airline": 18
+    },
+    "fp_run": "a6k2_q8_bf16_cal",
+    "q_run": null,
+    "novelty": null,
+    "notes": [],
+    "split_file_sha256": "7d1671154c37375990fd01999df2257e1bef916ee8201158b850846876315a79",
+    "manifest_sha256": "f371bcafe843e95327a3f7bc72325862405ead830bf456fea172656ebb9fc108"
+   },
+   "seconds_quantize": 635.1478388309479,
+   "n_expert_tensors_rtn": 0
+  },
+  "user_base": "http://127.0.0.1:8000/v1",
+  "host": "node005",
+  "job": "49672"
+ },
+ "bases": {
+  "B": "http://127.0.0.1:8105/v1",
+  "Q": "http://127.0.0.1:8205/v1"
+ },
+ "user_base": "http://127.0.0.1:8000/v1",
+ "metrics_start": {
+  "B": {
+   "vllm:prefix_cache_queries_total": 2790.0,
+   "vllm:prefix_cache_hits_total": 1392.0,
+   "vllm:prompt_tokens_total": 2790.0,
+   "vllm:generation_tokens_total": 96.0,
+   "vllm:request_success_total": 2.0
+  },
+  "Q": {
+   "vllm:prefix_cache_queries_total": 1395.0,
+   "vllm:prefix_cache_hits_total": 0.0,
+   "vllm:prompt_tokens_total": 1395.0,
+   "vllm:generation_tokens_total": 48.0,
+   "vllm:request_success_total": 1.0
+  }
+ },
+ "idcheck_Q": {
+  "label": "Q",
+  "base": "http://127.0.0.1:8205/v1",
+  "n": 8,
+  "n_match": 8,
+  "rows": [
+   {
+    "run_id": "a6k2_q8_tel_awq_w4_q1",
+    "domain": "telecom",
+    "task_id": "[mms_issue]airplane_mode_on|bad_network_preference|break_apn_mms_setting|data_usage_exceeded[PERSONA:Hard]",
+    "t": 12,
+    "n_prompt": 8327,
+    "n_completion": 33,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_tel_awq_w4_q1",
+    "domain": "telecom",
+    "task_id": "[service_issue]break_apn_settings|lock_sim_card_pin|overdue_bill_suspension|unseat_sim_card[PERSONA:Easy]",
+    "t": 13,
+    "n_prompt": 10114,
+    "n_completion": 62,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_tel_awq_w4_q1",
+    "domain": "telecom",
+    "task_id": "[service_issue]break_apn_settings|overdue_bill_suspension|unseat_sim_card[PERSONA:Hard]",
+    "t": 65,
+    "n_prompt": 32753,
+    "n_completion": 425,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_tel_awq_w4_q1",
+    "domain": "telecom",
+    "task_id": "[service_issue]lock_sim_card_pin|overdue_bill_suspension[PERSONA:Easy]",
+    "t": 27,
+    "n_prompt": 14014,
+    "n_completion": 396,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_tel_awq_w4_q1",
+    "domain": "telecom",
+    "task_id": "[mms_issue]airplane_mode_on|bad_network_preference|bad_wifi_calling|break_apn_mms_setting|break_app_both_permissions|unseat_sim_card|user_abroad_roaming_enabled_off[PERSONA:Hard]",
+    "t": 17,
+    "n_prompt": 9443,
+    "n_completion": 33,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_tel_awq_w4_q1",
+    "domain": "telecom",
+    "task_id": "[service_issue]break_apn_settings|lock_sim_card_pin|overdue_bill_suspension[PERSONA:Easy]",
+    "t": 42,
+    "n_prompt": 19742,
+    "n_completion": 288,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_tel_awq_w4_q1",
+    "domain": "telecom",
+    "task_id": "[mms_issue]bad_network_preference|bad_wifi_calling|break_app_both_permissions|data_usage_exceeded|user_abroad_roaming_disabled_off[PERSONA:Hard]",
+    "t": 24,
+    "n_prompt": 10080,
+    "n_completion": 55,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_tel_awq_w4_q1",
+    "domain": "telecom",
+    "task_id": "[mms_issue]airplane_mode_on|bad_network_preference|break_app_both_permissions|data_usage_exceeded|unseat_sim_card|user_abroad_roaming_disabled_on[PERSONA:Hard]",
+    "t": 26,
+    "n_prompt": 10783,
+    "n_completion": 100,
+    "match": true
+   }
+  ],
+  "ok": true
+ },
+ "idcheck_B": {
+  "label": "B",
+  "base": "http://127.0.0.1:8105/v1",
+  "n": 8,
+  "n_match": 8,
+  "rows": [
+   {
+    "run_id": "a6k2_tel_det_q8_a",
+    "domain": "telecom",
+    "task_id": "[mobile_data_issue]data_usage_exceeded|user_abroad_roaming_enabled_off[PERSONA:Easy]",
+    "t": 7,
+    "n_prompt": 8763,
+    "n_completion": 17,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_tel_det_q8_a",
+    "domain": "telecom",
+    "task_id": "[mms_issue]break_app_sms_permission|data_usage_exceeded|user_abroad_roaming_disabled_on[PERSONA:None]",
+    "t": 5,
+    "n_prompt": 7451,
+    "n_completion": 25,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_tel_det_q8_a",
+    "domain": "telecom",
+    "task_id": "[service_issue]airplane_mode_on|unseat_sim_card[PERSONA:None]",
+    "t": 0,
+    "n_prompt": 7220,
+    "n_completion": 34,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_tel_det_q8_a",
+    "domain": "telecom",
+    "task_id": "[mms_issue]airplane_mode_on|bad_network_preference|break_apn_mms_setting|break_app_storage_permission[PERSONA:None]",
+    "t": 3,
+    "n_prompt": 7688,
+    "n_completion": 37,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_tel_det_q8_a",
+    "domain": "telecom",
+    "task_id": "[mobile_data_issue]bad_network_preference|bad_vpn|user_abroad_roaming_disabled_off[PERSONA:Hard]",
+    "t": 1,
+    "n_prompt": 7298,
+    "n_completion": 49,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_tel_det_q8_a",
+    "domain": "telecom",
+    "task_id": "[mobile_data_issue]airplane_mode_on|bad_network_preference[PERSONA:Hard]",
+    "t": 12,
+    "n_prompt": 9095,
+    "n_completion": 17,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_tel_det_q8_a",
+    "domain": "telecom",
+    "task_id": "[mms_issue]airplane_mode_on|bad_network_preference|bad_wifi_calling|break_apn_mms_setting|break_app_both_permissions|data_mode_off|data_usage_exceeded|unseat_sim_card|user_abroad_roaming_disabled_off[PERSONA:Hard]",
+    "t": 6,
+    "n_prompt": 7807,
+    "n_completion": 25,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_tel_det_q8_a",
+    "domain": "telecom",
+    "task_id": "[service_issue]airplane_mode_on|break_apn_settings|lock_sim_card_pin|overdue_bill_suspension[PERSONA:Hard]",
+    "t": 20,
+    "n_prompt": 11177,
+    "n_completion": 197,
+    "match": true
+   }
+  ],
+  "ok": true
+ },
+ "search": {
+  "seconds": 32.78728699684143,
+  "rows": [
+   {
+    "run_id": "a6k2_q8_tel_awq_w4_q1",
+    "domain": "telecom",
+    "task_id": "[service_issue]break_apn_settings|lock_sim_card_pin|overdue_bill_suspension|unseat_sim_card[PERSONA:Easy]",
+    "n_decisions": 24,
+    "orig_termination": "user_stop",
+    "orig_official_reward": 0.0,
+    "orig_db_match": false,
+    "steps": [
+     {
+      "t": 0,
+      "category": "same",
+      "shadow_seconds": 3.7583820819854736,
+      "n_prompt": 7234,
+      "n_completion_b": 34
+     },
+     {
+      "t": 1,
+      "category": "same",
+      "shadow_seconds": 1.8618624210357666,
+      "n_prompt": 7533,
+      "n_completion_b": 26
+     },
+     {
+      "t": 2,
+      "category": "same",
+      "shadow_seconds": 1.8069627285003662,
+      "n_prompt": 7709,
+      "n_completion_b": 26
+     },
+     {
+      "t": 3,
+      "category": "same",
+      "shadow_seconds": 1.8686115741729736,
+      "n_prompt": 7906,
+      "n_completion_b": 26
+     },
+     {
+      "t": 4,
+      "category": "same",
+      "shadow_seconds": 2.405461072921753,
+      "n_prompt": 8093,
+      "n_completion_b": 35
+     },
+     {
+      "t": 5,
+      "category": "same",
+      "shadow_seconds": 2.2215161323547363,
+      "n_prompt": 9052,
+      "n_completion_b": 29
+     },
+     {
+      "t": 6,
+      "category": "class:talk->act",
+      "shadow_seconds": 1.914116621017456,
+      "n_prompt": 9248,
+      "n_completion_b": 26
+     }
+    ],
+    "t_star": 6,
+    "category": "class:talk->act",
+    "exclusion": null,
+    "state_id": "5860d1c152306917",
+    "q_replay": {
+     "completion_ids_ok": true,
+     "prompt_ids_ok": true,
+     "action_ok": true
+    },
+    "io_check": {
+     "history_sha_ok": true,
+     "env_hash_ok": true,
+     "task_sha_ok": true,
+     "env_hash_loaded": {
+      "db": "aad6f2f4527d73683cc0c097cb47d3af5f353aacafac295936eba4d6684a7842",
+      "user_db": "8077f70614c643409c7c63e11eb3b44525aed390b3c3f95d8a38c3d7e7a46930"
+     }
+    },
+    "budget": {
+     "steps_used": 13,
+     "errors_used": 0,
+     "max_steps": 200,
+     "max_errors": 10,
+     "steps_left": 187,
+     "errors_left": 10
+    },
+    "shadow_seconds_total": 15.836912631988525,
+    "no_divergence": false
+   },
+   {
+    "run_id": "a6k2_q8_tel_awq_w4_q1",
+    "domain": "telecom",
+    "task_id": "[mms_issue]airplane_mode_on|bad_network_preference|bad_wifi_calling|break_apn_mms_setting|break_app_storage_permission|data_mode_off|data_usage_exceeded|unseat_sim_card|user_abroad_roaming_disabled_on[PERSONA:Easy]",
+    "n_decisions": 11,
+    "orig_termination": "user_stop",
+    "orig_official_reward": 0.0,
+    "orig_db_match": false,
+    "steps": [
+     {
+      "t": 0,
+      "category": "invalid_tool",
+      "shadow_seconds": 3.643287420272827,
+      "n_prompt": 7226,
+      "n_completion_b": 32
+     }
+    ],
+    "t_star": 0,
+    "category": "invalid_tool",
+    "exclusion": null,
+    "state_id": "65a722c738ef4b9a",
+    "q_replay": {
+     "completion_ids_ok": true,
+     "prompt_ids_ok": true,
+     "action_ok": true
+    },
+    "io_check": {
+     "history_sha_ok": true,
+     "env_hash_ok": true,
+     "task_sha_ok": true,
+     "env_hash_loaded": {
+      "db": "1442db41dcd064cf99d61a98abd746f5f7f49e0a682c84194a88ef9e417e2e39",
+      "user_db": "790ffe625351d9348214440f18ef26d0324e310a223eb02b8f21522acaffbb09"
+     }
+    },
+    "budget": {
+     "steps_used": 1,
+     "errors_used": 0,
+     "max_steps": 200,
+     "max_errors": 10,
+     "steps_left": 199,
+     "errors_left": 10
+    },
+    "shadow_seconds_total": 3.643287420272827,
+    "no_divergence": false
+   },
+   {
+    "run_id": "a6k2_q8_tel_awq_w4_q1",
+    "domain": "telecom",
+    "task_id": "[mms_issue]break_app_storage_permission|data_usage_exceeded[PERSONA:Easy]",
+    "n_decisions": 28,
+    "orig_termination": "user_stop",
+    "orig_official_reward": 0.0,
+    "orig_db_match": false,
+    "steps": [
+     {
+      "t": 0,
+      "category": "invalid_tool",
+      "shadow_seconds": 3.7704014778137207,
+      "n_prompt": 7240,
+      "n_completion_b": 34
+     }
+    ],
+    "t_star": 0,
+    "category": "invalid_tool",
+    "exclusion": null,
+    "state_id": "4df6a56bd5a862b0",
+    "q_replay": {
+     "completion_ids_ok": true,
+     "prompt_ids_ok": true,
+     "action_ok": true
+    },
+    "io_check": {
+     "history_sha_ok": true,
+     "env_hash_ok": true,
+     "task_sha_ok": true,
+     "env_hash_loaded": {
+      "db": "2041156d154b2ed1c5fe372ef44b0aca85555a4c91c82def969bc1d61d8c7548",
+      "user_db": "e9d7cde3d4e3b72677288b33da3f8411e7a1b00d902aa8c5fe47751dfefd059b"
+     }
+    },
+    "budget": {
+     "steps_used": 1,
+     "errors_used": 0,
+     "max_steps": 200,
+     "max_errors": 10,
+     "steps_left": 199,
+     "errors_left": 10
+    },
+    "shadow_seconds_total": 3.7704014778137207,
+    "no_divergence": false
+   },
+   {
+    "run_id": "a6k2_q8_tel_awq_w4_q1",
+    "domain": "telecom",
+    "task_id": "[mms_issue]airplane_mode_on|bad_network_preference|bad_wifi_calling|break_app_sms_permission|data_mode_off|data_usage_exceeded|unseat_sim_card|user_abroad_roaming_disabled_off[PERSONA:None]",
+    "n_decisions": 17,
+    "orig_termination": "too_many_errors",
+    "orig_official_reward": 0.0,
+    "orig_db_match": null,
+    "steps": [
+     {
+      "t": 0,
+      "category": "tool_args",
+      "shadow_seconds": 3.3767855167388916,
+      "n_prompt": 7216,
+      "n_completion_b": 27
+     }
+    ],
+    "t_star": 0,
+    "category": "tool_args",
+    "exclusion": null,
+    "state_id": "5eb755ab84465835",
+    "q_replay": {
+     "completion_ids_ok": true,
+     "prompt_ids_ok": true,
+     "action_ok": true
+    },
+    "io_check": {
+     "history_sha_ok": true,
+     "env_hash_ok": true,
+     "task_sha_ok": true,
+     "env_hash_loaded": {
+      "db": "1442db41dcd064cf99d61a98abd746f5f7f49e0a682c84194a88ef9e417e2e39",
+      "user_db": "49845de2335bb3bf8236fbbfe6ff8e416cbe9688f7a7b5b06fd9805d86e79130"
+     }
+    },
+    "budget": {
+     "steps_used": 1,
+     "errors_used": 0,
+     "max_steps": 200,
+     "max_errors": 10,
+     "steps_left": 199,
+     "errors_left": 10
+    },
+    "shadow_seconds_total": 3.3767855167388916,
+    "no_divergence": false
+   },
+   {
+    "run_id": "a6k2_q8_tel_awq_w4_q1",
+    "domain": "telecom",
+    "task_id": "[mms_issue]bad_wifi_calling|break_apn_mms_setting|break_app_both_permissions|data_mode_off|data_usage_exceeded|user_abroad_roaming_disabled_off[PERSONA:None]",
+    "n_decisions": 14,
+    "orig_termination": "too_many_errors",
+    "orig_official_reward": 0.0,
+    "orig_db_match": null,
+    "steps": [
+     {
+      "t": 0,
+      "category": "tool_args",
+      "shadow_seconds": 3.3612449169158936,
+      "n_prompt": 7216,
+      "n_completion_b": 27
+     }
+    ],
+    "t_star": 0,
+    "category": "tool_args",
+    "exclusion": null,
+    "state_id": "0c2d3393f9057aa6",
+    "q_replay": {
+     "completion_ids_ok": true,
+     "prompt_ids_ok": true,
+     "action_ok": true
+    },
+    "io_check": {
+     "history_sha_ok": true,
+     "env_hash_ok": true,
+     "task_sha_ok": true,
+     "env_hash_loaded": {
+      "db": "1442db41dcd064cf99d61a98abd746f5f7f49e0a682c84194a88ef9e417e2e39",
+      "user_db": "873a8ef1c244064e192a79860694841e970ef106a615d88f4a94e25751fd6c76"
+     }
+    },
+    "budget": {
+     "steps_used": 1,
+     "errors_used": 0,
+     "max_steps": 200,
+     "max_errors": 10,
+     "steps_left": 199,
+     "errors_left": 10
+    },
+    "shadow_seconds_total": 3.3612449169158936,
+    "no_divergence": false
+   },
+   {
+    "run_id": "a6k2_q8_tel_awq_w4_q1",
+    "domain": "telecom",
+    "task_id": "[service_issue]break_apn_settings|lock_sim_card_pin|overdue_bill_suspension[PERSONA:Easy]",
+    "n_decisions": 70,
+    "orig_termination": "max_steps",
+    "orig_official_reward": 0.0,
+    "orig_db_match": null,
+    "steps": [
+     {
+      "t": 0,
+      "category": "same",
+      "shadow_seconds": 3.5418028831481934,
+      "n_prompt": 7234,
+      "n_completion_b": 34
+     },
+     {
+      "t": 1,
+      "category": "same",
+      "shadow_seconds": 1.8272080421447754,
+      "n_prompt": 7533,
+      "n_completion_b": 26
+     },
+     {
+      "t": 2,
+      "category": "same",
+      "shadow_seconds": 1.8045194149017334,
+      "n_prompt": 7709,
+      "n_completion_b": 26
+     },
+     {
+      "t": 3,
+      "category": "same",
+      "shadow_seconds": 1.765669584274292,
+      "n_prompt": 7906,
+      "n_completion_b": 26
+     },
+     {
+      "t": 4,
+      "category": "same",
+      "shadow_seconds": 2.4030568599700928,
+      "n_prompt": 8093,
+      "n_completion_b": 35
+     },
+     {
+      "t": 5,
+      "category": "same",
+      "shadow_seconds": 2.1757795810699463,
+      "n_prompt": 9052,
+      "n_completion_b": 29
+     },
+     {
+      "t": 6,
+      "category": "class:talk->act",
+      "shadow_seconds": 1.8052353858947754,
+      "n_prompt": 9248,
+      "n_completion_b": 26
+     }
+    ],
+    "t_star": 6,
+    "category": "class:talk->act",
+    "exclusion": null,
+    "state_id": "a93b1bfb3b57b9f0",
+    "q_replay": {
+     "completion_ids_ok": true,
+     "prompt_ids_ok": true,
+     "action_ok": true
+    },
+    "io_check": {
+     "history_sha_ok": true,
+     "env_hash_ok": true,
+     "task_sha_ok": true,
+     "env_hash_loaded": {
+      "db": "aad6f2f4527d73683cc0c097cb47d3af5f353aacafac295936eba4d6684a7842",
+      "user_db": "71ecc154da2a00733ae91cfad4abc1387f713abbe54b0275ec17929b7d8a9413"
+     }
+    },
+    "budget": {
+     "steps_used": 13,
+     "errors_used": 0,
+     "max_steps": 200,
+     "max_errors": 10,
+     "steps_left": 187,
+     "errors_left": 10
+    },
+    "shadow_seconds_total": 15.323271751403809,
+    "no_divergence": false
+   }
+  ]
+ },
+ "fwd_seconds": 825.166671037674,
+ "states": [
+  {
+   "state_id": "5860d1c152306917",
+   "domain": "telecom",
+   "task_id": "[service_issue]break_apn_settings|lock_sim_card_pin|overdue_bill_suspension|unseat_sim_card[PERSONA:Easy]",
+   "t": 6,
+   "category": "class:talk->act",
+   "budget": {
+    "steps_used": 13,
+    "errors_used": 0,
+    "max_steps": 200,
+    "max_errors": 10,
+    "steps_left": 187,
+    "errors_left": 10
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "env_hash_ok": true,
+    "task_sha_ok": true,
+    "env_hash_loaded": {
+     "db": "aad6f2f4527d73683cc0c097cb47d3af5f353aacafac295936eba4d6684a7842",
+     "user_db": "8077f70614c643409c7c63e11eb3b44525aed390b3c3f95d8a38c3d7e7a46930"
+    }
+   },
+   "a_noop_QQ": {
+    "ok": true,
+    "suffix_messages": true,
+    "prompt_token_ids": true,
+    "termination": true,
+    "reward": true,
+    "db_match": true,
+    "official_reward": true,
+    "budget_final": true,
+    "env_hash_final_vs_orig_replay": true,
+    "env_hash_replay_vs_live": true,
+    "env_hash_init": true,
+    "history_prefix": true,
+    "n_prompts": 18,
+    "n_prompts_orig": 18
+   },
+   "d_budget": {
+    "QQ": {
+     "ok": true,
+     "live": [
+      69,
+      6
+     ],
+     "recount": [
+      69,
+      6
+     ],
+     "state_used": [
+      13,
+      0
+     ],
+     "termination": "user_stop",
+     "term_consistent": true,
+     "note": "tau2 would restart the counters at 0 (counters_tau2_default); the fork restores them"
+    },
+    "BB": {
+     "ok": true,
+     "live": [
+      71,
+      3
+     ],
+     "recount": [
+      71,
+      3
+     ],
+     "state_used": [
+      13,
+      0
+     ],
+     "termination": "user_stop",
+     "term_consistent": true,
+     "note": "tau2 would restart the counters at 0 (counters_tau2_default); the fork restores them"
+    },
+    "BQ": {
+     "ok": true,
+     "live": [
+      101,
+      5
+     ],
+     "recount": [
+      101,
+      5
+     ],
+     "state_used": [
+      13,
+      0
+     ],
+     "termination": "user_stop",
+     "term_consistent": true,
+     "note": "tau2 would restart the counters at 0 (counters_tau2_default); the fork restores them"
+    },
+    "QB": {
+     "ok": true,
+     "live": [
+      71,
+      5
+     ],
+     "recount": [
+      71,
+      5
+     ],
+     "state_used": [
+      13,
+      0
+     ],
+     "termination": "user_stop",
+     "term_consistent": true,
+     "note": "tau2 would restart the counters at 0 (counters_tau2_default); the fork restores them"
+    }
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "QB_first_from_server": true,
+    "QB_first_api_base": "http://127.0.0.1:8105/v1",
+    "QB_first_n_prompt": 9545,
+    "BQ_first_prompt_eq_BB_first": true,
+    "BQ_first_from_server": true,
+    "BQ_first_api_base": "http://127.0.0.1:8205/v1",
+    "ok": true,
+    "applicable": true
+   },
+   "outcomes": {
+    "QQ": {
+     "termination_reason": "user_stop",
+     "reward": 0.0,
+     "db_match": false,
+     "official_reward": 0.0,
+     "step_count_final": 69,
+     "num_errors_final": 6,
+     "duration": 95.98153495788574,
+     "error": null
+    },
+    "BB": {
+     "termination_reason": "user_stop",
+     "reward": 1.0,
+     "db_match": false,
+     "official_reward": 1.0,
+     "step_count_final": 71,
+     "num_errors_final": 3,
+     "duration": 160.67769193649292,
+     "error": null
+    },
+    "BQ": {
+     "termination_reason": "user_stop",
+     "reward": 1.0,
+     "db_match": false,
+     "official_reward": 1.0,
+     "step_count_final": 101,
+     "num_errors_final": 5,
+     "duration": 335.8736472129822,
+     "error": null
+    },
+    "QB": {
+     "termination_reason": "user_stop",
+     "reward": 0.0,
+     "db_match": false,
+     "official_reward": 0.0,
+     "step_count_final": 71,
+     "num_errors_final": 5,
+     "duration": 230.84529495239258,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "4df6a56bd5a862b0",
+   "domain": "telecom",
+   "task_id": "[mms_issue]break_app_storage_permission|data_usage_exceeded[PERSONA:Easy]",
+   "t": 0,
+   "category": "invalid_tool",
+   "budget": {
+    "steps_used": 1,
+    "errors_used": 0,
+    "max_steps": 200,
+    "max_errors": 10,
+    "steps_left": 199,
+    "errors_left": 10
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "env_hash_ok": true,
+    "task_sha_ok": true,
+    "env_hash_loaded": {
+     "db": "2041156d154b2ed1c5fe372ef44b0aca85555a4c91c82def969bc1d61d8c7548",
+     "user_db": "e9d7cde3d4e3b72677288b33da3f8411e7a1b00d902aa8c5fe47751dfefd059b"
+    }
+   },
+   "a_noop_QQ": {
+    "ok": true,
+    "suffix_messages": true,
+    "prompt_token_ids": true,
+    "termination": true,
+    "reward": true,
+    "db_match": true,
+    "official_reward": true,
+    "budget_final": true,
+    "env_hash_final_vs_orig_replay": true,
+    "env_hash_replay_vs_live": true,
+    "env_hash_init": true,
+    "history_prefix": true,
+    "n_prompts": 28,
+    "n_prompts_orig": 28
+   },
+   "d_budget": {
+    "QQ": {
+     "ok": true,
+     "live": [
+      83,
+      8
+     ],
+     "recount": [
+      83,
+      8
+     ],
+     "state_used": [
+      1,
+      0
+     ],
+     "termination": "user_stop",
+     "term_consistent": true,
+     "note": "tau2 would restart the counters at 0 (counters_tau2_default); the fork restores them"
+    },
+    "BB": {
+     "ok": true,
+     "live": [
+      73,
+      10
+     ],
+     "recount": [
+      73,
+      10
+     ],
+     "state_used": [
+      1,
+      0
+     ],
+     "termination": "too_many_errors",
+     "term_consistent": true,
+     "note": "tau2 would restart the counters at 0 (counters_tau2_default); the fork restores them"
+    },
+    "BQ": {
+     "ok": true,
+     "live": [
+      83,
+      8
+     ],
+     "recount": [
+      83,
+      8
+     ],
+     "state_used": [
+      1,
+      0
+     ],
+     "termination": "user_stop",
+     "term_consistent": true,
+     "note": "tau2 would restart the counters at 0 (counters_tau2_default); the fork restores them"
+    },
+    "QB": {
+     "ok": true,
+     "live": [
+      31,
+      10
+     ],
+     "recount": [
+      31,
+      10
+     ],
+     "state_used": [
+      1,
+      0
+     ],
+     "termination": "too_many_errors",
+     "term_consistent": true,
+     "note": "tau2 would restart the counters at 0 (counters_tau2_default); the fork restores them"
+    }
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "QB_first_from_server": true,
+    "QB_first_api_base": "http://127.0.0.1:8105/v1",
+    "QB_first_n_prompt": 7300,
+    "BQ_first_prompt_eq_BB_first": true,
+    "BQ_first_from_server": true,
+    "BQ_first_api_base": "http://127.0.0.1:8205/v1",
+    "ok": true,
+    "applicable": true
+   },
+   "outcomes": {
+    "QQ": {
+     "termination_reason": "user_stop",
+     "reward": 0.0,
+     "db_match": false,
+     "official_reward": 0.0,
+     "step_count_final": 83,
+     "num_errors_final": 8,
+     "duration": 177.83653450012207,
+     "error": null
+    },
+    "BB": {
+     "termination_reason": "too_many_errors",
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "step_count_final": 73,
+     "num_errors_final": 10,
+     "duration": 141.76174187660217,
+     "error": null
+    },
+    "BQ": {
+     "termination_reason": "user_stop",
+     "reward": 0.0,
+     "db_match": false,
+     "official_reward": 0.0,
+     "step_count_final": 83,
+     "num_errors_final": 8,
+     "duration": 189.2713553905487,
+     "error": null
+    },
+    "QB": {
+     "termination_reason": "too_many_errors",
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "step_count_final": 31,
+     "num_errors_final": 10,
+     "duration": 32.09386086463928,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "0c2d3393f9057aa6",
+   "domain": "telecom",
+   "task_id": "[mms_issue]bad_wifi_calling|break_apn_mms_setting|break_app_both_permissions|data_mode_off|data_usage_exceeded|user_abroad_roaming_disabled_off[PERSONA:None]",
+   "t": 0,
+   "category": "tool_args",
+   "budget": {
+    "steps_used": 1,
+    "errors_used": 0,
+    "max_steps": 200,
+    "max_errors": 10,
+    "steps_left": 199,
+    "errors_left": 10
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "env_hash_ok": true,
+    "task_sha_ok": true,
+    "env_hash_loaded": {
+     "db": "1442db41dcd064cf99d61a98abd746f5f7f49e0a682c84194a88ef9e417e2e39",
+     "user_db": "873a8ef1c244064e192a79860694841e970ef106a615d88f4a94e25751fd6c76"
+    }
+   },
+   "a_noop_QQ": {
+    "ok": true,
+    "suffix_messages": true,
+    "prompt_token_ids": true,
+    "termination": true,
+    "reward": true,
+    "db_match": true,
+    "official_reward": true,
+    "budget_final": true,
+    "env_hash_final_vs_orig_replay": true,
+    "env_hash_replay_vs_live": true,
+    "env_hash_init": true,
+    "history_prefix": true,
+    "n_prompts": 14,
+    "n_prompts_orig": 14
+   },
+   "d_budget": {
+    "QQ": {
+     "ok": true,
+     "live": [
+      35,
+      10
+     ],
+     "recount": [
+      35,
+      10
+     ],
+     "state_used": [
+      1,
+      0
+     ],
+     "termination": "too_many_errors",
+     "term_consistent": true,
+     "note": "tau2 would restart the counters at 0 (counters_tau2_default); the fork restores them"
+    },
+    "BB": {
+     "ok": true,
+     "live": [
+      21,
+      10
+     ],
+     "recount": [
+      21,
+      10
+     ],
+     "state_used": [
+      1,
+      0
+     ],
+     "termination": "too_many_errors",
+     "term_consistent": true,
+     "note": "tau2 would restart the counters at 0 (counters_tau2_default); the fork restores them"
+    },
+    "BQ": {
+     "ok": true,
+     "live": [
+      200,
+      5
+     ],
+     "recount": [
+      200,
+      5
+     ],
+     "state_used": [
+      1,
+      0
+     ],
+     "termination": "max_steps",
+     "term_consistent": true,
+     "note": "tau2 would restart the counters at 0 (counters_tau2_default); the fork restores them"
+    },
+    "QB": {
+     "ok": true,
+     "live": [
+      21,
+      10
+     ],
+     "recount": [
+      21,
+      10
+     ],
+     "state_used": [
+      1,
+      0
+     ],
+     "termination": "too_many_errors",
+     "term_consistent": true,
+     "note": "tau2 would restart the counters at 0 (counters_tau2_default); the fork restores them"
+    }
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "QB_first_from_server": true,
+    "QB_first_api_base": "http://127.0.0.1:8105/v1",
+    "QB_first_n_prompt": 7260,
+    "BQ_first_prompt_eq_BB_first": true,
+    "BQ_first_from_server": true,
+    "BQ_first_api_base": "http://127.0.0.1:8205/v1",
+    "ok": true,
+    "applicable": true
+   },
+   "outcomes": {
+    "QQ": {
+     "termination_reason": "too_many_errors",
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "step_count_final": 35,
+     "num_errors_final": 10,
+     "duration": 47.76232028007507,
+     "error": null
+    },
+    "BB": {
+     "termination_reason": "too_many_errors",
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "step_count_final": 21,
+     "num_errors_final": 10,
+     "duration": 15.658671140670776,
+     "error": null
+    },
+    "BQ": {
+     "termination_reason": "max_steps",
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "step_count_final": 200,
+     "num_errors_final": 5,
+     "duration": 672.9705781936646,
+     "error": null
+    },
+    "QB": {
+     "termination_reason": "too_many_errors",
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0,
+     "step_count_final": 21,
+     "num_errors_final": 10,
+     "duration": 12.506023168563843,
+     "error": null
+    }
+   }
+  }
+ ],
+ "c_isolation": [
+  {
+   "state_id": "5860d1c152306917",
+   "domain": "telecom",
+   "cmp": {
+    "QQ": {
+     "reversed": true,
+     "concurrent": true
+    },
+    "BB": {
+     "reversed": true,
+     "concurrent": true
+    },
+    "BQ": {
+     "reversed": true,
+     "concurrent": true
+    },
+    "QB": {
+     "reversed": true,
+     "concurrent": true
+    }
+   },
+   "ok": true
+  },
+  {
+   "state_id": "4df6a56bd5a862b0",
+   "domain": "telecom",
+   "cmp": {
+    "QQ": {
+     "reversed": true,
+     "concurrent": true
+    },
+    "BB": {
+     "reversed": true,
+     "concurrent": true
+    },
+    "BQ": {
+     "reversed": true,
+     "concurrent": true
+    },
+    "QB": {
+     "reversed": true,
+     "concurrent": true
+    }
+   },
+   "ok": true
+  },
+  {
+   "state_id": "0c2d3393f9057aa6",
+   "domain": "telecom",
+   "cmp": {
+    "QQ": {
+     "reversed": true,
+     "concurrent": true
+    },
+    "BB": {
+     "reversed": true,
+     "concurrent": true
+    },
+    "BQ": {
+     "reversed": true,
+     "concurrent": true
+    },
+    "QB": {
+     "reversed": true,
+     "concurrent": true
+    }
+   },
+   "ok": true
+  }
+ ],
+ "a_noop_BB": [
+  {
+   "state_id": "ae424e56aff71287",
+   "run_id": "a6k2_tel_det_q8_a",
+   "domain": "telecom",
+   "task_id": "[mms_issue]airplane_mode_on|bad_network_preference|bad_wifi_calling|break_apn_mms_setting|break_app_both_permissions|unseat_sim_card|user_abroad_roaming_enabled_off[PERSONA:Hard]",
+   "t": 10,
+   "budget": {
+    "steps_used": 31,
+    "errors_used": 5,
+    "max_steps": 200,
+    "max_errors": 10,
+    "steps_left": 169,
+    "errors_left": 5
+   },
+   "noop": {
+    "ok": true,
+    "suffix_messages": true,
+    "prompt_token_ids": true,
+    "termination": true,
+    "reward": true,
+    "db_match": true,
+    "official_reward": true,
+    "budget_final": true,
+    "env_hash_final_vs_orig_replay": true,
+    "env_hash_replay_vs_live": true,
+    "env_hash_init": true,
+    "history_prefix": true,
+    "n_prompts": 11,
+    "n_prompts_orig": 11
+   },
+   "d_budget": {
+    "ok": true,
+    "live": [
+     65,
+     10
+    ],
+    "recount": [
+     65,
+     10
+    ],
+    "state_used": [
+     31,
+     5
+    ],
+    "termination": "too_many_errors",
+    "term_consistent": true,
+    "note": "tau2 would restart the counters at 0 (counters_tau2_default); the fork restores them"
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "env_hash_ok": true,
+    "task_sha_ok": true,
+    "env_hash_loaded": {
+     "db": "304cf5ef059852e117ea801ab9a5efc24c9713ec887679dc2e30acceb4b6742d",
+     "user_db": "93dd989cdda3bc7e065c63bdb5356828b8e822aa9362953163be7529e9318a2c"
+    }
+   }
+  },
+  {
+   "state_id": "90f11b2e429670c0",
+   "run_id": "a6k2_tel_det_q8_a",
+   "domain": "telecom",
+   "task_id": "[mms_issue]airplane_mode_on|bad_network_preference|bad_wifi_calling|break_apn_mms_setting|break_app_both_permissions|data_mode_off|data_usage_exceeded|unseat_sim_card|user_abroad_roaming_disabled_on[PERSONA:Hard]",
+   "t": 10,
+   "budget": {
+    "steps_used": 31,
+    "errors_used": 5,
+    "max_steps": 200,
+    "max_errors": 10,
+    "steps_left": 169,
+    "errors_left": 5
+   },
+   "noop": {
+    "ok": true,
+    "suffix_messages": true,
+    "prompt_token_ids": true,
+    "termination": true,
+    "reward": true,
+    "db_match": true,
+    "official_reward": true,
+    "budget_final": true,
+    "env_hash_final_vs_orig_replay": true,
+    "env_hash_replay_vs_live": true,
+    "env_hash_init": true,
+    "history_prefix": true,
+    "n_prompts": 10,
+    "n_prompts_orig": 10
+   },
+   "d_budget": {
+    "ok": true,
+    "live": [
+     61,
+     10
+    ],
+    "recount": [
+     61,
+     10
+    ],
+    "state_used": [
+     31,
+     5
+    ],
+    "termination": "too_many_errors",
+    "term_consistent": true,
+    "note": "tau2 would restart the counters at 0 (counters_tau2_default); the fork restores them"
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "env_hash_ok": true,
+    "task_sha_ok": true,
+    "env_hash_loaded": {
+     "db": "1442db41dcd064cf99d61a98abd746f5f7f49e0a682c84194a88ef9e417e2e39",
+     "user_db": "1145bf2b4444c1797ca13a44d8ded4cb54b7210ce7e3b87b50999dfee66d0c94"
+    }
+   }
+  }
+ ],
+ "metrics_end": {
+  "B": {
+   "vllm:prefix_cache_queries_total": 3221992.0,
+   "vllm:prefix_cache_hits_total": 3177856.0,
+   "vllm:prompt_tokens_total": 3221992.0,
+   "vllm:generation_tokens_total": 22872.0,
+   "vllm:request_success_total": 341.0
+  },
+  "Q": {
+   "vllm:prefix_cache_queries_total": 7763324.0,
+   "vllm:prefix_cache_hits_total": 7673184.0,
+   "vllm:prompt_tokens_total": 7763324.0,
+   "vllm:generation_tokens_total": 44537.0,
+   "vllm:request_success_total": 660.0
+  }
+ },
+ "seconds_total": 4246.872885227203,
+ "verdict": {
+  "idcheck": true,
+  "a_QQ": true,
+  "a_BB": true,
+  "q_replay_at_state": true,
+  "c_isolation": true,
+  "c_saveload": true,
+  "d_budget": true,
+  "e_reprefill": true,
+  "n_states": 3,
+  "n_state_errors": 0,
+  "n_bb_noop": 2,
+  "n_bb_errors": 0,
+  "domains": [
+   "telecom"
+  ],
+  "categories": [
+   "class:talk->act",
+   "invalid_tool",
+   "tool_args"
+  ],
+  "pass": true
+ },
+ "throughput": {
+  "n_branches": 9,
+  "suffix_seconds_median": 160.67769193649292,
+  "suffix_seconds_p90": 672.9705781936646,
+  "user_msgs_per_branch_mean": 20.77777777777778,
+  "agent_decisions_per_branch_mean": 28.444444444444443,
+  "shadow_seconds_per_decision_median": 2.1986478567123413,
+  "shadow_seconds_per_decision_p90": 3.7583820819854736,
+  "n_shadow": 18,
+  "search_decisions_per_task_mean": 3,
+  "search_wall_seconds": 32.78728699684143,
+  "fwd_wall_seconds": 825.166671037674,
+  "note": "wall times under concurrency 8 on one node, shared simulator; branch = BB/BQ/QB (QQ excluded)"
+ }
+}
