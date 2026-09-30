@@ -102,8 +102,9 @@ def load_block(run_id: str, domain: str) -> dict:
 
 
 def raw_from_rec(rec: dict) -> dict:
-    """The server response a recorded decision came from (vLLM returns tool_calls [] for a text reply)."""
-    return {"choices": [{"message": {"role": "assistant", "content": rec["raw_content"], "tool_calls": rec["tool_calls"] or []},
+    """The server response a recorded decision came from. vLLM returns tool_calls null for a text reply, and BFCL's
+    parser then records the content string (gate r1 used [] here: same prompts and outcomes, different bfcl_result)."""
+    return {"choices": [{"message": {"role": "assistant", "content": rec["raw_content"], "tool_calls": rec["tool_calls"]},
                          "token_ids": rec["completion_token_ids"], "finish_reason": rec["finish_reason"]}],
             "prompt_token_ids": rec["prompt_token_ids"],
             "usage": {"prompt_tokens": rec["n_prompt_tokens"], "completion_tokens": rec["n_completion_tokens"]}}

@@ -36,32 +36,36 @@ def fork_task(tid, env, model, q_arm, b_arm, spec, priority, deps, note) -> dict
             "B": role(model, b_arm), "Q": role(model, q_arm), "fork": spec, "note": note}
 
 
-def gate_tasks(priority: float) -> list[dict]:
+def gate_tasks(priority: float, envs: list[str], tag: str) -> list[dict]:
     ts = []
     for env, doms in (("bfcl", BFCL_DOMS), ("alfworld", ["alfworld"])):
+        if env not in envs:
+            continue
         qb = [f"ext_q4_gptq_w4_d1_{env}_smoke:{d}" for d in doms]
         bb = [f"ext_q4_bf16_{env}_smoke:{d}" for d in doms]
-        ts.append(fork_task(f"fork_ext_gate_q4_gptq_w4_d1_{env}", env, "q4", "gptq_w4_d1", "bf16",
+        ts.append(fork_task(f"fork_ext_gate_q4_gptq_w4_d1_{env}{tag}", env, "q4", "gptq_w4_d1", "bf16",
                             {"mode": "gate", "q_blocks": qb, "b_blocks": bb, "n_bb": 4, "max_states": 12, "n_iso": 4,
-                             "concurrency": 8, "out": f"analysis/fork/ext/gate/{env}_q4_gptq_w4_d1"}, priority, [],
+                             "concurrency": 8, "out": f"analysis/fork/ext/gate/{env}_q4_gptq_w4_d1{tag}"}, priority, [],
                             "fork-ext-v1 engineering gate (a,c,d,e) on the W36-ext smoke blocks (development only)"))
-        ts.append(fork_task(f"fork_ext_gate_same_q4_gptq_w4_d1_{env}", env, "q4", "gptq_w4_d1", "gptq_w4_d1",
+        ts.append(fork_task(f"fork_ext_gate_same_q4_gptq_w4_d1_{env}{tag}", env, "q4", "gptq_w4_d1", "gptq_w4_d1",
                             {"mode": "gate_same", "q_blocks": qb, "n_items": 3 if env == "bfcl" else 6, "n_same": 4,
-                             "concurrency": 8, "out": f"analysis/fork/ext/gate/{env}_q4_same_ckpt"}, priority, [],
+                             "concurrency": 8, "out": f"analysis/fork/ext/gate/{env}_q4_same_ckpt{tag}"}, priority, [],
                             "fork-ext-v1 gate (b): B and Q handles on two servers of the same checkpoint"))
     return ts
 
 
-def dev_tasks(priority: float) -> list[dict]:
+def dev_tasks(priority: float, envs: list[str]) -> list[dict]:
     ts = []
     plan = [("alfworld", "q8", a, ["alfworld"]) for a in ("gptq_w4_d1", "awq_w4_d1", "gptq_w3", "kvq_int4")] + \
            [("bfcl", m, a, BFCL_DOMS) for m in ("q4", "q8") for a in ("gptq_w4_d1", "awq_w4_d1", "gptq_w3", "kvq_int4")]
     for env, m, arm, doms in plan:
+        if env not in envs:
+            continue
         qrun, brun = f"ext_{m}_{arm}_{env}_eval", f"ext_{m}_bf16_{env}_eval"
         for d in doms:
             tag = d.replace("bfcl_", "") if env == "bfcl" else "all"
             ts.append(fork_task(f"fork_ext_dev_{m}_{arm}_{env}_{tag}", env, m, arm, "bf16",
-                                {"mode": "dev", "q_blocks": [f"{qrun}:{d}"], "noop_frac": 0.1, "concurrency": 8,
+                                {"mode": "dev", "q_blocks": [f"{qrun}:{d}"], "noop_frac": 0.1, "concurrency": 8 if m == "q4" else 12,
                                  "out": f"analysis/fork/ext/dev/{env}_{m}_{arm}_{tag}"}, priority, [qrun, brun],
                                 "fork-ext-v1 development forks (search over every item; BB/BQ/QB + 10% QQ no-op)"))
     return ts
@@ -72,8 +76,10 @@ def main():
     ap.add_argument("mode", choices=["gate", "dev"])
     ap.add_argument("--write", action="store_true")
     ap.add_argument("--priority", type=float, default=-8)
+    ap.add_argument("--env", default="bfcl,alfworld")
+    ap.add_argument("--tag", default="", help="gate rerun suffix, e.g. _r2")
     a = ap.parse_args()
-    ts = gate_tasks(a.priority) if a.mode == "gate" else dev_tasks(a.priority)
+    ts = gate_tasks(a.priority, a.env.split(","), a.tag) if a.mode == "gate" else dev_tasks(a.priority, a.env.split(","))
     for t in ts:
         p = Q / "todo" / f"{t['id']}.json"
         if any((Q / d / p.name).exists() for d in ("todo", "running", "done")):

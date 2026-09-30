@@ -1,0 +1,3202 @@
+{
+ "protocol": "fork-ext-v1",
+ "env": "alfworld",
+ "state_id": "481879ec8e91a2c7",
+ "run_id": "ext_q4_gptq_w4_d1_alfworld_smoke",
+ "domain": "alfworld",
+ "task_id": "json_2.1.1/valid_unseen/pick_heat_then_place_in_recep-Potato-None-GarbageCan-10/trial_T20190907_161745_664033/game.tw-pddl",
+ "decision_idx": 0,
+ "n_decisions_orig": 50,
+ "checkpoint": "{\"kind\": \"gptq\", \"wbits\": 4, \"calib\": \"manifests/a6k2/q4/calib_fp_traj_c1.json\"}",
+ "arm": "gptq",
+ "model": {
+  "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+  "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+  "chat_template_kwargs": {}
+ },
+ "history": [
+  {
+   "role": "system",
+   "content": "You are an agent in a household environment. You will be given a description of the room and a task to complete. You interact with the environment through a single tool named `act`, which takes one argument, `command`: the text command to execute. The commands listed below are values for that argument, not tools. Each tool call executes one command and returns what you observe afterwards. You may write a short thought before the tool call in the same reply, but a reply without a tool call does not change the environment and still uses up one of your turns. Keep making `act` tool calls until the task is done.\n\nValid commands follow these templates (fill in objects and receptacles):\n- look\n- inventory\n- go to (receptacle)\n- open (receptacle)\n- close (receptacle)\n- take (object) from (receptacle)\n- move (object) to (receptacle)\n- examine (something)\n- use (object)\n- heat (object) with (receptacle)\n- clean (object) with (receptacle)\n- cool (object) with (receptacle)\n- slice (object) with (object)\n\nYou can only interact with a receptacle, or with objects in or on it, after you have gone to it (go to ...); an object you are carrying stays with you. Refer to objects and receptacles exactly as they are named in the observations, including their number (for example \"apple 1\" or \"countertop 2\"). If the environment answers \"Nothing happens.\", the command was invalid or had no effect. The episode ends as soon as the task is completed, or after 50 commands."
+  },
+  {
+   "role": "user",
+   "content": "You are in the middle of a room. Looking quickly around you, you see a cabinet 6, a cabinet 5, a cabinet 4, a cabinet 3, a cabinet 2, a cabinet 1, a coffeemachine 1, a countertop 3, a countertop 2, a countertop 1, a drawer 3, a drawer 2, a drawer 1, a fridge 1, a garbagecan 1, a microwave 1, a shelf 3, a shelf 2, a shelf 1, a sinkbasin 1, a stoveburner 4, a stoveburner 3, a stoveburner 2, a stoveburner 1, and a toaster 1.\nYour task is to: heat some potato and put it in garbagecan."
+  }
+ ],
+ "history_sha": "8f21f389cb6141542f1a89d84f0a7a243d97241b7d4b8eb730a53d34ef2c2be4",
+ "tools": [
+  {
+   "type": "function",
+   "function": {
+    "name": "act",
+    "description": "Execute one text command in the household environment and return the resulting observation.",
+    "parameters": {
+     "type": "object",
+     "properties": {
+      "command": {
+       "type": "string",
+       "description": "One command, e.g. \"go to countertop 1\" or \"take apple 1 from countertop 1\"."
+      }
+     },
+     "required": [
+      "command"
+     ]
+    }
+   }
+  }
+ ],
+ "tools_sha": "f8597cf07d0990989ae65e4fe6327ead4292fa54abe2dffddb67f3948d26b448",
+ "state_sha": "63c67ad1cfe363fbcecf33595ca078eefed12008618b56a274af00b53a6afcb0",
+ "q_decision": {
+  "prompt_ids_sha": "d9a5506952c042f521b79e04f304177e51f72e73a68e0584a5d2f89f65829c49",
+  "n_prompt_tokens": 704,
+  "completion_ids_sha": "16725b9734c98a9c6002a2194dc36b39445e60c842cfc75a425d841c4a35bc13",
+  "parser_error": false,
+  "finish_reason": "tool_calls"
+ },
+ "a_Q": {
+  "raw": {
+   "choices": [
+    {
+     "message": {
+      "role": "assistant",
+      "content": null,
+      "tool_calls": [
+       {
+        "id": "chatcmpl-tool-b988e73c55c43979",
+        "type": "function",
+        "function": {
+         "name": "act",
+         "arguments": "{\"command\": \"go to cabinet 1\"}"
+        }
+       }
+      ]
+     },
+     "token_ids": [
+      151657,
+      198,
+      4913,
+      606,
+      788,
+      330,
+      531,
+      497,
+      330,
+      16370,
+      788,
+      5212,
+      5631,
+      788,
+      330,
+      3346,
+      311,
+      21921,
+      220,
+      16,
+      95642,
+      151658,
+      151645
+     ],
+     "finish_reason": "tool_calls"
+    }
+   ],
+   "prompt_token_ids": [
+    151644,
+    8948,
+    198,
+    2610,
+    525,
+    458,
+    8315,
+    304,
+    264,
+    13732,
+    4573,
+    13,
+    1446,
+    686,
+    387,
+    2661,
+    264,
+    4008,
+    315,
+    279,
+    3054,
+    323,
+    264,
+    3383,
+    311,
+    4583,
+    13,
+    1446,
+    16282,
+    448,
+    279,
+    4573,
+    1526,
+    264,
+    3175,
+    5392,
+    6941,
+    1565,
+    531,
+    7808,
+    892,
+    4990,
+    825,
+    5693,
+    11,
+    1565,
+    5631,
+    44622,
+    279,
+    1467,
+    3210,
+    311,
+    9026,
+    13,
+    576,
+    11293,
+    10007,
+    3685,
+    525,
+    2750,
+    369,
+    429,
+    5693,
+    11,
+    537,
+    7375,
+    13,
+    8886,
+    5392,
+    1618,
+    51435,
+    825,
+    3210,
+    323,
+    4675,
+    1128,
+    498,
+    22986,
+    26807,
+    13,
+    1446,
+    1231,
+    3270,
+    264,
+    2805,
+    3381,
+    1573,
+    279,
+    5392,
+    1618,
+    304,
+    279,
+    1852,
+    9851,
+    11,
+    714,
+    264,
+    9851,
+    2041,
+    264,
+    5392,
+    1618,
+    1558,
+    537,
+    2297,
+    279,
+    4573,
+    323,
+    2058,
+    5711,
+    705,
+    825,
+    315,
+    697,
+    10577,
+    13,
+    13655,
+    3259,
+    1565,
+    531,
+    63,
+    5392,
+    6738,
+    3080,
+    279,
+    3383,
+    374,
+    2814,
+    382,
+    4088,
+    11293,
+    1795,
+    1493,
+    19911,
+    320,
+    7559,
+    304,
+    6171,
+    323,
+    28818,
+    18209,
+    982,
+    12,
+    1401,
+    198,
+    12,
+    15444,
+    198,
+    12,
+    728,
+    311,
+    320,
+    265,
+    1484,
+    7902,
+    340,
+    12,
+    1787,
+    320,
+    265,
+    1484,
+    7902,
+    340,
+    12,
+    3265,
+    320,
+    265,
+    1484,
+    7902,
+    340,
+    12,
+    1896,
+    320,
+    1700,
+    8,
+    504,
+    320,
+    265,
+    1484,
+    7902,
+    340,
+    12,
+    3271,
+    320,
+    1700,
+    8,
+    311,
+    320,
+    265,
+    1484,
+    7902,
+    340,
+    12,
+    20961,
+    320,
+    33331,
+    340,
+    12,
+    990,
+    320,
+    1700,
+    340,
+    12,
+    8628,
+    320,
+    1700,
+    8,
+    448,
+    320,
+    265,
+    1484,
+    7902,
+    340,
+    12,
+    4240,
+    320,
+    1700,
+    8,
+    448,
+    320,
+    265,
+    1484,
+    7902,
+    340,
+    12,
+    7010,
+    320,
+    1700,
+    8,
+    448,
+    320,
+    265,
+    1484,
+    7902,
+    340,
+    12,
+    15983,
+    320,
+    1700,
+    8,
+    448,
+    320,
+    1700,
+    692,
+    2610,
+    646,
+    1172,
+    16282,
+    448,
+    264,
+    28818,
+    7902,
+    11,
+    476,
+    448,
+    6171,
+    304,
+    476,
+    389,
+    432,
+    11,
+    1283,
+    498,
+    614,
+    8048,
+    311,
+    432,
+    320,
+    3346,
+    311,
+    2503,
+    1215,
+    458,
+    1633,
+    498,
+    525,
+    15331,
+    26558,
+    448,
+    498,
+    13,
+    28634,
+    311,
+    6171,
+    323,
+    28818,
+    18209,
+    6896,
+    438,
+    807,
+    525,
+    6941,
+    304,
+    279,
+    23722,
+    11,
+    2670,
+    862,
+    1372,
+    320,
+    1958,
+    3110,
+    330,
+    22377,
+    220,
+    16,
+    1,
+    476,
+    330,
+    1830,
+    529,
+    453,
+    220,
+    17,
+    1827,
+    1416,
+    279,
+    4573,
+    11253,
+    330,
+    23780,
+    8573,
+    10465,
+    279,
+    3210,
+    572,
+    8318,
+    476,
+    1030,
+    902,
+    2456,
+    13,
+    576,
+    9234,
+    10335,
+    438,
+    5135,
+    438,
+    279,
+    3383,
+    374,
+    8145,
+    11,
+    476,
+    1283,
+    220,
+    20,
+    15,
+    11293,
+    382,
+    2,
+    13852,
+    271,
+    2610,
+    1231,
+    1618,
+    825,
+    476,
+    803,
+    5746,
+    311,
+    7789,
+    448,
+    279,
+    1196,
+    3239,
+    382,
+    2610,
+    525,
+    3897,
+    448,
+    729,
+    32628,
+    2878,
+    366,
+    15918,
+    1472,
+    15918,
+    29,
+    11874,
+    9492,
+    510,
+    27,
+    15918,
+    397,
+    4913,
+    1313,
+    788,
+    330,
+    1688,
+    497,
+    330,
+    1688,
+    788,
+    5212,
+    606,
+    788,
+    330,
+    531,
+    497,
+    330,
+    4684,
+    788,
+    330,
+    17174,
+    825,
+    1467,
+    3210,
+    304,
+    279,
+    13732,
+    4573,
+    323,
+    470,
+    279,
+    12942,
+    21930,
+    10465,
+    330,
+    13786,
+    788,
+    5212,
+    1313,
+    788,
+    330,
+    1700,
+    497,
+    330,
+    13193,
+    788,
+    5212,
+    5631,
+    788,
+    5212,
+    1313,
+    788,
+    330,
+    917,
+    497,
+    330,
+    4684,
+    788,
+    330,
+    3966,
+    3210,
+    11,
+    384,
+    1302,
+    13,
+    7245,
+    3346,
+    311,
+    60110,
+    453,
+    220,
+    16,
+    2105,
+    476,
+    7245,
+    22769,
+    23268,
+    220,
+    16,
+    504,
+    60110,
+    453,
+    220,
+    16,
+    2105,
+    1189,
+    38154,
+    330,
+    6279,
+    788,
+    4383,
+    5631,
+    1341,
+    3417,
+    532,
+    522,
+    15918,
+    1339,
+    2461,
+    1817,
+    729,
+    1618,
+    11,
+    470,
+    264,
+    2951,
+    1633,
+    448,
+    729,
+    829,
+    323,
+    5977,
+    2878,
+    220,
+    151657,
+    151658,
+    11874,
+    9492,
+    510,
+    151657,
+    198,
+    4913,
+    606,
+    788,
+    366,
+    1688,
+    11494,
+    8066,
+    330,
+    16370,
+    788,
+    366,
+    2116,
+    56080,
+    40432,
+    31296,
+    151658,
+    151645,
+    198,
+    151644,
+    872,
+    198,
+    2610,
+    525,
+    304,
+    279,
+    6149,
+    315,
+    264,
+    3054,
+    13,
+    21131,
+    6157,
+    2163,
+    498,
+    11,
+    498,
+    1490,
+    264,
+    21921,
+    220,
+    21,
+    11,
+    264,
+    21921,
+    220,
+    20,
+    11,
+    264,
+    21921,
+    220,
+    19,
+    11,
+    264,
+    21921,
+    220,
+    18,
+    11,
+    264,
+    21921,
+    220,
+    17,
+    11,
+    264,
+    21921,
+    220,
+    16,
+    11,
+    264,
+    9894,
+    68,
+    98469,
+    220,
+    16,
+    11,
+    264,
+    60110,
+    453,
+    220,
+    18,
+    11,
+    264,
+    60110,
+    453,
+    220,
+    17,
+    11,
+    264,
+    60110,
+    453,
+    220,
+    16,
+    11,
+    264,
+    26482,
+    220,
+    18,
+    11,
+    264,
+    26482,
+    220,
+    17,
+    11,
+    264,
+    26482,
+    220,
+    16,
+    11,
+    264,
+    37581,
+    220,
+    16,
+    11,
+    264,
+    25878,
+    4814,
+    220,
+    16,
+    11,
+    264,
+    41274,
+    220,
+    16,
+    11,
+    264,
+    27645,
+    220,
+    18,
+    11,
+    264,
+    27645,
+    220,
+    17,
+    11,
+    264,
+    27645,
+    220,
+    16,
+    11,
+    264,
+    19309,
+    17797,
+    258,
+    220,
+    16,
+    11,
+    264,
+    44015,
+    21719,
+    261,
+    220,
+    19,
+    11,
+    264,
+    44015,
+    21719,
+    261,
+    220,
+    18,
+    11,
+    264,
+    44015,
+    21719,
+    261,
+    220,
+    17,
+    11,
+    264,
+    44015,
+    21719,
+    261,
+    220,
+    16,
+    11,
+    323,
+    264,
+    89818,
+    220,
+    16,
+    624,
+    7771,
+    3383,
+    374,
+    311,
+    25,
+    8628,
+    1045,
+    38734,
+    323,
+    2182,
+    432,
+    304,
+    25878,
+    4814,
+    13,
+    151645,
+    198,
+    151644,
+    77091,
+    198
+   ],
+   "usage": {
+    "prompt_tokens": 704,
+    "completion_tokens": 23
+   }
+  },
+  "action": {
+   "kind": "act",
+   "calls": [
+    [
+     "act",
+     "go to cabinet 1"
+    ]
+   ],
+   "text": ""
+  },
+  "source": "decisions.jsonl"
+ },
+ "a_B": {
+  "raw": {
+   "choices": [
+    {
+     "index": 0,
+     "message": {
+      "role": "assistant",
+      "content": null,
+      "refusal": null,
+      "annotations": null,
+      "audio": null,
+      "function_call": null,
+      "tool_calls": [
+       {
+        "id": "chatcmpl-tool-a4cd525220d679db",
+        "type": "function",
+        "function": {
+         "name": "act",
+         "arguments": "{\"command\": \"go to fridge 1\"}"
+        }
+       }
+      ],
+      "reasoning": null
+     },
+     "logprobs": {
+      "content": [
+       {
+        "token": "<tool_call>",
+        "logprob": -0.2639157772064209,
+        "bytes": [
+         60,
+         116,
+         111,
+         111,
+         108,
+         95,
+         99,
+         97,
+         108,
+         108,
+         62
+        ],
+        "top_logprobs": [
+         {
+          "token": "<tool_call>",
+          "logprob": -0.2639157772064209,
+          "bytes": [
+           60,
+           116,
+           111,
+           111,
+           108,
+           95,
+           99,
+           97,
+           108,
+           108,
+           62
+          ]
+         },
+         {
+          "token": "I",
+          "logprob": -1.513915777206421,
+          "bytes": [
+           73
+          ]
+         },
+         {
+          "token": "The",
+          "logprob": -5.138916015625,
+          "bytes": [
+           84,
+           104,
+           101
+          ]
+         },
+         {
+          "token": "First",
+          "logprob": -5.763916015625,
+          "bytes": [
+           70,
+           105,
+           114,
+           115,
+           116
+          ]
+         },
+         {
+          "token": "It",
+          "logprob": -7.388916015625,
+          "bytes": [
+           73,
+           116
+          ]
+         }
+        ]
+       },
+       {
+        "token": "\n",
+        "logprob": 0.0,
+        "bytes": [
+         10
+        ],
+        "top_logprobs": [
+         {
+          "token": "\n",
+          "logprob": 0.0,
+          "bytes": [
+           10
+          ]
+         },
+         {
+          "token": "\r\n",
+          "logprob": -23.5,
+          "bytes": [
+           13,
+           10
+          ]
+         },
+         {
+          "token": "\r",
+          "logprob": -29.125,
+          "bytes": [
+           13
+          ]
+         },
+         {
+          "token": " \n",
+          "logprob": -31.0,
+          "bytes": [
+           32,
+           10
+          ]
+         },
+         {
+          "token": "\n\n",
+          "logprob": -31.75,
+          "bytes": [
+           10,
+           10
+          ]
+         }
+        ]
+       },
+       {
+        "token": "{\"",
+        "logprob": 0.0,
+        "bytes": [
+         123,
+         34
+        ],
+        "top_logprobs": [
+         {
+          "token": "{\"",
+          "logprob": 0.0,
+          "bytes": [
+           123,
+           34
+          ]
+         },
+         {
+          "token": "({\"",
+          "logprob": -20.75,
+          "bytes": [
+           40,
+           123,
+           34
+          ]
+         },
+         {
+          "token": " {\"",
+          "logprob": -21.75,
+          "bytes": [
+           32,
+           123,
+           34
+          ]
+         },
+         {
+          "token": ">{\"",
+          "logprob": -22.0,
+          "bytes": [
+           62,
+           123,
+           34
+          ]
+         },
+         {
+          "token": "={\"",
+          "logprob": -24.25,
+          "bytes": [
+           61,
+           123,
+           34
+          ]
+         }
+        ]
+       },
+       {
+        "token": "name",
+        "logprob": 0.0,
+        "bytes": [
+         110,
+         97,
+         109,
+         101
+        ],
+        "top_logprobs": [
+         {
+          "token": "name",
+          "logprob": 0.0,
+          "bytes": [
+           110,
+           97,
+           109,
+           101
+          ]
+         },
+         {
+          "token": " name",
+          "logprob": -21.0,
+          "bytes": [
+           32,
+           110,
+           97,
+           109,
+           101
+          ]
+         },
+         {
+          "token": ".name",
+          "logprob": -21.75,
+          "bytes": [
+           46,
+           110,
+           97,
+           109,
+           101
+          ]
+         },
+         {
+          "token": "Name",
+          "logprob": -22.75,
+          "bytes": [
+           78,
+           97,
+           109,
+           101
+          ]
+         },
+         {
+          "token": "名称",
+          "logprob": -23.25,
+          "bytes": [
+           229,
+           144,
+           141,
+           231,
+           167,
+           176
+          ]
+         }
+        ]
+       },
+       {
+        "token": "\":",
+        "logprob": 0.0,
+        "bytes": [
+         34,
+         58
+        ],
+        "top_logprobs": [
+         {
+          "token": "\":",
+          "logprob": 0.0,
+          "bytes": [
+           34,
+           58
+          ]
+         },
+         {
+          "token": "\">",
+          "logprob": -17.0,
+          "bytes": [
+           34,
+           62
+          ]
+         },
+         {
+          "token": "\"):",
+          "logprob": -17.5,
+          "bytes": [
+           34,
+           41,
+           58
+          ]
+         },
+         {
+          "token": "':",
+          "logprob": -18.5,
+          "bytes": [
+           39,
+           58
+          ]
+         },
+         {
+          "token": "\\\":",
+          "logprob": -19.25,
+          "bytes": [
+           92,
+           34,
+           58
+          ]
+         }
+        ]
+       },
+       {
+        "token": " \"",
+        "logprob": 0.0,
+        "bytes": [
+         32,
+         34
+        ],
+        "top_logprobs": [
+         {
+          "token": " \"",
+          "logprob": 0.0,
+          "bytes": [
+           32,
+           34
+          ]
+         },
+         {
+          "token": " \"_",
+          "logprob": -30.25,
+          "bytes": [
+           32,
+           34,
+           95
+          ]
+         },
+         {
+          "token": " “",
+          "logprob": -32.25,
+          "bytes": [
+           32,
+           226,
+           128,
+           156
+          ]
+         },
+         {
+          "token": " \"#",
+          "logprob": -33.0,
+          "bytes": [
+           32,
+           34,
+           35
+          ]
+         },
+         {
+          "token": "(\"",
+          "logprob": -33.0,
+          "bytes": [
+           40,
+           34
+          ]
+         }
+        ]
+       },
+       {
+        "token": "act",
+        "logprob": -4.565611743601039e-05,
+        "bytes": [
+         97,
+         99,
+         116
+        ],
+        "top_logprobs": [
+         {
+          "token": "act",
+          "logprob": -4.565611743601039e-05,
+          "bytes": [
+           97,
+           99,
+           116
+          ]
+         },
+         {
+          "token": "look",
+          "logprob": -10.000045776367188,
+          "bytes": [
+           108,
+           111,
+           111,
+           107
+          ]
+         },
+         {
+          "token": "go",
+          "logprob": -15.375045776367188,
+          "bytes": [
+           103,
+           111
+          ]
+         },
+         {
+          "token": "\tact",
+          "logprob": -19.250045776367188,
+          "bytes": [
+           9,
+           97,
+           99,
+           116
+          ]
+         },
+         {
+          "token": " act",
+          "logprob": -19.375045776367188,
+          "bytes": [
+           32,
+           97,
+           99,
+           116
+          ]
+         }
+        ]
+       },
+       {
+        "token": "\",",
+        "logprob": 0.0,
+        "bytes": [
+         34,
+         44
+        ],
+        "top_logprobs": [
+         {
+          "token": "\",",
+          "logprob": 0.0,
+          "bytes": [
+           34,
+           44
+          ]
+         },
+         {
+          "token": "',",
+          "logprob": -17.0,
+          "bytes": [
+           39,
+           44
+          ]
+         },
+         {
+          "token": "”,",
+          "logprob": -19.75,
+          "bytes": [
+           226,
+           128,
+           157,
+           44
+          ]
+         },
+         {
+          "token": "\",\"",
+          "logprob": -23.625,
+          "bytes": [
+           34,
+           44,
+           34
+          ]
+         },
+         {
+          "token": ".\",",
+          "logprob": -25.375,
+          "bytes": [
+           46,
+           34,
+           44
+          ]
+         }
+        ]
+       },
+       {
+        "token": " \"",
+        "logprob": 0.0,
+        "bytes": [
+         32,
+         34
+        ],
+        "top_logprobs": [
+         {
+          "token": " \"",
+          "logprob": 0.0,
+          "bytes": [
+           32,
+           34
+          ]
+         },
+         {
+          "token": " \"(",
+          "logprob": -21.25,
+          "bytes": [
+           32,
+           34,
+           40
+          ]
+         },
+         {
+          "token": " \"\\",
+          "logprob": -23.5,
+          "bytes": [
+           32,
+           34,
+           92
+          ]
+         },
+         {
+          "token": " \"[",
+          "logprob": -23.75,
+          "bytes": [
+           32,
+           34,
+           91
+          ]
+         },
+         {
+          "token": " \"@",
+          "logprob": -24.125,
+          "bytes": [
+           32,
+           34,
+           64
+          ]
+         }
+        ]
+       },
+       {
+        "token": "arguments",
+        "logprob": -1.1920928244535389e-07,
+        "bytes": [
+         97,
+         114,
+         103,
+         117,
+         109,
+         101,
+         110,
+         116,
+         115
+        ],
+        "top_logprobs": [
+         {
+          "token": "arguments",
+          "logprob": -1.1920928244535389e-07,
+          "bytes": [
+           97,
+           114,
+           103,
+           117,
+           109,
+           101,
+           110,
+           116,
+           115
+          ]
+         },
+         {
+          "token": ".arguments",
+          "logprob": -16.0,
+          "bytes": [
+           46,
+           97,
+           114,
+           103,
+           117,
+           109,
+           101,
+           110,
+           116,
+           115
+          ]
+         },
+         {
+          "token": " arguments",
+          "logprob": -16.875,
+          "bytes": [
+           32,
+           97,
+           114,
+           103,
+           117,
+           109,
+           101,
+           110,
+           116,
+           115
+          ]
+         },
+         {
+          "token": "_arguments",
+          "logprob": -18.125,
+          "bytes": [
+           95,
+           97,
+           114,
+           103,
+           117,
+           109,
+           101,
+           110,
+           116,
+           115
+          ]
+         },
+         {
+          "token": "Arguments",
+          "logprob": -18.75,
+          "bytes": [
+           65,
+           114,
+           103,
+           117,
+           109,
+           101,
+           110,
+           116,
+           115
+          ]
+         }
+        ]
+       },
+       {
+        "token": "\":",
+        "logprob": 0.0,
+        "bytes": [
+         34,
+         58
+        ],
+        "top_logprobs": [
+         {
+          "token": "\":",
+          "logprob": 0.0,
+          "bytes": [
+           34,
+           58
+          ]
+         },
+         {
+          "token": "':",
+          "logprob": -19.625,
+          "bytes": [
+           39,
+           58
+          ]
+         },
+         {
+          "token": "\\\":",
+          "logprob": -19.75,
+          "bytes": [
+           92,
+           34,
+           58
+          ]
+         },
+         {
+          "token": "\"):",
+          "logprob": -19.875,
+          "bytes": [
+           34,
+           41,
+           58
+          ]
+         },
+         {
+          "token": "\">",
+          "logprob": -20.625,
+          "bytes": [
+           34,
+           62
+          ]
+         }
+        ]
+       },
+       {
+        "token": " {\"",
+        "logprob": -1.1920928244535389e-07,
+        "bytes": [
+         32,
+         123,
+         34
+        ],
+        "top_logprobs": [
+         {
+          "token": " {\"",
+          "logprob": -1.1920928244535389e-07,
+          "bytes": [
+           32,
+           123,
+           34
+          ]
+         },
+         {
+          "token": "{\"",
+          "logprob": -16.0,
+          "bytes": [
+           123,
+           34
+          ]
+         },
+         {
+          "token": " \"{\\\"",
+          "logprob": -17.0,
+          "bytes": [
+           32,
+           34,
+           123,
+           92,
+           34
+          ]
+         },
+         {
+          "token": " \"",
+          "logprob": -17.25,
+          "bytes": [
+           32,
+           34
+          ]
+         },
+         {
+          "token": " (\"",
+          "logprob": -19.5,
+          "bytes": [
+           32,
+           40,
+           34
+          ]
+         }
+        ]
+       },
+       {
+        "token": "command",
+        "logprob": 0.0,
+        "bytes": [
+         99,
+         111,
+         109,
+         109,
+         97,
+         110,
+         100
+        ],
+        "top_logprobs": [
+         {
+          "token": "command",
+          "logprob": 0.0,
+          "bytes": [
+           99,
+           111,
+           109,
+           109,
+           97,
+           110,
+           100
+          ]
+         },
+         {
+          "token": " command",
+          "logprob": -17.5,
+          "bytes": [
+           32,
+           99,
+           111,
+           109,
+           109,
+           97,
+           110,
+           100
+          ]
+         },
+         {
+          "token": "(command",
+          "logprob": -18.5,
+          "bytes": [
+           40,
+           99,
+           111,
+           109,
+           109,
+           97,
+           110,
+           100
+          ]
+         },
+         {
+          "token": "\tcommand",
+          "logprob": -19.125,
+          "bytes": [
+           9,
+           99,
+           111,
+           109,
+           109,
+           97,
+           110,
+           100
+          ]
+         },
+         {
+          "token": ".command",
+          "logprob": -19.375,
+          "bytes": [
+           46,
+           99,
+           111,
+           109,
+           109,
+           97,
+           110,
+           100
+          ]
+         }
+        ]
+       },
+       {
+        "token": "\":",
+        "logprob": 0.0,
+        "bytes": [
+         34,
+         58
+        ],
+        "top_logprobs": [
+         {
+          "token": "\":",
+          "logprob": 0.0,
+          "bytes": [
+           34,
+           58
+          ]
+         },
+         {
+          "token": "\"):",
+          "logprob": -20.25,
+          "bytes": [
+           34,
+           41,
+           58
+          ]
+         },
+         {
+          "token": "':",
+          "logprob": -20.25,
+          "bytes": [
+           39,
+           58
+          ]
+         },
+         {
+          "token": "\\\":",
+          "logprob": -20.5,
+          "bytes": [
+           92,
+           34,
+           58
+          ]
+         },
+         {
+          "token": "\",",
+          "logprob": -21.125,
+          "bytes": [
+           34,
+           44
+          ]
+         }
+        ]
+       },
+       {
+        "token": " \"",
+        "logprob": 0.0,
+        "bytes": [
+         32,
+         34
+        ],
+        "top_logprobs": [
+         {
+          "token": " \"",
+          "logprob": 0.0,
+          "bytes": [
+           32,
+           34
+          ]
+         },
+         {
+          "token": " \"_",
+          "logprob": -26.75,
+          "bytes": [
+           32,
+           34,
+           95
+          ]
+         },
+         {
+          "token": " \"<",
+          "logprob": -28.0,
+          "bytes": [
+           32,
+           34,
+           60
+          ]
+         },
+         {
+          "token": " \"\\\"",
+          "logprob": -28.125,
+          "bytes": [
+           32,
+           34,
+           92,
+           34
+          ]
+         },
+         {
+          "token": " \"'",
+          "logprob": -29.0,
+          "bytes": [
+           32,
+           34,
+           39
+          ]
+         }
+        ]
+       },
+       {
+        "token": "go",
+        "logprob": -0.0031787839252501726,
+        "bytes": [
+         103,
+         111
+        ],
+        "top_logprobs": [
+         {
+          "token": "go",
+          "logprob": -0.0031787839252501726,
+          "bytes": [
+           103,
+           111
+          ]
+         },
+         {
+          "token": "look",
+          "logprob": -5.753178596496582,
+          "bytes": [
+           108,
+           111,
+           111,
+           107
+          ]
+         },
+         {
+          "token": "ex",
+          "logprob": -14.128178596496582,
+          "bytes": [
+           101,
+           120
+          ]
+         },
+         {
+          "token": "goto",
+          "logprob": -15.003178596496582,
+          "bytes": [
+           103,
+           111,
+           116,
+           111
+          ]
+         },
+         {
+          "token": "Go",
+          "logprob": -18.2531795501709,
+          "bytes": [
+           71,
+           111
+          ]
+         }
+        ]
+       },
+       {
+        "token": " to",
+        "logprob": 0.0,
+        "bytes": [
+         32,
+         116,
+         111
+        ],
+        "top_logprobs": [
+         {
+          "token": " to",
+          "logprob": 0.0,
+          "bytes": [
+           32,
+           116,
+           111
+          ]
+         },
+         {
+          "token": "to",
+          "logprob": -27.75,
+          "bytes": [
+           116,
+           111
+          ]
+         },
+         {
+          "token": "\tto",
+          "logprob": -28.0,
+          "bytes": [
+           9,
+           116,
+           111
+          ]
+         },
+         {
+          "token": ".to",
+          "logprob": -28.625,
+          "bytes": [
+           46,
+           116,
+           111
+          ]
+         },
+         {
+          "token": "_to",
+          "logprob": -28.625,
+          "bytes": [
+           95,
+           116,
+           111
+          ]
+         }
+        ]
+       },
+       {
+        "token": " fridge",
+        "logprob": -0.22213797271251678,
+        "bytes": [
+         32,
+         102,
+         114,
+         105,
+         100,
+         103,
+         101
+        ],
+        "top_logprobs": [
+         {
+          "token": " fridge",
+          "logprob": -0.22213797271251678,
+          "bytes": [
+           32,
+           102,
+           114,
+           105,
+           100,
+           103,
+           101
+          ]
+         },
+         {
+          "token": " countert",
+          "logprob": -1.7221379280090332,
+          "bytes": [
+           32,
+           99,
+           111,
+           117,
+           110,
+           116,
+           101,
+           114,
+           116
+          ]
+         },
+         {
+          "token": " cabinet",
+          "logprob": -4.097137928009033,
+          "bytes": [
+           32,
+           99,
+           97,
+           98,
+           105,
+           110,
+           101,
+           116
+          ]
+         },
+         {
+          "token": " cupboard",
+          "logprob": -5.847137928009033,
+          "bytes": [
+           32,
+           99,
+           117,
+           112,
+           98,
+           111,
+           97,
+           114,
+           100
+          ]
+         },
+         {
+          "token": " refrigerator",
+          "logprob": -7.347137928009033,
+          "bytes": [
+           32,
+           114,
+           101,
+           102,
+           114,
+           105,
+           103,
+           101,
+           114,
+           97,
+           116,
+           111,
+           114
+          ]
+         }
+        ]
+       },
+       {
+        "token": " ",
+        "logprob": 0.0,
+        "bytes": [
+         32
+        ],
+        "top_logprobs": [
+         {
+          "token": " ",
+          "logprob": 0.0,
+          "bytes": [
+           32
+          ]
+         },
+         {
+          "token": "1",
+          "logprob": -26.625,
+          "bytes": [
+           49
+          ]
+         },
+         {
+          "token": " door",
+          "logprob": -30.125,
+          "bytes": [
+           32,
+           100,
+           111,
+           111,
+           114
+          ]
+         },
+         {
+          "token": "\"}}\n",
+          "logprob": -30.75,
+          "bytes": [
+           34,
+           125,
+           125,
+           10
+          ]
+         },
+         {
+          "token": " one",
+          "logprob": -33.375,
+          "bytes": [
+           32,
+           111,
+           110,
+           101
+          ]
+         }
+        ]
+       },
+       {
+        "token": "1",
+        "logprob": 0.0,
+        "bytes": [
+         49
+        ],
+        "top_logprobs": [
+         {
+          "token": "1",
+          "logprob": 0.0,
+          "bytes": [
+           49
+          ]
+         },
+         {
+          "token": "2",
+          "logprob": -28.25,
+          "bytes": [
+           50
+          ]
+         },
+         {
+          "token": "3",
+          "logprob": -31.125,
+          "bytes": [
+           51
+          ]
+         },
+         {
+          "token": "0",
+          "logprob": -32.0,
+          "bytes": [
+           48
+          ]
+         },
+         {
+          "token": "5",
+          "logprob": -34.125,
+          "bytes": [
+           53
+          ]
+         }
+        ]
+       },
+       {
+        "token": "\"}}\n",
+        "logprob": -4.768370445162873e-07,
+        "bytes": [
+         34,
+         125,
+         125,
+         10
+        ],
+        "top_logprobs": [
+         {
+          "token": "\"}}\n",
+          "logprob": -4.768370445162873e-07,
+          "bytes": [
+           34,
+           125,
+           125,
+           10
+          ]
+         },
+         {
+          "token": "\"}}",
+          "logprob": -14.75,
+          "bytes": [
+           34,
+           125,
+           125
+          ]
+         },
+         {
+          "token": "\"})\n",
+          "logprob": -17.25,
+          "bytes": [
+           34,
+           125,
+           41,
+           10
+          ]
+         },
+         {
+          "token": "'}}\n",
+          "logprob": -19.75,
+          "bytes": [
+           39,
+           125,
+           125,
+           10
+          ]
+         },
+         {
+          "token": "\"))\n",
+          "logprob": -20.375,
+          "bytes": [
+           34,
+           41,
+           41,
+           10
+          ]
+         }
+        ]
+       },
+       {
+        "token": "</tool_call>",
+        "logprob": -0.00034421717282384634,
+        "bytes": [
+         60,
+         47,
+         116,
+         111,
+         111,
+         108,
+         95,
+         99,
+         97,
+         108,
+         108,
+         62
+        ],
+        "top_logprobs": [
+         {
+          "token": "</tool_call>",
+          "logprob": -0.00034421717282384634,
+          "bytes": [
+           60,
+           47,
+           116,
+           111,
+           111,
+           108,
+           95,
+           99,
+           97,
+           108,
+           108,
+           62
+          ]
+         },
+         {
+          "token": "<tool_call>",
+          "logprob": -11.375344276428223,
+          "bytes": [
+           60,
+           116,
+           111,
+           111,
+           108,
+           95,
+           99,
+           97,
+           108,
+           108,
+           62
+          ]
+         },
+         {
+          "token": " extingu",
+          "logprob": -12.125344276428223,
+          "bytes": [
+           32,
+           101,
+           120,
+           116,
+           105,
+           110,
+           103,
+           117
+          ]
+         },
+         {
+          "token": "<|im_start|>",
+          "logprob": -13.000344276428223,
+          "bytes": [
+           60,
+           124,
+           105,
+           109,
+           95,
+           115,
+           116,
+           97,
+           114,
+           116,
+           124,
+           62
+          ]
+         },
+         {
+          "token": "<|im_end|>",
+          "logprob": -13.125344276428223,
+          "bytes": [
+           60,
+           124,
+           105,
+           109,
+           95,
+           101,
+           110,
+           100,
+           124,
+           62
+          ]
+         }
+        ]
+       },
+       {
+        "token": "<|im_end|>",
+        "logprob": -1.4305104514278355e-06,
+        "bytes": [
+         60,
+         124,
+         105,
+         109,
+         95,
+         101,
+         110,
+         100,
+         124,
+         62
+        ],
+        "top_logprobs": [
+         {
+          "token": "<|im_end|>",
+          "logprob": -1.4305104514278355e-06,
+          "bytes": [
+           60,
+           124,
+           105,
+           109,
+           95,
+           101,
+           110,
+           100,
+           124,
+           62
+          ]
+         },
+         {
+          "token": "<|im_start|>",
+          "logprob": -13.750000953674316,
+          "bytes": [
+           60,
+           124,
+           105,
+           109,
+           95,
+           115,
+           116,
+           97,
+           114,
+           116,
+           124,
+           62
+          ]
+         },
+         {
+          "token": "incer",
+          "logprob": -17.000001907348633,
+          "bytes": [
+           105,
+           110,
+           99,
+           101,
+           114
+          ]
+         },
+         {
+          "token": "ceptors",
+          "logprob": -17.750001907348633,
+          "bytes": [
+           99,
+           101,
+           112,
+           116,
+           111,
+           114,
+           115
+          ]
+         },
+         {
+          "token": " npc",
+          "logprob": -18.625001907348633,
+          "bytes": [
+           32,
+           110,
+           112,
+           99
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     "finish_reason": "tool_calls",
+     "stop_reason": null,
+     "token_ids": [
+      151657,
+      198,
+      4913,
+      606,
+      788,
+      330,
+      531,
+      497,
+      330,
+      16370,
+      788,
+      5212,
+      5631,
+      788,
+      330,
+      3346,
+      311,
+      37581,
+      220,
+      16,
+      95642,
+      151658,
+      151645
+     ],
+     "routed_experts": null
+    }
+   ],
+   "prompt_token_ids": [
+    151644,
+    8948,
+    198,
+    2610,
+    525,
+    458,
+    8315,
+    304,
+    264,
+    13732,
+    4573,
+    13,
+    1446,
+    686,
+    387,
+    2661,
+    264,
+    4008,
+    315,
+    279,
+    3054,
+    323,
+    264,
+    3383,
+    311,
+    4583,
+    13,
+    1446,
+    16282,
+    448,
+    279,
+    4573,
+    1526,
+    264,
+    3175,
+    5392,
+    6941,
+    1565,
+    531,
+    7808,
+    892,
+    4990,
+    825,
+    5693,
+    11,
+    1565,
+    5631,
+    44622,
+    279,
+    1467,
+    3210,
+    311,
+    9026,
+    13,
+    576,
+    11293,
+    10007,
+    3685,
+    525,
+    2750,
+    369,
+    429,
+    5693,
+    11,
+    537,
+    7375,
+    13,
+    8886,
+    5392,
+    1618,
+    51435,
+    825,
+    3210,
+    323,
+    4675,
+    1128,
+    498,
+    22986,
+    26807,
+    13,
+    1446,
+    1231,
+    3270,
+    264,
+    2805,
+    3381,
+    1573,
+    279,
+    5392,
+    1618,
+    304,
+    279,
+    1852,
+    9851,
+    11,
+    714,
+    264,
+    9851,
+    2041,
+    264,
+    5392,
+    1618,
+    1558,
+    537,
+    2297,
+    279,
+    4573,
+    323,
+    2058,
+    5711,
+    705,
+    825,
+    315,
+    697,
+    10577,
+    13,
+    13655,
+    3259,
+    1565,
+    531,
+    63,
+    5392,
+    6738,
+    3080,
+    279,
+    3383,
+    374,
+    2814,
+    382,
+    4088,
+    11293,
+    1795,
+    1493,
+    19911,
+    320,
+    7559,
+    304,
+    6171,
+    323,
+    28818,
+    18209,
+    982,
+    12,
+    1401,
+    198,
+    12,
+    15444,
+    198,
+    12,
+    728,
+    311,
+    320,
+    265,
+    1484,
+    7902,
+    340,
+    12,
+    1787,
+    320,
+    265,
+    1484,
+    7902,
+    340,
+    12,
+    3265,
+    320,
+    265,
+    1484,
+    7902,
+    340,
+    12,
+    1896,
+    320,
+    1700,
+    8,
+    504,
+    320,
+    265,
+    1484,
+    7902,
+    340,
+    12,
+    3271,
+    320,
+    1700,
+    8,
+    311,
+    320,
+    265,
+    1484,
+    7902,
+    340,
+    12,
+    20961,
+    320,
+    33331,
+    340,
+    12,
+    990,
+    320,
+    1700,
+    340,
+    12,
+    8628,
+    320,
+    1700,
+    8,
+    448,
+    320,
+    265,
+    1484,
+    7902,
+    340,
+    12,
+    4240,
+    320,
+    1700,
+    8,
+    448,
+    320,
+    265,
+    1484,
+    7902,
+    340,
+    12,
+    7010,
+    320,
+    1700,
+    8,
+    448,
+    320,
+    265,
+    1484,
+    7902,
+    340,
+    12,
+    15983,
+    320,
+    1700,
+    8,
+    448,
+    320,
+    1700,
+    692,
+    2610,
+    646,
+    1172,
+    16282,
+    448,
+    264,
+    28818,
+    7902,
+    11,
+    476,
+    448,
+    6171,
+    304,
+    476,
+    389,
+    432,
+    11,
+    1283,
+    498,
+    614,
+    8048,
+    311,
+    432,
+    320,
+    3346,
+    311,
+    2503,
+    1215,
+    458,
+    1633,
+    498,
+    525,
+    15331,
+    26558,
+    448,
+    498,
+    13,
+    28634,
+    311,
+    6171,
+    323,
+    28818,
+    18209,
+    6896,
+    438,
+    807,
+    525,
+    6941,
+    304,
+    279,
+    23722,
+    11,
+    2670,
+    862,
+    1372,
+    320,
+    1958,
+    3110,
+    330,
+    22377,
+    220,
+    16,
+    1,
+    476,
+    330,
+    1830,
+    529,
+    453,
+    220,
+    17,
+    1827,
+    1416,
+    279,
+    4573,
+    11253,
+    330,
+    23780,
+    8573,
+    10465,
+    279,
+    3210,
+    572,
+    8318,
+    476,
+    1030,
+    902,
+    2456,
+    13,
+    576,
+    9234,
+    10335,
+    438,
+    5135,
+    438,
+    279,
+    3383,
+    374,
+    8145,
+    11,
+    476,
+    1283,
+    220,
+    20,
+    15,
+    11293,
+    382,
+    2,
+    13852,
+    271,
+    2610,
+    1231,
+    1618,
+    825,
+    476,
+    803,
+    5746,
+    311,
+    7789,
+    448,
+    279,
+    1196,
+    3239,
+    382,
+    2610,
+    525,
+    3897,
+    448,
+    729,
+    32628,
+    2878,
+    366,
+    15918,
+    1472,
+    15918,
+    29,
+    11874,
+    9492,
+    510,
+    27,
+    15918,
+    397,
+    4913,
+    1313,
+    788,
+    330,
+    1688,
+    497,
+    330,
+    1688,
+    788,
+    5212,
+    606,
+    788,
+    330,
+    531,
+    497,
+    330,
+    4684,
+    788,
+    330,
+    17174,
+    825,
+    1467,
+    3210,
+    304,
+    279,
+    13732,
+    4573,
+    323,
+    470,
+    279,
+    12942,
+    21930,
+    10465,
+    330,
+    13786,
+    788,
+    5212,
+    1313,
+    788,
+    330,
+    1700,
+    497,
+    330,
+    13193,
+    788,
+    5212,
+    5631,
+    788,
+    5212,
+    1313,
+    788,
+    330,
+    917,
+    497,
+    330,
+    4684,
+    788,
+    330,
+    3966,
+    3210,
+    11,
+    384,
+    1302,
+    13,
+    7245,
+    3346,
+    311,
+    60110,
+    453,
+    220,
+    16,
+    2105,
+    476,
+    7245,
+    22769,
+    23268,
+    220,
+    16,
+    504,
+    60110,
+    453,
+    220,
+    16,
+    2105,
+    1189,
+    38154,
+    330,
+    6279,
+    788,
+    4383,
+    5631,
+    1341,
+    3417,
+    532,
+    522,
+    15918,
+    1339,
+    2461,
+    1817,
+    729,
+    1618,
+    11,
+    470,
+    264,
+    2951,
+    1633,
+    448,
+    729,
+    829,
+    323,
+    5977,
+    2878,
+    220,
+    151657,
+    151658,
+    11874,
+    9492,
+    510,
+    151657,
+    198,
+    4913,
+    606,
+    788,
+    366,
+    1688,
+    11494,
+    8066,
+    330,
+    16370,
+    788,
+    366,
+    2116,
+    56080,
+    40432,
+    31296,
+    151658,
+    151645,
+    198,
+    151644,
+    872,
+    198,
+    2610,
+    525,
+    304,
+    279,
+    6149,
+    315,
+    264,
+    3054,
+    13,
+    21131,
+    6157,
+    2163,
+    498,
+    11,
+    498,
+    1490,
+    264,
+    21921,
+    220,
+    21,
+    11,
+    264,
+    21921,
+    220,
+    20,
+    11,
+    264,
+    21921,
+    220,
+    19,
+    11,
+    264,
+    21921,
+    220,
+    18,
+    11,
+    264,
+    21921,
+    220,
+    17,
+    11,
+    264,
+    21921,
+    220,
+    16,
+    11,
+    264,
+    9894,
+    68,
+    98469,
+    220,
+    16,
+    11,
+    264,
+    60110,
+    453,
+    220,
+    18,
+    11,
+    264,
+    60110,
+    453,
+    220,
+    17,
+    11,
+    264,
+    60110,
+    453,
+    220,
+    16,
+    11,
+    264,
+    26482,
+    220,
+    18,
+    11,
+    264,
+    26482,
+    220,
+    17,
+    11,
+    264,
+    26482,
+    220,
+    16,
+    11,
+    264,
+    37581,
+    220,
+    16,
+    11,
+    264,
+    25878,
+    4814,
+    220,
+    16,
+    11,
+    264,
+    41274,
+    220,
+    16,
+    11,
+    264,
+    27645,
+    220,
+    18,
+    11,
+    264,
+    27645,
+    220,
+    17,
+    11,
+    264,
+    27645,
+    220,
+    16,
+    11,
+    264,
+    19309,
+    17797,
+    258,
+    220,
+    16,
+    11,
+    264,
+    44015,
+    21719,
+    261,
+    220,
+    19,
+    11,
+    264,
+    44015,
+    21719,
+    261,
+    220,
+    18,
+    11,
+    264,
+    44015,
+    21719,
+    261,
+    220,
+    17,
+    11,
+    264,
+    44015,
+    21719,
+    261,
+    220,
+    16,
+    11,
+    323,
+    264,
+    89818,
+    220,
+    16,
+    624,
+    7771,
+    3383,
+    374,
+    311,
+    25,
+    8628,
+    1045,
+    38734,
+    323,
+    2182,
+    432,
+    304,
+    25878,
+    4814,
+    13,
+    151645,
+    198,
+    151644,
+    77091,
+    198
+   ],
+   "usage": {
+    "prompt_tokens": 704,
+    "total_tokens": 727,
+    "completion_tokens": 23,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": null
+   }
+  },
+  "action": {
+   "kind": "act",
+   "calls": [
+    [
+     "act",
+     "go to fridge 1"
+    ]
+   ],
+   "text": ""
+  },
+  "prompt_ids_sha": "d9a5506952c042f521b79e04f304177e51f72e73a68e0584a5d2f89f65829c49",
+  "completion_ids_sha": "1cdd64a5b2a44d51a4a9973e8609a7a83d3a51c441697b241dd3b624d9c6988f"
+ },
+ "divergence": {
+  "category": "command",
+  "q_kind": "act",
+  "b_kind": "act",
+  "t_star": 0,
+  "text_only_before": []
+ },
+ "q_replay": {
+  "completion_ids_ok": true,
+  "prompt_ids_ok": true,
+  "action_ok": true
+ },
+ "budget": {
+  "decisions_used": 0,
+  "env_steps_used": 0,
+  "max_env_steps": 50,
+  "max_decisions": 50
+ },
+ "orig": {
+  "reward": 0.0,
+  "official_reward": 0.0,
+  "db_match": null,
+  "success": false,
+  "termination_reason": "max_decisions",
+  "n_decisions": 50,
+  "n_env_steps": 36,
+  "actions_sha": "6174c01cdcd84fa9ec7c2635fa0c90d4ea8f8c6635696735b6a10f209411bf49",
+  "suffix_prompt_ids_sha": [
+   "d9a5506952c042f521b79e04f304177e51f72e73a68e0584a5d2f89f65829c49",
+   "0dd1879dc719e6a9fd8bb6bba8132e9b4d5eb5159e1e37ff0a3c5727495e1296",
+   "9a7324093edcee0a8223f695df399da7e76f0749806251889c6c5dc2d4e18e81",
+   "f2cdceb7acc50cd1f47a1be1e4c3d1d6ed8f82e90874f62fab7630322188b9c0",
+   "12c974ca636c8c05f0e4dbb941de84adf97899d516e88b88ada954adc5cb2b37",
+   "13810202b3290836a4860329a4617cbb79e753734df39c52448f6f0afa07d7f0",
+   "728f729767803405cd8de7dbe55dc0dc775aa7e75e07174f69ea7a7a3f35c1c7",
+   "93844bda754b5745e3f37b3fc35d7ab101db14389647659280eed29b79a21d83",
+   "7758be82135fae12fe9455d2bc6455f7df35ea498fc9cb2781abc9e3136c4ebd",
+   "28df8002f6be6ad572ef2022032f8f5a7dbf92ecb5805ca9fc5327cbacadcd59",
+   "a49d54fe70285978d3fee2b8bcae7007499244efecedaeb3243500d3ffe9f2b8",
+   "569e7d71770443821d9fcfc28fe8b9ffea26abd3e85c61567fe5053893899ee1",
+   "1460dffebaf867562ff285eed0038749250031ddb4d4fe69a5a3519343579704",
+   "4bc6ace7f2ef7fda53ab085b50a3e1585481fce572a2f775f2b82f81565570d2",
+   "eaad941e09aa8c55f8d8537381544f72b7b85572a0043237dbe9f7d8a7a5509f",
+   "cfd4bd9c0d9949233a847da1a2f05819bd29271e9f9d3f876ea7be1fee812441",
+   "ae3a8859561897b62af2939da073e5a6be61eb1e01faaa71a22677e877c3c53e",
+   "1b82a98c4edd85a9cc472d5ea4a076bad9fd692210c6a55b78e90275225c7a08",
+   "151456a7e71d87d880e0c5168109c5dccba07ff5b700a42176daddee2474515c",
+   "eef528cbb0c84c44b0a9f5912b030f36be43132251b76f144f845ced494e6394",
+   "375fc3d97b64a89e7f7b086013d676b50cc4bb1c20d4e90155f58e7b23b4202c",
+   "73c66cdde7986e6f86358842342206c244b393ddb1869a344b8f96fe82798de0",
+   "cca2478f0a38de1e460fecf3e4dca97408cd5827fda03c3b1dbca7d6e005b498",
+   "c7ff224922a1c3452a60304b996d020df385ccf9a6c35c22a7b8f0d2ce10987d",
+   "48409ab613b997c772c858b485e33600d0accbc9b175368c52bbe5f12cbed9bf",
+   "3160bbaec7545d5a7398b4d9f954c8ceeed393b0b26b6b825984ed40f4929f0d",
+   "c3afbde8272a319862066969ec86b3621b0e4e483bbc5af591a247a0e45f6b46",
+   "cc61650e83e581440f0ca58b78dde9d87ca123da04128133136eae5bd168ca68",
+   "873962c80854b422402c101bbcf1717abf41c329c582e7e7499aad79505719fc",
+   "3723165d40150f39d13d8da44b951495984cbbab6e757bed02bda964b7801efc",
+   "4521c10e74f13ddbd445ec3412c981cce1dfd4424f7997153e932a9884a6946d",
+   "74c73e8e153eaa54ed50070b7f5a800490a8bbe099de602a6ac459ade57392f3",
+   "2e0dffcc78c737d4187d0f8d074836c849966e812f362b374c563ab99cb362bc",
+   "8aba225c6794d9f1968378dc462237513c64dde734ee1b0fb2bbce33c70de0a0",
+   "c0f253909d3759304f296b29b4ffa81cb0a953357b3dad6dc66cfe70df6b9a69",
+   "bd0f801d104cf62e41a37247c6a35883b5ea17b4bc79cbe6a9dc2883cfc12e23",
+   "f96fb9a59c36fb8e2bb2c9047e2f0bf2b3bb2f89b4939073728a9ee7f9059bc4",
+   "5095033fef0b1cf9d844505afb0447e7c12b0c5bc7cc5cfba78ffc3076a342c9",
+   "6f3e3febf14eaa2551e0732c96f5225ffb5297a757ecf0ca99bd91e24096e21d",
+   "500855d0ee81e6fd2509b23b73136b9ab40bc70c628d00ed225caa78aaaad2f0",
+   "3fdd55d13659e9a3c833d80bd6fedc99d020446dd7bc94bdda222183009a2d66",
+   "fb06792e767cd5fda14e5ba7313ba7d66750ef543ff9f1cba98e047445df6296",
+   "0f0d80452c2287fd7819869ca49f3f7938a6358f69af6a770885e6bcc984f68d",
+   "9b88dfa5b3d518f7cdaed9178718f50dd4cf8a946d8aebd7dd4d761d150d6db6",
+   "1f151464645e504d4cefd5502e6c994eddde8222825571147e8c0329e84e595a",
+   "d2a4cc2f3b46a1018ccd28c6e6e255bcbea083403c02c674b48c1c8677fb9262",
+   "9d0d8382780a2efa0ce00428b716a98a2c31e161b66b77cb6c913327c9ac76b4",
+   "d549b3f146f4658b6f7bb9fe2bfb1b41e7a9f113a6d42e206e07ac25e6103a97",
+   "6067e64662f955bfd10f1ce44ae7140bb7f4cef30cdcdc040359768257cc99f0",
+   "65dfc1dadac92089698a4724eee9e66efddfc397f6b48dddce7cadaf133e2af1"
+  ],
+  "suffix_completion_ids_sha": [
+   "16725b9734c98a9c6002a2194dc36b39445e60c842cfc75a425d841c4a35bc13",
+   "deae446a7410b5871758aab1a07b8b2b832bfaa04cf794bcd3d84fa3c01b09bb",
+   "1cdd64a5b2a44d51a4a9973e8609a7a83d3a51c441697b241dd3b624d9c6988f",
+   "7967ef7a0b2480082294e2683b251359ebe548210f56e5d5dea3013dd3fc42e1",
+   "6f7ccbfe897f673315b0b18819bc8fbd1df00490366f1e92b2bcad1723306c1e",
+   "ffad60d50c2f9f99f00a2fa0924e49c0e36272788ce06017a5483469b414eeac",
+   "2a01272baf70b0d4065ef3d61e67a58cb0393e75bdc54627283f4d412d05bbb2",
+   "d66bf0d4965ca7551b23c88175f54c57edb1793dae928caa3fb3e90ff35db980",
+   "5467d5892c08e442f3884726827b8ee5216cedc7d938d10a9eefc34a546eedd7",
+   "24be6a687db0e3ad38d6bdd2e959ea4e212b1bd43da1277421d643e392612459",
+   "d18406a81cba578b6d4e86ae13cd25e721b58dcaa4afebb73f6fa4e9d82b4510",
+   "4d63e5fab45c507ae60e1e44db1cf4b32fe2f1cbc769ba210c4f5531ebf7b9d9",
+   "373c5d6fcce4649e5c6dc41e6a1c9970aa253eff7bfa34a024f8604d45feccae",
+   "4a0ebf47b158b63b85e096b6322f3165ea8c20c86de3af622e8ed15ff1cf8ab4",
+   "288829a6fc0a7577cfc71ad400d9a8a2fbd19a6fd547b19b0a059dd231b03bc2",
+   "510394f52821d576eb86d6c8f3f900d0f8680e2be147716ca78b0ac92c063091",
+   "6f1b37c775cef8173f32054a6ca080ff97ea2e27de85ba3e83e920e4db1d2dac",
+   "288829a6fc0a7577cfc71ad400d9a8a2fbd19a6fd547b19b0a059dd231b03bc2",
+   "510394f52821d576eb86d6c8f3f900d0f8680e2be147716ca78b0ac92c063091",
+   "6113b041a54d823c3f93b043f0f4830a005295eae16643264e11027db8453d70",
+   "f98bce040b68d24a0dbf5f1115f0dae3eeb96bc7f7003abb4a5b42b2b7ee6dde",
+   "8b54f3fc19739736f4ed954da8eaa5ab523100e831b84cda5937057dab063b31",
+   "60e7adc687e116810ce57efd141db328f07ca1f5d6b9eeeeb4655885cb0ee503",
+   "bcd720bc07ab453b149bd9d81230a6b2d6b128cecec50d07bc7babcee4168c0b",
+   "76ff3a8eabdba54b5294e2523614d9221b4620e53907edb043d7aa302f551589",
+   "91348396c4e1ee8caecc3219b1911b004626f0e8564aca4e9d2c1b9d8d282967",
+   "24be6a687db0e3ad38d6bdd2e959ea4e212b1bd43da1277421d643e392612459",
+   "01d0bd22e48642282009dafa1ee4caabec944e7d7ec2bf3ba9a662df4d39bf66",
+   "288829a6fc0a7577cfc71ad400d9a8a2fbd19a6fd547b19b0a059dd231b03bc2",
+   "8e6c9a8fe7eddd65a5f5f8d3fef012717174e0df5b589ae8eb23d7957fcd0b49",
+   "4d63e5fab45c507ae60e1e44db1cf4b32fe2f1cbc769ba210c4f5531ebf7b9d9",
+   "d4fddb547f3bd9edbe1e3f8230715d6c6f9b770f992528932878947c4e94bfb9",
+   "510394f52821d576eb86d6c8f3f900d0f8680e2be147716ca78b0ac92c063091",
+   "e75acf1b1d4e4c1cbc3ec1240bae25211a1ae62461c4a10f8eeefb769aeb97c2",
+   "6113b041a54d823c3f93b043f0f4830a005295eae16643264e11027db8453d70",
+   "67abb21d994bf7b7c09b635ba355fdba5c43eba8d35b46a894460877aa70ad9b",
+   "4d63e5fab45c507ae60e1e44db1cf4b32fe2f1cbc769ba210c4f5531ebf7b9d9",
+   "3b823fd962ac921f4f41b7902b2a3721dfddc06133aeb4afec65164af9ad225f",
+   "fdeab18db34b605c51c9cb90743681b94b7e14b2ea1fce226fa231e8c6465d38",
+   "fe6812194dbb7b720c2c212f7cb239f7ee136c39eb0edefc3d31f0409b0c6599",
+   "288829a6fc0a7577cfc71ad400d9a8a2fbd19a6fd547b19b0a059dd231b03bc2",
+   "a9083454449e9e1fb1475e9e9c05a959572cb541c0bdf1e7a8f1e8a7ca4d87c3",
+   "7b8307c2e8c8d6a2c1cd3489c2be4b5c14f6961ac29ab03a23d0f10301a922c4",
+   "422877db38e7b4edd0262febe9d619625aeb7fae9ecf575eb4bfa96e87d9d1f1",
+   "eb07df3d93b228d0ce02f74cfd8a06e74aaa661a6ad4fa2657e0ba3348b4d02b",
+   "cc5ff871d9e35ec378af95054efc756644415b27280df0eea6826405552b92c2",
+   "6113b041a54d823c3f93b043f0f4830a005295eae16643264e11027db8453d70",
+   "04c00ce3f60876e74c172d3e75445f0af5c96728a50e75e689d0e91b871f25ab",
+   "3404fd9558e4d621e83e56d590280c05f46c22be9cea1b67a83ccdfa8491821f",
+   "9f2fe88078785fbf0c7b18350b018b60862dd0c71fd8db0498bfbc5d122ec6c8"
+  ]
+ },
+ "created": 1790763109.1867251,
+ "io_check": {
+  "history_sha_ok": true,
+  "tools_sha_ok": true,
+  "a_B_ok": true
+ }
+}

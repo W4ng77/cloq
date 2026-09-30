@@ -1,0 +1,267 @@
+{
+ "protocol": "fork-ext-v1",
+ "env": "alfworld",
+ "spec": {
+  "mode": "gate_same",
+  "q_blocks": [
+   "ext_q4_gptq_w4_d1_alfworld_smoke:alfworld"
+  ],
+  "n_items": 6,
+  "n_same": 4,
+  "concurrency": 8,
+  "out": "analysis/fork/ext/gate/alfworld_q4_same_ckpt"
+ },
+ "servers": {
+  "B": {
+   "gpu": "7",
+   "port": 8108,
+   "pid": 762765,
+   "ckpt": {
+    "kind": "gptq",
+    "wbits": 4,
+    "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+   },
+   "path": "/tmp/cloq_49731/ckpt_fork_ext_gate_same_q4_gptq_w4_d1_alfworld_Q",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "7",
+    "8108",
+    "/tmp/cloq_49731/ckpt_fork_ext_gate_same_q4_gptq_w4_d1_alfworld_Q",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.44",
+   "hook_coverage": null,
+   "canary": "a72b3da03409576e",
+   "ckpt_sha256": "e6c24bc24d5d2729f0ae2de9cbcee08d7291a829cdc3d1eb2d48fefd1a9605a1",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+     "chat_template_kwargs": {}
+    },
+    "weights": "sha256:e6c24bc24d5d2729f0ae2de9cbcee08d7291a829cdc3d1eb2d48fefd1a9605a1",
+    "ckpt": {
+     "kind": "gptq",
+     "wbits": 4,
+     "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 4,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "29ba0176bfc6a4e0"
+  },
+  "Q": {
+   "gpu": "7",
+   "port": 8208,
+   "pid": 763448,
+   "ckpt": {
+    "kind": "gptq",
+    "wbits": 4,
+    "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+   },
+   "path": "/tmp/cloq_49731/ckpt_fork_ext_gate_same_q4_gptq_w4_d1_alfworld_Q",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "7",
+    "8208",
+    "/tmp/cloq_49731/ckpt_fork_ext_gate_same_q4_gptq_w4_d1_alfworld_Q",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.44",
+   "hook_coverage": null,
+   "canary": "a72b3da03409576e",
+   "ckpt_sha256": "e6c24bc24d5d2729f0ae2de9cbcee08d7291a829cdc3d1eb2d48fefd1a9605a1",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+     "chat_template_kwargs": {}
+    },
+    "weights": "sha256:e6c24bc24d5d2729f0ae2de9cbcee08d7291a829cdc3d1eb2d48fefd1a9605a1",
+    "ckpt": {
+     "kind": "gptq",
+     "wbits": 4,
+     "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 4,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "29ba0176bfc6a4e0"
+  },
+  "same_effective_config": true,
+  "q_quantization": {
+   "method": "GPTQ",
+   "wbits": 4,
+   "group_size": 128,
+   "sym": false,
+   "percdamp": 0.01,
+   "blocksize": 128,
+   "act_order": true,
+   "true_sequential": true,
+   "source_model": "Qwen/Qwen3-4B-Instruct-2507",
+   "source_revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+   "storage": "fake-quant bf16",
+   "calibration_manifest": "/data/ziyangs/cloq/manifests/a6k2/q4/calib_fp_traj_c1.json",
+   "moe_experts": null,
+   "calibration": {
+    "protocol": "v1",
+    "arm": "fp_traj",
+    "draw": "c1",
+    "draw_seed": 20260729,
+    "budget_rows": 64000,
+    "total_rows": 64000,
+    "rows_within_budget": true,
+    "n_states": 57,
+    "n_tasks": 57,
+    "rows_per_state_min": 1122,
+    "rows_per_state_max": 1123,
+    "median_context_tokens": 6041.0,
+    "total_context_tokens": 372294,
+    "states_by_source": {
+     "fp": 57
+    },
+    "states_by_depth_quartile": {
+     "0": 16,
+     "1": 13,
+     "2": 14,
+     "3": 14
+    },
+    "states_by_domain": {
+     "retail": 39,
+     "airline": 18
+    },
+    "fp_run": "a6k2_q4_bf16_cal",
+    "q_run": null,
+    "novelty": null,
+    "notes": [],
+    "split_file_sha256": "7d1671154c37375990fd01999df2257e1bef916ee8201158b850846876315a79",
+    "manifest_sha256": "780875fe8a38bd31c9687ffafb512b09061db1c3b8786ecacbbbb9547cd5a20a"
+   },
+   "seconds_quantize": 382.98857617378235,
+   "n_expert_tensors_rtn": 0
+  },
+  "user_base": null,
+  "host": "node006",
+  "job": "49731"
+ },
+ "bases": {
+  "B": "http://127.0.0.1:8108/v1",
+  "Q": "http://127.0.0.1:8208/v1"
+ },
+ "search": {
+  "n": 6,
+  "n_states": 0,
+  "n_no_divergence": 6,
+  "excluded": []
+ },
+ "states": [
+  {
+   "state_id": "b22067711d36728c",
+   "domain": "alfworld",
+   "task_id": "json_2.1.1/valid_unseen/pick_two_obj_and_place-Pillow-None-Sofa-219/trial_T20190907_163408_914117/game.tw-pddl",
+   "t": 5,
+   "shadow_equals_a_Q": true,
+   "four_identical": true,
+   "equal_original": true,
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 6
+   }
+  },
+  {
+   "state_id": "fdb66dae6f6a2f60",
+   "domain": "alfworld",
+   "task_id": "json_2.1.1/valid_unseen/pick_cool_then_place_in_recep-Pan-None-CounterTop-10/trial_T20190908_114545_244903/game.tw-pddl",
+   "t": 25,
+   "shadow_equals_a_Q": true,
+   "four_identical": true,
+   "equal_original": true,
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 26
+   }
+  },
+  {
+   "state_id": "eef73da2b483d06f",
+   "domain": "alfworld",
+   "task_id": "json_2.1.1/valid_unseen/pick_and_place_simple-SaltShaker-None-Drawer-10/trial_T20190909_021728_339782/game.tw-pddl",
+   "t": 25,
+   "shadow_equals_a_Q": true,
+   "four_identical": true,
+   "equal_original": true,
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 26
+   }
+  },
+  {
+   "state_id": "a87e9a6b97f6cb6b",
+   "domain": "alfworld",
+   "task_id": "json_2.1.1/valid_unseen/pick_and_place_simple-Pencil-None-Shelf-308/trial_T20190908_122024_052056/game.tw-pddl",
+   "t": 2,
+   "shadow_equals_a_Q": true,
+   "four_identical": true,
+   "equal_original": true,
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 3
+   }
+  }
+ ],
+ "verdict": {
+  "no_divergence_all": true,
+  "shadow_equals_a_Q": true,
+  "four_identical": true,
+  "equal_original": true,
+  "replay": true,
+  "n_states": 4,
+  "pass": true
+ },
+ "seconds_total": 252.96004915237427
+}

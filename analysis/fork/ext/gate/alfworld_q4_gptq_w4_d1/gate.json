@@ -1,0 +1,1265 @@
+{
+ "protocol": "fork-ext-v1",
+ "env": "alfworld",
+ "spec": {
+  "mode": "gate",
+  "q_blocks": [
+   "ext_q4_gptq_w4_d1_alfworld_smoke:alfworld"
+  ],
+  "b_blocks": [
+   "ext_q4_bf16_alfworld_smoke:alfworld"
+  ],
+  "n_bb": 4,
+  "max_states": 12,
+  "n_iso": 4,
+  "concurrency": 8,
+  "out": "analysis/fork/ext/gate/alfworld_q4_gptq_w4_d1"
+ },
+ "servers": {
+  "B": {
+   "gpu": "5",
+   "port": 8106,
+   "pid": 3586894,
+   "ckpt": {
+    "kind": "bf16"
+   },
+   "path": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "5",
+    "8106",
+    "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.44",
+   "hook_coverage": null,
+   "canary": "c7343b60da095480",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+     "chat_template_kwargs": {}
+    },
+    "weights": "Qwen/Qwen3-4B-Instruct-2507@cdbee75f17c01a7cc42f958dc650907174af0554",
+    "ckpt": {
+     "kind": "bf16"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 16,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "efce043e33600dcc",
+   "canary_ref_ok": true
+  },
+  "Q": {
+   "gpu": "5",
+   "port": 8206,
+   "pid": 3588895,
+   "ckpt": {
+    "kind": "gptq",
+    "wbits": 4,
+    "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+   },
+   "path": "/tmp/cloq_49694/ckpt_fork_ext_gate_q4_gptq_w4_d1_alfworld_Q",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "5",
+    "8206",
+    "/tmp/cloq_49694/ckpt_fork_ext_gate_q4_gptq_w4_d1_alfworld_Q",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.44",
+   "hook_coverage": null,
+   "canary": "a72b3da03409576e",
+   "ckpt_sha256": "e6c24bc24d5d2729f0ae2de9cbcee08d7291a829cdc3d1eb2d48fefd1a9605a1",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+     "chat_template_kwargs": {}
+    },
+    "weights": "sha256:e6c24bc24d5d2729f0ae2de9cbcee08d7291a829cdc3d1eb2d48fefd1a9605a1",
+    "ckpt": {
+     "kind": "gptq",
+     "wbits": 4,
+     "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 4,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "29ba0176bfc6a4e0"
+  },
+  "same_effective_config": false,
+  "q_quantization": {
+   "method": "GPTQ",
+   "wbits": 4,
+   "group_size": 128,
+   "sym": false,
+   "percdamp": 0.01,
+   "blocksize": 128,
+   "act_order": true,
+   "true_sequential": true,
+   "source_model": "Qwen/Qwen3-4B-Instruct-2507",
+   "source_revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+   "storage": "fake-quant bf16",
+   "calibration_manifest": "/data/ziyangs/cloq/manifests/a6k2/q4/calib_fp_traj_c1.json",
+   "moe_experts": null,
+   "calibration": {
+    "protocol": "v1",
+    "arm": "fp_traj",
+    "draw": "c1",
+    "draw_seed": 20260729,
+    "budget_rows": 64000,
+    "total_rows": 64000,
+    "rows_within_budget": true,
+    "n_states": 57,
+    "n_tasks": 57,
+    "rows_per_state_min": 1122,
+    "rows_per_state_max": 1123,
+    "median_context_tokens": 6041.0,
+    "total_context_tokens": 372294,
+    "states_by_source": {
+     "fp": 57
+    },
+    "states_by_depth_quartile": {
+     "0": 16,
+     "1": 13,
+     "2": 14,
+     "3": 14
+    },
+    "states_by_domain": {
+     "retail": 39,
+     "airline": 18
+    },
+    "fp_run": "a6k2_q4_bf16_cal",
+    "q_run": null,
+    "novelty": null,
+    "notes": [],
+    "split_file_sha256": "7d1671154c37375990fd01999df2257e1bef916ee8201158b850846876315a79",
+    "manifest_sha256": "780875fe8a38bd31c9687ffafb512b09061db1c3b8786ecacbbbb9547cd5a20a"
+   },
+   "seconds_quantize": 384.194215297699,
+   "n_expert_tensors_rtn": 0
+  },
+  "user_base": null,
+  "host": "node003",
+  "job": "49694"
+ },
+ "bases": {
+  "B": "http://127.0.0.1:8106/v1",
+  "Q": "http://127.0.0.1:8206/v1"
+ },
+ "search": {
+  "n": 12,
+  "n_states": 12,
+  "n_no_divergence": 0,
+  "excluded": [],
+  "categories": [
+   "command"
+  ]
+ },
+ "fwd_seconds": 1264.2984137535095,
+ "states": [
+  {
+   "state_id": "4319e4b6ae7dcac2",
+   "domain": "alfworld",
+   "task_id": "json_2.1.1/valid_unseen/pick_two_obj_and_place-Pillow-None-Sofa-219/trial_T20190907_163408_914117/game.tw-pddl",
+   "t": 0,
+   "category": "command",
+   "budget": {
+    "decisions_used": 0,
+    "env_steps_used": 0,
+    "max_env_steps": 50,
+    "max_decisions": 50
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "tools_sha_ok": true,
+    "a_B_ok": true
+   },
+   "a_noop_QQ": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   },
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 1
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "BQ_first_prompt_eq_BB_first": true,
+    "ok": true
+   },
+   "outcomes": {
+    "QQ": {
+     "reward": 1.0,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "n_decisions": 10,
+     "duration": 49.516961336135864,
+     "error": null
+    },
+    "BB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 260.8427994251251,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 149.01241278648376,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "n_decisions": 8,
+     "duration": 34.54365301132202,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "43b5425b64e38b20",
+   "domain": "alfworld",
+   "task_id": "json_2.1.1/valid_unseen/pick_cool_then_place_in_recep-Pan-None-CounterTop-10/trial_T20190908_114545_244903/game.tw-pddl",
+   "t": 1,
+   "category": "command",
+   "budget": {
+    "decisions_used": 1,
+    "env_steps_used": 1,
+    "max_env_steps": 50,
+    "max_decisions": 50
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "tools_sha_ok": true,
+    "a_B_ok": true
+   },
+   "a_noop_QQ": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   },
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 2
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "BQ_first_prompt_eq_BB_first": true,
+    "ok": true
+   },
+   "outcomes": {
+    "QQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 138.5290937423706,
+     "error": null
+    },
+    "BB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 167.75630927085876,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 180.91008067131042,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 212.5796446800232,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "f53b13cc99b39580",
+   "domain": "alfworld",
+   "task_id": "json_2.1.1/valid_unseen/pick_and_place_simple-SaltShaker-None-Drawer-10/trial_T20190909_021728_339782/game.tw-pddl",
+   "t": 2,
+   "category": "command",
+   "budget": {
+    "decisions_used": 2,
+    "env_steps_used": 2,
+    "max_env_steps": 50,
+    "max_decisions": 50
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "tools_sha_ok": true,
+    "a_B_ok": true
+   },
+   "a_noop_QQ": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   },
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 3
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "BQ_first_prompt_eq_BB_first": true,
+    "ok": true
+   },
+   "outcomes": {
+    "QQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 185.49664902687073,
+     "error": null
+    },
+    "BB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 88.89073157310486,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 89.27915716171265,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 266.2831389904022,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "94a1177d8cf4ecf2",
+   "domain": "alfworld",
+   "task_id": "json_2.1.1/valid_unseen/pick_and_place_simple-Pencil-None-Shelf-308/trial_T20190908_122024_052056/game.tw-pddl",
+   "t": 0,
+   "category": "command",
+   "budget": {
+    "decisions_used": 0,
+    "env_steps_used": 0,
+    "max_env_steps": 50,
+    "max_decisions": 50
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "tools_sha_ok": true,
+    "a_B_ok": true
+   },
+   "a_noop_QQ": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   },
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 1
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "BQ_first_prompt_eq_BB_first": true,
+    "ok": true
+   },
+   "outcomes": {
+    "QQ": {
+     "reward": 1.0,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "n_decisions": 4,
+     "duration": 8.659452199935913,
+     "error": null
+    },
+    "BB": {
+     "reward": 1.0,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "n_decisions": 6,
+     "duration": 31.272069215774536,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "n_decisions": 6,
+     "duration": 32.515668869018555,
+     "error": null
+    },
+    "QB": {
+     "reward": 1.0,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "n_decisions": 4,
+     "duration": 11.822238445281982,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "45c1ef3d13f559b0",
+   "domain": "alfworld",
+   "task_id": "json_2.1.1/valid_unseen/look_at_obj_in_light-Bowl-None-DeskLamp-308/trial_T20190907_133953_562557/game.tw-pddl",
+   "t": 0,
+   "category": "command",
+   "budget": {
+    "decisions_used": 0,
+    "env_steps_used": 0,
+    "max_env_steps": 50,
+    "max_decisions": 50
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "tools_sha_ok": true,
+    "a_B_ok": true
+   },
+   "a_noop_QQ": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   },
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 1
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "BQ_first_prompt_eq_BB_first": true,
+    "ok": true
+   },
+   "outcomes": {
+    "QQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 184.5444211959839,
+     "error": null
+    },
+    "BB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 198.61571192741394,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 141.7617576122284,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 198.52946710586548,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "db559228fedb83a2",
+   "domain": "alfworld",
+   "task_id": "json_2.1.1/valid_unseen/pick_heat_then_place_in_recep-Cup-None-Cabinet-10/trial_T20190907_083507_594820/game.tw-pddl",
+   "t": 0,
+   "category": "command",
+   "budget": {
+    "decisions_used": 0,
+    "env_steps_used": 0,
+    "max_env_steps": 50,
+    "max_decisions": 50
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "tools_sha_ok": true,
+    "a_B_ok": true
+   },
+   "a_noop_QQ": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   },
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 1
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "BQ_first_prompt_eq_BB_first": true,
+    "ok": true
+   },
+   "outcomes": {
+    "QQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 158.86950969696045,
+     "error": null
+    },
+    "BB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 226.93959784507751,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "official_reward": 1.0,
+     "termination_reason": "won",
+     "n_decisions": 18,
+     "duration": 64.09570360183716,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 153.29866290092468,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "546ae1d8e935123f",
+   "domain": "alfworld",
+   "task_id": "json_2.1.1/valid_unseen/look_at_obj_in_light-Mug-None-DeskLamp-308/trial_T20190908_201421_021646/game.tw-pddl",
+   "t": 0,
+   "category": "command",
+   "budget": {
+    "decisions_used": 0,
+    "env_steps_used": 0,
+    "max_env_steps": 50,
+    "max_decisions": 50
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "tools_sha_ok": true,
+    "a_B_ok": true
+   },
+   "a_noop_QQ": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   },
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 1
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "BQ_first_prompt_eq_BB_first": true,
+    "ok": true
+   },
+   "outcomes": {
+    "QQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 172.2974112033844,
+     "error": null
+    },
+    "BB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 164.9004306793213,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 176.68159985542297,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 292.3864345550537,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "1f40e003321c1130",
+   "domain": "alfworld",
+   "task_id": "json_2.1.1/valid_unseen/pick_clean_then_place_in_recep-SoapBar-None-CounterTop-424/trial_T20190907_074045_109439/game.tw-pddl",
+   "t": 0,
+   "category": "command",
+   "budget": {
+    "decisions_used": 0,
+    "env_steps_used": 0,
+    "max_env_steps": 50,
+    "max_decisions": 50
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "tools_sha_ok": true,
+    "a_B_ok": true
+   },
+   "a_noop_QQ": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   },
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 1
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "BQ_first_prompt_eq_BB_first": true,
+    "ok": true
+   },
+   "outcomes": {
+    "QQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 144.9759693145752,
+     "error": null
+    },
+    "BB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 297.9569444656372,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 212.90664410591125,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 183.0437421798706,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "3761d05862b1cc5d",
+   "domain": "alfworld",
+   "task_id": "json_2.1.1/valid_unseen/pick_clean_then_place_in_recep-Spatula-None-Drawer-10/trial_T20190907_080800_275989/game.tw-pddl",
+   "t": 0,
+   "category": "command",
+   "budget": {
+    "decisions_used": 0,
+    "env_steps_used": 0,
+    "max_env_steps": 50,
+    "max_decisions": 50
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "tools_sha_ok": true,
+    "a_B_ok": true
+   },
+   "a_noop_QQ": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   },
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 1
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "BQ_first_prompt_eq_BB_first": true,
+    "ok": true
+   },
+   "outcomes": {
+    "QQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 187.5241346359253,
+     "error": null
+    },
+    "BB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 290.8065354824066,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 314.55406761169434,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 375.6326959133148,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "d55fb2d3e46f03ce",
+   "domain": "alfworld",
+   "task_id": "json_2.1.1/valid_unseen/pick_two_obj_and_place-KeyChain-None-Safe-219/trial_T20190909_012027_782483/game.tw-pddl",
+   "t": 0,
+   "category": "command",
+   "budget": {
+    "decisions_used": 0,
+    "env_steps_used": 0,
+    "max_env_steps": 50,
+    "max_decisions": 50
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "tools_sha_ok": true,
+    "a_B_ok": true
+   },
+   "a_noop_QQ": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   },
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 1
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "BQ_first_prompt_eq_BB_first": true,
+    "ok": true
+   },
+   "outcomes": {
+    "QQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 326.3137357234955,
+     "error": null
+    },
+    "BB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 392.30258893966675,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 364.85177516937256,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 298.21607995033264,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "eb5906e88fca91b0",
+   "domain": "alfworld",
+   "task_id": "json_2.1.1/valid_unseen/pick_cool_then_place_in_recep-Potato-None-Microwave-10/trial_T20190907_033306_962974/game.tw-pddl",
+   "t": 0,
+   "category": "command",
+   "budget": {
+    "decisions_used": 0,
+    "env_steps_used": 0,
+    "max_env_steps": 50,
+    "max_decisions": 50
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "tools_sha_ok": true,
+    "a_B_ok": true
+   },
+   "a_noop_QQ": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   },
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 1
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "BQ_first_prompt_eq_BB_first": true,
+    "ok": true
+   },
+   "outcomes": {
+    "QQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 199.28844141960144,
+     "error": null
+    },
+    "BB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 187.16455245018005,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 173.73243856430054,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 326.9741322994232,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "481879ec8e91a2c7",
+   "domain": "alfworld",
+   "task_id": "json_2.1.1/valid_unseen/pick_heat_then_place_in_recep-Potato-None-GarbageCan-10/trial_T20190907_161745_664033/game.tw-pddl",
+   "t": 0,
+   "category": "command",
+   "budget": {
+    "decisions_used": 0,
+    "env_steps_used": 0,
+    "max_env_steps": 50,
+    "max_decisions": 50
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "tools_sha_ok": true,
+    "a_B_ok": true
+   },
+   "a_noop_QQ": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   },
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 1
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "BQ_first_prompt_eq_BB_first": true,
+    "ok": true
+   },
+   "outcomes": {
+    "QQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 215.2793972492218,
+     "error": null
+    },
+    "BB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 263.47796654701233,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 252.09690308570862,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "max_decisions",
+     "n_decisions": 50,
+     "duration": 247.2706172466278,
+     "error": null
+    }
+   }
+  }
+ ],
+ "c_isolation": [
+  {
+   "state_id": "4319e4b6ae7dcac2",
+   "rev_equal": true,
+   "conc_equal": true
+  },
+  {
+   "state_id": "43b5425b64e38b20",
+   "rev_equal": true,
+   "conc_equal": true
+  },
+  {
+   "state_id": "f53b13cc99b39580",
+   "rev_equal": true,
+   "conc_equal": true
+  },
+  {
+   "state_id": "94a1177d8cf4ecf2",
+   "rev_equal": true,
+   "conc_equal": true
+  }
+ ],
+ "a_noop_BB": [
+  {
+   "state_id": "3653e7223c32fddc",
+   "run_id": "ext_q4_bf16_alfworld_smoke",
+   "domain": "alfworld",
+   "task_id": "json_2.1.1/valid_unseen/pick_two_obj_and_place-Pillow-None-Sofa-219/trial_T20190907_163408_914117/game.tw-pddl",
+   "t": 25,
+   "noop": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   }
+  },
+  {
+   "state_id": "f0b0c42e956f79af",
+   "run_id": "ext_q4_bf16_alfworld_smoke",
+   "domain": "alfworld",
+   "task_id": "json_2.1.1/valid_unseen/look_at_obj_in_light-Mug-None-DeskLamp-308/trial_T20190908_201421_021646/game.tw-pddl",
+   "t": 25,
+   "noop": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   }
+  },
+  {
+   "state_id": "61f35187bd4d830b",
+   "run_id": "ext_q4_bf16_alfworld_smoke",
+   "domain": "alfworld",
+   "task_id": "json_2.1.1/valid_unseen/pick_clean_then_place_in_recep-Spatula-None-Drawer-10/trial_T20190907_080800_275989/game.tw-pddl",
+   "t": 25,
+   "noop": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   }
+  },
+  {
+   "state_id": "5232125292d08b53",
+   "run_id": "ext_q4_bf16_alfworld_smoke",
+   "domain": "alfworld",
+   "task_id": "json_2.1.1/valid_unseen/pick_and_place_simple-Pencil-None-Shelf-308/trial_T20190908_122024_052056/game.tw-pddl",
+   "t": 3,
+   "noop": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   }
+  }
+ ],
+ "seconds_total": 2507.2315335273743,
+ "verdict": {
+  "q_replay_at_state": true,
+  "a_QQ": true,
+  "a_BB": true,
+  "replay_fidelity": true,
+  "c_isolation": true,
+  "c_saveload": true,
+  "e_reprefill": true,
+  "n_states": 12,
+  "n_bb_noop": 4,
+  "n_isolation": 4,
+  "n_search_excluded": 0,
+  "categories": [
+   "command"
+  ],
+  "n_branch_errors": 0,
+  "pass": true
+ },
+ "throughput": {
+  "n_items_searched": 12,
+  "n_states": 12,
+  "divergence_rate": 1.0,
+  "t_star": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1,
+   2
+  ],
+  "shadow_seconds_median": 2.16397762298584,
+  "search_wall_per_item": 7.1396727959314985,
+  "branch_duration_median": 186.3306007385254,
+  "branch_duration_p90": 314.55406761169434,
+  "fwd_wall_per_branch": 26.33955028653145,
+  "n_fwd_branches": 48
+ }
+}

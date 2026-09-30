@@ -1,0 +1,270 @@
+{
+ "protocol": "fork-ext-v1",
+ "env": "bfcl",
+ "spec": {
+  "mode": "gate_same",
+  "q_blocks": [
+   "ext_q4_gptq_w4_d1_bfcl_smoke:bfcl_base",
+   "ext_q4_gptq_w4_d1_bfcl_smoke:bfcl_miss_param",
+   "ext_q4_gptq_w4_d1_bfcl_smoke:bfcl_miss_func",
+   "ext_q4_gptq_w4_d1_bfcl_smoke:bfcl_long_context"
+  ],
+  "n_items": 3,
+  "n_same": 4,
+  "concurrency": 8,
+  "out": "analysis/fork/ext/gate/bfcl_q4_same_ckpt_r2"
+ },
+ "servers": {
+  "B": {
+   "gpu": "2",
+   "port": 8103,
+   "pid": 3919789,
+   "ckpt": {
+    "kind": "gptq",
+    "wbits": 4,
+    "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+   },
+   "path": "/tmp/cloq_49694/ckpt_fork_ext_gate_same_q4_gptq_w4_d1_bfcl_r2_Q",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "2",
+    "8103",
+    "/tmp/cloq_49694/ckpt_fork_ext_gate_same_q4_gptq_w4_d1_bfcl_r2_Q",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.44",
+   "hook_coverage": null,
+   "canary": "a72b3da03409576e",
+   "ckpt_sha256": "e6c24bc24d5d2729f0ae2de9cbcee08d7291a829cdc3d1eb2d48fefd1a9605a1",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+     "chat_template_kwargs": {}
+    },
+    "weights": "sha256:e6c24bc24d5d2729f0ae2de9cbcee08d7291a829cdc3d1eb2d48fefd1a9605a1",
+    "ckpt": {
+     "kind": "gptq",
+     "wbits": 4,
+     "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 4,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "29ba0176bfc6a4e0"
+  },
+  "Q": {
+   "gpu": "2",
+   "port": 8203,
+   "pid": 3922717,
+   "ckpt": {
+    "kind": "gptq",
+    "wbits": 4,
+    "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+   },
+   "path": "/tmp/cloq_49694/ckpt_fork_ext_gate_same_q4_gptq_w4_d1_bfcl_r2_Q",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "2",
+    "8203",
+    "/tmp/cloq_49694/ckpt_fork_ext_gate_same_q4_gptq_w4_d1_bfcl_r2_Q",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.44",
+   "hook_coverage": null,
+   "canary": "a72b3da03409576e",
+   "ckpt_sha256": "e6c24bc24d5d2729f0ae2de9cbcee08d7291a829cdc3d1eb2d48fefd1a9605a1",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+     "chat_template_kwargs": {}
+    },
+    "weights": "sha256:e6c24bc24d5d2729f0ae2de9cbcee08d7291a829cdc3d1eb2d48fefd1a9605a1",
+    "ckpt": {
+     "kind": "gptq",
+     "wbits": 4,
+     "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 4,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "29ba0176bfc6a4e0"
+  },
+  "same_effective_config": true,
+  "q_quantization": {
+   "method": "GPTQ",
+   "wbits": 4,
+   "group_size": 128,
+   "sym": false,
+   "percdamp": 0.01,
+   "blocksize": 128,
+   "act_order": true,
+   "true_sequential": true,
+   "source_model": "Qwen/Qwen3-4B-Instruct-2507",
+   "source_revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+   "storage": "fake-quant bf16",
+   "calibration_manifest": "/data/ziyangs/cloq/manifests/a6k2/q4/calib_fp_traj_c1.json",
+   "moe_experts": null,
+   "calibration": {
+    "protocol": "v1",
+    "arm": "fp_traj",
+    "draw": "c1",
+    "draw_seed": 20260729,
+    "budget_rows": 64000,
+    "total_rows": 64000,
+    "rows_within_budget": true,
+    "n_states": 57,
+    "n_tasks": 57,
+    "rows_per_state_min": 1122,
+    "rows_per_state_max": 1123,
+    "median_context_tokens": 6041.0,
+    "total_context_tokens": 372294,
+    "states_by_source": {
+     "fp": 57
+    },
+    "states_by_depth_quartile": {
+     "0": 16,
+     "1": 13,
+     "2": 14,
+     "3": 14
+    },
+    "states_by_domain": {
+     "retail": 39,
+     "airline": 18
+    },
+    "fp_run": "a6k2_q4_bf16_cal",
+    "q_run": null,
+    "novelty": null,
+    "notes": [],
+    "split_file_sha256": "7d1671154c37375990fd01999df2257e1bef916ee8201158b850846876315a79",
+    "manifest_sha256": "780875fe8a38bd31c9687ffafb512b09061db1c3b8786ecacbbbb9547cd5a20a"
+   },
+   "seconds_quantize": 382.9359998703003,
+   "n_expert_tensors_rtn": 0
+  },
+  "user_base": null,
+  "host": "node003",
+  "job": "49694"
+ },
+ "bases": {
+  "B": "http://127.0.0.1:8103/v1",
+  "Q": "http://127.0.0.1:8203/v1"
+ },
+ "search": {
+  "n": 12,
+  "n_states": 0,
+  "n_no_divergence": 12,
+  "excluded": []
+ },
+ "states": [
+  {
+   "state_id": "7bd337d0ed291cbc",
+   "domain": "bfcl_base",
+   "task_id": "multi_turn_base_69",
+   "t": 2,
+   "shadow_equals_a_Q": true,
+   "four_identical": true,
+   "equal_original": true,
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 3
+   }
+  },
+  {
+   "state_id": "80e87ede5177b180",
+   "domain": "bfcl_base",
+   "task_id": "multi_turn_base_92",
+   "t": 6,
+   "shadow_equals_a_Q": true,
+   "four_identical": true,
+   "equal_original": true,
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 7
+   }
+  },
+  {
+   "state_id": "64c6b61662cda8d2",
+   "domain": "bfcl_base",
+   "task_id": "multi_turn_base_146",
+   "t": 5,
+   "shadow_equals_a_Q": true,
+   "four_identical": true,
+   "equal_original": true,
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 6
+   }
+  },
+  {
+   "state_id": "c4c1c1165a1e89c4",
+   "domain": "bfcl_base",
+   "task_id": "multi_turn_base_132",
+   "t": 2,
+   "shadow_equals_a_Q": true,
+   "four_identical": true,
+   "equal_original": true,
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 3
+   }
+  }
+ ],
+ "verdict": {
+  "no_divergence_all": true,
+  "shadow_equals_a_Q": true,
+  "four_identical": true,
+  "equal_original": true,
+  "replay": true,
+  "n_states": 4,
+  "pass": true
+ },
+ "seconds_total": 126.81168675422668
+}

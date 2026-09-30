@@ -10,6 +10,31 @@ Newest first.
 
 ---
 
+## W39-extfork — Same-state 2×2 forks ported to ALFWorld and BFCL multi-turn; replay gate PASS; development forks queued (2026-09-30)
+**TL;DR** Protocol fork-ext-v1 passes the fork-v1 engineering gate on both simulator-free environments (q4 GPTQ-W4 d1 vs BF16, smoke blocks). Neither environment has an LLM user, so these forks remove the user-simulator confound of the τ² forks.
+- **ALFWorld:** Q→Q 12/12, B→B 4/4, same-checkpoint 4/4, isolation 4/4, save/load 12/12, re-prefill 12/12 + 12/12.
+- **BFCL (r2):** the same counts.
+- Every replayed step reproduces the recorded prompt and observations, and backend-state hashes are equal across branches.
+- **BFCL r1** failed only on the stored BFCL result record: replayed text replies were rebuilt with `tool_calls []` instead of vLLM's `null`. Prompts and outcomes were identical. It was fixed and re-run before any development fork (r1 is kept).
+- **Queued at −8, after the gate:** 36 development tasks.
+  - ALFWorld q8 × {GPTQ-W4 d1, AWQ-W4 d1, GPTQ-W3, KV4} (2-GPU).
+  - BFCL {q4 (1-GPU), q8 (2-GPU)} × the same 4 arms × 4 categories.
+  - All run on the W37/W38 eval blocks; B = BF16; each task searches every item, then runs BB/BQ/QB plus a 10% QQ no-op sample (a mismatch quarantines the task).
+  - About 90 GPU-h estimated.
+- **Mechanism.**
+  - State = the first semantic divergence along Q's trajectory: action class, tool count/name/arguments, or the ALFWorld `act` command after normalisation.
+  - The environment is rebuilt by re-executing the recorded prefix through the adapters' own episode code, via a policy hook.
+  - Branches BB/BQ/QB/QQ follow fork-v1. Y = the official evaluator: BFCL multi_turn_checker valid, ALFWorld won.
+  - Output: G = Y_BQ − Y_QQ and A/C/I in `effects.jsonl`; `branches.json` rows follow the τ² schema.
+- **Throughput (q4 gate, 1 GPU, concurrency 8).**
+  - ALFWorld: divergence 100% (t* mostly 0); 26 s wall per branch (episodes run 186 s).
+  - BFCL: divergence 65%; 6 s wall per branch; search 37 s per item.
+- **Gate-state outcomes are not estimates** (12 smoke states each, q4):
+  - ALFWorld: ΣG 0, ΣA +1, ΣC +1, ΣI −1.
+  - BFCL: all four cells equal in every state.
+
+Evidence: `docs/insights/REPLAY_ACCEPTANCE_ext.md`, `analysis/fork/ext/gate/{alfworld_q4_gptq_w4_d1,alfworld_q4_same_ckpt,bfcl_q4_gptq_w4_d1_r2,bfcl_q4_same_ckpt_r2,bfcl_q4_gptq_w4_d1,bfcl_q4_same_ckpt}/`, `scripts/ext/{fork_ext,make_tasks_extfork}.py`, `scripts/ext/{alfworld_run,bfcl_run}.py` (replay hooks), `scripts/a6000/worker.py::run_fork` (`env` dispatch), queue `todo/fork_ext_dev_*.json`.
+
 ## W47 — q4 W×A×KV 2³ closed-loop matrix queued (QuaRot-rotated), A8/SQ anchors; q8 QuaRot validated (2026-09-30 05:00 PDT)
 **TL;DR** The three smoke evals finished with no errors and plausible success, so the matrix is queued.
 
