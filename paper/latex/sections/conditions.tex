@@ -1,0 +1,31 @@
+\section{Run Conditions and Measurement Definitions}
+\label{sec:conditions}
+
+\paragraph{Tasks.} We use \tautwo{} \citep{barres2025tau2} in text mode. \emph{Development} uses the 85 retail and airline tasks of our frozen evaluation split (58 retail, 27 airline; 22 tasks were excluded earlier because BF16 was unstable on them, and they stay out because that selection used BF16 behaviour) and the 80-task telecom development split. \emph{Confirmation} uses the remaining 34 telecom tasks. The telecom split was fixed before any run from \tautwo{}'s official 114-task \texttt{base} split, stratified by issue type and persona and ordered by a salted hash of the task id, so no model output entered it. A disjoint set of 57 retail/airline tasks supplies the quantizers' calibration trajectories.
+
+\paragraph{Agents and quantization.} The agents are Qwen3-4B-Instruct-2507 (q4) and Qwen3-8B (q8, thinking disabled), pinned to fixed revisions and served with the Hermes tool parser. The user simulator is Qwen3-30B-A3B, shared by all agents. Q is a GPTQ-W4 \citep{frantar2023gptq} or AWQ-W4 \citep{lin2024awq} checkpoint, fake-quantized: weights are quantized and dequantized, then served with BF16 compute on the same serving path as the BF16 reference B. The primary checkpoint per model and method (calibration draw d1) was fixed by a completeness rule stated before any fork outcome (the checkpoint with the most existing independent runs; ties broken by the lowest draw index), not by earlier results. Agent and simulator decode greedily with a 32k-token context.
+
+\paragraph{Deterministic serving.} Agents and simulator run on vLLM with batch-invariant kernels and deterministic Inductor compilation; every server start checks a numerics canary against stored reference outputs. We adopted the deterministic compilation flag after finding that compile-time autotuning chose different reduction configurations for a fused residual+RMSNorm kernel on different nodes, which shifted every token of a determinism pair (Appendix~\ref{app:serving}). With the fix, cross-node determinism pairs are byte-identical in prompts and completions: 257/257 decisions for q4 and 303/303 for Qwen3-30B-A3B as agent. Each branch of \S\ref{sec:fork} is therefore designed to have one reproducible outcome given its state; the replay acceptance gate (\S\ref{sec:replay}) checks this rather than assuming it.
+
+\paragraph{Prompt nonces and blocks.} A \emph{nonce} is a short random string inserted as a session-identifier line in the system prompt. It is a researcher-defined input perturbation, not a ``no-change'' null: it changes the input and re-rolls trajectories. We use it for one purpose: each independent nonce defines a \emph{block}, one closed-loop run of Q (and of B, for paired success) over the task pool, and blocks are the replicate unit of inference (\S\ref{sec:inference}). Reference controls are reported separately and never pooled with the quantization comparison: identical-setting repeats, nonce perturbation, numerics controls (a rotated-BF16 checkpoint) and fixed random weight perturbations, the last being a control intervention rather than a null. \pending{stratified floor table for these controls, flagging single canonical-run floors --- identical-setting repeats and a BF16-vs-BF16 nonce control are not run yet (\nolinkurl{docs/insights/METHODOLOGY_REVISION.md} B4)}
+
+\paragraph{Success endpoints.} For retail and airline we report \emph{DB success}: the final database matches the gold database and the episode terminated normally. This is not \tautwo{}'s official reward, which multiplies DB match with natural-language assertions (retail, 112 of 114 tasks) or a communicate check (airline, 50 of 50); official rewards are reported separately. For telecom we report the official deterministic task-basis success (environment assertions, plus action checks for 14 of the 80 development tasks). Context overflow and unparseable agent output count as failures; infrastructure outages are missing, never failures, and never ``no divergence''.
+
+\paragraph{Tool types.} Whether an action reads, writes or hands off is taken from a table derived from \tautwo{}'s tool decorators and re-verified against the source (Table~\ref{tab:tooltypes}); names outside a domain's tool list are \emph{invalid}. An earlier name-pattern rule agreed with the table on 99.98\% of q4/q8 episodes for ``any write'' in retail/airline, but misses 5 of the 6 telecom write tools, so the table is binding for all annotation and is frozen by hash before confirmation.
+
+\begin{table}[t]
+\centering\footnotesize\setlength{\tabcolsep}{4pt}
+\resizebox{\columnwidth}{!}{\begin{tabular}{@{}lccccc@{}}
+\toprule
+Domain & read & write & handoff & other & regex misses \\
+\midrule
+Retail  & 7 & 7 & 1 & 1 (calculate) & 0 \\
+Airline & 6 & 6 & 1 & 1 (calculate) & 0 \\
+Telecom & 6 & 6 & 1 & 0 & 5 of 6 writes \\
+\bottomrule
+\end{tabular}}
+\caption{Agent tool types per domain, from the \tautwo{} tool decorators (commit \texttt{2174a60}), verified by re-derivation from the source. ``Regex misses'': write tools the earlier name-pattern rule failed to classify. Source: \nolinkurl{analysis/insights/iter_4/out/tool_types.json}; full list in Appendix~\ref{app:tooltable}.}
+\label{tab:tooltypes}
+\end{table}
+
+\paragraph{Background measurement: turnover above a floor.} As motivation only, and only for the conditions where it was verified (5 Qwen3 models, retail and airline, W4 cells against a numerics floor of rotated BF16, canonical BF16 reruns and Gaussian noise at $k\le 0.003$), the turnover intensity of W4 checkpoints exceeds the floor: pooled excess $+0.19$ [0.10, 0.30] for RTN, $+0.15$ for GPTQ and $+0.16$ for AWQ, Holm-adjusted (Appendix~\ref{app:turnover}). This says that W4 changes which tasks succeed. It does not say which of those changes quantized actions cause, which is the question of \S\ref{sec:fork}. Whether W4 success is non-inferior to BF16 is a separate, paired analysis (margin 3\pp{}; \S\ref{sec:confirm}). \pending{paired Q$-$B success non-inferiority, TOST and ordinary difference per model $\times$ method --- \nolinkurl{analysis/insights/iter_4/success_ni.py} real mode on the \nolinkurl{a6k2_{q4,q8}_bfpair_q1..q5} runs}

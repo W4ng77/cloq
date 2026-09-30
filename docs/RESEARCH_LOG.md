@@ -10,6 +10,17 @@ Newest first.
 
 ---
 
+## W33 — Paper rewritten as "Tracing the Consequences of Quantization in Closed-Loop Agents" (2026-09-30)
+**TL;DR** `paper/latex/` is rewritten to the Round-3 target. The question: on identical interaction histories, which task consequences do quantization-induced local action changes cause, and do they come from the current action, the continuation controller, or their interaction?
+- **Structure:** Intro; Related work (Dutta, Flat Score, AgentProv, Model Equality Testing, Replay Gap, Dynamic MP Routing, agent-eval noise); Run conditions and measurement definitions; the same-state four-branch design (G = h − b, A/C/I, G_all, replay gate, stochastic fallback, paired-block inference, fixed-pool vs new-task); Consequence composition and mechanism annotation; Telecom holdout confirmation (g_min = ε = 3 pp); Discussion (pending); Limitations.
+- **Placeholders:** all fork results are `\pending{}` (136 rendered).
+- **Figure 1:** a TikZ schematic, with no data in it.
+- **Appendix:** the P0 audit (H3 original vs corrected, simulation, crossed variance components, measurement fixes); the iter-4 prereg record (non-replication); the random-perturbation fingerprint (exploratory, post-hoc); the turnover table; determinism.
+- **Build:** 13 pages; main text 8 pages; no errors, undefined references or undefined citations.
+- **Citations:** 6 bib entries added from `references_new.bib`, with arXiv ids checked.
+- **Other files:** the old sections are moved to `sections/old/`, and the checklist is updated (A1–A3, B1, B5, B6, C2, C3, D).
+Evidence: `paper/latex/REWRITE_NOTES.md` (source of every number, open placeholders), `paper/latex/main.tex`, `paper/latex/sections/*.tex`, `paper/latex/main.pdf`, `paper/latex/responsible_nlp_checklist.md`.
+
 ## W32 — Review round 3: paper fixed as "Tracing the Consequences of Quantization in Closed-Loop Agents" (2026-09-30)
 **TL;DR** The goal is a complete, submittable paper; results set claim strength, not continuation. Decision points: 10-01 (deterministic vs stochastic forks vs engineering) and 10-03 (measurement-paper freeze if restoration is unverifiable). Stochastic estimand G = E[Y_BQ] − E[Y_QQ] with nested repeats, no no-op subtraction. Annotation: automatic events + LLM labels with evidence locations + ~80 human-blinded states (~20 double). Blocks sized by simulator throughput. Telecom holdout = independent cross-domain confirmation with a pre-mapped taxonomy. LaTeX rewrite starts now.
 Evidence: `docs/insights/EXTERNAL_REVIEW_GPT61_20260930.md` (Round 3).

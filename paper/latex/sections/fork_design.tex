@@ -1,0 +1,98 @@
+\section{Same-State Four-Branch Design}
+\label{sec:fork}
+
+\subsection{Fork states: the first semantic action divergence}
+\label{sec:states}
+
+For a model, a quantized checkpoint Q, a task $i$ and a block $r$, take Q's closed-loop trajectory. Before each of Q's decisions $t$ we restore the saved state $s_t$: the full message history (agent, user and tool messages), the environment and user-device databases rebuilt by strict replay of the recorded tool calls, the user simulator's visible conversation, and the step and error budget already used. B then generates its full action on the same request; the prompt token ids B's server receives must equal those Q received at $t$, otherwise the task is excluded with that reason. The primary state is the first $t$ at which the two full actions differ \emph{semantically}: in class (tool call, text, stop), in tool name (including names outside the domain's tool list), in the number or order of calls, or in arguments after normalisation (key order, JSON whitespace and number formatting ignored).
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+\item At most one state per task $\times$ model $\times$ checkpoint $\times$ block, frozen (written to disk with its hashes) before any branch is run.
+\item Differences in free text only (same class, different wording) are recorded but are not primary states. Such differences, for example a commitment made or an authorisation requested in prose, can matter; they are outside the primary scope.
+\item Late divergences are kept, with their remaining step and error budget.
+\item A task with no qualifying divergence stays in the denominator with zero effect. Infrastructure failures are never coded as ``no divergence''.
+\end{itemize}
+
+\subsection{Branches and estimands}
+\label{sec:estimands}
+
+From state $s$, the current action $a_{\mathrm{X}}$ ($\mathrm{X}\in\{\mathrm{B},\mathrm{Q}\}$) is executed as the agent's next step by the real environment or answered by the real simulator, consuming one step and counting its errors as in live play; controller $\mathrm{Y}$ then continues to the end with the original remaining budget. This gives branches BB, BQ, QB and QQ with binary outcomes $\YY{XY}$ and means $\LL{XY}=E[\YY{XY}]$ over fork states (Figure~\ref{fig:fork}). QQ reproduces Q's original episode.
+
+\paragraph{One-replacement gain.} Replacing only the current action with B's, while Q continues, gives
+\begin{equation}
+G = E[\YY{BQ}-\YY{QQ}] = h - b,
+\end{equation}
+with rescue rate $h=P(\YY{BQ}=1,\YY{QQ}=0)$ and new-damage rate $b=P(\YY{BQ}=0,\YY{QQ}=1)$. We always report the paired four-way composition (rescue, new damage, both succeed, both fail), because the same $G$ can come from few consequences or from many rescues cancelled by many breaks.
+
+\paragraph{Decomposition.} With B's branch BB as the reference,
+\begin{align}
+A &= \LL{QB}-\LL{BB} \quad\text{(current action)},\\
+C &= \LL{BQ}-\LL{BB} \quad\text{(continuation)},\\
+I &= \LL{QQ}-\LL{QB}-\LL{BQ}+\LL{BB} \quad\text{(interaction)},
+\end{align}
+so that $\LL{QQ}-\LL{BB}=A+C+I$ exactly, and $G=-(A+I)$: the gain of one replacement is the current-action effect as seen under Q's own continuation. $A$, $C$ and $I$ are contrasts on the population of fork states; they say where the change in success at a divergence comes from, not whether a particular action was wrong (\S\ref{sec:annotation}).
+
+\paragraph{Primary endpoint.} Let $D_{ir}=1$ if task $i$ in block $r$ reaches a valid fork state. The primary endpoint is the full-pool one-replacement gain
+\begin{equation}
+\Gall = E_{i,r}\big[D_{ir}\,(\YY{BQ}-\YY{QQ})_{ir}\big] = \pi\, G,
+\end{equation}
+with divergence prevalence $\pi=P(D_{ir}=1)$, averaged over the whole task pool with fixed cell weights declared in advance; tasks without a divergence contribute zero. The conditional $G$ (given a divergence) is secondary and is estimated as a ratio with block resampling. Prevalence, the number of valid states and every exclusion reason are always reported.
+
+\subsection{Replay acceptance}
+\label{sec:replay}
+
+Forks count as mechanism evidence only if an engineering gate passes before any development outcome is analysed:
+(a) restoration of the databases, device state, user-simulator state and step budget is correct, and canonical state hashes match after save and load;
+(b) no-op forks B$\to$B and Q$\to$Q reproduce the original trajectories and outcomes, token for token;
+(c) with B and Q pointed at the same checkpoint (on two servers), all four branches agree;
+(d) branches are isolated, so execution order and concurrency do not change any branch;
+(e) after a controller switch the context is re-prefilled from the history by the other server, with no KV or prefix cache shared across weights; and forced actions consume the same step and error budget as live actions.
+If restoration cannot be verified by the decision point, the paper reports the measurements of \S\ref{sec:states} and \S\ref{sec:annotation} and withdraws the causal reading of the branches. \pending{gate outcome (a)--(e) with counts --- \nolinkurl{analysis/fork/gate/} (\nolinkurl{gate.json}, \nolinkurl{gate_same.json}) from \nolinkurl{scripts/a6000/fork_driver.py}; \nolinkurl{docs/insights/FORK_PROTOCOL.md} \S8}
+
+\subsection{Protocol, replicates and inference}
+\label{sec:inference}
+
+\paragraph{Deterministic protocol.} Under deterministic serving and a greedy simulator, each branch is run once per state; the randomness in $\Gall$ comes from which states arise, and that varies only across blocks. A block is one independent nonce (\S\ref{sec:conditions}); all tasks of a block share it, and B and Q branches share each state, so inference is on paired blocks: we compute each block's full-pool statistics and draw intervals from between-block variation, with simulation checks of calibration for sparse events. \pending{interval method and its simulated coverage for sparse rescue/damage counts --- statistics deliverable (review \S D), script in \nolinkurl{analysis/fork/} not yet written}
+
+\paragraph{Stochastic fallback.} If deterministic replay fails the gate but the start state (environment, history, remaining budget) is verifiably identical across branches and the remaining differences come from a describable, repeatable source of randomness in the subsequent execution, the estimand becomes $G=E[\YY{BQ}]-E[\YY{QQ}]$, the expectation over that declared randomness. Branch repeats estimate these expectations and are nested within task, nonce and state; they are not independent samples. Same-configuration replays measure run variance but are never subtracted from $G$ as a ``no-op flip rate''. Hidden-state loss, branch contamination or systematic replay bias cannot be repaired by repeats. Repeat count, seed rule, failure handling and inference would be fixed in the protocol before use.
+
+\paragraph{Two target populations.} Conclusions about the \emph{fixed benchmark task pool} treat tasks as fixed and blocks as random; conclusions about a \emph{new task distribution} resample tasks and blocks jointly (task-clustered, crossed). More nonce blocks narrow the first but not the second; only more independent tasks narrow the second. We report both and never let the first stand in for the second.
+
+\paragraph{Decision rules.} We plan power for a true $G$ of $g_{\min}=3$\pp{}. $G$ is called positive if its one-sided 95\% lower bound exceeds 0, and above 3\pp{} if that bound exceeds 3\pp{}. An average effect is called small only if a valid 90\% interval lies inside $(-3,+3)$\pp{}. A 5\pp{} margin is a sensitivity analysis only. A pooled pass does not imply a per-model or per-method pass. \pending{multiplicity rule across models, methods and secondary endpoints --- to be frozen in \nolinkurl{docs/insights/PREREG_FORK_CONFIRM.md}}
+
+\subsection{Development results}
+\label{sec:fork-results}
+
+Development covers q4 and q8 $\times$ GPTQ-W4 and AWQ-W4 on the 85 retail/airline tasks and the 80 telecom development tasks. The number of blocks is set by simulator throughput, after the gate, full task coverage and complete, balanced blocks, with capacity reserved for the confirmation (Table~\ref{tab:dev}).
+
+\begin{table*}[t]
+\centering\scriptsize\setlength{\tabcolsep}{4pt}
+\resizebox{\textwidth}{!}{\begin{tabular}{@{}llccccc@{}}
+\toprule
+ & Quantity & q4 GPTQ-W4 & q4 AWQ-W4 & q8 GPTQ-W4 & q8 AWQ-W4 & Pooled (fixed weights) \\
+\midrule
+\multirow{6}{*}{\shortstack[l]{(a) Divergence\\coverage}}
+ & tasks in pool $\times$ blocks & \pending{DEV-a} & \pending{DEV-a} & \pending{DEV-a} & \pending{DEV-a} & \pending{DEV-a} \\
+ & valid fork states & \pending{DEV-a} & \pending{DEV-a} & \pending{DEV-a} & \pending{DEV-a} & \pending{DEV-a} \\
+ & no qualifying divergence & \pending{DEV-a} & \pending{DEV-a} & \pending{DEV-a} & \pending{DEV-a} & \pending{DEV-a} \\
+ & excluded (by reason) & \pending{DEV-a} & \pending{DEV-a} & \pending{DEV-a} & \pending{DEV-a} & \pending{DEV-a} \\
+ & prevalence $\pi$ [CI] & \pending{DEV-a} & \pending{DEV-a} & \pending{DEV-a} & \pending{DEV-a} & \pending{DEV-a} \\
+ & position $t$ / remaining budget (median) & \pending{DEV-a} & \pending{DEV-a} & \pending{DEV-a} & \pending{DEV-a} & \pending{DEV-a} \\
+\midrule
+\multirow{4}{*}{\shortstack[l]{(b) Consequence\\composition\\$(\YY{BQ},\YY{QQ})$}}
+ & rescue $(1,0)$: $n$ (share) & \pending{DEV-b} & \pending{DEV-b} & \pending{DEV-b} & \pending{DEV-b} & \pending{DEV-b} \\
+ & new damage $(0,1)$: $n$ (share) & \pending{DEV-b} & \pending{DEV-b} & \pending{DEV-b} & \pending{DEV-b} & \pending{DEV-b} \\
+ & both succeed $(1,1)$: $n$ (share) & \pending{DEV-b} & \pending{DEV-b} & \pending{DEV-b} & \pending{DEV-b} & \pending{DEV-b} \\
+ & both fail $(0,0)$: $n$ (share) & \pending{DEV-b} & \pending{DEV-b} & \pending{DEV-b} & \pending{DEV-b} & \pending{DEV-b} \\
+\midrule
+\multirow{6}{*}{\shortstack[l]{(c) Gain and\\decomposition\\(pp, 95\% CI)}}
+ & $\Gall$ (primary, fixed pool) & \pending{DEV-c} & \pending{DEV-c} & \pending{DEV-c} & \pending{DEV-c} & \pending{DEV-c} \\
+ & $\Gall$ (new tasks) & \pending{DEV-c} & \pending{DEV-c} & \pending{DEV-c} & \pending{DEV-c} & \pending{DEV-c} \\
+ & $G$ given divergence & \pending{DEV-c} & \pending{DEV-c} & \pending{DEV-c} & \pending{DEV-c} & \pending{DEV-c} \\
+ & $A$ (current action) & \pending{DEV-c} & \pending{DEV-c} & \pending{DEV-c} & \pending{DEV-c} & \pending{DEV-c} \\
+ & $C$ (continuation) & \pending{DEV-c} & \pending{DEV-c} & \pending{DEV-c} & \pending{DEV-c} & \pending{DEV-c} \\
+ & $I$ (interaction) & \pending{DEV-c} & \pending{DEV-c} & \pending{DEV-c} & \pending{DEV-c} & \pending{DEV-c} \\
+\bottomrule
+\end{tabular}}
+\caption{Development forks (85 retail/airline + 80 telecom development tasks), per model $\times$ method and pooled with fixed cell weights. All cells are placeholders. \pending{DEV-a: coverage from the frozen state files (\nolinkurl{states/*.json}) written by \nolinkurl{scripts/a6000/fork_driver.py}; DEV-b, DEV-c: branch outcomes from \nolinkurl{fork_driver.py} and the paired-block analysis script to be added under \nolinkurl{analysis/fork/}; per-domain split in the appendix}}
+\label{tab:dev}
+\end{table*}

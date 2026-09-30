@@ -1,0 +1,55 @@
+\section{Consequence Composition and Mechanism Annotation}
+\label{sec:annotation}
+
+A different full action is not by itself a mechanism finding, and a nonzero $G$ does not say why. For each fork state and branch we therefore record process evidence in three independent fields. The BF16 action is only a reference: a Q action is never labelled defective because it differs from $a_{\mathrm{B}}$, and $a_{\mathrm{Q}}$ and $a_{\mathrm{B}}$ are judged by the same checks.
+\begin{enumerate}[leftmargin=*,itemsep=1pt,topsep=2pt]
+\item \textbf{Defect of the current action}, judged from tool preconditions, task requirements, authorisation and state changes: an invalid tool (Table~\ref{tab:tooltypes}), invalid arguments against the tool schema, an execution error returned by the environment, identifiers that appear in no earlier message or tool output, a write without an explicit confirmation in the preceding user turn (a proxy, not an authorisation verdict), a malformed action, or ending the episode.
+\item \textbf{Later correction aimed at that defect}, e.g.\ a later valid call of the same tool with grounded identifiers; a write is not undone by a retry.
+\item \textbf{Requirements satisfied at the end}: success under its named endpoint, each environment assertion, action and communicate check, and the database paths that differ from the gold state.
+\end{enumerate}
+Recovery is claimed only for the sequence \emph{defect $\rightarrow$ correction $\rightarrow$ requirements satisfied}. Otherwise a failed branch reads ``not recovered under the tested continuation controllers and the fixed remaining budget''. We also relate non-recovery to the remaining budget, the defect type and the controller.
+
+% Table 4 (holdout) is defined here so that it floats onto the page of Section 6.
+\begin{table*}[t]
+\centering\scriptsize\setlength{\tabcolsep}{4pt}
+\resizebox{\textwidth}{!}{\begin{tabular}{@{}lccccc@{}}
+\toprule
+Quantity & q4 GPTQ-W4 & q4 AWQ-W4 & q8 GPTQ-W4 & q8 AWQ-W4 & Pooled (fixed weights) \\
+\midrule
+blocks / valid fork states / no divergence / excluded & \pending{HOLD} & \pending{HOLD} & \pending{HOLD} & \pending{HOLD} & \pending{HOLD} \\
+rescue / new damage / both succeed / both fail: $n$ (share) & \pending{HOLD} & \pending{HOLD} & \pending{HOLD} & \pending{HOLD} & \pending{HOLD} \\
+$\Gall$ (pp) [one-sided 95\% lower bound] & \pending{HOLD} & \pending{HOLD} & \pending{HOLD} & \pending{HOLD} & \pending{HOLD} \\
+$A$, $C$, $I$ (pp) [95\% CI] & \pending{HOLD} & \pending{HOLD} & \pending{HOLD} & \pending{HOLD} & \pending{HOLD} \\
+frozen hypothesis: verdict & \multicolumn{5}{c}{\pending{HOLD}} \\
+\bottomrule
+\end{tabular}}
+\caption{Telecom holdout confirmation (34 tasks). All cells are placeholders. \pending{HOLD: holdout fork runs under the frozen \nolinkurl{docs/insights/PREREG_FORK_CONFIRM.md} (not yet written), analysed by the same \nolinkurl{analysis/fork/} script as Table~\ref{tab:dev}}}
+\label{tab:confirm}
+\end{table*}
+
+\paragraph{Three layers of labels.} (i) \emph{Automatic events} are extracted on all trajectories from the tool-type table, the tool schemas, environment responses and the evaluator, keeping the raw record behind each judgement. (ii) An \emph{LLM labeller} assigns correction and failed-requirement labels under fixed written rules; every label carries its evidence location in the trajectory, and ``cannot judge'' is an allowed answer. Labels such as ``wrong identifier'', ``write without consent'' and ``premature end'' need rule support or human review, because legitimate substitutes, earlier authorisation and already completed tasks exist. (iii) \emph{Blinded human review} covers about 80 fork states, stratified by consequential versus non-consequential pair, tool type and automatic label; about 20 are reviewed independently by two people. Blinding strips model, precision and branch source and randomises order. We report stratified confusion matrices of human against automatic and LLM labels for the key defect and recovery labels; because the sample is enriched, these do not estimate whole-data accuracy. Case studies are drawn only from human-verified states.
+
+\paragraph{Reading $G$ near zero.} The composition and the process fields decide how a small $G$ is read: a wide interval is \emph{inconclusive}; many rescues and many breaks mean \emph{cancellation}; branches that usually both succeed mean a \emph{small consequence}; and an explicit Q defect, then a correction, then success is \emph{observed recovery}.
+
+\begin{table}[t]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+\resizebox{\columnwidth}{!}{\begin{tabular}{@{}lccc@{}}
+\toprule
+Defect type (current Q action) & states & new damage & recovered \\
+\midrule
+invalid tool / invalid arguments & \pending{MECH} & \pending{MECH} & \pending{MECH} \\
+execution error & \pending{MECH} & \pending{MECH} & \pending{MECH} \\
+ungrounded identifier & \pending{MECH} & \pending{MECH} & \pending{MECH} \\
+unconfirmed write & \pending{MECH} & \pending{MECH} & \pending{MECH} \\
+ends episode & \pending{MECH} & \pending{MECH} & \pending{MECH} \\
+no verifiable defect & \pending{MECH} & \pending{MECH} & \pending{MECH} \\
+\midrule
+human vs.\ auto / LLM agreement & \multicolumn{3}{c}{\pending{MECH-h}} \\
+double-review agreement ($\approx$20) & \multicolumn{3}{c}{\pending{MECH-h}} \\
+\bottomrule
+\end{tabular}}
+\caption{Process evidence for development fork states. ``Recovered'' requires defect $\rightarrow$ correction $\rightarrow$ requirements satisfied. \pending{MECH: \nolinkurl{annotations.jsonl} from \nolinkurl{cloq/fork_annotate.py} plus LLM labels (labeller and rules not yet fixed); MECH-h: blinded review sheets and confusion matrices, stratified, in the appendix}}
+\label{tab:mech}
+\end{table}
+
+\paragraph{Development evidence gate.} There is no go/no-go on the sign of $G$. Development ends when divergence consequences are measured clearly enough to yield a specific explanation that the holdout can test: stable consequences with mechanism evidence; a small effect with a narrow interval and a checked rescue/damage balance; or a few pre-defined divergence types with their opportunity denominators. If intervals are wide and events few, we report insufficient evidence and no new explanation. \pending{which of these outcomes development produced, and the frozen hypothesis for \S\ref{sec:confirm}}

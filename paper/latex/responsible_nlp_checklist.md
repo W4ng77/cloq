@@ -1,6 +1,7 @@
 <!--
-TL;DR (2026-09-28): draft answers to the ARR Responsible NLP Research checklist (sections A-E) for
-"Perturbation Equivalence in Closed-Loop Agents" (paper/latex/main.tex). Answers are drafted from repo facts;
+TL;DR (2026-09-28; updated 2026-09-30, W33): draft answers to the ARR Responsible NLP Research checklist (sections A-E) for
+"Tracing the Consequences of Quantization in Closed-Loop Agents" (paper/latex/main.tex; retitled and reframed in W33,
+see paper/latex/REWRITE_NOTES.md). Answers changed by the new design: A1, A2, A3, B1, B6, C3, D. Answers are drafted from repo facts;
 every TODO must be resolved by the authors before submission. Keep answers anonymous: the form is visible to
 reviewers, so no cluster/host names, repo URLs, or author-identifying details.
 Evidence: model licenses from the Hugging Face API (license tag, checked 2026-09-28); tau2-bench license from
@@ -10,30 +11,28 @@ GPU queue records (queue/done/*.json `seconds`); software versions from the serv
 
 # ARR Responsible NLP Research Checklist: draft answers
 
-Section references are to `paper/latex/main.tex` as compiled on 2026-09-28. The appendix letters (A–H) may shift if sections are moved.
+Section references are to `paper/latex/main.tex` as compiled on 2026-09-30 (W33 rewrite). Appendix letters: A P0 audit, B pre-registration record, C random-perturbation fingerprint, D turnover, E determinism/serving, F tool-type table, G per-domain results. They may shift if sections are moved.
 
 ## A. For every submission
 
 **A1. Did you describe the limitations of your work?**
-Yes. See the unnumbered "Limitations" section after the Conclusion. It covers: two domains and 85 tasks; the MDE applies only to the pooled test; no declared-margin equivalence test; greedy decoding only; fake quantization; one fixed simulator (the same model as the q30a3 agent); one model family; legacy/clean pooling; live snapshots; 4B numbers taken from analysis files; the bf16-grid quantization of the shift axis; and no perturbation tested below one grid step. The section ends with an open-questions list.
+Yes. See the unnumbered "Limitations" section after §7. It covers: fake quantization (dequantized W4 weights, BF16 compute, batch-invariant path; no production kernels); two Qwen3 models × two W4 methods, one primary checkpoint each; one user simulator and one benchmark (three τ²-bench domains); DB success for retail/airline is not the official reward; nonce blocks are a researcher-defined perturbation; fixed-pool vs new-task inference (task-clustered width about ±4 pp in a development run with stand-in pairs, not a result); only the first semantic action divergence is intervened on; the causal reading depends on the replay gate; label validation on an enriched sample; the 34-task holdout; retired lines (checkpoint lottery not replicated in the pre-registered confirmation; corrected fingerprint test, no W4 fingerprint detected).
 
 **A2. Did you discuss any potential risks of your work?**
-Yes. See the "Ethics Statement". The main risk is misuse of the criterion as a certificate of equivalence for deploying compressed agents. At 85 tasks, not rejecting the null does not establish equivalence.
+Yes. See the "Ethics Statement". The main risk is over-reading: a small or cancelling one-replacement gain on one simulator and a fixed task pool does not certify a quantized agent for deployment, and non-inferiority at 3 pp is not equivalence.
 
 **A3. Do the abstract and introduction summarize the paper's main claims?**
-Yes. See the Abstract and §1. The abstract and contribution 2 scope the claims explicitly: P1 is observed on Qwen3-4B and is consistent on Qwen3-8B; P2 is tentative on Qwen3-4B; P3 is partly at risk.
-- TODO: rewrite the abstract's pending five-model sentence once the multi-model cells finish.
+Partly, by design. The abstract and §1 state the question and the evaluation we build and run; contributions are phrased as the evaluation, not as findings. Findings are `\pending{}` until the development forks and the holdout confirmation are analysed.
+- TODO: fill the abstract's and §1's pending findings sentences only from §4.5 and §6.
 
 ## B. Did you use or create scientific artifacts?
 
 Yes. We use a benchmark (τ²-bench), pretrained models (Qwen3), and serving software (vLLM, PyTorch). We create derived artifacts: quantized and noise-perturbed checkpoints, run logs, and analysis scripts.
 
 **B1. Did you cite the creators of artifacts you used?**
-Yes.
-- τ²-bench (Barres et al., 2025) and τ-bench (Yao et al., 2024) are cited.
-- TODO:
-  - Add citations for the Qwen3 models (Qwen3 technical report), vLLM (Kwon et al., 2023), GPTQ (Frantar et al., 2023) and AWQ (Lin et al., 2024). They are not in `refs.bib` yet because they were not among the draft's 37 sources.
-  - Add BibTeX entries with verified metadata before submission.
+Partly.
+- τ²-bench (Barres et al., 2025), GPTQ (Frantar et al., 2023) and AWQ (Lin et al., 2024) are cited (GPTQ/AWQ added in W33).
+- TODO: add citations for the Qwen3 models (Qwen3 technical report) and vLLM (Kwon et al., 2023). They are not in `refs.bib`; add BibTeX entries with verified metadata before submission.
 
 **B2. Did you discuss the license or terms for use and/or distribution of any artifacts?**
 Not in the paper yet. Draft facts:
@@ -55,16 +54,16 @@ N/A. We collect no new data. τ²-bench retail and airline tasks use synthetic u
 
 **B5. Did you provide documentation of the artifacts?**
 Partly.
-- The paper documents the perturbation matrix (Table 1), the Gaussian-noise construction and the serving configuration (§4, Appendix B). The per-cell configuration table is a `\pending` placeholder in Appendix B.
+- The paper documents the run conditions (§3), the tool-type table (Table 1, Appendix F), the fork state and branch definitions (§4), the annotation fields (§5) and the serving configuration (Appendix E). The fork serving record is a `\pending` placeholder in Appendix E. (W33)
 - TODO:
   - Decide whether code, run logs and derived checkpoints will be released as anonymized supplementary material.
   - The review version must not link to non-anonymous repositories.
 
 **B6. Did you report relevant statistics like the number of examples, details of train/test/dev splits?**
-Yes, partly.
-- §4 states the 85 development tasks of a frozen split: 58 retail and 27 airline.
-- No training is done. Quantization calibration sets come from the model's own BF16 trajectories (Appendix B).
-- TODO: state how the 85-task split was chosen, and whether a held-out split exists. The internal review raised this question (Q3).
+Yes (§3, §6).
+- Development: 85 retail/airline tasks (58 retail, 27 airline; the evaluation split after 22 BF16-unstable tasks were excluded) and the 80-task telecom development split.
+- Confirmation: the 34-task telecom holdout. The telecom split was fixed before any run from τ²-bench's official 114-task `base` split, stratified by issue type × persona and ordered by a salted task-id hash (`manifests/telecom/dev_v1.json`).
+- 57 retail/airline calibration tasks feed GPTQ/AWQ calibration. No training is done.
 
 ## C. Did you run computational experiments?
 
@@ -88,18 +87,16 @@ Partly.
 Yes. No hyperparameter search was done.
 - Decoding is greedy for both agent and simulator.
 - The harness uses a 32k prompt budget (maximum model length 33,792).
-- Quantization settings: RTN W8/W4/W3 with group 128, asymmetric; GPTQ W4 with two calibration draws, and GPTQ W3; AWQ W4.
-- The Gaussian ladder uses k ∈ {0.03, 0.1, 0.3, 1, 3}.
+- Quantization settings (W33 main text): GPTQ-W4 and AWQ-W4, fake-quantized, primary checkpoint per model × method = calibration draw d1, fixed by a completeness rule before any fork outcome. Other cells (RTN, Gaussian controls, recalibrations d3/d4) appear only in appendix background analyses.
+- TODO: state GPTQ/AWQ group size and symmetry in Appendix E from the quantization configs.
 - Serving flags are listed in Appendix B, and model revisions are pinned.
 - TODO: list the revision hashes in the appendix, or in the supplementary material if that is allowed without de-anonymizing.
 
 **C3. Did you report descriptive statistics about your results (e.g., error bars around results, summary statistics from sets of experiments), and is it transparent whether you are reporting the max, mean, etc. or just a single run?**
-Yes.
-- Every Δ carries a 95% task-cluster bootstrap CI, and hazards carry task-bootstrap CIs where available. Draw counts are given per family (Tables 1 and 3).
-- Null-draw SDs are reported against a Bernoulli prediction. Single-run numbers are labelled as such (for example, the canonical-score shifts).
-- Numbers are labelled legacy or clean, and pooled numbers are marked as pooled.
-- Clean-pass numbers are live snapshots (2026-09-29T02:36Z), stated in the table captions.
-- TODO: re-run the verify scripts on final data, and update the snapshot times.
+Planned; the fork results are placeholders.
+- Every G, G_all, A, C, I carries an interval from paired-block inference over independent nonce blocks; fixed-pool and new-task intervals are reported separately (§4.4). Rescue / new damage / both succeed / both fail are reported as counts and shares.
+- Background numbers in the appendix carry their original intervals and p-values; post-hoc results are labelled post-hoc.
+- TODO: interval method and its simulated coverage for sparse events (statistics deliverable); snapshot ids in captions once the analyses run.
 
 **C4. If you used existing packages (e.g., for preprocessing, normalization, or evaluation), did you report the implementation, model, and parameter settings used?**
 Partly.
@@ -113,13 +110,13 @@ Partly.
 
 ## D. Did you use human annotators (e.g., crowdworkers) or research with human participants?
 
-No. All "users" are an LLM user simulator on public benchmark tasks. D1–D5 are N/A.
+Yes, planned (changed in W33). About 80 fork states will be reviewed blind (model, precision and branch source stripped, order randomised), about 20 of them independently by two reviewers (§5). The material is synthetic benchmark conversations between an LLM agent and an LLM user simulator; no human participants are studied and no personal data is involved.
 
-- D1 (instructions to participants): N/A.
-- D2 (recruitment and payment): N/A.
-- D3 (consent for data use): N/A.
-- D4 (ethics review board approval): N/A.
-- D5 (demographics of annotators): N/A.
+- D1 (instructions to participants): TODO. The review guidelines (label definitions for defect, correction and requirements; "cannot judge" allowed) must be written and included in the appendix or supplementary material.
+- D2 (recruitment and payment): TODO. State who the reviewers are (e.g., members of the research team, unpaid beyond their normal role) once decided.
+- D3 (consent for data use): N/A (no data about the reviewers is collected or released beyond their labels).
+- D4 (ethics review board approval): TODO. Likely N/A for expert annotation of synthetic text; confirm with the institution.
+- D5 (demographics of annotators): N/A unless required; the reviewers' relevant expertise should be stated.
 
 ## E. Did you use AI assistants (e.g., ChatGPT, Copilot) in your research, coding, or writing?
 
