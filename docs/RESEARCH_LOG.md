@@ -10,6 +10,15 @@ Newest first.
 
 ---
 
+## W40 — Closed-loop restoration and residual-dose arms on the development blocks (2026-09-30 00:40 PDT)
+**TL;DR** After W39-pert verified the `restore` and `resid` checkpoint kinds (bit-exact endpoints, byte-matched random controls, cross-node reproducible cache), I queued 34 eval tasks (102 runs, about 8.7k episodes) at priority −8.
+- **Cells:** q4 GPTQ-W4 d1 and q8 AWQ-W4 (the primary dev checkpoints).
+- **Arms:** BF16 restored in early / middle / late thirds and in attention / MLP; byte-matched random thirds / attention / MLP, 3 seeds each; residual dose α ∈ {0.25, 0.5, 2}. α = 0 and 1 are the existing BF16 and Q runs.
+- **Blocks:** dev blocks f01–f03, so every arm is paired with the Q and BF16 runs on the same nonces.
+- **Purpose:** an early closed-loop recovery and dose curve (paper Fig. 2 and Fig. 4) while the fork gate is pending. The fork versions of the same arms follow the gate.
+- **Open item:** `run_fork` does not yet apply `derived.canary_checks` (the equals-BF16 / equals-Q canary rules); this was sent to the fork agent. Registry `restoration` now matches `^pert_` / `_resid_`.
+Evidence: queue `todo/pert_q{4,8}_*_fdev.json`, `docs/insights/PERTURBATION_PROTOCOL.md`, W39-pert.
+
 ## W39-pert — Engineering line 3: restoration and residual-dose checkpoint kinds (perturb-v1); smoke passes (2026-09-30)
 **TL;DR** Two new worker ckpt kinds are derived from one cached W4 checkpoint Q:
 - `restore`: BF16 restored in early / middle / late thirds, attention-only, MLP-only, or byte-matched random module sets (3 seeds per budget);
