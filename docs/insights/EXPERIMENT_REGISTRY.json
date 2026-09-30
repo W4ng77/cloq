@@ -223,16 +223,16 @@
    "title": "q4 W x A x KV 2^3 closed-loop matrix (QuaRot-rotated) + A8 / SmoothQuant anchors, dev blocks f01-f03",
    "role": "support",
    "patterns": [
-    "^a6k2_q4_quarot_w\\d+a\\d+kv\\d+_fdev$",
+    "^a6k2_q[48]_quarot_w\\d+a\\d+kv\\d+r?_fdev\\d*$",
     "^a6k2_q4_aq_a8_fdev$",
     "^a6k2_q4_sq_w8a8_fdev$"
    ],
-   "fit": "Which precision axis (weights, activations, KV) drives closed-loop turnover and damage, and whether effects add (W47). Paired with bfpair and GPTQ-W4 on the same nonces.",
+   "fit": "Which precision axis (weights, activations, KV) drives closed-loop turnover and damage, and whether effects add (W47). Paired with bfpair and GPTQ-W4 on the same nonces. W65: matched rotated-KV16 controls; W66: q8 replication of I_WK|A16 pre-registered (WAKV_PREREG.md, 27a3802).",
    "analysis": {
     "name": "W x A x KV factorial effects and additivity",
     "run": "cpu",
     "script": "analysis/ahook/analyze_wakv.py",
-    "cmd": "python analysis/ahook/analyze_wakv.py --snapshot {snapshot}",
+    "cmd": "python analysis/ahook/analyze_wakv.py --snapshot {snapshot} && python analysis/ahook/analyze_wakv.py --snapshot {snapshot} --models q8",
     "trigger": "script_exists_and_new_done"
    }
   },
