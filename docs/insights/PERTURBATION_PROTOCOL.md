@@ -153,6 +153,15 @@ Because parameter bytes match, the simulated budgets also match to within 0.005 
 
 The action level is not a same-state comparison once the wording has diverged; same-state claims remain the fork protocol's.
 
+## 3b. Telecom W4-damage cell (W53): q8 AWQ-W4 c1 on telecom dev
+
+- **Base:** the same cached base as W40 (`q8_awq_8a97d2f7b45b`, W4 budgets of §3).
+- **Arms (9):** early, middle, late, attn, mlp; `rand_{third,attn,mlp}_s1`; resid α 0.5.
+- **Blocks:** telecom dev f01–f06 (`manifests/telecom/dev_v1.json`); the holdout is never used.
+- **Pairing:** arms pair with `a6k2_q8_tel_awq_w4_<blk>` and `a6k2_q8_tel_bfpair_<blk>`.
+- **Reporting:** `analyze_restore_eval.py` gives this cell its own bootstrap population and a persona breakdown (Hard / Easy / None). Success and behaviour are co-primary here.
+- **Caveat:** on f01–f06 the Q–BF16 gap itself is not significant (+2.7 pp [−2.9, +9.2]; Hard +7.3 [−2.6, +19.0]), and on f01–f03 it is exactly 0.
+
 ## 4. What each arm can and cannot show
 
 | Arm | Can show | Cannot show |

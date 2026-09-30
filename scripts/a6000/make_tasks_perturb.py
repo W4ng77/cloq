@@ -10,7 +10,9 @@ build+serve+canary. Everything else prints only.
 
 --w3 [--write]: W50 damage-regime set, 17 arms x q4/q8 on GPTQ-W3 c1, blocks q3-q5 (priority -8).
 
-usage: python scripts/a6000/make_tasks_perturb.py [--smoke | --w3] [--write]
+--tel [f123 f456] [--write]: W53 telecom set, 9 arms on q8 AWQ-W4 c1, telecom dev blocks (priority -9).
+
+usage: python scripts/a6000/make_tasks_perturb.py [--smoke | --w3 | --tel [groups]] [--write]
 """
 from __future__ import annotations
 
@@ -99,12 +101,65 @@ def w3_tasks() -> tuple[list[dict], list[str]]:
     return tasks, problems
 
 
+TEL_ARMS = (["restore_" + a for a in ("early", "middle", "late", "attn", "mlp")]
+            + [f"restore_rand_{b}_s1" for b in ("third", "attn", "mlp")] + ["resid_a0.5"])
+TEL_GROUPS = {"f123": ("f01", "f02", "f03"), "f456": ("f04", "f05", "f06")}
+
+
+def tel_tasks(groups=("f123", "f456")) -> tuple[list[dict], list[str]]:
+    """W53: q8 AWQ-W4 (c1, cached base) restoration arms on telecom dev blocks, paired with a6k2_q8_tel_awq_w4_<blk> and
+    a6k2_q8_tel_bfpair_<blk>; same task_file / domain / naming as the *_tel_* dev tasks (make_tasks_fork_dev2.py)."""
+    nonce = json.load(open(ROOT / "manifests/fork/dev_blocks_v1.json"))["new_blocks"]
+    tasks, problems = [], []
+    sp = specs("q8", "awq_w4")
+    for gname in groups:
+        blocks = []
+        for b in TEL_GROUPS[gname]:
+            ok = True
+            for rid in (f"a6k2_q8_tel_awq_w4_{b}", f"a6k2_q8_tel_bfpair_{b}"):
+                st, env = ROOT / "runs" / rid / "telecom/status.json", ROOT / "runs" / rid / "telecom/environment.json"
+                if not st.exists() or json.load(open(st)).get("status") != "completed":
+                    problems.append(f"{rid}/telecom not completed")
+                    ok = False
+                elif json.load(open(env)).get("prompt_nonce") != nonce[b]:
+                    problems.append(f"{rid}/telecom nonce != {nonce[b]}")
+                    ok = False
+            if ok:
+                blocks.append(b)
+        if not blocks:
+            continue
+        for arm in TEL_ARMS:
+            tasks.append({"id": f"pert_q8_tel_awq_w4_{arm}_{gname}", "kind": "eval", "model": "q8", "domains": ["telecom"],
+                          "arm": arm, "ckpt": sp[arm],
+                          "runs": [{"run_id": f"a6k2_pert_q8_tel_awq_w4_{arm}_{b}", "task_file": "manifests/telecom/dev_v1.json",
+                                    "nonce": nonce[b]} for b in blocks],
+                          "priority": -9, "deps": ["a6k2_q8_calib_c1"],
+                          "note": "W53: telecom W4-damage restoration arms (q8 AWQ-W4 c1) on telecom dev blocks (holdout untouched); "
+                                  "PERTURBATION_PROTOCOL.md"})
+    return tasks, problems
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--w3", action="store_true", help="W50 damage-regime arms (GPTQ-W3 base, blocks q3-q5)")
+    ap.add_argument("--tel", nargs="*", default=None, help="W53 telecom arms; groups f123 / f456 (default both)")
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args()
+    if a.tel is not None:
+        ts, problems = tel_tasks(tuple(a.tel) or ("f123", "f456"))
+        for p in problems:
+            print("MISSING", p)
+        for t in ts:
+            print(t["id"], [r["run_id"] for r in t["runs"]])
+        if a.write:
+            for t in ts:
+                if not any((Q / d / f"{t['id']}.json").exists() for d in ("todo", "running", "done", "failed")):
+                    json.dump(t, open(Q / "todo" / f"{t['id']}.json", "w"), indent=1)
+                    print("queued", t["id"])
+        else:
+            print(f"{len(ts)} telecom tasks (dry run)")
+        return
     if a.w3:
         ts, problems = w3_tasks()
         for p in problems:

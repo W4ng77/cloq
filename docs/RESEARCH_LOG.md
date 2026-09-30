@@ -10,6 +10,44 @@ Newest first.
 
 ---
 
+## W53 — Telecom W4-damage restoration cell (q8 AWQ-W4 c1): 9 arms queued on telecom dev f01–f06 (2026-09-30)
+**TL;DR** This adds a second damage regime and the only one at W4 bits: q8 AWQ-W4 d1 on telecom dev blocks. 9 arms, cached AWQ base, priority −9, 18 tasks / 54 runs, estimated **~41 GPU-h (range 32–66)**; `analyze_restore_eval.py` reports the telecom cell separately, with a persona breakdown.
+- **Arms:** early, middle, late, attn, mlp; `rand_{third,attn,mlp}_s1`; resid α 0.5.
+- **Runs:** `a6k2_pert_q8_tel_awq_w4_<arm>_<blk>`, domain {telecom}, `manifests/telecom/dev_v1.json`. They pair with `a6k2_q8_tel_awq_w4_<blk>` and `a6k2_q8_tel_bfpair_<blk>`.
+- **Holdout:** untouched.
+
+**Block choice (a deviation from the f01–f03 request)**
+- On f01–f03 there is no Q–BF16 gap at all: official success is 21/240 for both, and Hard persona 5/75 for both.
+- The damage sits in f04–f06: 19/240 vs 32/240, Hard 1/75 vs 12/75. Restoration on f01–f03 alone would repeat the W4 equivalence problem (W50).
+- I queued the full pre-existing dev set f01–f06 as two tasks per arm (`_f123`, `_f456`). This is the set the damage claim was made on.
+- f04–f06 alone would be selected on outcome (regression to the mean), and that was rejected.
+- The `_f456` half can be deleted from `todo` if f01–f03 only is preferred; that halves the cost to about 21 GPU-h.
+
+**Caveat on the premise**
+- With official task-basis success (the analysis definition) on f01–f06, BF16 − Q = +2.7 pp [−2.9, +9.2] overall (Q 8.3 %, BF16 11.0 %).
+- For Hard it is +7.3 [−2.6, +19.0] (Q 4.0 %, BF16 11.3 %).
+- Both intervals include 0, so the W4 damage is suggestive, not established.
+- These numbers come from the pairing check, an aliased arm = Q.
+
+**Cost estimate**
+- Done q8 telecom 3-run tasks took 1.8–3.7 h each (median ~2.3 GPU-h, one GPU).
+- The derived build takes about 1 min on the cached base `q8_awq_8a97d2f7b45b`.
+- 18 × 2.3 ≈ 41 GPU-h is under the 60 GPU-h cut, so no arms were dropped. The cost also falls on the telecom simulator.
+
+**Pairing verified before writing**
+- Six Q runs were aliased as a fake arm (symlinked run dirs, temporary snapshot, output to scratch; all removed).
+- `analyze_restore_eval` paired all 480 units on f01–f06, 0 skipped, with arm − Q = 0 and turnover 0 as expected.
+- The run names contain `_tel_`, so the integrity snapshot expects the {telecom} domain set (W44).
+
+**Analysis changes**
+- The arm regex accepts `tel_<cell>`, and `pair_ids()` maps telecom cells to `*_tel_bfpair_*`.
+- Telecom cells get their own bootstrap population.
+- New "Telecom cell(s), by persona" table: Hard / Easy / None success, arm − Q, BF16 − Q, gap closed and turnover closed.
+
+**Evidence**
+- `scripts/a6000/make_tasks_perturb.py --tel`, `analysis/fork/analyze_restore_eval.py`.
+- Queue: `/data/ziyangs/cloq_work/queue/todo/pert_q8_tel_awq_w4_*_{f123,f456}.json`.
+
 ## W52 — Difficulty moderators (exploratory) and telecom development forks queued (2026-09-30)
 **TL;DR** The preliminary telecom signal is smaller under the official criterion, and none of the post hoc difficulty moderators is significant on the development forks.
 - **Preliminary signal, recomputed with official telecom success** (official_reward == 1; the preliminary numbers used db_match/reward):

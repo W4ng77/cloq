@@ -27,7 +27,9 @@ Behavioural endpoint (W50; primary in the W4 equivalence regime, co-primary with
     the first decisions), so the action level is the informative decision-level measure; it is not a same-state
     comparison after the first wording difference.
 Intervals come from the hierarchical bootstrap of analysis/fork/analyze_dev.py (tasks, then blocks within task; B = 2000;
-seed 20261001; draws shared by every arm, so arm contrasts are paired).
+seed 20261001; draws shared by every arm of a population, so arm contrasts are paired). Telecom cells (W53,
+a6k2_pert_<m>_tel_<cell>_<arm>_<blk>, paired with a6k2_<m>_tel_<cell>_<blk> and a6k2_<m>_tel_bfpair_<blk>) get their own
+bootstrap population and a persona breakdown (Hard / Easy / None from the task id).
 Idempotent: an output with the same input fingerprint (script, snapshot, every run file sha) is not rewritten.
 
 usage: python analysis/fork/analyze_restore_eval.py --snapshot <snapshot.json> [--models q4 q8]
@@ -52,9 +54,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from analyze_dev import Boot, SEED, B_BOOT, sha256, success, summarise  # noqa: E402
 
 OUT = ROOT / "analysis/fork/out"
-ARM_RE = re.compile(r"^a6k2_pert_(q\d+)_(gptq_w4_d1|awq_w4|gptq_w3)_(.+)_(f\d\d|q\d+)$")
+ARM_RE = re.compile(r"^a6k2_pert_(q\d+)_((?:tel_)?(?:gptq_w4_d1|awq_w4|gptq_w3))_(.+)_(f\d\d|q\d+)$")
+PERSONAS = ("Hard", "Easy", "None")  # telecom task ids end in [PERSONA:<level>]
 REGIME = {"gptq_w4_d1": "W4 equivalence (behavioural endpoint primary)", "awq_w4": "W4 equivalence (behavioural endpoint primary)",
-          "gptq_w3": "W3 damage (success and behavioural endpoints co-primary)"}
+          "gptq_w3": "W3 damage (success and behavioural endpoints co-primary)",
+          "tel_awq_w4": "W4 telecom damage (success and behavioural endpoints co-primary; Hard-persona breakdown)"}
+
+
+def pair_ids(model: str, cell: str, arm_rid: str, blk: str) -> dict:
+    """Arm, Q and BF16 run ids of one block. Telecom cells (tel_<cell>) pair with a6k2_<m>_tel_<cell>_<blk> and
+    a6k2_<m>_tel_bfpair_<blk> (single-domain {telecom} runs, integrity W44)."""
+    bf = f"a6k2_{model}_tel_bfpair_{blk}" if cell.startswith("tel_") else f"a6k2_{model}_bfpair_{blk}"
+    return {"arm": arm_rid, "Q": f"a6k2_{model}_{cell}_{blk}", "B": bf}
 _DEC_CACHE: dict = {}
 
 
@@ -153,7 +164,7 @@ def main():
     files, units, skipped = {}, defaultdict(list), []
     for (model, cell, arm), blocks in sorted(arms.items()):
         for blk, arm_rid in sorted(blocks):
-            ids = {"arm": arm_rid, "Q": f"a6k2_{model}_{cell}_{blk}", "B": f"a6k2_{model}_bfpair_{blk}"}
+            ids = pair_ids(model, cell, arm_rid, blk)
             for dom in sorted(fz[ids["arm"]]):
                 if not all(dom in (fz.get(r) or {}) for r in ids.values()):
                     skipped.append({"arm": ids["arm"], "domain": dom, "reason": "Q or BF16 run not admitted"})
@@ -198,10 +209,17 @@ def main():
     if not allu:
         print(f"analyze_restore_eval: arm runs found but no complete Q/arm/BF16 triples yet ({len(skipped)} skipped); nothing to do.")
         return
-    bo = defaultdict(set)
-    for u in allu:
-        bo[u["task"]].add(u["block"])
-    boot = Boot(sorted(bo), {k: sorted(v) for k, v in bo.items()}, B=a.B)
+    def group(cell):  # separate bootstrap for telecom cells (own task population), shared draws within a group
+        return "telecom" if cell.startswith("tel_") else "main"
+    boots = {}
+    for g_ in sorted({group(k[1]) for k in units}):
+        bo = defaultdict(set)
+        for k, us_ in units.items():
+            if group(k[1]) == g_:
+                for u in us_:
+                    bo[u["task"]].add(u["block"])
+        boots[g_] = Boot(sorted(bo), {k: sorted(v) for k, v in bo.items()}, B=a.B)
+    boot = None
 
     def stat(us, fn, field="Y"):
         us = [u for u in us if field in u]
@@ -226,6 +244,7 @@ def main():
     res_arms = {}
     for key, us in sorted(units.items()):
         m, c, arm = key
+        boot = boots[group(c)]
         r = {"n_units": len(us), "n_tasks": len({u["task"] for u in us}), "blocks": sorted({u["block"] for u in us}),
              "domains": sorted({u["domain"] for u in us})}
         fns = {"success_Q": lambda y: y["Q"], "success_arm": lambda y: y["arm"], "success_B": lambda y: y["B"],
@@ -244,6 +263,18 @@ def main():
         # behavioural endpoint: outcome turnover to BF16
         r["regime"] = REGIME.get(c)
         r["turnover_closed"] = closed(raw["turnover_vs_B"], raw["turnover_Q_vs_B"])
+        if c.startswith("tel_"):  # persona breakdown (Hard is where the W4 damage sits, W53)
+            r["persona"] = {}
+            for pl in PERSONAS:
+                sub = [u for u in us if f"[PERSONA:{pl}]" in u["task"]]
+                if not sub:
+                    continue
+                pr = {k: stat(sub, fns[k]) for k in ("success_Q", "success_arm", "success_B", "arm_minus_Q", "B_minus_Q",
+                                                     "turnover_vs_B", "turnover_Q_vs_B")}
+                n_, d_ = pr["arm_minus_Q"], pr["B_minus_Q"]
+                r["persona"][pl] = {"n_units": len(sub), "pp": {k: summarise(*v) for k, v in pr.items()},
+                                    "gap_closed": round(n_[0] / d_[0], 3) if abs(d_[0]) > 1e-12 else None,
+                                    "turnover_closed": closed(pr["turnover_vs_B"], pr["turnover_Q_vs_B"])}
         # decision level: token-level shared prefix ("decision") and action-sequence level ("action")
         for name, fld in (("decision", "D"), ("action", "A")):
             ud = [u for u in us if fld in u]
@@ -320,6 +351,20 @@ def main():
         else:
             row += "n/a | n/a | n/a | n/a | n/a | n/a |"
         L.append(row)
+    tel = {k: v for k, v in res_arms.items() if v.get("persona")}
+    if tel:
+        L += ["", "## Telecom cell(s), by persona (W53)", "",
+              "Separate bootstrap population (telecom dev tasks). pp; gap closed = (arm-Q)/(BF16-Q); turnover closed = 1 - T(arm)/T(Q).", "",
+              "| arm | persona | units | Q | arm | BF16 | arm-Q | BF16-Q | gap closed | turnover closed |", "|---|---|---|---|---|---|---|---|---|---|"]
+        for k, v in tel.items():
+            p = v["pp"]
+            L.append(f"| {k} | all | {v['n_units']} | {p['success_Q']['est']:.1f} | {p['success_arm']['est']:.1f} | {p['success_B']['est']:.1f} | "
+                     f"{f(p['arm_minus_Q'])} | {f(p['B_minus_Q'])} | {v['gap_closed']['est']} | {g(v['turnover_closed'])} |")
+            for pl, pv in v["persona"].items():
+                pp = pv["pp"]
+                L.append(f"| {k} | {pl} | {pv['n_units']} | {pp['success_Q']['est']:.1f} | {pp['success_arm']['est']:.1f} | "
+                         f"{pp['success_B']['est']:.1f} | {f(pp['arm_minus_Q'])} | {f(pp['B_minus_Q'])} | {pv['gap_closed']} | "
+                         f"{g(pv['turnover_closed'])} |")
     (OUT / f"restore_eval_{utc}.md").write_text("\n".join(L) + "\n")
     print(f"analyze_restore_eval: wrote {jp.relative_to(ROOT) if jp.is_relative_to(ROOT) else jp} ({res['seconds']} s)")
 
