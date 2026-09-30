@@ -52,7 +52,7 @@ def tiny_shapes() -> dict:
     return s
 
 
-def write_pair(d: Path, seed: int = 0, break_nonlinear: bool = False) -> tuple[Path, Path]:
+def write_pair(d: Path, seed: int = 0, break_nonlinear: bool = False, wbits: int = 4) -> tuple[Path, Path]:
     g = torch.Generator().manual_seed(seed)
     W, Q = d / "W", d / "Q"
     W.mkdir(parents=True)
@@ -66,7 +66,7 @@ def write_pair(d: Path, seed: int = 0, break_nonlinear: bool = False) -> tuple[P
             w = (torch.randn(tiny_shapes()[n], generator=g) * 0.05).to(torch.bfloat16)
             if n.endswith("proj.weight"):
                 w.view(-1)[:3] = torch.tensor([0.0, -0.0, 1e-30]).to(torch.bfloat16)  # signed zero / tiny edge cases
-                q = rtn_dequant(w.float(), 4).to(torch.bfloat16)
+                q = rtn_dequant(w.float(), wbits).to(torch.bfloat16)
             else:
                 q = w.clone()
                 if break_nonlinear and n == "model.norm.weight":
@@ -76,7 +76,7 @@ def write_pair(d: Path, seed: int = 0, break_nonlinear: bool = False) -> tuple[P
         save_file(tq, str(Q / sh), metadata={"format": "pt"})
     for p in (W, Q):
         (p / "config.json").write_text(json.dumps({"num_hidden_layers": L, "tie_word_embeddings": True}))
-    (Q / "quantization.json").write_text(json.dumps({"method": "GPTQ", "wbits": 4, "source_model": "tiny", "source_revision": "r0"}))
+    (Q / "quantization.json").write_text(json.dumps({"method": "GPTQ", "wbits": wbits, "source_model": "tiny", "source_revision": "r0"}))
     return W, Q
 
 
@@ -101,8 +101,8 @@ def bits_eq(a, b) -> bool:
     return P.same_bits(a, b)
 
 
-def test_resid(tmp: Path):
-    W, Q = write_pair(tmp)
+def test_resid(tmp: Path, wbits: int = 4):
+    W, Q = write_pair(tmp, wbits=wbits)
     w, q = load(W), load(Q)
     lin = [n for n in w if P.is_target(n)]
     res = {}
@@ -136,7 +136,7 @@ def test_resid(tmp: Path):
             f = (w[n].float() + (q[n].float() - w[n].float()) * a).to(torch.bfloat16)
             nd += int((f.view(torch.int16) != ref[n].view(torch.int16)).sum())
         diff[str(a)] = nd
-    RESULTS["resid"] = {"alphas": res, "literal_formula_endpoint_bit_diffs": diff}
+    RESULTS["resid" if wbits == 4 else f"resid_w{wbits}"] = {"alphas": res, "literal_formula_endpoint_bit_diffs": diff}
 
 
 def P_content(t: dict) -> str:
@@ -146,8 +146,8 @@ def P_content(t: dict) -> str:
     return ch.hexdigest()
 
 
-def test_restore(tmp: Path):
-    W, Q = write_pair(tmp)
+def test_restore(tmp: Path, wbits: int = 4):
+    W, Q = write_pair(tmp, wbits=wbits)
     w, q = load(W), load(Q)
     shapes = P.linear_shapes(W)
     assert len(shapes) == 7 * L
@@ -174,10 +174,13 @@ def test_restore(tmp: Path):
             assert abs(got - tgt) <= P.RAND_TOL * tgt, (name, got, tgt)
             for s in man["matched_to"]:
                 assert mans[s]["budget"]["gptq"]["restored_params"] == tgt
-    RESULTS["restore_tiny"] = out_rec
+    RESULTS["restore_tiny" if wbits == 4 else f"restore_tiny_w{wbits}"] = out_rec
 
 
 def test_bytes():
+    # W3 hand count, [4096, 2560] GPTQ: 3-bit codes + 4096*20 groups*(2 + 3/8) + 2560*4 g_idx
+    assert P.wq_bytes(4096, 2560, "gptq", 3) == 4096 * 2560 * 3 / 8 + 4096 * 20 * 2.375 + 2560 * 4
+    assert P.wq_bytes(4096, 2560, "gptq", 4) == P.w4_bytes(4096, 2560, "gptq")
     # hand count, [4096, 2560] GPTQ: 4096*2560/2 codes + 4096*20 groups*(2+0.5) + 2560*4 g_idx
     assert P.w4_bytes(4096, 2560, "gptq") == 4096 * 2560 / 2 + 4096 * 20 * 2.5 + 2560 * 4
     assert P.w4_bytes(4096, 2560, "awq") == 4096 * 2560 / 2 + 4096 * 20 * 2.5 + 2560 * 2
@@ -210,6 +213,12 @@ def test_real_manifests():
             disk = json.load(open(md / f"{arm}.json"))
             assert disk["modules_sha256"] == man["modules_sha256"], (m, arm)
             assert disk["budget"] == json.loads(json.dumps(man["budget"])), (m, arm)
+            assert disk["budget_w3"] == json.loads(json.dumps(man["budget_w3"])), (m, arm)
+            for meth in ("gptq", "awq"):  # W3 accounting: same params, 3-bit codes/zeros, never more bytes than W4
+                b3, b4 = man["budget_w3"][meth], man["budget"][meth]
+                assert b3["restored_params"] == b4["restored_params"]
+                assert b3["sim_storage_bytes_q"] < b4["sim_storage_bytes_q"]
+                assert b3["sim_storage_bytes"] <= b4["sim_storage_bytes"]
             if man["family"] == "random":
                 assert abs(man["delta_frac"]) <= P.RAND_TOL, (m, arm, man["delta_frac"])
                 assert man["budget"]["gptq"]["restored_params"] <= man["target_restored_params"]
@@ -218,9 +227,15 @@ def test_real_manifests():
                          "restored_bf16_GB": b["gptq"]["restored_bf16_bytes"] / 1e9,
                          "frac": round(b["gptq"]["restored_param_frac"], 5), "delta_frac": man.get("delta_frac", 0.0),
                          "sim_bits_gptq": round(b["gptq"]["sim_bits_per_linear_param"], 4),
-                         "sim_bits_awq": round(b["awq"]["sim_bits_per_linear_param"], 4)}
+                         "sim_bits_awq": round(b["awq"]["sim_bits_per_linear_param"], 4),
+                         "sim_bits_gptq_w3": round(man["budget_w3"]["gptq"]["sim_bits_per_linear_param"], 4)}
         a = fresh
         assert a["early"]["budget"]["gptq"]["restored_params"] == a["late"]["budget"]["gptq"]["restored_params"]
+        for arm, man in fresh.items():  # W3 simulated budgets of random arms within 0.5% of their structured arm
+            if man["family"] == "random":
+                ref = fresh[man["matched_to"][0]]["budget_w3"]["gptq"]["sim_storage_bytes"]
+                got = man["budget_w3"]["gptq"]["sim_storage_bytes"]
+                assert abs(got - ref) <= P.RAND_TOL * ref, (m, arm, got, ref)
         table[m] = rows
     RESULTS["manifests"] = table
 
@@ -313,9 +328,31 @@ def test_worker_path(tmp: Path):
     RESULTS["worker_path"] = {"base_builds": len(calls), "tags": {k: v[1] for k, v in out.items()}}
 
 
+def test_resid_w3(tmp: Path):
+    test_resid(tmp, wbits=3)
+
+
+def test_restore_w3(tmp: Path):
+    test_restore(tmp, wbits=3)
+
+
+def test_cli_w3_budget(tmp: Path):
+    """cloq.perturb restore on a W3 base records the W3 budget of the manifest (budget_w3), not the W4 one."""
+    W, Q = write_pair(tmp, wbits=3)
+    man = P.make_manifests(W, "tiny", "r0")["late"]
+    mp = tmp / "late.json"
+    mp.write_text(json.dumps(man))
+    subprocess.check_call([sys.executable, "-m", "cloq.perturb", "restore", "--src", str(W), "--q", str(Q), "--out",
+                           str(tmp / "o"), "--manifest", str(mp)], env=ENV, stdout=subprocess.DEVNULL)
+    meta = json.load(open(tmp / "o/quantization.json"))
+    assert meta["budget"] == man["budget_w3"]["gptq"] and meta["budget"] != man["budget"]["gptq"]
+    RESULTS["cli_w3_budget"] = {"sim_bits": meta["budget"]["sim_bits_per_linear_param"]}
+
+
 def main():
     test_bytes()
-    for fn in (test_resid, test_restore, test_determinism, test_guard, test_worker_path):
+    for fn in (test_resid, test_restore, test_determinism, test_guard, test_worker_path, test_resid_w3, test_restore_w3,
+               test_cli_w3_budget):
         with tempfile.TemporaryDirectory(dir=os.environ.get("TMPDIR")) as d:
             fn(Path(d))
         print("ok", fn.__name__, flush=True)

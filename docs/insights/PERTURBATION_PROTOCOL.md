@@ -105,6 +105,54 @@ q8 = Qwen3-8B, 6.946 B linear params. All nine random arms match exactly (Δ = 0
 
 Because parameter bytes match, the simulated budgets also match to within 0.005 bits/param. The small remainder is side information that scales with input columns, not with parameters.
 
+## 3a. Damage-regime base (W50): GPTQ-W3 c1
+
+**Why a second base.** On the development blocks, q4 GPTQ-W4 d1 does not lose success relative to BF16 (Q 43.9 vs BF16 33.7 on f01–f03; `analysis/fork/out/restore_eval_20260930T122705Z.md`). Every restoration arm therefore moves success *down* toward BF16. In that regime, "gap closed" measures reversion toward BF16, not recovery of lost performance. W4 is in the equivalence regime, so there the behavioural endpoint (§4a) is primary.
+
+**The W3 arms**
+- Base: GPTQ-W3 with calibration c1 (`{"kind": "gptq", "wbits": 3, "calib": …c1}`), cell `gptq_w3`, for q4 and q8.
+- Arms, the same 17: early, middle, late, attn, mlp; `rand_{third,attn,mlp}_s{1,2,3}`; resid α ∈ {0.25, 0.5, 2}.
+- Blocks: q3–q5 (nonces 4c8e1a7f, b9d2e605, e1a47c3d). Both models already have W3 Q runs `a6k2_<m>_gptq_w3_<blk>` and BF16 pairs `a6k2_<m>_bfpair_<blk>` on these blocks, and the generator checks that before writing.
+
+**Budgets**
+- The module sets are unchanged. They are matched on BF16 parameter bytes, which do not depend on the base's bit width.
+- The simulated storage is recomputed as `budget_w3` in every manifest: 3-bit codes, plus one fp16 scale and one 3-bit zero per (row, 128 columns), plus the same side information as for W4.
+- Q alone: q4 3.157 and q8 3.155 simulated bits/param (GPTQ).
+
+| model | arm | W3 sim bits/param, structured | W3 sim bits/param, random s1 / s2 / s3 |
+|---|---|---|---|
+| q4 | third | 7.438 | 7.433 / 7.438 / 7.433 |
+| q4 | attn | 6.491 | 6.493 / 6.488 / 6.488 |
+| q4 | mlp | 12.666 | 12.664 / 12.659 / 12.664 |
+| q8 | third | 7.436 | 7.436 / 7.436 / 7.436 |
+| q8 | attn | 5.946 | 5.947 / 5.947 / 5.947 |
+| q8 | mlp | 13.209 | 13.207 / 13.207 / 13.208 |
+
+`tests/test_perturb.py` checks:
+- the W3 hand count;
+- W3 exactness (resid and restore on an RTN-W3 base);
+- that a W3 build records `budget_w3`;
+- that every random arm's W3 simulated budget is within 0.5 % of its structured arm.
+
+## 4a. Endpoints by regime (W50)
+
+`analysis/fork/analyze_restore_eval.py` reports two groups of columns.
+
+**Success** (kept): Q, arm and BF16 success, and "gap closed" = (arm − Q)/(BF16 − Q).
+
+**Behavioural**, where the reference is BF16 rather than success:
+- Turnover to BF16: T(X) = P(outcome of X ≠ outcome of BF16). Turnover closed = 1 − T(arm)/T(Q), computed per bootstrap draw with the same hierarchical bootstrap.
+- Decision level, from `decisions.jsonl`:
+  - token level: the first decision whose prompt or completion tokens differ from BF16. At W4 this saturates, since almost every episode differs from BF16 within one or two decisions.
+  - action level: the first decision whose action signature (kind plus normalised tool calls, wording ignored) differs.
+  - Both levels give the divergence rate, divergence closed, prefix agreement (first-divergence index / BF16 decisions), and later / earlier than Q.
+
+**Which is primary**
+- W4 (equivalence): the behavioural endpoint is primary.
+- W3 (damage): success and behaviour are co-primary.
+
+The action level is not a same-state comparison once the wording has diverged; same-state claims remain the fork protocol's.
+
 ## 4. What each arm can and cannot show
 
 | Arm | Can show | Cannot show |

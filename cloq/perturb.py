@@ -61,9 +61,15 @@ SCALE_BYTES, ZERO_BITS, CODE_BITS = 2, 4, 4
 SIDE_BYTES_PER_COL = {"gptq": 4, "awq": 2, "rtn": 0}
 
 
-def w4_bytes(rows: int, cols: int, method: str) -> float:
+def wq_bytes(rows: int, cols: int, method: str, bits: int = CODE_BITS) -> float:
+    """Packed Wb g128 asym storage of one linear: b-bit codes + per (row, group) fp16 scale and b-bit zero + side info."""
     groups = rows * -(-cols // GROUP)
-    return rows * cols * CODE_BITS / 8 + groups * (SCALE_BYTES + ZERO_BITS / 8) + cols * SIDE_BYTES_PER_COL[method]
+    return rows * cols * bits / 8 + groups * (SCALE_BYTES + bits / 8) + cols * SIDE_BYTES_PER_COL[method]
+
+
+def w4_bytes(rows: int, cols: int, method: str) -> float:
+    assert ZERO_BITS == CODE_BITS == 4
+    return wq_bytes(rows, cols, method, 4)
 
 
 def method_family(method: str | None) -> str:
@@ -139,12 +145,12 @@ def random_arm(shapes: dict, target: int, key: str, tol: float = RAND_TOL, tries
     raise RuntimeError(f"no random module set within {tol:.3%} of {target} params after {tries} tries ({key})")
 
 
-def budget(shapes: dict, restored: list[str], method: str) -> dict:
+def budget(shapes: dict, restored: list[str], method: str, bits: int = 4) -> dict:
     """Byte accounting for one arm (decoder linears only; embeddings/norms/lm_head are BF16 in every arm and in Q)."""
     rs = set(restored)
     p_all, p_rest = params(shapes, shapes), params(shapes, restored)
-    w4_all = sum(w4_bytes(r, c, method) for r, c in shapes.values())
-    w4_kept = sum(w4_bytes(*shapes[n], method) for n in shapes if n not in rs)
+    w4_all = sum(wq_bytes(r, c, method, bits) for r, c in shapes.values())
+    w4_kept = sum(wq_bytes(*shapes[n], method, bits) for n in shapes if n not in rs)
     sim = w4_kept + 2 * p_rest
     return {"n_linears": len(shapes), "n_restored": len(restored), "linear_params": p_all,
             "restored_params": p_rest, "restored_bf16_bytes": 2 * p_rest, "restored_param_frac": p_rest / p_all,
@@ -177,8 +183,12 @@ def make_manifests(src: Path, model: str, revision: str, seeds=SEEDS) -> dict[st
         m.update({"protocol": PROTOCOL, "model": model, "source_revision": revision,
                   "n_layers": len({module_key(n)[0] for n in shapes}),
                   "budget": {meth: budget(shapes, m["modules"], meth) for meth in SIDE_BYTES_PER_COL},
+                  # W3 bases (damage regime, W50): same module sets (matched on BF16 parameter bytes, which do not
+                  # depend on the base's bit width), budgets recomputed with 3-bit codes and 3-bit zero points
+                  "budget_w3": {meth: budget(shapes, m["modules"], meth, 3) for meth in SIDE_BYTES_PER_COL},
                   "budget_rule": "W4 g128 asym: 4-bit codes + fp16 scale + 4-bit zero per (row, 128 cols) + GPTQ g_idx int32 "
-                                 "per input col / AWQ fp16 per input col; restored linears BF16 (2 B/param)"})
+                                 "per input col / AWQ fp16 per input col; restored linears BF16 (2 B/param)",
+                  "budget_w3_rule": "as budget_rule with 3-bit codes and 3-bit zero points (W3 g128 asym base)"})
         m["modules_sha256"] = hashlib.sha256("\n".join(m["modules"]).encode()).hexdigest()
     return out
 
@@ -330,7 +340,8 @@ def main():
         meta = build(Path(a.src), Path(a.q), out, "restore", restored=man["modules"])
         meta.update({"arm": man["arm"], "family": man["family"], "seed": man.get("seed"), "manifest": a.manifest,
                      "manifest_modules_sha256": man["modules_sha256"],
-                     "budget": man["budget"][method_family(meta.get("base_method"))]})
+                     "budget": man["budget" if (meta.get("base") or {}).get("wbits", 4) == 4 else f"budget_w{meta['base']['wbits']}"][
+                         method_family(meta.get("base_method"))]})
         exp = {"none": "q", "all": "bf16"}.get(man["arm"])
         assert meta["equals"] == exp or (exp is None and meta["equals"] is None), f"arm {man['arm']}: equals={meta['equals']}"
     else:

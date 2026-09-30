@@ -10,6 +10,40 @@ Newest first.
 
 ---
 
+## W50 — Restoration moved to the damage regime (GPTQ-W3) and given a behavioural endpoint (2026-09-30)
+**TL;DR** The first W40 results (q4 GPTQ-W4 d1, f01–f03) show a design problem. At W4, Q beats BF16 (43.9 vs 33.7; `success_ni` +5.7 pp), so every restoration arm "closes the gap" by losing success. W4 is an equivalence regime, and success recovery is not a meaningful endpoint there.
+
+**Two fixes**
+1. **Damage-regime cell.** GPTQ-W3 c1 is added as a restoration base for q4 and q8:
+   - the same 17 arms (5 structured, 9 byte-matched random, resid α 0.25/0.5/2);
+   - on stress blocks q3–q5, where W3 Q runs and BF16 pairs exist for both models (checked: all completed, nonces match);
+   - 34 tasks / 102 runs queued at priority −8 (`pert_q{4,8}_gptq_w3_<arm>_q345`);
+   - W3 byte budgets (`budget_w3`) recomputed in every manifest; module sets unchanged.
+2. **Behavioural endpoint** in `analysis/fork/analyze_restore_eval.py`:
+   - turnover to BF16, and turnover closed = 1 − T(arm, BF16)/T(Q, BF16), with the hierarchical bootstrap;
+   - decision-level divergence from BF16, at token level and at action level;
+   - the success columns are kept.
+
+**First behavioural reading (q4 W4, 255 units per arm)**
+- **Turnover to BF16 is not closed by any arm.** T(Q) = 26.7 %. Turnover closed ranges from −0.12 to +0.10, and every 95 % CI spans 0 (roughly ±0.4).
+- **Action-level agreement with BF16 follows the residual dose.** Prefix agreement is:
+
+  | α | 0.25 | 0.5 | 1 (Q) | 2 |
+  |---|---|---|---|---|
+  | prefix agreement | 0.57 | 0.50 | 0.42 | 0.24 |
+
+  Action divergence closed at α = 0.25 is 0.10 [0.04, 0.19].
+- **Layer restoration barely moves it.** Prefix agreement: early 0.42, late 0.45, middle 0.48, attn 0.49.
+- **Token level saturates:** 99–100 % of episodes differ from BF16, first at decision ≈ 1.
+- **Reading:** at W4, restoring precision delays the first action change but does not return outcomes to BF16's. This is consistent with outcome turnover at the perturbation floor. W3 will show whether restoration recovers success where there is damage.
+
+**Tests:** `tests/test_perturb.py` now has W3 cases (hand count, exactness on an RTN-W3 base, `budget_w3` recorded by the build, random-arm W3 budgets within 0.5 %): ALL PASS.
+
+**Evidence**
+- Code and docs: `scripts/a6000/make_tasks_perturb.py --w3`, `cloq/perturb.py` (`wq_bytes`, `budget_w3`), `manifests/perturb/restore_v1/{q4,q8}/*.json`, `docs/insights/PERTURBATION_PROTOCOL.md` §3a/§4a.
+- Outputs: `analysis/fork/out/restore_eval_20260930T125027Z.{md,json}`.
+- Queue: `/data/ziyangs/cloq_work/queue/todo/pert_q*_gptq_w3_*_q345.json`.
+
 ## W39-extfork — Same-state 2×2 forks ported to ALFWorld and BFCL multi-turn; replay gate PASS; development forks queued (2026-09-30)
 **TL;DR** Protocol fork-ext-v1 passes the fork-v1 engineering gate on both simulator-free environments (q4 GPTQ-W4 d1 vs BF16, smoke blocks). Neither environment has an LLM user, so these forks remove the user-simulator confound of the τ² forks.
 - **ALFWorld:** Q→Q 12/12, B→B 4/4, same-checkpoint 4/4, isolation 4/4, save/load 12/12, re-prefill 12/12 + 12/12.
