@@ -506,6 +506,14 @@ def search_mode(spec, bases, user_base, servers, out):
     return res
 
 
+def dev_mode(spec, bases, user_base, servers, out):
+    """Development forks: divergence search over every task of the blocks; all states are frozen (written) before any
+    branch runs; then BB/BQ/QB on every state plus the QQ no-op on a hash-selected sample (noop_frac)."""
+    s = search_mode(spec, bases, user_base, servers, out)
+    b = branches_mode({**spec, "states_dir": str((out / "states").relative_to(ROOT))}, bases, user_base, servers, out)
+    return {"search_seconds": s["seconds"], "branches_seconds": b["seconds"], "n_states": len(b["rows"])}
+
+
 def branches_mode(spec, bases, user_base, servers, out):
     sdir = ROOT / spec["states_dir"]
     states = [json.loads(p.read_text()) for p in sorted(sdir.glob("*.json"))]
@@ -597,7 +605,7 @@ def main():
     bases = {"B": a.b_base, "Q": a.q_base}
     out = ROOT / spec["out"]
     out.mkdir(parents=True, exist_ok=True)
-    fn = {"gate": gate, "gate_same": gate_same, "search": search_mode, "branches": branches_mode}[spec["mode"]]
+    fn = {"gate": gate, "gate_same": gate_same, "search": search_mode, "branches": branches_mode, "dev": dev_mode}[spec["mode"]]
     r = fn(spec, bases, a.user_base, servers, out)
     v = r.get("verdict")
     print(json.dumps({"verdict": v}, default=str))
