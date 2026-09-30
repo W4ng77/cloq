@@ -183,6 +183,34 @@ The action level is not a same-state comparison once the wording has diverged; s
 
 **Compensation effect.** `analyze_restore_eval.py` reports `restore_recal_<X>` − `restore_<X>` on paired units, for success and for turnover to BF16.
 
+## 3d. RTN-W3: the primary damage regime (W60)
+
+**Why RTN-W3 is primary.** On blocks q3–q5, closed-loop db_match success is:
+
+| model | BF16 | GPTQ-W3 | RTN-W3 |
+|---|---|---|---|
+| q4 | 35.7 | 36.1 | 13.5 |
+| q8 | 30.6 | 26.7 | 13.3 |
+
+GPTQ-W3 barely damages q4 and costs q8 about 4 pp. RTN-W3 costs 17–22 pp, so it is the primary damage regime, with success and behaviour co-primary.
+
+**No confound.** RTN quantizes every linear independently and has no calibration and no sequential compensation. A plain `restore` on an RTN-W3 base is therefore exactly "these modules BF16, every other linear its own RTN-W3". The compensation confound of §3c does not arise, and no `restore_recal` variant is needed.
+
+**Arms**
+- Base: `{"kind": "rtn", "wbits": 3}`, the same spec as the `a6k2_<m>_rtn_w3_*` Q runs.
+- Arms: the 17 W3 arms (5 structured, 9 random, resid α 0.25/0.5/2) for q4 and q8 on q3–q5.
+- Pairing: `a6k2_<m>_rtn_w3_<blk>` and `a6k2_<m>_bfpair_<blk>`.
+
+**Budget:** `budget_w3.rtn` is 3-bit codes plus one fp16 scale and one 3-bit zero per (row, 128 columns), with no g_idx. Storage is therefore exactly proportional to parameters:
+- Q: 3.148 bits/param;
+- a third: 7.432;
+- attn: 6.487 (q4) / 5.942 (q8);
+- mlp: 12.662 (q4) / 13.206 (q8).
+
+Random arms with Δ = 0 match their structured arm exactly.
+
+**GPTQ-W3 is secondary.** Its plain and recal arms now measure only the compensation effect.
+
 ## 4. What each arm can and cannot show
 
 | Arm | Can show | Cannot show |

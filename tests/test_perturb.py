@@ -233,9 +233,12 @@ def test_real_manifests():
         assert a["early"]["budget"]["gptq"]["restored_params"] == a["late"]["budget"]["gptq"]["restored_params"]
         for arm, man in fresh.items():  # W3 simulated budgets of random arms within 0.5% of their structured arm
             if man["family"] == "random":
-                ref = fresh[man["matched_to"][0]]["budget_w3"]["gptq"]["sim_storage_bytes"]
-                got = man["budget_w3"]["gptq"]["sim_storage_bytes"]
-                assert abs(got - ref) <= P.RAND_TOL * ref, (m, arm, got, ref)
+                for meth in ("gptq", "rtn"):  # W60: RTN-W3 has no g_idx, so its budget is exactly proportional to params
+                    ref = fresh[man["matched_to"][0]]["budget_w3"][meth]["sim_storage_bytes"]
+                    got = man["budget_w3"][meth]["sim_storage_bytes"]
+                    assert abs(got - ref) <= P.RAND_TOL * ref, (m, arm, meth, got, ref)
+                    if man["delta_frac"] == 0 and meth == "rtn":
+                        assert got == ref, (m, arm)
         table[m] = rows
     RESULTS["manifests"] = table
 
@@ -372,6 +375,37 @@ def _tiny_model():
     return m
 
 
+def test_rtn_w3_cli(tmp: Path):
+    """W60: RTN-W3 base from the real cloq.compress CLI (as the worker builds it). Plain restore = kept modules BF16,
+    every other linear exactly its own RTN-W3 (no sequential compensation to break); resid endpoints exact; budget_w3.rtn."""
+    W, _ = write_pair(tmp)
+    Qr = tmp / "Qrtn"
+    subprocess.check_call([sys.executable, "-m", "cloq.compress", "rtn", "--src", str(W), "--out", str(Qr), "--wbits", "3",
+                           "--device", "cpu", "--no-sha"], env=ENV, stdout=subprocess.DEVNULL)
+    w, q = load(W), load(Qr)
+    lin = [n for n in w if P.is_target(n)]
+    for n in lin:  # the CLI output is the per-module RTN-W3 of W, independent of every other module
+        assert bits_eq(q[n], rtn_dequant(w[n].float(), 3).to(torch.bfloat16)), n
+    man = P.make_manifests(W, "tiny", "r0")["middle"]
+    mp = tmp / "middle.json"
+    mp.write_text(json.dumps(man))
+    subprocess.check_call([sys.executable, "-m", "cloq.perturb", "restore", "--src", str(W), "--q", str(Qr), "--out",
+                           str(tmp / "o"), "--manifest", str(mp)], env=ENV, stdout=subprocess.DEVNULL)
+    o, meta = load(tmp / "o"), json.load(open(tmp / "o/quantization.json"))
+    keep = set(man["modules"])
+    for n in w:
+        want = w[n] if (n in keep or not P.is_target(n)) else rtn_dequant(w[n].float(), 3).to(torch.bfloat16)
+        assert bits_eq(o[n], want), n
+    assert meta["budget"] == man["budget_w3"]["rtn"], "RTN-W3 base must record budget_w3.rtn (no g_idx)"
+    for a, ref in ((0.0, w), (1.0, q)):
+        subprocess.check_call([sys.executable, "-m", "cloq.perturb", "resid", "--src", str(W), "--q", str(Qr), "--out",
+                               str(tmp / f"r{a}"), "--alpha", str(a)], env=ENV, stdout=subprocess.DEVNULL)
+        r = load(tmp / f"r{a}")
+        assert all(bits_eq(r[n], ref[n]) for n in w), a
+    RESULTS["rtn_w3_cli"] = {"sim_bits_middle": meta["budget"]["sim_bits_per_linear_param"],
+                             "sim_bits_none": P.make_manifests(W, "tiny", "r0")["none"]["budget_w3"]["rtn"]["sim_bits_per_linear_param"]}
+
+
 def test_restore_recal():
     """W54: sequential re-calibration around a BF16 keep-set (cloq.quantize.quantize_model keep=...)."""
     from cloq.quantize import quantize_model
@@ -419,7 +453,7 @@ def test_restore_recal():
 def main():
     test_bytes()
     for fn in (test_resid, test_restore, test_determinism, test_guard, test_worker_path, test_resid_w3, test_restore_w3,
-               test_cli_w3_budget):
+               test_cli_w3_budget, test_rtn_w3_cli):
         with tempfile.TemporaryDirectory(dir=os.environ.get("TMPDIR")) as d:
             fn(Path(d))
         print("ok", fn.__name__, flush=True)

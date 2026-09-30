@@ -39,6 +39,28 @@ Newest first.
 Evidence: `docs/insights/FORK_PROTOCOL.md` §13 amendment 1; `scripts/a6000/{make_tasks_fork_p2,make_tasks_pivot_arms}.py`; `analysis/fork/{analyze_dev,analyze_pivot_arms}.py`;
 `/data/ziyangs/cloq_work/queue/todo/{fork_stress,pivot}_q{4,8}_rtn_w3*.json`.
 
+## W60 — Restoration damage regime moved to RTN-W3: 34 arm tasks queued at −16; GPTQ-W3 demoted (2026-09-30)
+**TL;DR** GPTQ-W3 is the wrong damage regime. On q3–q5, db_match success is q4 BF16 35.7 / GPTQ-W3 36.1 / RTN-W3 13.5, and q8 30.6 / 26.7 / 13.3.
+- **New primary damage regime: RTN-W3.** It has no calibration and no sequential compensation, so plain `restore` is unconfounded (no recal needed).
+- **Queued:** 34 tasks (17 arms × q4/q8, blocks q3–q5, 102 runs) at priority −16, paired with `a6k2_{q4,q8}_rtn_w3_q3..q5` and `bfpair_q3..q5`. All 12 of those runs are admitted in snapshot 20260930T2047Z, with matching nonces.
+- **Estimated ~130 GPU-h (range 40–220).** RTN-W3 episodes are about 2–3× longer than BF16 (q4 retail 38 vs 12 decisions), and the RTN-W3 Q tasks took 8.0 h (q4) and 4.9 h (q8) for 3 runs. BF16-like arms take ~1–1.5 h.
+- **GPTQ-W3 demoted:** its 2 not-yet-started tasks (recal rand_mlp_s1 / rand_third_s1 on q8) were lowered to −8. The other 48 had already run or were running.
+
+**Changes**
+- `scripts/a6000/make_tasks_perturb.py`: `rtn_w3` cell with spec `{"kind": "rtn", "wbits": 3}` and no calibration dependency; `w3_tasks(cell, priority)`; `--rtn3`.
+- Manifests: unchanged. `budget_w3.rtn` was already computed (3-bit codes plus an fp16 scale and a 3-bit zero per group, no g_idx), giving Q 3.148, a third 7.432, attn 6.487 / 5.942, mlp 12.662 / 13.206 bits/param (q4 / q8), exactly proportional to parameters.
+- `analysis/fork/analyze_restore_eval.py`: parses `rtn_w3` arms; regime labels are RTN-W3 primary (success and behaviour co-primary), GPTQ-W3 secondary (compensation effect), and W4 behaviour primary.
+
+**Tests:** new `test_rtn_w3_cli` (ALL PASS).
+- The real `cloq.compress rtn --wbits 3` output equals the per-module RTN-W3 of W.
+- Plain restore on it gives exactly "kept modules BF16, others their own RTN-W3".
+- α = 0 / 1 are exact, and `budget_w3.rtn` is recorded.
+- Byte matching now also checks the RTN-W3 budgets of random arms, which are exactly equal when Δparams = 0.
+
+**Evidence**
+- `docs/insights/PERTURBATION_PROTOCOL.md` §3d.
+- Queue: `/data/ziyangs/cloq_work/queue/todo/pert_{q4,q8}_rtn_w3_*_q345.json`.
+
 ## W59 — NFS recovered; node001 back in service (2026-09-30 12:15 PDT)
 **TL;DR** The W56/W57 NFS degradation has cleared:
 - A fresh `import cloq.run_arm, vllm` takes 13–15 s on node001/004/006, down from >300 s at 11:25.

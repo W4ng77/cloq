@@ -12,9 +12,10 @@ build+serve+canary. Everything else prints only.
 
 --tel [f123 f456] [--write]: W53 telecom set, 9 arms on q8 AWQ-W4 c1, telecom dev blocks (priority -9).
 
+--rtn3 [--write]: W60 primary damage regime, 17 arms x q4/q8 on RTN-W3, blocks q3-q5 (priority -16).
 --recal [--write]: W54 restore_recal arms (8 per model) on the W3 cell, blocks q3-q5 (priority -14).
 
-usage: python scripts/a6000/make_tasks_perturb.py [--smoke | --w3 | --tel [groups] | --recal] [--write]
+usage: python scripts/a6000/make_tasks_perturb.py [--smoke | --w3 | --rtn3 | --tel [groups] | --recal] [--write]
 """
 from __future__ import annotations
 
@@ -24,7 +25,8 @@ from pathlib import Path
 
 ROOT = Path("/data/ziyangs/cloq")
 Q = Path("/data/ziyangs/cloq_work/queue")
-CK = {"gptq_w4_d1": ("gptq", 4), "awq_w4": ("awq", 4), "gptq_w3": ("gptq", 3)}  # all calibration draw c1
+CK = {"gptq_w4_d1": ("gptq", 4), "awq_w4": ("awq", 4), "gptq_w3": ("gptq", 3),  # calibration draw c1
+      "rtn_w3": ("rtn", 3)}  # W60: primary damage regime; RTN has no calibration and no sequential compensation
 # W50 damage regime: GPTQ-W3 (c1) on the stress blocks q3-q5, which have both W3 Q runs (a6k2_<m>_gptq_w3_<blk>) and
 # BF16 pairs (a6k2_<m>_bfpair_<blk>) on the same nonces for q4 and q8.
 W3_BLOCKS = {"q3": "4c8e1a7f", "q4": "b9d2e605", "q5": "e1a47c3d"}
@@ -37,6 +39,8 @@ ALPHAS = (0.0, 0.25, 0.5, 1.0, 2.0)
 
 def base(model: str, cell: str) -> dict:
     kind, wbits = CK[cell]
+    if kind == "rtn":  # same spec as the a6k2_<m>_rtn_w3 Q runs (cloq.compress rtn)
+        return {"kind": "rtn", "wbits": wbits}
     return {"kind": kind, "wbits": wbits, "calib": f"manifests/a6k2/{model}/calib_fp_traj_c1.json"}
 
 
@@ -75,14 +79,14 @@ def smoke() -> list[dict]:
     return t
 
 
-def w3_tasks() -> tuple[list[dict], list[str]]:
+def w3_tasks(cell: str = "gptq_w3", priority: float = -8) -> tuple[list[dict], list[str]]:
     """17 arms x {q4, q8} on the GPTQ-W3 c1 base, runs on q3-q5; problems = blocks lacking a finished Q or BF16 run."""
     tasks, problems = [], []
     for m in ("q4", "q8"):
         blocks = []
         for b, nonce in W3_BLOCKS.items():
             ok = True
-            for rid in (f"a6k2_{m}_gptq_w3_{b}", f"a6k2_{m}_bfpair_{b}"):
+            for rid in (f"a6k2_{m}_{cell}_{b}", f"a6k2_{m}_bfpair_{b}"):
                 for d in ("retail", "airline"):
                     st = ROOT / "runs" / rid / d / "status.json"
                     env = ROOT / "runs" / rid / d / "environment.json"
@@ -94,16 +98,16 @@ def w3_tasks() -> tuple[list[dict], list[str]]:
                         ok = False
             if ok:
                 blocks.append((b, nonce))
-        sp = specs(m, "gptq_w3")
+        sp = specs(m, cell)
         for arm in W3_ARMS:
             if not blocks:
                 continue
-            tasks.append({"id": f"pert_{m}_gptq_w3_{arm}_q345", "kind": "eval", "model": m, "arm": arm, "ckpt": sp[arm],
-                          "runs": [{"run_id": f"a6k2_pert_{m}_gptq_w3_{arm}_{b}", "task_file": "manifests/eval_tasks_v0.json",
+            tasks.append({"id": f"pert_{m}_{cell}_{arm}_q345", "kind": "eval", "model": m, "arm": arm, "ckpt": sp[arm],
+                          "runs": [{"run_id": f"a6k2_pert_{m}_{cell}_{arm}_{b}", "task_file": "manifests/eval_tasks_v0.json",
                                     "nonce": n} for b, n in blocks],
-                          "priority": -8, "deps": [f"a6k2_{m}_calib_c1"],
-                          "note": "W50: damage-regime (GPTQ-W3 c1) restoration / residual-dose arms on stress blocks q3-q5, "
-                                  "paired with a6k2_<m>_gptq_w3_<blk> and a6k2_<m>_bfpair_<blk>; PERTURBATION_PROTOCOL.md"})
+                          "priority": priority, "deps": [] if CK[cell][0] == "rtn" else [f"a6k2_{m}_calib_c1"],
+                          "note": f"W50/W60: damage-regime ({cell}) restoration / residual-dose arms on stress blocks q3-q5, "
+                                  f"paired with a6k2_<m>_{cell}_<blk> and a6k2_<m>_bfpair_<blk>; PERTURBATION_PROTOCOL.md"})
     return tasks, problems
 
 
@@ -170,6 +174,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--w3", action="store_true", help="W50 damage-regime arms (GPTQ-W3 base, blocks q3-q5)")
+    ap.add_argument("--rtn3", action="store_true", help="W60 primary damage regime: RTN-W3 base, blocks q3-q5, priority -16")
     ap.add_argument("--tel", nargs="*", default=None, help="W53 telecom arms; groups f123 / f456 (default both)")
     ap.add_argument("--recal", action="store_true", help="W54 restore_recal arms on the W3 cell")
     ap.add_argument("--write", action="store_true")
@@ -202,8 +207,8 @@ def main():
         else:
             print(f"{len(ts)} telecom tasks (dry run)")
         return
-    if a.w3:
-        ts, problems = w3_tasks()
+    if a.w3 or a.rtn3:
+        ts, problems = w3_tasks("rtn_w3", -16) if a.rtn3 else w3_tasks()
         for p in problems:
             print("MISSING", p)
         for t in ts:

@@ -56,10 +56,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from analyze_dev import Boot, SEED, B_BOOT, sha256, success, summarise  # noqa: E402
 
 OUT = ROOT / "analysis/fork/out"
-ARM_RE = re.compile(r"^a6k2_pert_(q\d+)_((?:tel_)?(?:gptq_w4_d1|awq_w4|gptq_w3))_(.+)_(f\d\d|q\d+)$")
-PERSONAS = ("Hard", "Easy", "None")  # telecom task ids end in [PERSONA:<level>]
+ARM_RE = re.compile(r"^a6k2_pert_(q\d+)_((?:tel_)?(?:gptq_w4_d1|awq_w4|gptq_w3|rtn_w3))_(.+)_(f\d\d|q\d+)$")
+PERSONAS = ("Hard", "Easy", "None")
+SHORT_REGIME = {"rtn_w3": "RTN-W3 damage (primary)", "gptq_w3": "GPTQ-W3 (secondary)", "tel_awq_w4": "W4 telecom damage",
+                "gptq_w4_d1": "W4 equivalence", "awq_w4": "W4 equivalence"}  # telecom task ids end in [PERSONA:<level>]
 REGIME = {"gptq_w4_d1": "W4 equivalence (behavioural endpoint primary)", "awq_w4": "W4 equivalence (behavioural endpoint primary)",
-          "gptq_w3": "W3 damage (success and behavioural endpoints co-primary)",
+          "gptq_w3": "GPTQ-W3: little closed-loop damage on q3-q5 (q4 +0.4, q8 -3.9 pp); secondary, compensation-effect testbed (W60)",
+          "rtn_w3": "RTN-W3 PRIMARY damage regime (success and behavioural endpoints co-primary; no sequential compensation, "
+                    "so plain restore is unconfounded) (W60)",
           "tel_awq_w4": "W4 telecom damage (success and behavioural endpoints co-primary; Hard-persona breakdown)"}
 
 
@@ -342,6 +346,8 @@ def main():
         return f"{x['est']:+.1f} [{x['ci95'][0]:+.1f}, {x['ci95'][1]:+.1f}]"
     L = [f"**TL;DR** Restoration arms vs Q vs BF16 on shared nonces, {len(res_arms)} arms, "
          f"{sum(v['n_units'] for v in res_arms.values())} paired units; {len(skipped)} run-domains skipped. Snapshot {res['snapshot']['id']}.",
+         "Primary damage regime: RTN-W3 (q3-q5), success and behaviour co-primary; W4 cells: behaviour primary; GPTQ-W3: "
+         "secondary (compensation effect).",
          "", f"# Restoration closed-loop arms ({res['utc']})", "", f"Full numbers: `{jp.relative_to(ROOT) if jp.is_relative_to(ROOT) else jp}`. pp; 95% hierarchical bootstrap.", "",
          "| arm | units | Q | arm | BF16 | arm-Q | BF16-Q | gap closed | turnover vs Q (fix/break) |", "|---|---|---|---|---|---|---|---|---|"]
     for k, v in res_arms.items():
@@ -364,7 +370,7 @@ def main():
           "|---|---|---|---|---|---|---|---|---|---|---|"]
     for k, v in res_arms.items():
         p = v["pp"]
-        reg = "W3" if "gptq_w3" in k else "W4"
+        reg = SHORT_REGIME.get(k.split(":")[1], "W4")
         row = f"| {k} | {reg} | {p['turnover_Q_vs_B']['est']:.1f} | {p['turnover_vs_B']['est']:.1f} | {g(v['turnover_closed'])} | "
         a, d = v.get("action", {}), v.get("decision", {})
         if a.get("pp") and d.get("pp"):
