@@ -10,6 +10,15 @@ Newest first.
 
 ---
 
+## W62 — node002 joins (job 49599) (2026-09-30 14:20 PDT)
+**TL;DR** The admin now reserves CPUs for GPU jobs. As a result, our long-pending runner 49599 (submitted 09-28 with `-w node002 --gres=gpu:A6000:8 -c 16`) started on node002 at 14:19.
+- All 8 GPUs passed the probe.
+- The simulator replica is on GPUs 0,1; the other 6 GPUs take tasks.
+- Only 16 CPUs are allocated (other runners have 32). Watch for CPU-bound slow-down.
+- Usable A6000s: node001, node002 and node004–007 = 48. node003 is still down (W56).
+- 49600 (node008) is still pending (Resources).
+Evidence: `logs/node_node002_49599.out`, `squeue`.
+
 ## W61 — Damage regime moved to RTN-W3: stress forks, pivot arms, amended selection population (2026-09-30)
 **TL;DR** RTN-W3 is where the damage is, so the pivot-arm selection population moves there (amendment committed first), and 14 tasks are queued (≈ 30–40 GPU-h).
 - **Why.** Closed-loop success on q3–q5 shows no GPTQ-W3 damage but heavy RTN-W3 damage:
