@@ -10,6 +10,23 @@ Newest first.
 
 ---
 
+## W49 — P2 fork tasks queued: KV8 core and stress cells (2026-09-30)
+**TL;DR** 14 fork tasks queued at priority −15 by `scripts/a6000/make_tasks_fork_p2.py`, estimated at ≈ 86–136 GPU-h in total (under the 150 GPU-h cut, so all stress cells are kept).
+- **KV8 core.** q4 and q8 × kvq_int8 (BF16 weights with the KV INT8 hook, same serve_env as the closed-loop runs) on 22 blocks per model: q1–q5 plus f01–f17, every block with an admitted Q run and an admitted nonce-paired BF16 run. 5 tasks per model, groups of 5, 5, 5, 5 and 2 blocks.
+- **Stress.** q4 and q8 × gptq_w3 (GPTQ-W3 c1, blocks q3–q5) and × kvq_int4_rot (KV INT4 + Hadamard, blocks q1–q3). Plain INT4 KV has no closed-loop runs, so it is not included. One task per cell, 85 tasks × 3 blocks.
+- **Checks before queuing.** Snapshot 20260930T0911Z: all 56 Q blocks and their BF16 pairs admitted, nonces equal (0 mismatches), one checkpoint spec per cell. No new closed-loop Q runs are needed.
+- **Settings.** B is plain BF16 and Q the cell's exact serving config (per-role config, W34/W46). Mode "dev": all states frozen before branches, with the 10% QQ no-op quarantine. q8 uses 2 GPUs, pinned to node004/005/007.
+- **Estimate basis.** Measured on the running fork_dev tasks, per 5-block task:
+  - q4: search ≈ 0.8 h; 266–372 states of 425 units; 60–110 states/h in branches; ≈ 1.0–1.2 GPU-h per block.
+  - q8: search ≈ 0.4 h; ≈ 390 states; 57–94 states/h; ≈ 2.0–2.8 GPU-h per block.
+  - KV8: q4 22–26 GPU-h and q8 44–62 GPU-h, likely less if INT8 KV diverges less.
+  - Stress: 20–48 GPU-h, allowing up to 2× for looping at W3/KV4.
+- **analyze_dev.py changes.**
+  - It reads `analysis/fork/stress`.
+  - It pools only within pre-declared families: W4 (gptq_w4_d1, awq_w4), KV8 (kvq_int8), stress (gptq_w3, kvq_int4_rot), per model and overall. Families are never pooled together.
+  - `--cells kvq_int8 / gptq_w3 / kvq_int4_rot` are recognised; with no output yet they exit cleanly.
+Evidence: `scripts/a6000/make_tasks_fork_p2.py`, `/data/ziyangs/cloq_work/queue/todo/fork_{kv,stress}_*.json`, `analysis/fork/analyze_dev.py`.
+
 ## W46 — Fork serving for activation / SmoothQuant / QuaRot roles (2026-09-30)
 **TL;DR** `fork_serve` now matches the W45 hooks, and plain W and KV roles are unchanged.
 - **Hook config read by the hooks' own rules.** `CLOQ_AQ_*` (bits, fmt, clip, group, only, had) and `CLOQ_KVQ_*` (ROT 0 / 1 / qk, where qk = QuaRot mode with V rotated offline; FMT; K and V clips).

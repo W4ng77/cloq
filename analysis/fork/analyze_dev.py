@@ -22,7 +22,9 @@ Quarantine (protocol A): a fork task (output directory) with any QQ no-op sample
 Divergence types: act->talk, talk->act, tool name, tool args, user-side device call (telecom: Q or B calls a tool that
 belongs to the user's device toolset), other (tool count / order, stop, parse failure, invalid tool / args).
 
-Inputs: every directory under analysis/fork/{dev,kv,restore,holdout}/ that holds search.json + states/ + branches/
+Pools: equal weight per cell within pre-declared families (W4 = gptq_w4_d1 + awq_w4; KV8 = kvq_int8; stress =
+gptq_w3 + kvq_int4_rot), per model and across models; families are never pooled together.
+Inputs: every directory under analysis/fork/{dev,kv,stress,restore,holdout}/ that holds search.json + states/ + branches/
 (--include-gate also reads analysis/fork/gate/, whose states were selected, not searched over the full pool, for
 testing only). Cell/model/block come from the Q run id a6k2_<model>_<cell>_<block>. The Q block (run, domain) must be
 admitted (frozen) in the integrity-gated snapshot, and its trajectory.jsonl must still have the snapshot's sha256.
@@ -48,7 +50,13 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "analysis/fork/out"
-ROOTS = ["analysis/fork/dev", "analysis/fork/kv", "analysis/fork/restore", "analysis/fork/holdout"]
+ROOTS = ["analysis/fork/dev", "analysis/fork/kv", "analysis/fork/stress", "analysis/fork/restore", "analysis/fork/holdout"]
+# Pre-declared pooling families (equal weight per cell within a family; families are never pooled together).
+FAMILIES = {"W4": ("gptq_w4_d1", "awq_w4"), "KV8": ("kvq_int8",), "stress": ("gptq_w3", "kvq_int4_rot", "kvq_int4")}
+
+
+def family(cell: str) -> str:
+    return next((f for f, cs in FAMILIES.items() if cell in cs), "other")
 B_BOOT, SEED, G_MIN = 2000, 20261001, 0.03
 RUN_RE = re.compile(r"^a6k2_(q\d+|l8|m24)_(.+)_(q\d+|f\d\d|n\d+|h\d+)$")
 TYPES = ["act->talk", "talk->act", "tool_name", "tool_args", "user_device_call", "other"]
@@ -347,6 +355,12 @@ def main():
     ap.add_argument("--B", type=int, default=B_BOOT)
     a = ap.parse_args()
     t0 = time.time()
+    try:  # tau2 (imported for the telecom user-tool list) logs at INFO on import
+        from loguru import logger
+        logger.remove()
+        logger.add(sys.stderr, level="ERROR")
+    except Exception:
+        pass
     snap = json.load(open(a.snapshot))
     dirs = discover(a.include_gate)
     cache: dict = {}
@@ -418,8 +432,14 @@ def main():
                          "domains": {d: sum(1 for u in cu if u["domain"] == d) for d in sorted({u["domain"] for u in cu})}}
         res_cells[lab] = r
     models = sorted({m for m, _ in cells})
-    pools = {f"{m}:pooled_equal_weight": pooled(draws, [f"{m}:{c}" for mm, c in cells if mm == m]) for m in models}
-    pools["all:pooled_equal_weight"] = pooled(draws, [f"{m}:{c}" for m, c in cells])
+    pools = {}
+    for fam in sorted({family(c) for _, c in cells}):
+        fc = [(m, c) for m, c in cells if family(c) == fam]
+        for m in models:
+            labs = [f"{mm}:{c}" for mm, c in fc if mm == m]
+            if labs:
+                pools[f"{fam}:{m}:pooled_equal_weight"] = pooled(draws, labs)
+        pools[f"{fam}:all:pooled_equal_weight"] = pooled(draws, [f"{m}:{c}" for m, c in fc])
     noop = [x for L in loaded for x in L["noop"]]
     res = {
         "protocol": "fork-v1 / protocol A", "analysis": "analysis/fork/analyze_dev.py", "input_fingerprint": fp,
