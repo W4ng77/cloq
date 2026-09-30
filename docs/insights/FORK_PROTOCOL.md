@@ -1,8 +1,12 @@
 **TL;DR** Protocol `fork-v1` for the same-state 2×2 fork (EXTERNAL_REVIEW_GPT61_20260930.md §E). A fork state is
 Q's full saved history before one of its decisions. tau2 rebuilds the DB, the telecom device state and the
-user-simulator state from that history by strict replay. The current action is forced (a_B or a_Q), and the continuation
-runs on a separate vLLM server per checkpoint, with the step and error budget restored. Code: `cloq/fork.py`,
-`scripts/a6000/fork_driver.py`, worker kind `fork`. Gate status and numbers: §7–§9 (filled from `analysis/fork/gate/`).
+user-simulator state from it by strict replay. The current action is forced (a_B or a_Q), and the continuation runs on a
+separate vLLM server per checkpoint and serving config, with the step and error budget restored.
+**Engineering gate: PASS (§8), deterministic protocol A.** It covers 20 Q→Q and 10 B→B bit-exact no-ops (retail, airline,
+telecom), same-checkpoint four-branch agreement, order/concurrency isolation, budget accounting, re-prefill, and the
+hooked KV config. Throughput and the development cost (≈ 260–320 GPU-h for q4/q8 × GPTQ/AWQ × 85 tasks × 20 blocks) are
+in §9; the development plan (not queued) is in §11. Code: `cloq/fork.py`, `cloq/fork_annotate.py`,
+`scripts/a6000/{fork_driver,fork_serve,make_tasks_fork_dev}.py`, worker kind `fork`.
 
 # Fork protocol fork-v1
 
@@ -277,13 +281,92 @@ Both are fixed here before any development fork outcome.
 Gate tasks: `fork_gate_q4_gptq_w4_d1` (retail + airline, 1 GPU), `fork_gate_same_q4_gptq_w4_d1` (b),
 `fork_gate_q8_awq_w4` (telecom + retail, 2 GPUs; waits for `a6k2_q8_tel_awq_w4`). Results: §8.
 
-## 8. Gate results
+## 8. Gate results (2026-09-29/30, PDT)
 
-(pending)
+**Verdict: PASS.** Every check passes on real divergence states in retail, airline and telecom, including the
+hooked (KV-quantized) serving configuration. No stochastic replay floor remains: every no-op is bit-exact in prompts,
+messages, DB hashes and outcomes. Decision for 10-01: **protocol A (deterministic forks)**; protocol B is not needed.
+
+| Check | Result | Evidence (`analysis/fork/gate/`) |
+|---|---|---|
+| Checkpoint identity | Rebuilt Q regenerates recorded decisions: q4 GPTQ-W4 c1 16/16, q8 AWQ-W4 c1 16/16, q4 KVQ INT4+H 12/12. B (BF16) 16/16 each, and the BF16 canary matches its reference, including at GPU_UTIL 0.44. Q replay of a_Q at every fork state: 20/20. | `*/gate.json` idcheck_*, states[].q_replay |
+| State restoration (CPU) | The prompt rendered from the restored history equals Q's recorded server prompt at every decision: 3,492/3,492 (q4: 1,880; q8 incl. telecom: 1,612). Step/error recount consistent with all 73 max_steps / too_many_errors episodes. | `cpucheck_q4.json`, `cpucheck_q8.json` |
+| (a) Q→Q no-op | 20/20 states: q4 GPTQ 8 (retail 3, airline 5), q8 AWQ 8 (retail 5, telecom 3), q4 KVQ 4. Identical prompt-id hashes for every suffix decision, suffix messages (tool calls, args, results, user replies, telecom user device calls), live and replay DB hashes (= original replay), termination (incl. too_many_errors at 10 and max_steps), reward, db_match, official_reward, final counters. | `states[].a_noop_QQ` |
+| (a) B→B no-op | 10/10: q4 retail 2 + airline 2, q8 retail 2 + telecom 2, KVQ gate 2. The q4 set first failed only on `official_reward`: `a6k2_q4_null_n1` predates that trajectory field (None vs 0.0). Now recomputed from reward_info (validated 335/335 on runs that store it) and re-verdicted offline from the saved files; the old verdict is kept in gate.json. | `a_noop_BB`, `reverdict` |
+| (b) same checkpoint | 6/6 states (q4 GPTQ on two servers): the B-handle shadow reproduces a_Q, and all four branches are identical to each other and to the original. Also under the hooked config (KVQ INT4+H on both handles, 4/4) and the KV16 bridge (plain BF16 B vs hooked KV16 Q: same canary `c7343b60da095480`, 4/4 equal to the BF16 original). | `q4_same_ckpt/`, `q4_kvq_same/`, `q4_kv16_bridge/` `gate_same.json` |
+| (c) isolation | Reversed order and all-four-concurrent give identical signatures: 7/7 states (q4 4 airline, q8 2 retail, KVQ 1 airline). Telecom isolation: supplement `fork_gate_q8_telecom_iso` (see below). Save/load: history and DB/device hashes recomputed from the reloaded file match for all 30 states. | `c_isolation`, `io_check` |
+| (d) budget | In all 80 gate branches (20 states × 4) the live counters equal the recount of the produced trajectory; tau2's default would have restarted at 0/0. No-op final counters equal the original (telecom no-ops end in too_many_errors at exactly 10, from restored counts). | `d_budget` |
+| (e) re-prefill | 20/20 applicable states. QB: B's first request (server ids, equal to the local render) is exactly the prompt Q saw at t+1 in the original. BQ: Q's first request equals BB's. Servers are distinct processes (pid/port in `servers`). | `e_reprefill` |
+| Per-role config (W34) | Hooked Q gets its own server and config hash (`c5003748f3f6679d` vs BF16 `efce043e33600dcc`), cache namespace `kvq_b4_r1_kv`, coverage 36/36 decoder layers, canary distinct from BF16 (`f4e319a296f618ea`). | `logs/tasks/fork_accept_*.servers.json` (cluster), `*/gate*.json` servers |
+
+Divergence types covered by the gate states: class act→talk, talk→act, parse_fail→act, tool_name, tool_args,
+tool_count, invalid_tool (telecom: the agent calls user-side device tools).
 
 ## 9. Throughput and development cost
 
-(pending)
+Measured on the gate runs (real divergence states; concurrency 8; one node's shared simulator):
+
+| | q4 GPTQ-W4 (1 GPU, B+Q) | q8 AWQ-W4 (2 GPUs) | q4 KVQ INT4+H (1 GPU) |
+|---|---|---|---|
+| Search: tasks with a primary divergence | 12/20 (60%) | retail 6/8, telecom 8/8 | 11/12 |
+| t* (first divergence) | 1–7 (median 4) | retail 0–4, telecom 0 (6/8) or 6 | 0–10 |
+| Shadow B cost per searched decision (median / p90) | 3.5 s / 12.4 s | 2.9 s / 4.5 s | 4.2 s / 19.1 s |
+| Search wall per task | 8.6 s | 3.4 s | 14.3 s |
+| Branch suffix duration (median / p90) | retail 104 / 196 s, airline 79 / 120 s | retail 118 / 162 s, telecom 209 / 425 s | 68 / 215 s |
+| Effective wall per branch at concurrency 8 | 18.6 s | 60 s (retail ≈ 47 s, telecom ≈ 83 s) | 20 s |
+| Simulator turns per branch | 3.9 | retail 9.7, telecom 20.2 | 4.6 |
+| Agent generations per branch (mean prompt) | 6.3 (7.3k tokens) | retail 17.4 (9.4k), telecom 26.1 (11.1k) | 8 (8.6k) |
+
+Simulator capacity (sampled 120 s, 2026-09-29 22:5x PDT): 14.7 req/s total over 5 replicas at partial load. One
+replica sustained 6.5 req/s at 32 running requests, and node001/004 were nearly idle. A fork task at concurrency 8 uses about
+0.2–0.25 simulator turns/s, so simulator throughput does not bind at the planned scale. GPU time does.
+
+**Development estimate** (per block = 85 tasks retail+airline; 3 branches BB/BQ/QB per state + 10% QQ no-op; divergence
+rate 60–90%):
+- q4 per cell and block: search ≈ 12 min, 51–77 states × 3.1 branches × 18.6 s ≈ 49–74 min, so **≈ 1.0–1.5 GPU-h**.
+- q8 per cell and block: search ≈ 5 min, 64–77 states × 3.1 × 47 s ≈ 2.6–3.1 h wall on 2 GPUs, so **≈ 5.4–6.4 GPU-h**.
+  Concurrency 16 should roughly halve the wall time; it is not yet measured.
+- Checkpoint build per task (once per group of blocks): GPTQ q4 ≈ 6 min, AWQ q8 ≈ 10 min.
+- **Total, q4 and q8 × GPTQ-W4 and AWQ-W4 × 85 tasks × 20 blocks:**
+  - q4: 2 × 20 × 1.0–1.5 = 40–60 GPU-h.
+  - q8: 2 × 20 × 5.4–6.4 = 216–256 GPU-h.
+  - Total **≈ 260–320 GPU-h**, about 13–16 h wall on 20 GPUs.
+  - Simulator demand ≈ 25k (q4) + 80k (q8) turns, about 2–3 h of the currently measured simulator capacity.
+- **Telecom development option** (80 dev tasks; never the 34 holdout), per cell and block:
+  - a closed-loop Q block run (≈ 2.6 GPU-h, measured `a6k2_q8_tel_awq_w4_q1`), plus its paired BF16 run (≈ 2.6 GPU-h);
+  - forks: ≈ 80 states × 3.1 × 83 s ≈ 5.7 h wall on 2 GPUs ≈ 11.4 GPU-h;
+  - **≈ 17 GPU-h per q8 cell-block.** q8 × 2 methods × 5 blocks ≈ 170 GPU-h.
+  - q4 telecom is not measured; it is expected to be cheaper.
+  - Caveat: 6/8 q8 telecom divergences are at t=0, where both B and Q call user-side device tools (`invalid_tool`; the
+    q8 BF16 telecom run ends in too_many_errors in 63/80 episodes). The telecom states are therefore dominated by one
+    shared failure mode.
+- **Priority (review round 3):**
+  1. four-branch acceptance (done);
+  2. all 85 dev tasks × the preset q4/q8 cells;
+  3. complete balanced blocks;
+  4. reserved capacity for the 34-task telecom holdout confirmation (≈ 34 × 3.1 × 83 s ≈ 2.4 h wall per q8 cell-block on 2 GPUs, plus its closed-loop runs);
+  5. extras.
+
+  The number of blocks is set from this throughput, and the fixed 20/40 is withdrawn: with ≈ 20 GPUs for ≈ 12 h, all four cells
+  get ≈ 20 blocks on q4 but only ≈ 10–12 on q8 unless concurrency 16 is validated.
+
+## 11. Proposed development fork generator (not queued)
+
+`scripts/a6000/make_tasks_fork_dev.py` prints the tasks and writes nothing without `--write`.
+- **Cells.** Fixed by `manifests/fork/dev_blocks_v1.json` (W29a), under its completeness rule, not by favourable results.
+  - Rule: per model × method, the W4 checkpoint with the most existing fresh-nonce draws; ties go to the lowest calibration draw index.
+  - Result: `gptq_w4_d1` and `awq_w4` (calibration c1) on q4 and q8.
+- **Blocks.** q3–q5 plus f01–f17. The complete shared-nonce blocks are the replicate units.
+- **Tasks.** One task per cell × group of 5 blocks, 16 tasks in total, mode `dev`:
+  - search over all 85 tasks of each block;
+  - freeze all states;
+  - then BB/BQ/QB, plus the QQ no-op on a 10% hash sample.
+  - q4 uses 1 GPU (B+Q, GPU_UTIL 0.44); q8 uses 2 GPUs. Deps: the eval tasks producing the blocks, plus the gate task of the model.
+- **Proposed additions before `--write`:**
+  - order the groups so every cell completes block groups in lockstep (balanced blocks);
+  - set `concurrency` 16 on q4 after one validation task;
+  - optionally add telecom dev blocks for q8 once their closed-loop Q/BF16 runs exist.
+- **Stop rule.** Any development QQ no-op mismatch quarantines its task's output (protocol A, §6c).
 
 ## 10. Deviations from the design (and why)
 

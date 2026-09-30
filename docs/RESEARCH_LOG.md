@@ -10,6 +10,33 @@ Newest first.
 
 ---
 
+## W30 — Same-state fork pipeline built; engineering gate passed (deterministic forks) (2026-09-29/30)
+**TL;DR** fork-v1 is implemented and passes every gate check, so development forks use deterministic protocol A.
+- **Mechanism.** A fork state is Q's saved history before decision t. tau2 rebuilds the DB, the telecom device DB and the user-simulator
+  state by strict replay; the simulator has no hidden state. The current action is forced through the normal orchestrator
+  step. Step and error counters are restored (tau2 would reset them to 0). Each role gets its own vLLM server and
+  effective serving config.
+- **Evidence.**
+  - Restored-history prompts equal recorded server prompts at 3,492/3,492 decisions.
+  - Rebuilt GPTQ/AWQ checkpoints regenerate recorded decisions (16/16, 16/16).
+  - 20/20 Q→Q and 10/10 B→B no-ops are bit-exact (prompts, messages, DB/device hashes, termination, rewards, counters), including telecom dual control and too_many_errors endings.
+  - Same-checkpoint four-branch agreement holds 6/6, and 4/4 under the hooked KV config and the KV16 bridge.
+  - Reversed and concurrent runs are identical (7/7). Budget accounting holds in 80/80 branches. Re-prefill after a switch holds 20/20.
+- **Fixes during the gate.**
+  - The B→B comparator missed `official_reward` in old runs; it is now recomputed from reward_info (validated 335/335) and the verdict was recomputed offline, keeping the old one.
+  - W34: run_fork ignored serve_env/serve_extra. Fixed with per-role configs, an effective-config hash, W/A/K/V bits, hook version, cache namespace and hook coverage (36/36 layers).
+- **Annotation (review rounds 2–3).** `cloq/fork_annotate.py` records per-state events with raw records and ok/violation/needs_review statuses, correction evidence, per-assertion and per-DB-path requirements, and a blinded review export.
+- **Throughput.**
+  - q4 1-GPU B+Q: 18.6 s per branch at concurrency 8.
+  - q8 2-GPU: ≈ 47 s per retail branch and ≈ 83 s per telecom branch.
+  - The simulator is not binding (14.7 req/s observed over 5 replicas at partial load).
+- **Development cost.** ≈ 260–320 GPU-h for q4/q8 × GPTQ-W4/AWQ-W4 × 85 tasks × 20 blocks, of which q8 is about 80%. The generator is proposed, not queued.
+- **Pending.** The telecom isolation supplement `fork_gate_q8_telecom_iso` (queued).
+Evidence: `docs/insights/FORK_PROTOCOL.md` §8–§11; `analysis/fork/gate/{cpucheck_q4,cpucheck_q8}.json`,
+`analysis/fork/gate/{q4_gptq_w4_d1,q8_awq_w4,q4_kvq_int4_rot}/gate.json`, `analysis/fork/gate/{q4_same_ckpt,q4_kvq_same,q4_kv16_bridge}/gate_same.json`,
+`*/annotations.jsonl`; code `cloq/fork.py`, `cloq/fork_annotate.py`, `scripts/a6000/{fork_driver,fork_serve,make_tasks_fork_dev,worker}.py`;
+logs `/data/ziyangs/cloq_work/logs/tasks/fork_*.{log,servers.json}`.
+
 ## W34-infra — Multi-replica user simulator: instance registry, drain-then-add, 6 replicas live (2026-09-30)
 **TL;DR** The review finding on e72b93e was confirmed in code. The balancer read only port 8000 and keyed replicas by node name. The runner started exactly one simulator.
 - **What changed:**

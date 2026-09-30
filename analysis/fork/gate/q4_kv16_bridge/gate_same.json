@@ -1,0 +1,390 @@
+{
+ "protocol": "fork-v1",
+ "spec": {
+  "mode": "gate_same",
+  "q_blocks": [
+   [
+    "a6k2_q4_null_n1",
+    "retail"
+   ],
+   [
+    "a6k2_q4_null_n1",
+    "airline"
+   ]
+  ],
+  "n_per_block": 2,
+  "idcheck_n": 8,
+  "concurrency": 8,
+  "out": "analysis/fork/gate/q4_kv16_bridge"
+ },
+ "servers": {
+  "B": {
+   "gpu": "6",
+   "port": 8107,
+   "pid": 3908925,
+   "ckpt": {
+    "kind": "bf16"
+   },
+   "path": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "6",
+    "8107",
+    "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.44",
+   "hook_coverage": null,
+   "canary": "c7343b60da095480",
+   "ckpt_sha256": null,
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+     "chat_template_kwargs": {}
+    },
+    "weights": "Qwen/Qwen3-4B-Instruct-2507@cdbee75f17c01a7cc42f958dc650907174af0554",
+    "ckpt": {
+     "kind": "bf16"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 16,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "efce043e33600dcc",
+   "canary_ref_ok": true
+  },
+  "Q": {
+   "gpu": "6",
+   "port": 8207,
+   "pid": 3914817,
+   "ckpt": {
+    "kind": "bf16"
+   },
+   "path": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+   "serve_env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_KVQ_BITS": "16"
+   },
+   "serve_extra": [],
+   "launch_args": [
+    "6",
+    "8207",
+    "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.44",
+   "hook_coverage": {
+    "kvq": {
+     "bits": 16,
+     "rot": false,
+     "which": "kv",
+     "active": false,
+     "namespace": "kvq_b16_r0_kv"
+    },
+    "n_wrapped_processes": 2,
+    "decoder_attention_hooked": 36,
+    "expected_layers": 36,
+    "ok": true
+   },
+   "canary": "c7343b60da095480",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+     "chat_template_kwargs": {}
+    },
+    "weights": "Qwen/Qwen3-4B-Instruct-2507@cdbee75f17c01a7cc42f958dc650907174af0554",
+    "ckpt": {
+     "kind": "bf16"
+    },
+    "serve_env": {
+     "CLOQ_PYHOOKS": "1",
+     "CLOQ_KVQ_BITS": "16"
+    },
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 16,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": "e69fb37a7383ad96",
+    "cache_namespace": "kvq_b16_r0_kv"
+   },
+   "effective_config_sha": "3a87b20d0ecaee27"
+  },
+  "same_effective_config": false,
+  "q_quantization": {},
+  "user_base": "http://127.0.0.1:8000/v1",
+  "host": "node004",
+  "job": "49671"
+ },
+ "bases": {
+  "B": "http://127.0.0.1:8107/v1",
+  "Q": "http://127.0.0.1:8207/v1"
+ },
+ "idcheck_Q": {
+  "label": "Q",
+  "base": "http://127.0.0.1:8207/v1",
+  "n": 8,
+  "n_match": 8,
+  "rows": [
+   {
+    "run_id": "a6k2_q4_null_n1",
+    "domain": "retail",
+    "task_id": "40",
+    "t": 7,
+    "n_prompt": 6689,
+    "n_completion": 86,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_null_n1",
+    "domain": "retail",
+    "task_id": "12",
+    "t": 4,
+    "n_prompt": 6097,
+    "n_completion": 29,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_null_n1",
+    "domain": "airline",
+    "task_id": "19",
+    "t": 7,
+    "n_prompt": 6850,
+    "n_completion": 97,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_null_n1",
+    "domain": "retail",
+    "task_id": "90",
+    "t": 5,
+    "n_prompt": 6067,
+    "n_completion": 78,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_null_n1",
+    "domain": "airline",
+    "task_id": "17",
+    "t": 1,
+    "n_prompt": 4999,
+    "n_completion": 31,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_null_n1",
+    "domain": "retail",
+    "task_id": "99",
+    "t": 5,
+    "n_prompt": 6323,
+    "n_completion": 29,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_null_n1",
+    "domain": "retail",
+    "task_id": "38",
+    "t": 3,
+    "n_prompt": 5152,
+    "n_completion": 44,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_null_n1",
+    "domain": "retail",
+    "task_id": "13",
+    "t": 5,
+    "n_prompt": 6285,
+    "n_completion": 268,
+    "match": true
+   }
+  ],
+  "ok": true
+ },
+ "idcheck_Bhandle": {
+  "label": "B-handle (same ckpt)",
+  "base": "http://127.0.0.1:8107/v1",
+  "n": 8,
+  "n_match": 8,
+  "rows": [
+   {
+    "run_id": "a6k2_q4_null_n1",
+    "domain": "retail",
+    "task_id": "40",
+    "t": 7,
+    "n_prompt": 6689,
+    "n_completion": 86,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_null_n1",
+    "domain": "retail",
+    "task_id": "12",
+    "t": 4,
+    "n_prompt": 6097,
+    "n_completion": 29,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_null_n1",
+    "domain": "airline",
+    "task_id": "19",
+    "t": 7,
+    "n_prompt": 6850,
+    "n_completion": 97,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_null_n1",
+    "domain": "retail",
+    "task_id": "90",
+    "t": 5,
+    "n_prompt": 6067,
+    "n_completion": 78,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_null_n1",
+    "domain": "airline",
+    "task_id": "17",
+    "t": 1,
+    "n_prompt": 4999,
+    "n_completion": 31,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_null_n1",
+    "domain": "retail",
+    "task_id": "99",
+    "t": 5,
+    "n_prompt": 6323,
+    "n_completion": 29,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_null_n1",
+    "domain": "retail",
+    "task_id": "38",
+    "t": 3,
+    "n_prompt": 5152,
+    "n_completion": 44,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q4_null_n1",
+    "domain": "retail",
+    "task_id": "13",
+    "t": 5,
+    "n_prompt": 6285,
+    "n_completion": 268,
+    "match": true
+   }
+  ],
+  "ok": true
+ },
+ "rows": [
+  {
+   "state_id": "427cb73215b5675a",
+   "domain": "retail",
+   "task_id": "112",
+   "t": 4,
+   "shadow_eq_aQ": true,
+   "shadow_prompt_ok": true,
+   "all_four_equal": true,
+   "noop_vs_orig": {
+    "QQ": true,
+    "BB": true,
+    "BQ": true,
+    "QB": true
+   },
+   "differs": []
+  },
+  {
+   "state_id": "837e987d8f1a6f43",
+   "domain": "retail",
+   "task_id": "46",
+   "t": 3,
+   "shadow_eq_aQ": true,
+   "shadow_prompt_ok": true,
+   "all_four_equal": true,
+   "noop_vs_orig": {
+    "QQ": true,
+    "BB": true,
+    "BQ": true,
+    "QB": true
+   },
+   "differs": []
+  },
+  {
+   "state_id": "e3363d9ce06d8f87",
+   "domain": "airline",
+   "task_id": "35",
+   "t": 3,
+   "shadow_eq_aQ": true,
+   "shadow_prompt_ok": true,
+   "all_four_equal": true,
+   "noop_vs_orig": {
+    "QQ": true,
+    "BB": true,
+    "BQ": true,
+    "QB": true
+   },
+   "differs": []
+  },
+  {
+   "state_id": "517f5572688ae7a3",
+   "domain": "airline",
+   "task_id": "47",
+   "t": 1,
+   "shadow_eq_aQ": true,
+   "shadow_prompt_ok": true,
+   "all_four_equal": true,
+   "noop_vs_orig": {
+    "QQ": true,
+    "BB": true,
+    "BQ": true,
+    "QB": true
+   },
+   "differs": []
+  }
+ ],
+ "verdict": {
+  "b_same_ckpt": true,
+  "n_states": 4,
+  "n_errors": 0,
+  "domains": [
+   "airline",
+   "retail"
+  ],
+  "idcheck": true,
+  "pass": true
+ }
+}
