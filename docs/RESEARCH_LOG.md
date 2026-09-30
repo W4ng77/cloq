@@ -10,6 +10,22 @@ Newest first.
 
 ---
 
+## W59 — NFS recovered; node001 back in service (2026-09-30 12:15 PDT)
+**TL;DR** The W56/W57 NFS degradation has cleared:
+- A fresh `import cloq.run_arm, vllm` takes 13–15 s on node001/004/006, down from >300 s at 11:25.
+- The node001 latency probe was normal 3× in a row at 12:11.
+
+Recovery steps:
+- Removed `queue/DRAIN.node001`.
+- Restarted the analysis daemon at `CLOQ_DAEMON_PERIOD=1200`, `CLOQ_DAEMON_PROCS=4`, a middle setting between the 600 s / 6 default and the throttled 3600 s / 2.
+- The 90 min server-start timeout (W58) stays.
+
+Still open:
+- node003 remains down; the admin is working on it.
+- The admin proposed reserving 8 CPUs per node for GPU jobs. Our runners use ≤32 CPUs, so they already comply.
+- Rejected for now: re-running stalled tasks. A fresh start hit the same 5 min import, so it could not have helped.
+- Proposed and not done: a node-local copy of the Python environment. It is not needed while NFS is healthy.
+
 ## W57 — Cluster-wide NFS degradation; analysis daemon throttled (2026-09-30 10:55 PDT)
 **TL;DR** The NFS stalls from W56 are now on every node, not just node001. A metadata `ls` of the env takes 1.0–7.3 s, against 0.2–0.5 s in the morning. Processes sit in `rpc_wait_bit_killable` on node004, node005 and node006 (vLLM start, run_arm, fork_driver).
 - **Impact:** at 10:49, 16 of 40 monitored GPUs were busy with 113 tasks queued. 13 tasks finished in the last hour.
