@@ -461,3 +461,26 @@ Cut points and bins are fixed on the telecom development data, never on the hold
 
 **Step 3 (queued only if step 2 selects an arm):** the branch "R at t*, then Q", on the GPTQ-W3 stress-fork states of q4 and q8.
 It is compared with QQ (G_R = Y_RQ − Y_QQ) and with BQ (the share of the full-BF16-at-pivot effect it recovers).
+
+### §13 amendment 1 (W61): selection population GPTQ-W3 → RTN-W3, before any W3 pivot-arm outcome was computed
+
+- **Change.** The step-3 selection statistic (Δ = r_B(arm) − r_B(byte-matched random), pooled with equal weight over two
+  cells, hierarchical bootstrap, eligibility LB > 0 and Δ ≥ 5 pp, at most 2 arms) is now computed on **RTN-W3 q4 and q8**
+  instead of GPTQ-W3. Everything else in §13 is unchanged. RTN has no inter-layer compensation, so the RTN cells have no
+  recal candidates; their candidates are early, middle, late, attn and mlp with their seed-1 byte-matched random controls.
+  **Step 3** ("R at t*, then Q") correspondingly runs on the RTN-W3 stress-fork states. GPTQ-W3 pivot-arm results are
+  reported as secondary.
+- **Reason (a closed-loop fact, not a pivot-arm outcome).** Closed-loop success on blocks q3–q5 shows no GPTQ-W3 damage to rescue:
+
+  | | BF16 | GPTQ-W3 | RTN-W3 |
+  |---|---|---|---|
+  | q4 | 35.7% | 36.1% | 13.5% |
+  | q8 | 30.6% | 26.7% | 13.3% |
+
+  The stress forks agree (q4 GPTQ-W3 G_all ≈ −1.2 pp). The damage regime is RTN-W3.
+- **State of knowledge at amendment time.**
+  - The q4 GPTQ-W3 pivot-arm tasks had finished and their `analysis/fork/pivot_arms/q4_gptq_w3/*.jsonl` files existed.
+    They were **not opened or analysed** by the author of this amendment.
+  - The pooled selection statistic had **never been computed**: `analyze_pivot_arms.py` reported "waiting for both GPTQ-W3
+    cells", and q8 GPTQ-W3 had not run.
+  - No RTN-W3 pivot-arm task had been created.
