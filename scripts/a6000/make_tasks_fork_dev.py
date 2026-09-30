@@ -21,6 +21,10 @@ from pathlib import Path
 ROOT = Path("/data/ziyangs/cloq")
 Q = Path("/data/ziyangs/cloq_work/queue")
 CK = {"gptq_w4_d1": "gptq", "awq_w4": "awq"}
+# q8 fork tasks need one GPU per server (two 8B servers do not fit one A6000 at max_len 33792). node006's runner
+# (job 49642) predates task["gpus"] support and would hand out a single card, so q8 tasks are pinned to these nodes;
+# run_fork also refuses a wrong allocation before building anything.
+Q8_NODES = ("node004", "node005", "node007")
 
 
 def producer(model: str, cell: str, blk: str) -> str | None:
@@ -49,7 +53,8 @@ def main():
             for i in range(0, len(blocks), a.per_task):
                 grp = blocks[i:i + a.per_task]
                 deps = sorted({p for b in grp if (p := producer(model, cell, b))} | {f"fork_gate_{'q4_gptq_w4_d1' if model == 'q4' else 'q8_awq_w4'}"})
-                tasks.append({
+                pin = {} if model == "q4" else {"node": Q8_NODES[len(tasks) % len(Q8_NODES)]}
+                tasks.append({**pin,
                     "id": f"fork_dev_{model}_{cell}_g{i // a.per_task + 1}", "kind": "fork", "model": model,
                     "gpus": 1 if model == "q4" else 2, **({"gpu_util": 0.44} if model == "q4" else {}),
                     "priority": -20, "deps": deps, "q_ckpt": ck, "b_ckpt": {"kind": "bf16"},

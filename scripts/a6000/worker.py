@@ -441,6 +441,10 @@ def run_fork(task, args, st: Status):
     log.write(f"\n=== {time.ctime()} {socket.gethostname()} gpus={args.gpus} port={args.port} (fork)\n")
     log.flush()
     import fork_serve as FS  # per-role serving configs (scripts/a6000/fork_serve.py)
+    # Fail fast on a wrong allocation (an old runner ignores task["gpus"]): only q4 fits B+Q on one card at max_len 33792.
+    if len(gpus) != int(task.get("gpus", 1)) or (len(gpus) == 1 and task["model"] != "q4"):
+        raise RuntimeError(f"fork {task['model']}: allocated GPUs {gpus} but the task needs {task.get('gpus')} "
+                           f"(1-GPU B+Q only for q4; q8 at max_model_len {AGENT_MAXLEN} needs one GPU per server)")
     cfg = {r: FS.role_cfg(task, r) for r in ("B", "Q")}
     q_ck, b_ck = cfg["Q"]["ckpt"], cfg["B"]["ckpt"]
     same_w = q_ck == b_ck  # same weights spec: build once (the configurations may still differ, e.g. pure-KV Q)
