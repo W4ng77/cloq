@@ -10,6 +10,39 @@ Newest first.
 
 ---
 
+## W55 — Pivot-time restoration: detection (CPU), arm screening queued, step 3 gated by a pre-declared rule (2026-09-30)
+**TL;DR** The pivot (the first semantic divergence) is only moderately detectable from Q's own uncertainty (AUROC 0.60–0.73), and no escalation value is distinguishable from zero yet. Pivot-arm screening (32 tasks, ≈ 26 GPU-h) is queued. Step 3 will run only if the rule fixed in FORK_PROTOCOL §13 selects an arm.
+- **Step 1: `analysis/fork/analyze_pivot.py`** (EXPLORATORY; registrable as `python analysis/fork/analyze_pivot.py --snapshot {snapshot}`).
+  - **Positives:** Q's decision at t*.
+  - **Negatives:** Q's decisions before t*, and every decision of fully searched non-divergent units.
+  - **Signals:** from Q's decisions.jsonl: first-token margin, minimum margin, mean and minimum token log-probability, and the number of low-margin tokens. Entropy was not logged.
+  - **AUROC of −first_token_margin** (matched on domain × decision index):
+
+    | Cell | AUROC (matched) |
+    |---|---|
+    | q4 AWQ-W4 | 0.65 (0.60) |
+    | q4 GPTQ-W4 | 0.62 (0.62) |
+    | q8 AWQ-W4 | 0.64 (0.67) |
+    | q8 GPTQ-W4 | 0.69 (0.71) |
+    | q4 KV8 | 0.71 (0.71) |
+    | q4 GPTQ-W3 | 0.60 (0.64) |
+    | q4 KV4-rot | 0.62 (0.62) |
+
+    min_margin and the log-probability signals reach 0.66–0.73.
+  - **Escalation policy** (escalate when the margin is below θ; escalating once at the pivot is branch BQ): escalating 10% of decisions catches 16–39% of pivots, and escalating 20% catches 30–51%. The policy value over the full pool has intervals covering 0 in every cell (e.g. q8 GPTQ-W4 at a 20% rate: +3.4 [−1.5, +8.6] pp).
+  - **Full-pool values:** Y_BQ − Y_QQ, Y_QB − Y_QQ (= C + I, escalate after the divergence) and Y_BB − Y_QQ (= A + C + I) all cover 0, except q4 KV4-rot Y_BB − Y_QQ = +12.3 [+3.4, +22.2] pp.
+  - analyze_dev.py now carries Y_QB − Y_QQ and Y_BB − Y_QQ as explicit endpoints.
+- **Step 2: which modules flip the action at the pivot** (fork_driver mode `pivot_arms`, generator `scripts/a6000/make_tasks_pivot_arms.py`, analysis `analysis/fork/analyze_pivot_arms.py`).
+  - **Design:** 150 hash-sampled frozen states per cell (q4 GPTQ-W4, q8 AWQ-W4, q4/q8 GPTQ-W3). Arms: none, all, early/middle/late/attn/mlp, byte-matched random rand_third/attn/mlp s1, and resid α 0.5; the W3 cells also get the 8 restore_recal arms. Each arm makes one decision per state at the identical prompt, two arms per task. 32 tasks at −14; the estimate is ≈ 26 GPU-h, revised from the measured control task.
+  - **Pipeline control,** `pivot_q4_gptq_w4_d1_none__all` (run at −16, as the only priority exception): prompt ids 150/150; `none` reproduces a_Q exactly 150/150 and `all` reproduces a_B exactly 150/150.
+- **Step 3 selection rule, fixed before any arm outcome** (FORK_PROTOCOL §13, commit 6c926c2).
+  - **Statistic:** Δ = r_B(arm) − r_B(byte-matched random), paired, pooled over q4 and q8 GPTQ-W3 with the hierarchical bootstrap.
+  - **Eligible:** one-sided LB > 0 and Δ ≥ 5 pp. The largest Δ is chosen, with a second arm if also eligible (max 2).
+  - **If no arm is eligible,** step 3 is not run.
+  - **Step 3 itself** ("R at t*, then Q" on the GPTQ-W3 stress states, vs QQ and BQ) is not implemented or queued. Estimate: ≈ 460 states × (1–2 arms + control) single branches, ≈ 12–25 GPU-h.
+Evidence: `analysis/fork/out/pivot_20260930T135758Z.{json,md}`, `analysis/fork/pivot_arms/q4_gptq_w4_d1/{none,all}.jsonl`,
+`analysis/fork/out/pivot_arms_20260930T145218Z.{json,md}`, `docs/insights/FORK_PROTOCOL.md` §13, `/data/ziyangs/cloq_work/queue/todo/pivot_*.json`.
+
 ## W54 — `restore_recal`: rebuilt mixed precision around the kept modules (fixes the sequential-compensation confound); 16 W3 tasks queued (2026-09-30)
 **TL;DR** Plain `restore` arms swap BF16 modules into a finished true-sequential GPTQ/AWQ checkpoint. The downstream quantized modules were calibrated on quantized-upstream inputs, so the swap breaks their compensation, and the absolute recovery is confounded (the user caught this; confirmed in `cloq/quantize.py`).
 - **New kind `restore_recal`:** the arm's modules stay BF16, and the base's sequential GPTQ/AWQ is re-run for all other modules (same c1 manifest, settings, seed).

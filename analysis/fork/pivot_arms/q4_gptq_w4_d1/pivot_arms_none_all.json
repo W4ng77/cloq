@@ -1,0 +1,370 @@
+{
+ "protocol": "fork-v1",
+ "spec": {
+  "mode": "pivot_arms",
+  "states_globs": [
+   "analysis/fork/dev/q4_gptq_w4_d1/g*/states/*.json"
+  ],
+  "n_states": 150,
+  "salt": "pivot-arms-v1",
+  "arms": {
+   "B": "none",
+   "Q": "all"
+  },
+  "concurrency": 8,
+  "out": "analysis/fork/pivot_arms/q4_gptq_w4_d1"
+ },
+ "servers": {
+  "B": {
+   "gpu": "1",
+   "port": 8102,
+   "pid": 221599,
+   "ckpt": {
+    "kind": "restore",
+    "base": {
+     "kind": "gptq",
+     "wbits": 4,
+     "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+    },
+    "arm": "none",
+    "manifest": "manifests/perturb/restore_v1/q4/none.json"
+   },
+   "path": "/tmp/cloq_49694/ckpt_pivot_q4_gptq_w4_d1_none__all_B",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "1",
+    "8102",
+    "/tmp/cloq_49694/ckpt_pivot_q4_gptq_w4_d1_none__all_B",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.44",
+   "hook_coverage": null,
+   "canary": "a72b3da03409576e",
+   "ckpt_sha256": "e6c24bc24d5d2729f0ae2de9cbcee08d7291a829cdc3d1eb2d48fefd1a9605a1",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+     "chat_template_kwargs": {}
+    },
+    "weights": "sha256:e6c24bc24d5d2729f0ae2de9cbcee08d7291a829cdc3d1eb2d48fefd1a9605a1",
+    "ckpt": {
+     "kind": "restore",
+     "base": {
+      "kind": "gptq",
+      "wbits": 4,
+      "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+     },
+     "arm": "none",
+     "manifest": "manifests/perturb/restore_v1/q4/none.json"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": null,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "be28878d834f51f7",
+   "derived": {
+    "tag": "19fb47f7844f",
+    "method": "restore",
+    "arm": "none",
+    "alpha": null,
+    "equals": "q",
+    "content_sha256": "b22e0b7c77615378de10ffe2918892179a31d44a46798f4309ffa9b86097347f",
+    "files_sha256": "e6c24bc24d5d2729f0ae2de9cbcee08d7291a829cdc3d1eb2d48fefd1a9605a1",
+    "eff_alpha": null,
+    "n_restored": 0,
+    "base_cache": {
+     "key": "q4_gptq_c9c80ffd2e62",
+     "files_sha256": "e6c24bc24d5d2729f0ae2de9cbcee08d7291a829cdc3d1eb2d48fefd1a9605a1",
+     "built_on": "node005",
+     "path": "/data/ziyangs/cloq_work/ckpt_cache/base/q4_gptq_c9c80ffd2e62"
+    },
+    "canary": {
+     "q_ref": "a72b3da03409576e",
+     "tag_ref": "a72b3da03409576e"
+    }
+   }
+  },
+  "Q": {
+   "gpu": "1",
+   "port": 8202,
+   "pid": 259707,
+   "ckpt": {
+    "kind": "restore",
+    "base": {
+     "kind": "gptq",
+     "wbits": 4,
+     "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+    },
+    "arm": "all",
+    "manifest": "manifests/perturb/restore_v1/q4/all.json"
+   },
+   "path": "/tmp/cloq_49694/ckpt_pivot_q4_gptq_w4_d1_none__all_Q",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "1",
+    "8202",
+    "/tmp/cloq_49694/ckpt_pivot_q4_gptq_w4_d1_none__all_Q",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.44",
+   "hook_coverage": null,
+   "canary": "c7343b60da095480",
+   "ckpt_sha256": "54ea4170d090ec72fd5fa3d2f3be0a5af5548a3cb658db36d6911d32dc5e2adf",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+     "chat_template_kwargs": {}
+    },
+    "weights": "sha256:54ea4170d090ec72fd5fa3d2f3be0a5af5548a3cb658db36d6911d32dc5e2adf",
+    "ckpt": {
+     "kind": "restore",
+     "base": {
+      "kind": "gptq",
+      "wbits": 4,
+      "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+     },
+     "arm": "all",
+     "manifest": "manifests/perturb/restore_v1/q4/all.json"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": null,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "28a2e6f046437f93",
+   "derived": {
+    "tag": "dd3e55d00f53",
+    "method": "restore",
+    "arm": "all",
+    "alpha": null,
+    "equals": "bf16",
+    "content_sha256": "37749b096fc6d91d6cbbe345d0bcd694b927f02da8291678dacafb13d7694ad5",
+    "files_sha256": "54ea4170d090ec72fd5fa3d2f3be0a5af5548a3cb658db36d6911d32dc5e2adf",
+    "eff_alpha": null,
+    "n_restored": 252,
+    "base_cache": {
+     "key": "q4_gptq_c9c80ffd2e62",
+     "files_sha256": "e6c24bc24d5d2729f0ae2de9cbcee08d7291a829cdc3d1eb2d48fefd1a9605a1",
+     "built_on": "node005",
+     "path": "/data/ziyangs/cloq_work/ckpt_cache/base/q4_gptq_c9c80ffd2e62"
+    },
+    "canary": {
+     "bf16_ref": "c7343b60da095480",
+     "tag_ref": "c7343b60da095480"
+    }
+   }
+  },
+  "same_effective_config": false,
+  "q_quantization": {
+   "protocol": "perturb-v1",
+   "storage": "fake-quant bf16",
+   "n_decoder_linears": 252,
+   "base": {
+    "method": "GPTQ",
+    "wbits": 4,
+    "group_size": 128,
+    "sym": false,
+    "percdamp": 0.01,
+    "blocksize": 128,
+    "act_order": true,
+    "true_sequential": true,
+    "source_model": "Qwen/Qwen3-4B-Instruct-2507",
+    "source_revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+    "storage": "fake-quant bf16",
+    "calibration_manifest": "/data/ziyangs/cloq/manifests/a6k2/q4/calib_fp_traj_c1.json",
+    "moe_experts": null,
+    "calibration": {
+     "protocol": "v1",
+     "arm": "fp_traj",
+     "draw": "c1",
+     "draw_seed": 20260729,
+     "budget_rows": 64000,
+     "total_rows": 64000,
+     "rows_within_budget": true,
+     "n_states": 57,
+     "n_tasks": 57,
+     "rows_per_state_min": 1122,
+     "rows_per_state_max": 1123,
+     "median_context_tokens": 6041.0,
+     "total_context_tokens": 372294,
+     "states_by_source": {
+      "fp": 57
+     },
+     "states_by_depth_quartile": {
+      "0": 16,
+      "1": 13,
+      "2": 14,
+      "3": 14
+     },
+     "states_by_domain": {
+      "retail": 39,
+      "airline": 18
+     },
+     "fp_run": "a6k2_q4_bf16_cal",
+     "q_run": null,
+     "novelty": null,
+     "notes": [],
+     "split_file_sha256": "7d1671154c37375990fd01999df2257e1bef916ee8201158b850846876315a79",
+     "manifest_sha256": "780875fe8a38bd31c9687ffafb512b09061db1c3b8786ecacbbbb9547cd5a20a"
+    },
+    "seconds_quantize": 383.5227608680725,
+    "n_expert_tensors_rtn": 0
+   },
+   "base_method": "GPTQ",
+   "source_model": "Qwen/Qwen3-4B-Instruct-2507",
+   "source_revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+   "source_dir": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+   "q_dir": "/data/ziyangs/cloq_work/ckpt_cache/base/q4_gptq_c9c80ffd2e62",
+   "content_sha256": "37749b096fc6d91d6cbbe345d0bcd694b927f02da8291678dacafb13d7694ad5",
+   "equals": "bf16",
+   "seconds": 12.455057144165039,
+   "method": "restore",
+   "wbits": null,
+   "n_restored": 252,
+   "note": "local precision restoration: listed linears BF16 (from W), all others from Q; bit copies",
+   "arm": "all",
+   "family": "control",
+   "seed": null,
+   "manifest": "/data/ziyangs/cloq/manifests/perturb/restore_v1/q4/all.json",
+   "manifest_modules_sha256": "6163165b28331a85b75b827522920d08f356ba6d7781064d66b85abb4bec3e6e",
+   "budget": {
+    "n_linears": 252,
+    "n_restored": 252,
+    "linear_params": 3633315840,
+    "restored_params": 3633315840,
+    "restored_bf16_bytes": 7266631680,
+    "restored_param_frac": 1.0,
+    "sim_storage_bytes": 7266631680,
+    "sim_storage_bytes_q": 1891454976.0,
+    "sim_storage_bytes_bf16": 7266631680,
+    "sim_bits_per_linear_param": 16.0,
+    "sim_overhead_vs_q": 2.8418211229998636,
+    "restored_by_module": {
+     "self_attn.q_proj": 36,
+     "self_attn.k_proj": 36,
+     "self_attn.v_proj": 36,
+     "self_attn.o_proj": 36,
+     "mlp.gate_proj": 36,
+     "mlp.up_proj": 36,
+     "mlp.down_proj": 36
+    },
+    "restored_layers": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19,
+     20,
+     21,
+     22,
+     23,
+     24,
+     25,
+     26,
+     27,
+     28,
+     29,
+     30,
+     31,
+     32,
+     33,
+     34,
+     35
+    ]
+   },
+   "spec": {
+    "kind": "restore",
+    "base": {
+     "kind": "gptq",
+     "wbits": 4,
+     "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+    },
+    "arm": "all",
+    "manifest": "manifests/perturb/restore_v1/q4/all.json"
+   },
+   "tag": "dd3e55d00f53",
+   "base_cache": {
+    "key": "q4_gptq_c9c80ffd2e62",
+    "files_sha256": "e6c24bc24d5d2729f0ae2de9cbcee08d7291a829cdc3d1eb2d48fefd1a9605a1",
+    "built_on": "node005",
+    "path": "/data/ziyangs/cloq_work/ckpt_cache/base/q4_gptq_c9c80ffd2e62"
+   },
+   "files_sha256": "54ea4170d090ec72fd5fa3d2f3be0a5af5548a3cb658db36d6911d32dc5e2adf"
+  },
+  "user_base": "http://node005:8000/v1",
+  "host": "node003",
+  "job": "49694"
+ },
+ "n_states": 150,
+ "arms": {
+  "none": {
+   "n": 150,
+   "n_errors": 0,
+   "prompt_ok": 150,
+   "eq_B": 0,
+   "eq_Q": 150,
+   "other": 0,
+   "exact_B": 0,
+   "exact_Q": 150
+  },
+  "all": {
+   "n": 150,
+   "n_errors": 0,
+   "prompt_ok": 150,
+   "eq_B": 150,
+   "eq_Q": 0,
+   "other": 0,
+   "exact_B": 150,
+   "exact_Q": 0
+  }
+ },
+ "seconds": 275.24011421203613
+}
