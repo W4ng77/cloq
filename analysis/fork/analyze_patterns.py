@@ -96,6 +96,9 @@ def main():
                 u.setdefault("excluded", "quarantined fork task (QQ no-op mismatch)")
     units, _dups = AD.dedupe_units(allu)
     incomplete = AD.mark_incomplete_blocks(units, a.split, strict=not a.complete_case)
+    # W78: complete 85-task retail/airline blocks only; keyed per domain like mark_incomplete_blocks
+    incomplete.update({f"{k.split('|')[0]}|{d}|{k.split('|')[1]}": f"partial-panel block (W78): {v}"
+                       for k, v in AD.mark_partial_panel_blocks(units, a.split).items() for d in AD.PANEL_DOMAINS})
     ok = [u for u in units if "excluded" not in u]
     for u in ok:
         u["E"] = AD.effects(u["Y"], u["div"])

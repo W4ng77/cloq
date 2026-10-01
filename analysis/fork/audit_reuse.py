@@ -138,6 +138,7 @@ def main():
                 u.setdefault("excluded", "quarantined")
     units, _ = AD.dedupe_units(allu)
     AD.mark_incomplete_blocks(units, "dev", strict=True)
+    AD.mark_partial_panel_blocks(units, "dev")  # W78: no partial (single-domain) panel blocks in the common pool
     units = [u for u in units if "excluded" not in u]
     for u in units:
         u["E"] = AD.effects(u["Y"], u["div"])

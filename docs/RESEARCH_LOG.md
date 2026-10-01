@@ -10,6 +10,75 @@ Newest first.
 
 ---
 
+## W78 — W70/W67 statistics corrected: full 85-task panel, Freedman–Lane conditional test, complete-panel blocks only (2026-10-01 00:15 PDT)
+**TL;DR** GPT-6.1 was right on all three counts, but fixing them does **not** kill the claim.
+- **The W70 "11/12" was airline-only.** The 0255Z audit intersected task ids across blocks. One airline-only block (q4 AWQ-W4 q5) silently dropped all 58 retail tasks, leaving 27 × 20.
+- **The conditional test was invalid.** v1 permuted raw B rates with the controls held fixed.
+- **One block was mixed.** q4 AWQ-W4 had 1642 = 19 × 85 + 27 units.
+- **On the correct population (85 tasks: 58 retail + 27 airline, × 20 complete blocks):** with a Freedman–Lane test (nuisance-model residuals permuted within domain, HC3 t), the A-split rate predicts the B-split rate beyond measured baseline propensity in **12/12 cell-directions for M and 12/12 for G (Holm 12/12 each)**.
+- **Per domain:**
+  - Retail (58 tasks): 11/12 for both M and G.
+  - **Airline alone is weaker than W70 said:** M 8/12 (Holm 5) and G 9/12 (Holm 6). Under the heteroscedasticity-robust wild bootstrap it is 3/12 and 7/12, with Holm 0.
+  - So the claim survives on the panel and is carried mainly by retail. The airline-only evidence that W70 reported was overstated.
+- **The mixed-block fix moves q4 AWQ-W4 G from −0.9 to −0.3 pp.** No other cell changes. No conclusion changes.
+
+**Fixes** (code: `analysis/fork/{analyze_dev,audit_w67,analyze_consequence}.py`; new `w78_null_calibration.py`)
+1. **Population.**
+   - `analyze_dev.mark_partial_panel_blocks`: a retail/airline block enters only if both domains are complete in it (85 tasks). Otherwise its other-domain units are excluded as a "partial-panel block". Every block mean then has the fixed weights retail 58/85 and airline 27/85, and the point estimate and block bootstrap use the same blocks.
+   - The audit never intersects tasks. It declares populations (`panel85` primary, `retail58` and `airline27` on the same blocks, plus `legacy_airline27_x20` for reproduction only) and aborts if any declared task × block is missing.
+   - Every table states tasks × blocks. analyze_consequence now dedupes before the block rule, excludes telecom from the panel (W67 had pooled 160 telecom units into each q8 W4 cell) and uses domain-stratified nulls.
+2. **Conditional test.**
+   - Freedman–Lane is used because it keeps yB's dependence on the nuisance under every permutation. The statistic is the HC3 t (pivotal), and permutations stay within domain because residual exchangeability is only plausible between tasks of the same domain.
+   - Primary nuisance "AB": domain intercepts, q_A, q_A(1−q_A), q_B, q_B(1−q_B) and BF16 success. Also reported: "A" (v1's covariates) and "ABL" (AB + BF16 trajectory length; added after the first v2 run, so post hoc).
+   - **Exchangeability check:** |residual| rises with flip opportunity (Spearman 0.26–0.71), so a restricted Rademacher wild bootstrap is reported alongside the permutation test. Partial r is descriptive.
+   - **Size under an opportunity-only null** (1000 simulated panels per cell; task QQ propensity plus pooled per-domain rescue and damage rates, so no task fragility):
+     - FL rejects at 0.042–0.068 and wild at 0.037–0.066 (MC SE 0.007).
+     - v1 rejects at 0.041–0.065 for M and is conservative for G (0.011–0.042).
+     - So v1's error did not inflate significance. The population was the error that mattered.
+3. **Dependence.** Splits A and B are disjoint block sets (asserted). Block-aware intervals come from a delete-one-block jackknife within A and within B, with variances added. The with-replacement block bootstrap is kept in the JSON but labelled "attenuated": duplicated blocks add noise to the regressor yA and pull beta_A towards 0.
+4. **Missing output.** The cited `dev_all_20261001T061007Z.{md,json}` is now committed unchanged. Re-runs used the same snapshot 20261001T0600Z. Every output records its script sha, snapshot sha and input digest, plus a per-cell `units_digest_sha256`. That digest agrees across all four W78 outputs for every W4 cell. The fork inputs kept growing during the runs, so the global input digests differ.
+5. **Data note.** Between my runs the `fork_repair_q4_awq_w4` units for q5 retail landed, so q4 AWQ-W4 is now complete at 85 × 20. The rule-only state (85 × 19) is kept as `dev_all_20261001T064637Z` and `*_excl_q5_*`.
+
+**Before → after** (snapshot 0600Z unless noted; p is the one-sided Monte Carlo p, B = 2000)
+
+| headline | before (source) | after (W78) |
+|---|---|---|
+| W67 audit population | 27 airline tasks × 20 blocks, labelled "27-task retail/airline panel" (0255Z) | **85 tasks (58 R + 27 A) × 20 blocks**; drop q5 → 85 × 19 |
+| beyond-baseline, M: cell-directions with p < 0.05 | 11/12 (v1 raw permutation; exception q8 KV8 B→A p 0.15) | **12/12, Holm 12** (FL-AB); wild 12/12; retail58 11/12; airline27 8/12 (Holm 5; wild 3/12, Holm 0); 85 × 19: 12/12 |
+| beyond-baseline, G: cell-directions with p < 0.05 | 11/12 (q4 KV8 A→B p 0.06) | **12/12, Holm 12**; wild 12/12; retail58 11/12; airline27 9/12 (Holm 6; wild 7/12, Holm 0); 85 × 19: 12/12 |
+| largest p, panel85 | 0.15 (M), 0.06 (G) | 0.027 (M, q8 KV8 A→B), 0.008 (G) |
+| partial r of the A rate (descriptive) | M 0.31–0.87, G 0.36–0.87 (W70 text: "0.53–0.87") | M 0.43–0.87, G 0.44–0.88; beta_A 0.40–0.95; weakest cell q8 KV8 (jackknife lower bounds 0.02–0.06) |
+| concentration: Spearman of task M, A vs B | 0.56–0.89 | 0.52–0.86 (all p ≤ 0.0005); top-20% capture 0.46–0.69 → 0.46–0.64 (null median 0.19–0.21) |
+| direction: positive − negative mean G on B | 5–88 pp, 9/12 p < 0.05 | 14–51 pp, **12/12** |
+| direction beyond opportunity (p < 0.05) | rescue 6/12, damage 1/12 | rescue **11/12**, damage **6/12** |
+| cross-quantizer φ(M), task-identity null rejected | 4/8 pairs | 7/8 (not q4 vs q8 GPTQ); nonce-specific alignment only q4 AWQ vs q8 AWQ (p 0.001); same direction when both flip 0.42–0.81 |
+| q4 AWQ-W4, full pool (dev_all) | 1642 units; r 9.5, d 10.5, M 20.0, G −0.9 [−3.1, +1.2] (061007Z) | rule only (85 × 19, 1615): r 9.7, d 10.0, M 19.7, G −0.4 [−2.4, +1.7]; with repaired q5 (85 × 20, 1700): r 9.8, d 10.1, M 19.9, **G −0.3 [−2.2, +1.6]**, crossed [−5.4, +5.2] |
+| W4 q4 pool, G | −1.5 [−3.3, +0.1] (20 blocks, q5 airline-only) | −1.1 [−2.8, +0.5] (85 × 19) → **−1.1 [−2.6, +0.4]** (85 × 20) |
+| W4 all-model pool, G | +0.6 [−0.4, +1.6] | +0.7 [−0.3, +1.7] → **+0.7 [−0.3, +1.6]** |
+| other cells (q4/q8 GPTQ-W4, q8 AWQ-W4, KV8, stress) | 061007Z | unchanged (85 × 20 or 85 × 22; stress 85 × 3) |
+| W67 dispersion index (main cells) | 4.1–6.5; q8 W4 cells included 160 telecom units | 4.0–8.7 (panel only, domain-stratified binomial null, all p < 0.001) |
+| W67 share of flips in the top 20% of tasks | 57–88% | 57–71% |
+| W67 fewer mixed-direction tasks than null | W4 p < 0.001; KV8 0.019 / 0.027 | W4 p < 0.001; KV8 0.044 (q4) / 0.019 (q8) |
+| W67 shares of rescues in net-rescue tasks / damages in net-damage tasks; overlap lift and φ | 68–86% / 72–84%; lift 1.5–2.1, φ 0.07–0.19 | 68–86% / 71–84%; lift 1.5–2.1, φ 0.07–0.19 (within block × domain null) |
+
+**What survives of W67** (internal replication on viewed dev data, not confirmation):
+- **Fragility (task concentration):** yes, on the full panel and in each domain.
+- **Direction persistence:** yes (12/12). Beyond opportunity it holds for rescues (11/12) and only partly for damage (6/12), so the damage half is the weaker one.
+- **Beyond measured baseline propensity:** yes for the panel and retail. For airline alone it is not robust to multiplicity or heteroscedasticity.
+- **Cross-quantizer:** task-level co-susceptibility holds. Same-state direction is about a coin toss.
+- **Scope:** "beyond measured baseline" means beyond the QQ propensity estimated from about 10 blocks per split, BF16 success and length. It is not beyond every possible task property.
+- **Superseded wording:** REPORT_GPT61_20261001_0000 §2's "11/12 … (W70)" and W70's "partial r 0.53–0.87" are superseded by this entry.
+- **Not re-run:** `analyze_patterns.py` and `audit_reuse.py` received the same partial-panel rule. In current data no partial panel blocks remain, but their 0255Z outputs (q4 AWQ-W4 in `consequence_estimands_*`; the common pool in `population_panel_*`, which used retail 19 / airline 20 blocks) carry the mixed block. They were not re-run here, because audit_reuse also rewrites `docs/OLD_RESULT_REUSE.csv`.
+
+**Evidence**
+- Primary: `analysis/fork/out/w67_audit_v2_20261001T0600Z_20261001T070500Z.md` and `direction_replication_v2_20261001T0600Z_20261001T070500Z.json`.
+- 85 × 19 sensitivity: `*_excl_q5_20261001T070632Z.{md,json}`.
+- Null size: `w78_null_calibration_20261001T0600Z_20261001T070832Z.json`.
+- Full pool: `dev_all_20261001T070326Z.{md,json}` (after), `dev_all_20261001T064637Z.{md,json}` (rule only, 85 × 19), `dev_all_20261001T061007Z.{md,json}` (before, as cited).
+- W67 consequence: `consequence_v2_20261001T070850Z.json`.
+- Provenance (script, snapshot and output sha256s, digests, commands): `w78_provenance_20261001T0715Z.json`.
+- v1 outputs kept: `w67_audit_20261001T0255Z.md`, `direction_replication_20261001T0255Z.json`, `consequence_20261001T011124Z.json`.
+
 ## W79 — WP5 Table 4 v2: rubric label restored, programmatic verification, within-state paired statistics, human-check packet frozen (2026-10-01)
 **TL;DR** GPT-6.1 review applied to Table 4 (W75).
 - In both groups where the two branches differ, the failing continuation carries the rubric label **`unintended_or_unconsented_change`** more often than the succeeding continuation of the same state. Rescue: QQ vs BQ 9 vs 2, diff +0.35 [+0.08, +0.57]. Damage: 1 vs 9, diff −0.40 [−0.62, −0.11].
