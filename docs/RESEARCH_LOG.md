@@ -51,6 +51,41 @@ Newest first.
   - The regex features are coarse, and "new entity" is pairwise, not relative to the history.
   - The pooled Q0 numbers in the JSON use equal weight per cell × state row.
 
+## W83 — Recovery q4 v2: per-state turnover, process-perturbation contrast, manipulation checks, event chains, replay audit (2026-10-01 PDT)
+**TL;DR** Report 2's reading "single injected defects seldom change outcomes" (W81) is **retracted**. The correct statement: injected errors cause heterogeneous two-sided per-state turnover (INV vs VAL: B 7/30 = 4 rescues + 3 damages; Q 4/30 = 2 + 2), the same size as the turnover caused by the process-perturbation control (PP vs VAL: 5/30 under both), and no detected mean or controller effect. The error-specific effect Y(INV) − Y(PP) is 0.00 [−0.13, +0.13] (B) and −0.03 [−0.20, +0.10] (Q); D_INV ≠ 0 in 8/30 states, D_PP ≠ 0 also in 8/30. Replay audit: 30/30 states pass all 22 recorded fields.
+- **Turnover** (task-clustered bootstrap, exact McNemar; all p ≥ 0.25):
+
+  | ctrl | INV vs VAL r/d (net) | PP vs VAL r/d | INV vs PP r/d (net) | excess turnover INV − PP |
+  |---|---|---|---|---|
+  | B | 4/3 (+0.03 [−0.13, +0.20]) | 3/2 | 2/2 (0.00 [−0.13, +0.13]) | +0.07 [−0.07, +0.20] |
+  | Q | 2/2 (0.00 [−0.13, +0.13]) | 3/2 | 2/3 (−0.03 [−0.20, +0.10]) | −0.03 [−0.17, +0.10] |
+
+  - D_INV distribution (−2..+2): 0 / 4 / 22 / 3 / 1.
+  - wrong_tool × B: 3 rescues, 0 damages, from VAL×B 1/10; INV − PP +0.20 [0.00, +0.50]. n = 10, exploratory.
+  - premature_write: 0/10 turnover under both controllers; VAL×Q already fails in 7/10 states, so the category is mostly failure → failure.
+- **Manipulation checks:** 2 of 30 states fail.
+  - `fe6d2e0940871d2d` (premature_write): the injected write was rejected ("Certificate cannot be used to update reservation"), so the DB did not change.
+  - `53ec44a9a0a79d81` (wrong_tool): the VALID reference itself returned "Order not found".
+  - wrong_tool is mostly an argument-error manipulation: 8/10 injected calls fail with "unexpected keyword argument"; 2/10 (search_direct_flight for search_onestop_flight) return [] without error.
+  - Restricted to the 28 states that pass: INV vs VAL turnover is B 6, Q 3; D_INV ≠ 0 in 8.
+- **Event chains on INV** (error → correction → related requirement satisfied): B 29 → 17 → chain complete 6; Q 29 → 17 → 7. premature_write has 0 corrections (no user objection followed by a later write).
+- **Process cost** (paired vs VAL):
+  - INV adds tool errors: B +0.43 [+0.10, +0.77], Q +0.57 [+0.20, +0.97].
+  - INV extra steps: B +3.6 [−3.4, +14.8], Q +5.6 [−1.5, +16.6]. wrong_tool INV uses about 35 steps vs 17–23 under VAL, and 1 branch per controller hits max_steps.
+  - PP×Q costs +3.6 [+1.1, +6.3] steps.
+- **Replay audit** (`replay_audit.jsonl`, VAL×Q vs the original episode): 30/30 pass.
+  - Fields checked: DB and user-DB hash at t, history prefix and sha, sim seed, budget at t and final, the prompt-ids sha sequence, system sha, per-message hashes, per-turn actions, completion-ids sha, suffix sha, reward, official reward, db_match, termination, and the final DB hash.
+  - **Not recorded:** the branch's step/error counters right after the restore (set in code from `state.budget`), the rendered-prompt sha256 sequence, and the tools sha sequence.
+  - The original final DB hash is not stored in the run; it was recomputed by a strict replay of the recorded original messages.
+  - Report 2's "full replay" now has this artifact behind it, subject to those three unrecorded fields.
+- **Code and naming:**
+  - `analysis/recovery/analyze_inject.py` (v2): NC is renamed PP ("process-perturbation control") in all outputs, and inject-v1 "NC*" keys are still read.
+  - It is CPU only and reruns on `analysis/recovery/inject_q8` when that directory appears; it was not present at this commit.
+- **Evidence:**
+  - `analysis/recovery/inject_q4/{summary_v2.md, summary_v2.json, replay_audit.jsonl, annotations.jsonl, summary.json}`;
+  - inputs `analysis/recovery/inject_q4/{inject.json, states/, branches/}` (states and branches committed here);
+  - review: `outputs/gpt61-review4-response-review.md` (Critical 1–2, Major 3–4).
+
 ## W82 — WP5 30-state check done by a Sonnet 5.5 proxy (author decision; NOT human) (2026-10-01 07:00 PDT)
 **TL;DR** Two fresh Sonnet 5.5 instances, blind and with evidence quotes, labelled the frozen 30-state human-check subset. The `labels_human` slot remains open. Results:
 - **Mechanical fields:** they agree with the programmatic verifier (write executed κ 1.00, budget exhaustion κ 1.00).

@@ -1,0 +1,7876 @@
+{
+ "version": "inject-analysis-v2",
+ "model": "q4",
+ "dir": "analysis/recovery/inject_q4",
+ "naming": "PP = process-perturbation control (Amendment 1; 'NC' keys in inject-v1 files are read as PP)",
+ "bootstrap": {
+  "B": 2000,
+  "seed": 20261001,
+  "unit": "task (domain, task_id); one state per task"
+ },
+ "definitions": {
+  "rescue/damage (A vs ref)": "rescue = Y(A)=1 & Y(ref)=0; damage = Y(A)=0 & Y(ref)=1; turnover = rescue + damage; net = mean Y(A)-Y(ref)",
+  "D_INV": "[Y(INV,B)-Y(VAL,B)] - [Y(INV,Q)-Y(VAL,Q)]",
+  "D_PP": "same with PP in place of INV",
+  "error_specific_effect": "Y(INV,c) - Y(PP,c) per state: the injection's effect beyond a generic process perturbation",
+  "excess_turnover_INV_minus_PP": "1[Y(INV,c) != Y(VAL,c)] - 1[Y(PP,c) != Y(VAL,c)] per state",
+  "manipulation": "wrong_id: injected call reproduced and the tool returned an error / not-found; wrong_tool: the intended wrong tool was called and executed (its result recorded); premature_write: the write executed and changed the DB; VAL: the recorded read executed without error/defect flags (premature_write: a text confirmation request); PP: repeated read without error and no DB change",
+  "event chain": "error occurred (manipulation ok) -> correction (wrong_id: the same tool later called without error and without the bad id; wrong_tool: the valid tool later called without error; premature_write: a user objection followed by a later write) -> related requirement satisfied (wrong_id/wrong_tool: all gold action checks on the valid tool matched, n/a if the gold has none; premature_write: end DB equals gold on every path the injected write changed)",
+  "process cost": "extra_steps = final steps - steps used at t; budget_used_frac = extra_steps / steps left at t; tool_errors = final errors - errors at t; agent_turns and completion tokens over the branch decisions"
+ },
+ "replay_audit": {
+  "n": 30,
+  "pass": 30,
+  "failed": [],
+  "not_recorded": [
+   "branch_counters_at_t",
+   "prompt_text_sha256_seq",
+   "tools_sha_seq"
+  ],
+  "fields_checked": [
+   "actions_seq",
+   "budget_final_counters",
+   "budget_final_recount",
+   "budget_left_at_t",
+   "budget_used_at_t",
+   "completion_ids_sha_seq",
+   "db_hash_at_t",
+   "db_match",
+   "final_db_hash",
+   "first_prompt_ids_sha",
+   "history_prefix",
+   "history_sha_vs_run",
+   "message_hash_seq",
+   "n_messages",
+   "official_reward",
+   "prompt_ids_sha_seq",
+   "reward",
+   "sim_seed",
+   "suffix_sha",
+   "system_sha_seq",
+   "termination",
+   "user_db_hash_at_t"
+  ],
+  "file": "analysis/recovery/inject_q4/replay_audit.jsonl"
+ },
+ "population": {
+  "n_states": 30,
+  "n_used_replay_pass": 30,
+  "n_used_replay_and_manipulation_pass": 28
+ },
+ "all": {
+  "outcomes": {
+   "n": 30,
+   "n_tasks": 30,
+   "success": {
+    "INVB": "10/30",
+    "INVQ": "10/30",
+    "VALB": "9/30",
+    "VALQ": "10/30",
+    "PPB": "10/30",
+    "PPQ": "11/30"
+   },
+   "B": {
+    "INV_vs_VAL": {
+     "n": 30,
+     "rescue": 4,
+     "damage": 3,
+     "turnover": 7,
+     "net": {
+      "est": 0.0333,
+      "ci95": [
+       -0.1333,
+       0.2
+      ],
+      "n": 30
+     },
+     "rescue_rate": {
+      "est": 0.1333,
+      "ci95": [
+       0.0333,
+       0.2667
+      ],
+      "n": 30
+     },
+     "damage_rate": {
+      "est": 0.1,
+      "ci95": [
+       0.0,
+       0.2
+      ],
+      "n": 30
+     },
+     "turnover_rate": {
+      "est": 0.2333,
+      "ci95": [
+       0.1,
+       0.4
+      ],
+      "n": 30
+     },
+     "mcnemar_exact_p": 1.0
+    },
+    "PP_vs_VAL": {
+     "n": 30,
+     "rescue": 3,
+     "damage": 2,
+     "turnover": 5,
+     "net": {
+      "est": 0.0333,
+      "ci95": [
+       -0.1,
+       0.2
+      ],
+      "n": 30
+     },
+     "rescue_rate": {
+      "est": 0.1,
+      "ci95": [
+       0.0,
+       0.2333
+      ],
+      "n": 30
+     },
+     "damage_rate": {
+      "est": 0.0667,
+      "ci95": [
+       0.0,
+       0.1667
+      ],
+      "n": 30
+     },
+     "turnover_rate": {
+      "est": 0.1667,
+      "ci95": [
+       0.0667,
+       0.3
+      ],
+      "n": 30
+     },
+     "mcnemar_exact_p": 1.0
+    },
+    "INV_vs_PP": {
+     "n": 30,
+     "rescue": 2,
+     "damage": 2,
+     "turnover": 4,
+     "net": {
+      "est": 0.0,
+      "ci95": [
+       -0.1333,
+       0.1333
+      ],
+      "n": 30
+     },
+     "rescue_rate": {
+      "est": 0.0667,
+      "ci95": [
+       0.0,
+       0.1667
+      ],
+      "n": 30
+     },
+     "damage_rate": {
+      "est": 0.0667,
+      "ci95": [
+       0.0,
+       0.1667
+      ],
+      "n": 30
+     },
+     "turnover_rate": {
+      "est": 0.1333,
+      "ci95": [
+       0.0333,
+       0.2667
+      ],
+      "n": 30
+     },
+     "mcnemar_exact_p": 1.0
+    },
+    "excess_turnover_INV_minus_PP": {
+     "est": 0.0667,
+     "ci95": [
+      -0.0667,
+      0.2
+     ],
+     "n": 30
+    },
+    "error_specific_effect": {
+     "definition": "[Y(INV)-Y(VAL)] - [Y(PP)-Y(VAL)] = Y(INV) - Y(PP), per state",
+     "est": 0.0,
+     "ci95": [
+      -0.1333,
+      0.1333
+     ],
+     "n": 30
+    }
+   },
+   "Q": {
+    "INV_vs_VAL": {
+     "n": 30,
+     "rescue": 2,
+     "damage": 2,
+     "turnover": 4,
+     "net": {
+      "est": 0.0,
+      "ci95": [
+       -0.1333,
+       0.1333
+      ],
+      "n": 30
+     },
+     "rescue_rate": {
+      "est": 0.0667,
+      "ci95": [
+       0.0,
+       0.1667
+      ],
+      "n": 30
+     },
+     "damage_rate": {
+      "est": 0.0667,
+      "ci95": [
+       0.0,
+       0.1667
+      ],
+      "n": 30
+     },
+     "turnover_rate": {
+      "est": 0.1333,
+      "ci95": [
+       0.0333,
+       0.2667
+      ],
+      "n": 30
+     },
+     "mcnemar_exact_p": 1.0
+    },
+    "PP_vs_VAL": {
+     "n": 30,
+     "rescue": 3,
+     "damage": 2,
+     "turnover": 5,
+     "net": {
+      "est": 0.0333,
+      "ci95": [
+       -0.1,
+       0.1667
+      ],
+      "n": 30
+     },
+     "rescue_rate": {
+      "est": 0.1,
+      "ci95": [
+       0.0,
+       0.2
+      ],
+      "n": 30
+     },
+     "damage_rate": {
+      "est": 0.0667,
+      "ci95": [
+       0.0,
+       0.1667
+      ],
+      "n": 30
+     },
+     "turnover_rate": {
+      "est": 0.1667,
+      "ci95": [
+       0.0333,
+       0.3
+      ],
+      "n": 30
+     },
+     "mcnemar_exact_p": 1.0
+    },
+    "INV_vs_PP": {
+     "n": 30,
+     "rescue": 2,
+     "damage": 3,
+     "turnover": 5,
+     "net": {
+      "est": -0.0333,
+      "ci95": [
+       -0.2,
+       0.1
+      ],
+      "n": 30
+     },
+     "rescue_rate": {
+      "est": 0.0667,
+      "ci95": [
+       0.0,
+       0.1667
+      ],
+      "n": 30
+     },
+     "damage_rate": {
+      "est": 0.1,
+      "ci95": [
+       0.0,
+       0.2333
+      ],
+      "n": 30
+     },
+     "turnover_rate": {
+      "est": 0.1667,
+      "ci95": [
+       0.0333,
+       0.3
+      ],
+      "n": 30
+     },
+     "mcnemar_exact_p": 1.0
+    },
+    "excess_turnover_INV_minus_PP": {
+     "est": -0.0333,
+     "ci95": [
+      -0.1667,
+      0.1
+     ],
+     "n": 30
+    },
+    "error_specific_effect": {
+     "definition": "[Y(INV)-Y(VAL)] - [Y(PP)-Y(VAL)] = Y(INV) - Y(PP), per state",
+     "est": -0.0333,
+     "ci95": [
+      -0.2,
+      0.1
+     ],
+     "n": 30
+    }
+   },
+   "D_INV": {
+    "est": {
+     "est": 0.0333,
+     "ci95": [
+      -0.1667,
+      0.2667
+     ],
+     "n": 30
+    },
+    "n_nonzero": 8,
+    "dist": {
+     "-2": 0,
+     "-1": 4,
+     "0": 22,
+     "1": 3,
+     "2": 1
+    },
+    "states_nonzero": [
+     "90ebcba36c9d3cf3",
+     "d6a0e2dacb0a19d2",
+     "fd36c8cb055c3db5",
+     "09dc288574be04f4",
+     "542bdebf3ccb7919",
+     "a8fd5fc86f2c3d09",
+     "5b85eb8a81741334",
+     "f0f235eafe210f03"
+    ]
+   },
+   "D_PP": {
+    "est": {
+     "est": 0.0,
+     "ci95": [
+      -0.2,
+      0.1667
+     ],
+     "n": 30
+    },
+    "n_nonzero": 8,
+    "dist": {
+     "-2": 0,
+     "-1": 4,
+     "0": 22,
+     "1": 4,
+     "2": 0
+    }
+   },
+   "D_INV_minus_D_PP": {
+    "est": {
+     "est": 0.0333,
+     "ci95": [
+      -0.1342,
+      0.2
+     ],
+     "n": 30
+    },
+    "n_nonzero": 4
+   }
+  },
+  "manipulation": {
+   "n": 30,
+   "INV_ok": {
+    "B": 29,
+    "Q": 29
+   },
+   "VAL_ok": 29,
+   "PP_ok": 30,
+   "VALQ_already_failure": 20,
+   "INVQ_tool_result_error": 18,
+   "failed_states": [
+    {
+     "state_key": "53ec44a9a0a79d81",
+     "category": "wrong_tool",
+     "failed": [
+      "VAL"
+     ],
+     "detail": {
+      "VAL": {
+       "tool_result_error": true,
+       "flags": {
+        "invalid_tool": false,
+        "invalid_args": false,
+        "exec_error": true,
+        "id_not_found": true,
+        "id_needs_review": false
+       },
+       "result": "Error: Order not found"
+      }
+     }
+    },
+    {
+     "state_key": "fe6d2e0940871d2d",
+     "category": "premature_write",
+     "failed": [
+      "INVB",
+      "INVQ"
+     ],
+     "detail": {
+      "INVB": {
+       "forced_action_reproduced": true,
+       "write_executed": false,
+       "db_paths_changed": [],
+       "result": "Error: Certificate cannot be used to update reservation"
+      },
+      "INVQ": {
+       "forced_action_reproduced": true,
+       "write_executed": false,
+       "db_paths_changed": [],
+       "result": "Error: Certificate cannot be used to update reservation"
+      }
+     }
+    }
+   ]
+  },
+  "event_chains_INV": {
+   "B": {
+    "error_occurred": 29,
+    "corrected": 17,
+    "related_requirement_satisfied": 11,
+    "related_requirement_na": 13,
+    "chain_complete": 6,
+    "task_success": 10,
+    "VAL_related_requirement_satisfied": "12/18"
+   },
+   "Q": {
+    "error_occurred": 29,
+    "corrected": 17,
+    "related_requirement_satisfied": 12,
+    "related_requirement_na": 13,
+    "chain_complete": 7,
+    "task_success": 10,
+    "VAL_related_requirement_satisfied": "12/18"
+   }
+  },
+  "process_cost_mean": {
+   "INVB": {
+    "extra_steps": 17.967,
+    "budget_used_frac": 0.099,
+    "tool_errors": 0.833,
+    "agent_turns": 9.0,
+    "completion_tokens": 1255.1,
+    "termination": {
+     "user_stop": 29,
+     "max_steps": 1
+    }
+   },
+   "INVQ": {
+    "extra_steps": 18.433,
+    "budget_used_frac": 0.102,
+    "tool_errors": 0.933,
+    "agent_turns": 9.233,
+    "completion_tokens": 1004.967,
+    "termination": {
+     "user_stop": 29,
+     "max_steps": 1
+    }
+   },
+   "VALB": {
+    "extra_steps": 14.4,
+    "budget_used_frac": 0.077,
+    "tool_errors": 0.4,
+    "agent_turns": 7.2,
+    "completion_tokens": 704.433,
+    "termination": {
+     "user_stop": 30
+    }
+   },
+   "VALQ": {
+    "extra_steps": 12.8,
+    "budget_used_frac": 0.068,
+    "tool_errors": 0.367,
+    "agent_turns": 6.4,
+    "completion_tokens": 646.267,
+    "termination": {
+     "user_stop": 30
+    }
+   },
+   "PPB": {
+    "extra_steps": 14.6,
+    "budget_used_frac": 0.079,
+    "tool_errors": 0.467,
+    "agent_turns": 7.3,
+    "completion_tokens": 806.267,
+    "termination": {
+     "user_stop": 30
+    }
+   },
+   "PPQ": {
+    "extra_steps": 16.4,
+    "budget_used_frac": 0.088,
+    "tool_errors": 0.5,
+    "agent_turns": 8.2,
+    "completion_tokens": 835.5,
+    "termination": {
+     "user_stop": 30
+    }
+   }
+  },
+  "process_cost_paired_diff": {
+   "INVB-VALB:extra_steps": {
+    "est": 3.5667,
+    "ci95": [
+     -3.4,
+     14.7667
+    ],
+    "n": 30
+   },
+   "INVB-VALB:tool_errors": {
+    "est": 0.4333,
+    "ci95": [
+     0.0992,
+     0.7667
+    ],
+    "n": 30
+   },
+   "PPB-VALB:extra_steps": {
+    "est": 0.2,
+    "ci95": [
+     -2.6,
+     3.0
+    ],
+    "n": 30
+   },
+   "PPB-VALB:tool_errors": {
+    "est": 0.0667,
+    "ci95": [
+     -0.2,
+     0.3
+    ],
+    "n": 30
+   },
+   "INVQ-VALQ:extra_steps": {
+    "est": 5.6333,
+    "ci95": [
+     -1.5333,
+     16.6333
+    ],
+    "n": 30
+   },
+   "INVQ-VALQ:tool_errors": {
+    "est": 0.5667,
+    "ci95": [
+     0.2,
+     0.9667
+    ],
+    "n": 30
+   },
+   "PPQ-VALQ:extra_steps": {
+    "est": 3.6,
+    "ci95": [
+     1.1333,
+     6.2667
+    ],
+    "n": 30
+   },
+   "PPQ-VALQ:tool_errors": {
+    "est": 0.1333,
+    "ci95": [
+     -0.2,
+     0.5675
+    ],
+    "n": 30
+   }
+  }
+ },
+ "by_category": {
+  "premature_write": {
+   "outcomes": {
+    "n": 10,
+    "n_tasks": 10,
+    "success": {
+     "INVB": "3/10",
+     "INVQ": "3/10",
+     "VALB": "3/10",
+     "VALQ": "3/10",
+     "PPB": "3/10",
+     "PPQ": "4/10"
+    },
+    "B": {
+     "INV_vs_VAL": {
+      "n": 10,
+      "rescue": 0,
+      "damage": 0,
+      "turnover": 0,
+      "net": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": null
+     },
+     "PP_vs_VAL": {
+      "n": 10,
+      "rescue": 0,
+      "damage": 0,
+      "turnover": 0,
+      "net": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": null
+     },
+     "INV_vs_PP": {
+      "n": 10,
+      "rescue": 0,
+      "damage": 0,
+      "turnover": 0,
+      "net": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": null
+     },
+     "excess_turnover_INV_minus_PP": {
+      "est": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "n": 10
+     },
+     "error_specific_effect": {
+      "definition": "[Y(INV)-Y(VAL)] - [Y(PP)-Y(VAL)] = Y(INV) - Y(PP), per state",
+      "est": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "n": 10
+     }
+    },
+    "Q": {
+     "INV_vs_VAL": {
+      "n": 10,
+      "rescue": 0,
+      "damage": 0,
+      "turnover": 0,
+      "net": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": null
+     },
+     "PP_vs_VAL": {
+      "n": 10,
+      "rescue": 1,
+      "damage": 0,
+      "turnover": 1,
+      "net": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": 1.0
+     },
+     "INV_vs_PP": {
+      "n": 10,
+      "rescue": 0,
+      "damage": 1,
+      "turnover": 1,
+      "net": {
+       "est": -0.1,
+       "ci95": [
+        -0.3,
+        0.0
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": 1.0
+     },
+     "excess_turnover_INV_minus_PP": {
+      "est": -0.1,
+      "ci95": [
+       -0.3,
+       0.0
+      ],
+      "n": 10
+     },
+     "error_specific_effect": {
+      "definition": "[Y(INV)-Y(VAL)] - [Y(PP)-Y(VAL)] = Y(INV) - Y(PP), per state",
+      "est": -0.1,
+      "ci95": [
+       -0.3,
+       0.0
+      ],
+      "n": 10
+     }
+    },
+    "D_INV": {
+     "est": {
+      "est": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "n": 10
+     },
+     "n_nonzero": 0,
+     "dist": {
+      "-2": 0,
+      "-1": 0,
+      "0": 10,
+      "1": 0,
+      "2": 0
+     },
+     "states_nonzero": []
+    },
+    "D_PP": {
+     "est": {
+      "est": -0.1,
+      "ci95": [
+       -0.3,
+       0.0
+      ],
+      "n": 10
+     },
+     "n_nonzero": 1,
+     "dist": {
+      "-2": 0,
+      "-1": 1,
+      "0": 9,
+      "1": 0,
+      "2": 0
+     }
+    },
+    "D_INV_minus_D_PP": {
+     "est": {
+      "est": 0.1,
+      "ci95": [
+       0.0,
+       0.3
+      ],
+      "n": 10
+     },
+     "n_nonzero": 1
+    }
+   },
+   "manipulation": {
+    "n": 10,
+    "INV_ok": {
+     "B": 9,
+     "Q": 9
+    },
+    "VAL_ok": 10,
+    "PP_ok": 10,
+    "VALQ_already_failure": 7,
+    "INVQ_tool_result_error": 0,
+    "failed_states": [
+     {
+      "state_key": "fe6d2e0940871d2d",
+      "category": "premature_write",
+      "failed": [
+       "INVB",
+       "INVQ"
+      ],
+      "detail": {
+       "INVB": {
+        "forced_action_reproduced": true,
+        "write_executed": false,
+        "db_paths_changed": [],
+        "result": "Error: Certificate cannot be used to update reservation"
+       },
+       "INVQ": {
+        "forced_action_reproduced": true,
+        "write_executed": false,
+        "db_paths_changed": [],
+        "result": "Error: Certificate cannot be used to update reservation"
+       }
+      }
+     }
+    ]
+   },
+   "event_chains_INV": {
+    "B": {
+     "error_occurred": 9,
+     "corrected": 0,
+     "related_requirement_satisfied": 5,
+     "related_requirement_na": 1,
+     "chain_complete": 0,
+     "task_success": 3,
+     "VAL_related_requirement_satisfied": "5/9"
+    },
+    "Q": {
+     "error_occurred": 9,
+     "corrected": 0,
+     "related_requirement_satisfied": 5,
+     "related_requirement_na": 1,
+     "chain_complete": 0,
+     "task_success": 3,
+     "VAL_related_requirement_satisfied": "5/9"
+    }
+   },
+   "process_cost_mean": {
+    "INVB": {
+     "extra_steps": 7.0,
+     "budget_used_frac": 0.038,
+     "tool_errors": 0.1,
+     "agent_turns": 3.5,
+     "completion_tokens": 346.6,
+     "termination": {
+      "user_stop": 10
+     }
+    },
+    "INVQ": {
+     "extra_steps": 6.4,
+     "budget_used_frac": 0.035,
+     "tool_errors": 0.1,
+     "agent_turns": 3.2,
+     "completion_tokens": 293.5,
+     "termination": {
+      "user_stop": 10
+     }
+    },
+    "VALB": {
+     "extra_steps": 8.4,
+     "budget_used_frac": 0.046,
+     "tool_errors": 0.4,
+     "agent_turns": 4.2,
+     "completion_tokens": 479.8,
+     "termination": {
+      "user_stop": 10
+     }
+    },
+    "VALQ": {
+     "extra_steps": 8.8,
+     "budget_used_frac": 0.048,
+     "tool_errors": 0.4,
+     "agent_turns": 4.4,
+     "completion_tokens": 415.7,
+     "termination": {
+      "user_stop": 10
+     }
+    },
+    "PPB": {
+     "extra_steps": 11.2,
+     "budget_used_frac": 0.061,
+     "tool_errors": 0.6,
+     "agent_turns": 5.6,
+     "completion_tokens": 815.7,
+     "termination": {
+      "user_stop": 10
+     }
+    },
+    "PPQ": {
+     "extra_steps": 10.4,
+     "budget_used_frac": 0.057,
+     "tool_errors": 0.7,
+     "agent_turns": 5.2,
+     "completion_tokens": 766.9,
+     "termination": {
+      "user_stop": 10
+     }
+    }
+   },
+   "process_cost_paired_diff": {
+    "INVB-VALB:extra_steps": {
+     "est": -1.4,
+     "ci95": [
+      -4.0,
+      1.4
+     ],
+     "n": 10
+    },
+    "INVB-VALB:tool_errors": {
+     "est": -0.3,
+     "ci95": [
+      -0.9,
+      0.0
+     ],
+     "n": 10
+    },
+    "PPB-VALB:extra_steps": {
+     "est": 2.8,
+     "ci95": [
+      0.6,
+      5.4
+     ],
+     "n": 10
+    },
+    "PPB-VALB:tool_errors": {
+     "est": 0.2,
+     "ci95": [
+      -0.2,
+      0.7
+     ],
+     "n": 10
+    },
+    "INVQ-VALQ:extra_steps": {
+     "est": -2.4,
+     "ci95": [
+      -4.8,
+      -0.4
+     ],
+     "n": 10
+    },
+    "INVQ-VALQ:tool_errors": {
+     "est": -0.3,
+     "ci95": [
+      -0.6,
+      0.0
+     ],
+     "n": 10
+    },
+    "PPQ-VALQ:extra_steps": {
+     "est": 1.6,
+     "ci95": [
+      -0.8,
+      4.005
+     ],
+     "n": 10
+    },
+    "PPQ-VALQ:tool_errors": {
+     "est": 0.3,
+     "ci95": [
+      -0.4,
+      1.4
+     ],
+     "n": 10
+    }
+   }
+  },
+  "wrong_id": {
+   "outcomes": {
+    "n": 10,
+    "n_tasks": 10,
+    "success": {
+     "INVB": "3/10",
+     "INVQ": "3/10",
+     "VALB": "5/10",
+     "VALQ": "3/10",
+     "PPB": "5/10",
+     "PPQ": "4/10"
+    },
+    "B": {
+     "INV_vs_VAL": {
+      "n": 10,
+      "rescue": 1,
+      "damage": 3,
+      "turnover": 4,
+      "net": {
+       "est": -0.2,
+       "ci95": [
+        -0.6,
+        0.2
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.3,
+       "ci95": [
+        0.0,
+        0.6
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.4,
+       "ci95": [
+        0.1,
+        0.7
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": 0.625
+     },
+     "PP_vs_VAL": {
+      "n": 10,
+      "rescue": 2,
+      "damage": 2,
+      "turnover": 4,
+      "net": {
+       "est": 0.0,
+       "ci95": [
+        -0.4,
+        0.4
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.2,
+       "ci95": [
+        0.0,
+        0.5
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.2,
+       "ci95": [
+        0.0,
+        0.5
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.4,
+       "ci95": [
+        0.1,
+        0.7
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": 1.0
+     },
+     "INV_vs_PP": {
+      "n": 10,
+      "rescue": 0,
+      "damage": 2,
+      "turnover": 2,
+      "net": {
+       "est": -0.2,
+       "ci95": [
+        -0.5,
+        0.0
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.2,
+       "ci95": [
+        0.0,
+        0.5
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.2,
+       "ci95": [
+        0.0,
+        0.5
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": 0.5
+     },
+     "excess_turnover_INV_minus_PP": {
+      "est": 0.0,
+      "ci95": [
+       -0.3,
+       0.3
+      ],
+      "n": 10
+     },
+     "error_specific_effect": {
+      "definition": "[Y(INV)-Y(VAL)] - [Y(PP)-Y(VAL)] = Y(INV) - Y(PP), per state",
+      "est": -0.2,
+      "ci95": [
+       -0.5,
+       0.0
+      ],
+      "n": 10
+     }
+    },
+    "Q": {
+     "INV_vs_VAL": {
+      "n": 10,
+      "rescue": 1,
+      "damage": 1,
+      "turnover": 2,
+      "net": {
+       "est": 0.0,
+       "ci95": [
+        -0.3,
+        0.3
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.2,
+       "ci95": [
+        0.0,
+        0.5
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": 1.0
+     },
+     "PP_vs_VAL": {
+      "n": 10,
+      "rescue": 2,
+      "damage": 1,
+      "turnover": 3,
+      "net": {
+       "est": 0.1,
+       "ci95": [
+        -0.2,
+        0.4
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.2,
+       "ci95": [
+        0.0,
+        0.5
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.3,
+       "ci95": [
+        0.0,
+        0.6
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": 1.0
+     },
+     "INV_vs_PP": {
+      "n": 10,
+      "rescue": 1,
+      "damage": 2,
+      "turnover": 3,
+      "net": {
+       "est": -0.1,
+       "ci95": [
+        -0.4,
+        0.2
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.2,
+       "ci95": [
+        0.0,
+        0.5
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.3,
+       "ci95": [
+        0.0,
+        0.6
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": 1.0
+     },
+     "excess_turnover_INV_minus_PP": {
+      "est": -0.1,
+      "ci95": [
+       -0.4,
+       0.2
+      ],
+      "n": 10
+     },
+     "error_specific_effect": {
+      "definition": "[Y(INV)-Y(VAL)] - [Y(PP)-Y(VAL)] = Y(INV) - Y(PP), per state",
+      "est": -0.1,
+      "ci95": [
+       -0.4,
+       0.2
+      ],
+      "n": 10
+     }
+    },
+    "D_INV": {
+     "est": {
+      "est": -0.2,
+      "ci95": [
+       -0.7,
+       0.4
+      ],
+      "n": 10
+     },
+     "n_nonzero": 5,
+     "dist": {
+      "-2": 0,
+      "-1": 4,
+      "0": 5,
+      "1": 0,
+      "2": 1
+     },
+     "states_nonzero": [
+      "90ebcba36c9d3cf3",
+      "d6a0e2dacb0a19d2",
+      "fd36c8cb055c3db5",
+      "09dc288574be04f4",
+      "542bdebf3ccb7919"
+     ]
+    },
+    "D_PP": {
+     "est": {
+      "est": -0.1,
+      "ci95": [
+       -0.5,
+       0.3
+      ],
+      "n": 10
+     },
+     "n_nonzero": 5,
+     "dist": {
+      "-2": 0,
+      "-1": 3,
+      "0": 5,
+      "1": 2,
+      "2": 0
+     }
+    },
+    "D_INV_minus_D_PP": {
+     "est": {
+      "est": -0.1,
+      "ci95": [
+       -0.6,
+       0.3
+      ],
+      "n": 10
+     },
+     "n_nonzero": 2
+    }
+   },
+   "manipulation": {
+    "n": 10,
+    "INV_ok": {
+     "B": 10,
+     "Q": 10
+    },
+    "VAL_ok": 10,
+    "PP_ok": 10,
+    "VALQ_already_failure": 7,
+    "INVQ_tool_result_error": 10,
+    "failed_states": []
+   },
+   "event_chains_INV": {
+    "B": {
+     "error_occurred": 10,
+     "corrected": 8,
+     "related_requirement_satisfied": 2,
+     "related_requirement_na": 6,
+     "chain_complete": 2,
+     "task_success": 3,
+     "VAL_related_requirement_satisfied": "2/4"
+    },
+    "Q": {
+     "error_occurred": 10,
+     "corrected": 7,
+     "related_requirement_satisfied": 3,
+     "related_requirement_na": 6,
+     "chain_complete": 3,
+     "task_success": 3,
+     "VAL_related_requirement_satisfied": "2/4"
+    }
+   },
+   "process_cost_mean": {
+    "INVB": {
+     "extra_steps": 12.4,
+     "budget_used_frac": 0.065,
+     "tool_errors": 1.1,
+     "agent_turns": 6.2,
+     "completion_tokens": 587.2,
+     "termination": {
+      "user_stop": 10
+     }
+    },
+    "INVQ": {
+     "extra_steps": 13.2,
+     "budget_used_frac": 0.069,
+     "tool_errors": 1.4,
+     "agent_turns": 6.6,
+     "completion_tokens": 568.5,
+     "termination": {
+      "user_stop": 10
+     }
+    },
+    "VALB": {
+     "extra_steps": 12.2,
+     "budget_used_frac": 0.064,
+     "tool_errors": 0.4,
+     "agent_turns": 6.1,
+     "completion_tokens": 633.2,
+     "termination": {
+      "user_stop": 10
+     }
+    },
+    "VALQ": {
+     "extra_steps": 12.2,
+     "budget_used_frac": 0.064,
+     "tool_errors": 0.2,
+     "agent_turns": 6.1,
+     "completion_tokens": 677.6,
+     "termination": {
+      "user_stop": 10
+     }
+    },
+    "PPB": {
+     "extra_steps": 13.0,
+     "budget_used_frac": 0.068,
+     "tool_errors": 0.1,
+     "agent_turns": 6.5,
+     "completion_tokens": 656.0,
+     "termination": {
+      "user_stop": 10
+     }
+    },
+    "PPQ": {
+     "extra_steps": 15.2,
+     "budget_used_frac": 0.08,
+     "tool_errors": 0.3,
+     "agent_turns": 7.6,
+     "completion_tokens": 701.4,
+     "termination": {
+      "user_stop": 10
+     }
+    }
+   },
+   "process_cost_paired_diff": {
+    "INVB-VALB:extra_steps": {
+     "est": 0.2,
+     "ci95": [
+      -5.0,
+      4.4
+     ],
+     "n": 10
+    },
+    "INVB-VALB:tool_errors": {
+     "est": 0.7,
+     "ci95": [
+      0.2,
+      1.0
+     ],
+     "n": 10
+    },
+    "PPB-VALB:extra_steps": {
+     "est": 0.8,
+     "ci95": [
+      -3.4,
+      5.2
+     ],
+     "n": 10
+    },
+    "PPB-VALB:tool_errors": {
+     "est": -0.3,
+     "ci95": [
+      -0.8,
+      0.0
+     ],
+     "n": 10
+    },
+    "INVQ-VALQ:extra_steps": {
+     "est": 1.0,
+     "ci95": [
+      -4.8,
+      5.8
+     ],
+     "n": 10
+    },
+    "INVQ-VALQ:tool_errors": {
+     "est": 1.2,
+     "ci95": [
+      0.7,
+      1.9
+     ],
+     "n": 10
+    },
+    "PPQ-VALQ:extra_steps": {
+     "est": 3.0,
+     "ci95": [
+      1.4,
+      4.6
+     ],
+     "n": 10
+    },
+    "PPQ-VALQ:tool_errors": {
+     "est": 0.1,
+     "ci95": [
+      0.0,
+      0.3
+     ],
+     "n": 10
+    }
+   }
+  },
+  "wrong_tool": {
+   "outcomes": {
+    "n": 10,
+    "n_tasks": 10,
+    "success": {
+     "INVB": "4/10",
+     "INVQ": "4/10",
+     "VALB": "1/10",
+     "VALQ": "4/10",
+     "PPB": "2/10",
+     "PPQ": "3/10"
+    },
+    "B": {
+     "INV_vs_VAL": {
+      "n": 10,
+      "rescue": 3,
+      "damage": 0,
+      "turnover": 3,
+      "net": {
+       "est": 0.3,
+       "ci95": [
+        0.0,
+        0.6
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.3,
+       "ci95": [
+        0.0,
+        0.6
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.3,
+       "ci95": [
+        0.0,
+        0.6
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": 0.25
+     },
+     "PP_vs_VAL": {
+      "n": 10,
+      "rescue": 1,
+      "damage": 0,
+      "turnover": 1,
+      "net": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": 1.0
+     },
+     "INV_vs_PP": {
+      "n": 10,
+      "rescue": 2,
+      "damage": 0,
+      "turnover": 2,
+      "net": {
+       "est": 0.2,
+       "ci95": [
+        0.0,
+        0.5
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.2,
+       "ci95": [
+        0.0,
+        0.5
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.2,
+       "ci95": [
+        0.0,
+        0.5
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": 0.5
+     },
+     "excess_turnover_INV_minus_PP": {
+      "est": 0.2,
+      "ci95": [
+       0.0,
+       0.5
+      ],
+      "n": 10
+     },
+     "error_specific_effect": {
+      "definition": "[Y(INV)-Y(VAL)] - [Y(PP)-Y(VAL)] = Y(INV) - Y(PP), per state",
+      "est": 0.2,
+      "ci95": [
+       0.0,
+       0.5
+      ],
+      "n": 10
+     }
+    },
+    "Q": {
+     "INV_vs_VAL": {
+      "n": 10,
+      "rescue": 1,
+      "damage": 1,
+      "turnover": 2,
+      "net": {
+       "est": 0.0,
+       "ci95": [
+        -0.3,
+        0.3
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.2,
+       "ci95": [
+        0.0,
+        0.5
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": 1.0
+     },
+     "PP_vs_VAL": {
+      "n": 10,
+      "rescue": 0,
+      "damage": 1,
+      "turnover": 1,
+      "net": {
+       "est": -0.1,
+       "ci95": [
+        -0.3,
+        0.0
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": 1.0
+     },
+     "INV_vs_PP": {
+      "n": 10,
+      "rescue": 1,
+      "damage": 0,
+      "turnover": 1,
+      "net": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": 1.0
+     },
+     "excess_turnover_INV_minus_PP": {
+      "est": 0.1,
+      "ci95": [
+       0.0,
+       0.3
+      ],
+      "n": 10
+     },
+     "error_specific_effect": {
+      "definition": "[Y(INV)-Y(VAL)] - [Y(PP)-Y(VAL)] = Y(INV) - Y(PP), per state",
+      "est": 0.1,
+      "ci95": [
+       0.0,
+       0.3
+      ],
+      "n": 10
+     }
+    },
+    "D_INV": {
+     "est": {
+      "est": 0.3,
+      "ci95": [
+       0.0,
+       0.6
+      ],
+      "n": 10
+     },
+     "n_nonzero": 3,
+     "dist": {
+      "-2": 0,
+      "-1": 0,
+      "0": 7,
+      "1": 3,
+      "2": 0
+     },
+     "states_nonzero": [
+      "a8fd5fc86f2c3d09",
+      "5b85eb8a81741334",
+      "f0f235eafe210f03"
+     ]
+    },
+    "D_PP": {
+     "est": {
+      "est": 0.2,
+      "ci95": [
+       0.0,
+       0.5
+      ],
+      "n": 10
+     },
+     "n_nonzero": 2,
+     "dist": {
+      "-2": 0,
+      "-1": 0,
+      "0": 8,
+      "1": 2,
+      "2": 0
+     }
+    },
+    "D_INV_minus_D_PP": {
+     "est": {
+      "est": 0.1,
+      "ci95": [
+       0.0,
+       0.3
+      ],
+      "n": 10
+     },
+     "n_nonzero": 1
+    }
+   },
+   "manipulation": {
+    "n": 10,
+    "INV_ok": {
+     "B": 10,
+     "Q": 10
+    },
+    "VAL_ok": 9,
+    "PP_ok": 10,
+    "VALQ_already_failure": 6,
+    "INVQ_tool_result_error": 8,
+    "failed_states": [
+     {
+      "state_key": "53ec44a9a0a79d81",
+      "category": "wrong_tool",
+      "failed": [
+       "VAL"
+      ],
+      "detail": {
+       "VAL": {
+        "tool_result_error": true,
+        "flags": {
+         "invalid_tool": false,
+         "invalid_args": false,
+         "exec_error": true,
+         "id_not_found": true,
+         "id_needs_review": false
+        },
+        "result": "Error: Order not found"
+       }
+      }
+     }
+    ]
+   },
+   "event_chains_INV": {
+    "B": {
+     "error_occurred": 10,
+     "corrected": 9,
+     "related_requirement_satisfied": 4,
+     "related_requirement_na": 6,
+     "chain_complete": 4,
+     "task_success": 4,
+     "VAL_related_requirement_satisfied": "5/5"
+    },
+    "Q": {
+     "error_occurred": 10,
+     "corrected": 10,
+     "related_requirement_satisfied": 4,
+     "related_requirement_na": 6,
+     "chain_complete": 4,
+     "task_success": 4,
+     "VAL_related_requirement_satisfied": "5/5"
+    }
+   },
+   "process_cost_mean": {
+    "INVB": {
+     "extra_steps": 34.5,
+     "budget_used_frac": 0.195,
+     "tool_errors": 1.3,
+     "agent_turns": 17.3,
+     "completion_tokens": 2831.5,
+     "termination": {
+      "user_stop": 9,
+      "max_steps": 1
+     }
+    },
+    "INVQ": {
+     "extra_steps": 35.7,
+     "budget_used_frac": 0.201,
+     "tool_errors": 1.3,
+     "agent_turns": 17.9,
+     "completion_tokens": 2152.9,
+     "termination": {
+      "user_stop": 9,
+      "max_steps": 1
+     }
+    },
+    "VALB": {
+     "extra_steps": 22.6,
+     "budget_used_frac": 0.119,
+     "tool_errors": 0.4,
+     "agent_turns": 11.3,
+     "completion_tokens": 1000.3,
+     "termination": {
+      "user_stop": 10
+     }
+    },
+    "VALQ": {
+     "extra_steps": 17.4,
+     "budget_used_frac": 0.093,
+     "tool_errors": 0.5,
+     "agent_turns": 8.7,
+     "completion_tokens": 845.5,
+     "termination": {
+      "user_stop": 10
+     }
+    },
+    "PPB": {
+     "extra_steps": 19.6,
+     "budget_used_frac": 0.106,
+     "tool_errors": 0.7,
+     "agent_turns": 9.8,
+     "completion_tokens": 947.1,
+     "termination": {
+      "user_stop": 10
+     }
+    },
+    "PPQ": {
+     "extra_steps": 23.6,
+     "budget_used_frac": 0.127,
+     "tool_errors": 0.5,
+     "agent_turns": 11.8,
+     "completion_tokens": 1038.2,
+     "termination": {
+      "user_stop": 10
+     }
+    }
+   },
+   "process_cost_paired_diff": {
+    "INVB-VALB:extra_steps": {
+     "est": 11.9,
+     "ci95": [
+      -7.6,
+      44.7
+     ],
+     "n": 10
+    },
+    "INVB-VALB:tool_errors": {
+     "est": 0.9,
+     "ci95": [
+      0.4,
+      1.3
+     ],
+     "n": 10
+    },
+    "PPB-VALB:extra_steps": {
+     "est": -3.0,
+     "ci95": [
+      -9.8,
+      3.805
+     ],
+     "n": 10
+    },
+    "PPB-VALB:tool_errors": {
+     "est": 0.3,
+     "ci95": [
+      -0.1,
+      0.7
+     ],
+     "n": 10
+    },
+    "INVQ-VALQ:extra_steps": {
+     "est": 18.3,
+     "ci95": [
+      -1.0,
+      50.1
+     ],
+     "n": 10
+    },
+    "INVQ-VALQ:tool_errors": {
+     "est": 0.8,
+     "ci95": [
+      0.2,
+      1.4
+     ],
+     "n": 10
+    },
+    "PPQ-VALQ:extra_steps": {
+     "est": 6.2,
+     "ci95": [
+      -0.6,
+      12.8
+     ],
+     "n": 10
+    },
+    "PPQ-VALQ:tool_errors": {
+     "est": 0.0,
+     "ci95": [
+      -0.5,
+      0.6
+     ],
+     "n": 10
+    }
+   }
+  }
+ },
+ "manipulation_pass_only": {
+  "all": {
+   "n": 28,
+   "n_tasks": 28,
+   "success": {
+    "INVB": "9/28",
+    "INVQ": "9/28",
+    "VALB": "9/28",
+    "VALQ": "10/28",
+    "PPB": "10/28",
+    "PPQ": "11/28"
+   },
+   "B": {
+    "INV_vs_VAL": {
+     "n": 28,
+     "rescue": 3,
+     "damage": 3,
+     "turnover": 6,
+     "net": {
+      "est": 0.0,
+      "ci95": [
+       -0.1786,
+       0.1786
+      ],
+      "n": 28
+     },
+     "rescue_rate": {
+      "est": 0.1071,
+      "ci95": [
+       0.0,
+       0.2143
+      ],
+      "n": 28
+     },
+     "damage_rate": {
+      "est": 0.1071,
+      "ci95": [
+       0.0,
+       0.25
+      ],
+      "n": 28
+     },
+     "turnover_rate": {
+      "est": 0.2143,
+      "ci95": [
+       0.0714,
+       0.3571
+      ],
+      "n": 28
+     },
+     "mcnemar_exact_p": 1.0
+    },
+    "PP_vs_VAL": {
+     "n": 28,
+     "rescue": 3,
+     "damage": 2,
+     "turnover": 5,
+     "net": {
+      "est": 0.0357,
+      "ci95": [
+       -0.1071,
+       0.1786
+      ],
+      "n": 28
+     },
+     "rescue_rate": {
+      "est": 0.1071,
+      "ci95": [
+       0.0,
+       0.25
+      ],
+      "n": 28
+     },
+     "damage_rate": {
+      "est": 0.0714,
+      "ci95": [
+       0.0,
+       0.1786
+      ],
+      "n": 28
+     },
+     "turnover_rate": {
+      "est": 0.1786,
+      "ci95": [
+       0.0357,
+       0.3214
+      ],
+      "n": 28
+     },
+     "mcnemar_exact_p": 1.0
+    },
+    "INV_vs_PP": {
+     "n": 28,
+     "rescue": 1,
+     "damage": 2,
+     "turnover": 3,
+     "net": {
+      "est": -0.0357,
+      "ci95": [
+       -0.1429,
+       0.0714
+      ],
+      "n": 28
+     },
+     "rescue_rate": {
+      "est": 0.0357,
+      "ci95": [
+       0.0,
+       0.1071
+      ],
+      "n": 28
+     },
+     "damage_rate": {
+      "est": 0.0714,
+      "ci95": [
+       0.0,
+       0.1786
+      ],
+      "n": 28
+     },
+     "turnover_rate": {
+      "est": 0.1071,
+      "ci95": [
+       0.0,
+       0.2143
+      ],
+      "n": 28
+     },
+     "mcnemar_exact_p": 1.0
+    },
+    "excess_turnover_INV_minus_PP": {
+     "est": 0.0357,
+     "ci95": [
+      -0.0714,
+      0.1429
+     ],
+     "n": 28
+    },
+    "error_specific_effect": {
+     "definition": "[Y(INV)-Y(VAL)] - [Y(PP)-Y(VAL)] = Y(INV) - Y(PP), per state",
+     "est": -0.0357,
+     "ci95": [
+      -0.1429,
+      0.0714
+     ],
+     "n": 28
+    }
+   },
+   "Q": {
+    "INV_vs_VAL": {
+     "n": 28,
+     "rescue": 1,
+     "damage": 2,
+     "turnover": 3,
+     "net": {
+      "est": -0.0357,
+      "ci95": [
+       -0.1429,
+       0.0714
+      ],
+      "n": 28
+     },
+     "rescue_rate": {
+      "est": 0.0357,
+      "ci95": [
+       0.0,
+       0.1071
+      ],
+      "n": 28
+     },
+     "damage_rate": {
+      "est": 0.0714,
+      "ci95": [
+       0.0,
+       0.1786
+      ],
+      "n": 28
+     },
+     "turnover_rate": {
+      "est": 0.1071,
+      "ci95": [
+       0.0,
+       0.25
+      ],
+      "n": 28
+     },
+     "mcnemar_exact_p": 1.0
+    },
+    "PP_vs_VAL": {
+     "n": 28,
+     "rescue": 3,
+     "damage": 2,
+     "turnover": 5,
+     "net": {
+      "est": 0.0357,
+      "ci95": [
+       -0.1071,
+       0.1786
+      ],
+      "n": 28
+     },
+     "rescue_rate": {
+      "est": 0.1071,
+      "ci95": [
+       0.0,
+       0.25
+      ],
+      "n": 28
+     },
+     "damage_rate": {
+      "est": 0.0714,
+      "ci95": [
+       0.0,
+       0.1786
+      ],
+      "n": 28
+     },
+     "turnover_rate": {
+      "est": 0.1786,
+      "ci95": [
+       0.0357,
+       0.3571
+      ],
+      "n": 28
+     },
+     "mcnemar_exact_p": 1.0
+    },
+    "INV_vs_PP": {
+     "n": 28,
+     "rescue": 1,
+     "damage": 3,
+     "turnover": 4,
+     "net": {
+      "est": -0.0714,
+      "ci95": [
+       -0.2143,
+       0.0714
+      ],
+      "n": 28
+     },
+     "rescue_rate": {
+      "est": 0.0357,
+      "ci95": [
+       0.0,
+       0.1071
+      ],
+      "n": 28
+     },
+     "damage_rate": {
+      "est": 0.1071,
+      "ci95": [
+       0.0,
+       0.25
+      ],
+      "n": 28
+     },
+     "turnover_rate": {
+      "est": 0.1429,
+      "ci95": [
+       0.0357,
+       0.2857
+      ],
+      "n": 28
+     },
+     "mcnemar_exact_p": 0.625
+    },
+    "excess_turnover_INV_minus_PP": {
+     "est": -0.0714,
+     "ci95": [
+      -0.2143,
+      0.0714
+     ],
+     "n": 28
+    },
+    "error_specific_effect": {
+     "definition": "[Y(INV)-Y(VAL)] - [Y(PP)-Y(VAL)] = Y(INV) - Y(PP), per state",
+     "est": -0.0714,
+     "ci95": [
+      -0.2143,
+      0.0714
+     ],
+     "n": 28
+    }
+   },
+   "D_INV": {
+    "est": {
+     "est": 0.0357,
+     "ci95": [
+      -0.1786,
+      0.2857
+     ],
+     "n": 28
+    },
+    "n_nonzero": 8,
+    "dist": {
+     "-2": 0,
+     "-1": 4,
+     "0": 20,
+     "1": 3,
+     "2": 1
+    },
+    "states_nonzero": [
+     "90ebcba36c9d3cf3",
+     "d6a0e2dacb0a19d2",
+     "fd36c8cb055c3db5",
+     "09dc288574be04f4",
+     "542bdebf3ccb7919",
+     "a8fd5fc86f2c3d09",
+     "5b85eb8a81741334",
+     "f0f235eafe210f03"
+    ]
+   },
+   "D_PP": {
+    "est": {
+     "est": 0.0,
+     "ci95": [
+      -0.2143,
+      0.1786
+     ],
+     "n": 28
+    },
+    "n_nonzero": 8,
+    "dist": {
+     "-2": 0,
+     "-1": 4,
+     "0": 20,
+     "1": 4,
+     "2": 0
+    }
+   },
+   "D_INV_minus_D_PP": {
+    "est": {
+     "est": 0.0357,
+     "ci95": [
+      -0.1786,
+      0.2143
+     ],
+     "n": 28
+    },
+    "n_nonzero": 4
+   }
+  },
+  "by_category": {
+   "premature_write": {
+    "n": 9,
+    "n_tasks": 9,
+    "success": {
+     "INVB": "3/9",
+     "INVQ": "3/9",
+     "VALB": "3/9",
+     "VALQ": "3/9",
+     "PPB": "3/9",
+     "PPQ": "4/9"
+    },
+    "B": {
+     "INV_vs_VAL": {
+      "n": 9,
+      "rescue": 0,
+      "damage": 0,
+      "turnover": 0,
+      "net": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "rescue_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "damage_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "turnover_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "mcnemar_exact_p": null
+     },
+     "PP_vs_VAL": {
+      "n": 9,
+      "rescue": 0,
+      "damage": 0,
+      "turnover": 0,
+      "net": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "rescue_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "damage_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "turnover_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "mcnemar_exact_p": null
+     },
+     "INV_vs_PP": {
+      "n": 9,
+      "rescue": 0,
+      "damage": 0,
+      "turnover": 0,
+      "net": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "rescue_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "damage_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "turnover_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "mcnemar_exact_p": null
+     },
+     "excess_turnover_INV_minus_PP": {
+      "est": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "n": 9
+     },
+     "error_specific_effect": {
+      "definition": "[Y(INV)-Y(VAL)] - [Y(PP)-Y(VAL)] = Y(INV) - Y(PP), per state",
+      "est": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "n": 9
+     }
+    },
+    "Q": {
+     "INV_vs_VAL": {
+      "n": 9,
+      "rescue": 0,
+      "damage": 0,
+      "turnover": 0,
+      "net": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "rescue_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "damage_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "turnover_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "mcnemar_exact_p": null
+     },
+     "PP_vs_VAL": {
+      "n": 9,
+      "rescue": 1,
+      "damage": 0,
+      "turnover": 1,
+      "net": {
+       "est": 0.1111,
+       "ci95": [
+        0.0,
+        0.3333
+       ],
+       "n": 9
+      },
+      "rescue_rate": {
+       "est": 0.1111,
+       "ci95": [
+        0.0,
+        0.3333
+       ],
+       "n": 9
+      },
+      "damage_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "turnover_rate": {
+       "est": 0.1111,
+       "ci95": [
+        0.0,
+        0.3333
+       ],
+       "n": 9
+      },
+      "mcnemar_exact_p": 1.0
+     },
+     "INV_vs_PP": {
+      "n": 9,
+      "rescue": 0,
+      "damage": 1,
+      "turnover": 1,
+      "net": {
+       "est": -0.1111,
+       "ci95": [
+        -0.3333,
+        0.0
+       ],
+       "n": 9
+      },
+      "rescue_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "damage_rate": {
+       "est": 0.1111,
+       "ci95": [
+        0.0,
+        0.3333
+       ],
+       "n": 9
+      },
+      "turnover_rate": {
+       "est": 0.1111,
+       "ci95": [
+        0.0,
+        0.3333
+       ],
+       "n": 9
+      },
+      "mcnemar_exact_p": 1.0
+     },
+     "excess_turnover_INV_minus_PP": {
+      "est": -0.1111,
+      "ci95": [
+       -0.3333,
+       0.0
+      ],
+      "n": 9
+     },
+     "error_specific_effect": {
+      "definition": "[Y(INV)-Y(VAL)] - [Y(PP)-Y(VAL)] = Y(INV) - Y(PP), per state",
+      "est": -0.1111,
+      "ci95": [
+       -0.3333,
+       0.0
+      ],
+      "n": 9
+     }
+    },
+    "D_INV": {
+     "est": {
+      "est": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "n": 9
+     },
+     "n_nonzero": 0,
+     "dist": {
+      "-2": 0,
+      "-1": 0,
+      "0": 9,
+      "1": 0,
+      "2": 0
+     },
+     "states_nonzero": []
+    },
+    "D_PP": {
+     "est": {
+      "est": -0.1111,
+      "ci95": [
+       -0.3333,
+       0.0
+      ],
+      "n": 9
+     },
+     "n_nonzero": 1,
+     "dist": {
+      "-2": 0,
+      "-1": 1,
+      "0": 8,
+      "1": 0,
+      "2": 0
+     }
+    },
+    "D_INV_minus_D_PP": {
+     "est": {
+      "est": 0.1111,
+      "ci95": [
+       0.0,
+       0.3333
+      ],
+      "n": 9
+     },
+     "n_nonzero": 1
+    }
+   },
+   "wrong_id": {
+    "n": 10,
+    "n_tasks": 10,
+    "success": {
+     "INVB": "3/10",
+     "INVQ": "3/10",
+     "VALB": "5/10",
+     "VALQ": "3/10",
+     "PPB": "5/10",
+     "PPQ": "4/10"
+    },
+    "B": {
+     "INV_vs_VAL": {
+      "n": 10,
+      "rescue": 1,
+      "damage": 3,
+      "turnover": 4,
+      "net": {
+       "est": -0.2,
+       "ci95": [
+        -0.6,
+        0.2
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.3,
+       "ci95": [
+        0.0,
+        0.6
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.4,
+       "ci95": [
+        0.1,
+        0.7
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": 0.625
+     },
+     "PP_vs_VAL": {
+      "n": 10,
+      "rescue": 2,
+      "damage": 2,
+      "turnover": 4,
+      "net": {
+       "est": 0.0,
+       "ci95": [
+        -0.4,
+        0.4
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.2,
+       "ci95": [
+        0.0,
+        0.5
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.2,
+       "ci95": [
+        0.0,
+        0.5
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.4,
+       "ci95": [
+        0.1,
+        0.7
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": 1.0
+     },
+     "INV_vs_PP": {
+      "n": 10,
+      "rescue": 0,
+      "damage": 2,
+      "turnover": 2,
+      "net": {
+       "est": -0.2,
+       "ci95": [
+        -0.5,
+        0.0
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.2,
+       "ci95": [
+        0.0,
+        0.5
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.2,
+       "ci95": [
+        0.0,
+        0.5
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": 0.5
+     },
+     "excess_turnover_INV_minus_PP": {
+      "est": 0.0,
+      "ci95": [
+       -0.3,
+       0.3
+      ],
+      "n": 10
+     },
+     "error_specific_effect": {
+      "definition": "[Y(INV)-Y(VAL)] - [Y(PP)-Y(VAL)] = Y(INV) - Y(PP), per state",
+      "est": -0.2,
+      "ci95": [
+       -0.5,
+       0.0
+      ],
+      "n": 10
+     }
+    },
+    "Q": {
+     "INV_vs_VAL": {
+      "n": 10,
+      "rescue": 1,
+      "damage": 1,
+      "turnover": 2,
+      "net": {
+       "est": 0.0,
+       "ci95": [
+        -0.3,
+        0.3
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.2,
+       "ci95": [
+        0.0,
+        0.5
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": 1.0
+     },
+     "PP_vs_VAL": {
+      "n": 10,
+      "rescue": 2,
+      "damage": 1,
+      "turnover": 3,
+      "net": {
+       "est": 0.1,
+       "ci95": [
+        -0.2,
+        0.4
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.2,
+       "ci95": [
+        0.0,
+        0.5
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.3,
+       "ci95": [
+        0.0,
+        0.6
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": 1.0
+     },
+     "INV_vs_PP": {
+      "n": 10,
+      "rescue": 1,
+      "damage": 2,
+      "turnover": 3,
+      "net": {
+       "est": -0.1,
+       "ci95": [
+        -0.4,
+        0.2
+       ],
+       "n": 10
+      },
+      "rescue_rate": {
+       "est": 0.1,
+       "ci95": [
+        0.0,
+        0.3
+       ],
+       "n": 10
+      },
+      "damage_rate": {
+       "est": 0.2,
+       "ci95": [
+        0.0,
+        0.5
+       ],
+       "n": 10
+      },
+      "turnover_rate": {
+       "est": 0.3,
+       "ci95": [
+        0.0,
+        0.6
+       ],
+       "n": 10
+      },
+      "mcnemar_exact_p": 1.0
+     },
+     "excess_turnover_INV_minus_PP": {
+      "est": -0.1,
+      "ci95": [
+       -0.4,
+       0.2
+      ],
+      "n": 10
+     },
+     "error_specific_effect": {
+      "definition": "[Y(INV)-Y(VAL)] - [Y(PP)-Y(VAL)] = Y(INV) - Y(PP), per state",
+      "est": -0.1,
+      "ci95": [
+       -0.4,
+       0.2
+      ],
+      "n": 10
+     }
+    },
+    "D_INV": {
+     "est": {
+      "est": -0.2,
+      "ci95": [
+       -0.7,
+       0.4
+      ],
+      "n": 10
+     },
+     "n_nonzero": 5,
+     "dist": {
+      "-2": 0,
+      "-1": 4,
+      "0": 5,
+      "1": 0,
+      "2": 1
+     },
+     "states_nonzero": [
+      "90ebcba36c9d3cf3",
+      "d6a0e2dacb0a19d2",
+      "fd36c8cb055c3db5",
+      "09dc288574be04f4",
+      "542bdebf3ccb7919"
+     ]
+    },
+    "D_PP": {
+     "est": {
+      "est": -0.1,
+      "ci95": [
+       -0.5,
+       0.3
+      ],
+      "n": 10
+     },
+     "n_nonzero": 5,
+     "dist": {
+      "-2": 0,
+      "-1": 3,
+      "0": 5,
+      "1": 2,
+      "2": 0
+     }
+    },
+    "D_INV_minus_D_PP": {
+     "est": {
+      "est": -0.1,
+      "ci95": [
+       -0.6,
+       0.3
+      ],
+      "n": 10
+     },
+     "n_nonzero": 2
+    }
+   },
+   "wrong_tool": {
+    "n": 9,
+    "n_tasks": 9,
+    "success": {
+     "INVB": "3/9",
+     "INVQ": "3/9",
+     "VALB": "1/9",
+     "VALQ": "4/9",
+     "PPB": "2/9",
+     "PPQ": "3/9"
+    },
+    "B": {
+     "INV_vs_VAL": {
+      "n": 9,
+      "rescue": 2,
+      "damage": 0,
+      "turnover": 2,
+      "net": {
+       "est": 0.2222,
+       "ci95": [
+        0.0,
+        0.5556
+       ],
+       "n": 9
+      },
+      "rescue_rate": {
+       "est": 0.2222,
+       "ci95": [
+        0.0,
+        0.5556
+       ],
+       "n": 9
+      },
+      "damage_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "turnover_rate": {
+       "est": 0.2222,
+       "ci95": [
+        0.0,
+        0.5556
+       ],
+       "n": 9
+      },
+      "mcnemar_exact_p": 0.5
+     },
+     "PP_vs_VAL": {
+      "n": 9,
+      "rescue": 1,
+      "damage": 0,
+      "turnover": 1,
+      "net": {
+       "est": 0.1111,
+       "ci95": [
+        0.0,
+        0.3333
+       ],
+       "n": 9
+      },
+      "rescue_rate": {
+       "est": 0.1111,
+       "ci95": [
+        0.0,
+        0.3333
+       ],
+       "n": 9
+      },
+      "damage_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "turnover_rate": {
+       "est": 0.1111,
+       "ci95": [
+        0.0,
+        0.3333
+       ],
+       "n": 9
+      },
+      "mcnemar_exact_p": 1.0
+     },
+     "INV_vs_PP": {
+      "n": 9,
+      "rescue": 1,
+      "damage": 0,
+      "turnover": 1,
+      "net": {
+       "est": 0.1111,
+       "ci95": [
+        0.0,
+        0.3333
+       ],
+       "n": 9
+      },
+      "rescue_rate": {
+       "est": 0.1111,
+       "ci95": [
+        0.0,
+        0.3333
+       ],
+       "n": 9
+      },
+      "damage_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "turnover_rate": {
+       "est": 0.1111,
+       "ci95": [
+        0.0,
+        0.3333
+       ],
+       "n": 9
+      },
+      "mcnemar_exact_p": 1.0
+     },
+     "excess_turnover_INV_minus_PP": {
+      "est": 0.1111,
+      "ci95": [
+       0.0,
+       0.3333
+      ],
+      "n": 9
+     },
+     "error_specific_effect": {
+      "definition": "[Y(INV)-Y(VAL)] - [Y(PP)-Y(VAL)] = Y(INV) - Y(PP), per state",
+      "est": 0.1111,
+      "ci95": [
+       0.0,
+       0.3333
+      ],
+      "n": 9
+     }
+    },
+    "Q": {
+     "INV_vs_VAL": {
+      "n": 9,
+      "rescue": 0,
+      "damage": 1,
+      "turnover": 1,
+      "net": {
+       "est": -0.1111,
+       "ci95": [
+        -0.3333,
+        0.0
+       ],
+       "n": 9
+      },
+      "rescue_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "damage_rate": {
+       "est": 0.1111,
+       "ci95": [
+        0.0,
+        0.3333
+       ],
+       "n": 9
+      },
+      "turnover_rate": {
+       "est": 0.1111,
+       "ci95": [
+        0.0,
+        0.3333
+       ],
+       "n": 9
+      },
+      "mcnemar_exact_p": 1.0
+     },
+     "PP_vs_VAL": {
+      "n": 9,
+      "rescue": 0,
+      "damage": 1,
+      "turnover": 1,
+      "net": {
+       "est": -0.1111,
+       "ci95": [
+        -0.3333,
+        0.0
+       ],
+       "n": 9
+      },
+      "rescue_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "damage_rate": {
+       "est": 0.1111,
+       "ci95": [
+        0.0,
+        0.3333
+       ],
+       "n": 9
+      },
+      "turnover_rate": {
+       "est": 0.1111,
+       "ci95": [
+        0.0,
+        0.3333
+       ],
+       "n": 9
+      },
+      "mcnemar_exact_p": 1.0
+     },
+     "INV_vs_PP": {
+      "n": 9,
+      "rescue": 0,
+      "damage": 0,
+      "turnover": 0,
+      "net": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "rescue_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "damage_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "turnover_rate": {
+       "est": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 9
+      },
+      "mcnemar_exact_p": null
+     },
+     "excess_turnover_INV_minus_PP": {
+      "est": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "n": 9
+     },
+     "error_specific_effect": {
+      "definition": "[Y(INV)-Y(VAL)] - [Y(PP)-Y(VAL)] = Y(INV) - Y(PP), per state",
+      "est": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "n": 9
+     }
+    },
+    "D_INV": {
+     "est": {
+      "est": 0.3333,
+      "ci95": [
+       0.1111,
+       0.6667
+      ],
+      "n": 9
+     },
+     "n_nonzero": 3,
+     "dist": {
+      "-2": 0,
+      "-1": 0,
+      "0": 6,
+      "1": 3,
+      "2": 0
+     },
+     "states_nonzero": [
+      "a8fd5fc86f2c3d09",
+      "5b85eb8a81741334",
+      "f0f235eafe210f03"
+     ]
+    },
+    "D_PP": {
+     "est": {
+      "est": 0.2222,
+      "ci95": [
+       0.0,
+       0.4444
+      ],
+      "n": 9
+     },
+     "n_nonzero": 2,
+     "dist": {
+      "-2": 0,
+      "-1": 0,
+      "0": 7,
+      "1": 2,
+      "2": 0
+     }
+    },
+    "D_INV_minus_D_PP": {
+     "est": {
+      "est": 0.1111,
+      "ci95": [
+       0.0,
+       0.3333
+      ],
+      "n": 9
+     },
+     "n_nonzero": 1
+    }
+   }
+  }
+ },
+ "per_state": [
+  {
+   "state_key": "2f6d304e4296d9b7",
+   "category": "wrong_id",
+   "domain": "retail",
+   "task_id": "110",
+   "t": 4,
+   "Y": {
+    "INVB": 0,
+    "INVQ": 0,
+    "VALB": 0,
+    "VALQ": 0,
+    "PPB": 0,
+    "PPQ": 0
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "wrong_id",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "tool_result_error": true,
+     "result": "Error: Product not found",
+     "invalid_value_absent_from_db": true
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "tool_result_error": true,
+     "result": "Error: Product not found",
+     "invalid_value_absent_from_db": true
+    },
+    "VAL": {
+     "ok": true,
+     "tool_result_error": false,
+     "flags": {
+      "invalid_tool": false,
+      "invalid_args": false,
+      "exec_error": false,
+      "id_not_found": false,
+      "id_needs_review": false
+     },
+     "result": "{\"name\": \"Tablet\", \"product_id\": \"8024098596\", \"variants\": {\"3788616824\": {\"item_id\": \"3788616824\", \"options\": {\"screen "
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 0,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "exact_valid_id": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_product_details all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "exact_valid_id": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_product_details all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": null,
+     "Q": null
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0628,
+     "tool_errors": 1,
+     "agent_turns": 6,
+     "completion_tokens": 621,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0628,
+     "tool_errors": 1,
+     "agent_turns": 6,
+     "completion_tokens": 616,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 4,
+     "budget_used_frac": 0.0209,
+     "tool_errors": 0,
+     "agent_turns": 2,
+     "completion_tokens": 303,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 8,
+     "budget_used_frac": 0.0419,
+     "tool_errors": 0,
+     "agent_turns": 4,
+     "completion_tokens": 614,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 16,
+     "budget_used_frac": 0.0838,
+     "tool_errors": 0,
+     "agent_turns": 8,
+     "completion_tokens": 994,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0733,
+     "tool_errors": 0,
+     "agent_turns": 7,
+     "completion_tokens": 968,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 0,
+   "D_PP": 0
+  },
+  {
+   "state_key": "57d8f2089a63f71e",
+   "category": "wrong_id",
+   "domain": "retail",
+   "task_id": "102",
+   "t": 5,
+   "Y": {
+    "INVB": 0,
+    "INVQ": 0,
+    "VALB": 0,
+    "VALQ": 0,
+    "PPB": 0,
+    "PPQ": 0
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "wrong_id",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "tool_result_error": true,
+     "result": "Error: Product not found",
+     "invalid_value_absent_from_db": true
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "tool_result_error": true,
+     "result": "Error: Product not found",
+     "invalid_value_absent_from_db": true
+    },
+    "VAL": {
+     "ok": true,
+     "tool_result_error": false,
+     "flags": {
+      "invalid_tool": false,
+      "invalid_args": false,
+      "exec_error": false,
+      "id_not_found": false,
+      "id_needs_review": false
+     },
+     "result": "{\"name\": \"Air Purifier\", \"product_id\": \"3821016478\", \"variants\": {\"8302289002\": {\"item_id\": \"8302289002\", \"options\": {\"r"
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 0,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "exact_valid_id": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_product_details all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "exact_valid_id": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_product_details all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": null,
+     "Q": null
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 18,
+     "budget_used_frac": 0.0952,
+     "tool_errors": 1,
+     "agent_turns": 9,
+     "completion_tokens": 1388,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 26,
+     "budget_used_frac": 0.1376,
+     "tool_errors": 4,
+     "agent_turns": 13,
+     "completion_tokens": 1632,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0741,
+     "tool_errors": 2,
+     "agent_turns": 7,
+     "completion_tokens": 1150,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0635,
+     "tool_errors": 0,
+     "agent_turns": 6,
+     "completion_tokens": 1561,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0741,
+     "tool_errors": 0,
+     "agent_turns": 7,
+     "completion_tokens": 1271,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0635,
+     "tool_errors": 1,
+     "agent_turns": 6,
+     "completion_tokens": 822,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 0,
+   "D_PP": 0
+  },
+  {
+   "state_key": "cb2f73995847fec3",
+   "category": "wrong_id",
+   "domain": "retail",
+   "task_id": "47",
+   "t": 9,
+   "Y": {
+    "INVB": 0,
+    "INVQ": 0,
+    "VALB": 0,
+    "VALQ": 0,
+    "PPB": 0,
+    "PPQ": 0
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "wrong_id",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "tool_result_error": true,
+     "result": "Error: Order not found",
+     "invalid_value_absent_from_db": true
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "tool_result_error": true,
+     "result": "Error: Order not found",
+     "invalid_value_absent_from_db": true
+    },
+    "VAL": {
+     "ok": true,
+     "tool_result_error": false,
+     "flags": {
+      "invalid_tool": false,
+      "invalid_args": false,
+      "exec_error": false,
+      "id_not_found": false,
+      "id_needs_review": false
+     },
+     "result": "{\"order_id\": \"#W9502127\", \"user_id\": \"daiki_johnson_9523\", \"address\": {\"address1\": \"834 Park Avenue\", \"address2\": \"Suite"
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 0,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "exact_valid_id": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_order_details all matched",
+      "n_gold": 3,
+      "satisfied": false
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 2,
+      "exact_valid_id": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_order_details all matched",
+      "n_gold": 3,
+      "satisfied": false
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": false,
+     "Q": false
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 6,
+     "budget_used_frac": 0.0331,
+     "tool_errors": 1,
+     "agent_turns": 3,
+     "completion_tokens": 181,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 8,
+     "budget_used_frac": 0.0442,
+     "tool_errors": 1,
+     "agent_turns": 4,
+     "completion_tokens": 254,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 4,
+     "budget_used_frac": 0.0221,
+     "tool_errors": 0,
+     "agent_turns": 2,
+     "completion_tokens": 142,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 4,
+     "budget_used_frac": 0.0221,
+     "tool_errors": 0,
+     "agent_turns": 2,
+     "completion_tokens": 80,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 4,
+     "budget_used_frac": 0.0221,
+     "tool_errors": 0,
+     "agent_turns": 2,
+     "completion_tokens": 142,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 4,
+     "budget_used_frac": 0.0221,
+     "tool_errors": 0,
+     "agent_turns": 2,
+     "completion_tokens": 80,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 0,
+   "D_PP": 0
+  },
+  {
+   "state_key": "90ebcba36c9d3cf3",
+   "category": "wrong_id",
+   "domain": "retail",
+   "task_id": "83",
+   "t": 7,
+   "Y": {
+    "INVB": 0,
+    "INVQ": 0,
+    "VALB": 1,
+    "VALQ": 0,
+    "PPB": 0,
+    "PPQ": 0
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "wrong_id",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "tool_result_error": true,
+     "result": "Error: Order not found",
+     "invalid_value_absent_from_db": true
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "tool_result_error": true,
+     "result": "Error: Order not found",
+     "invalid_value_absent_from_db": true
+    },
+    "VAL": {
+     "ok": true,
+     "tool_result_error": false,
+     "flags": {
+      "invalid_tool": false,
+      "invalid_args": false,
+      "exec_error": false,
+      "id_not_found": false,
+      "id_needs_review": false
+     },
+     "result": "{\"order_id\": \"#W3069600\", \"user_id\": \"chen_silva_7485\", \"address\": {\"address1\": \"139 River Road\", \"address2\": \"Suite 418"
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 0,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 5,
+      "exact_valid_id": false
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_order_details all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "related_requirement": {
+      "definition": "gold action checks on get_order_details all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": null,
+     "Q": null
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0757,
+     "tool_errors": 2,
+     "agent_turns": 7,
+     "completion_tokens": 1145,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0649,
+     "tool_errors": 2,
+     "agent_turns": 6,
+     "completion_tokens": 722,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 32,
+     "budget_used_frac": 0.173,
+     "tool_errors": 2,
+     "agent_turns": 16,
+     "completion_tokens": 2036,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 32,
+     "budget_used_frac": 0.173,
+     "tool_errors": 2,
+     "agent_turns": 16,
+     "completion_tokens": 2051,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 20,
+     "budget_used_frac": 0.1081,
+     "tool_errors": 1,
+     "agent_turns": 10,
+     "completion_tokens": 1144,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 32,
+     "budget_used_frac": 0.173,
+     "tool_errors": 2,
+     "agent_turns": 16,
+     "completion_tokens": 1635,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": -1,
+   "D_PP": -1
+  },
+  {
+   "state_key": "d6a0e2dacb0a19d2",
+   "category": "wrong_id",
+   "domain": "retail",
+   "task_id": "38",
+   "t": 5,
+   "Y": {
+    "INVB": 0,
+    "INVQ": 0,
+    "VALB": 1,
+    "VALQ": 0,
+    "PPB": 0,
+    "PPQ": 0
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "wrong_id",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "tool_result_error": true,
+     "result": "Error: User not found",
+     "invalid_value_absent_from_db": true
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "tool_result_error": true,
+     "result": "Error: User not found",
+     "invalid_value_absent_from_db": true
+    },
+    "VAL": {
+     "ok": true,
+     "tool_result_error": false,
+     "flags": {
+      "invalid_tool": false,
+      "invalid_args": false,
+      "exec_error": false,
+      "id_not_found": false,
+      "id_needs_review": false
+     },
+     "result": "{\"user_id\": \"daiki_sanchez_3253\", \"name\": {\"first_name\": \"Daiki\", \"last_name\": \"Sanchez\"}, \"address\": {\"address1\": \"661 "
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 0,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "related_requirement": {
+      "definition": "gold action checks on get_user_details all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "related_requirement": {
+      "definition": "gold action checks on get_user_details all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": null,
+     "Q": null
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 4,
+     "budget_used_frac": 0.0212,
+     "tool_errors": 1,
+     "agent_turns": 2,
+     "completion_tokens": 50,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 4,
+     "budget_used_frac": 0.0212,
+     "tool_errors": 1,
+     "agent_turns": 2,
+     "completion_tokens": 48,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0741,
+     "tool_errors": 0,
+     "agent_turns": 7,
+     "completion_tokens": 492,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 10,
+     "budget_used_frac": 0.0529,
+     "tool_errors": 0,
+     "agent_turns": 5,
+     "completion_tokens": 237,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0635,
+     "tool_errors": 0,
+     "agent_turns": 6,
+     "completion_tokens": 250,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0741,
+     "tool_errors": 0,
+     "agent_turns": 7,
+     "completion_tokens": 587,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": -1,
+   "D_PP": -1
+  },
+  {
+   "state_key": "fd36c8cb055c3db5",
+   "category": "wrong_id",
+   "domain": "retail",
+   "task_id": "25",
+   "t": 5,
+   "Y": {
+    "INVB": 0,
+    "INVQ": 1,
+    "VALB": 1,
+    "VALQ": 1,
+    "PPB": 1,
+    "PPQ": 0
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "wrong_id",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "tool_result_error": true,
+     "result": "Error: Order not found",
+     "invalid_value_absent_from_db": true
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "tool_result_error": true,
+     "result": "Error: Order not found",
+     "invalid_value_absent_from_db": true
+    },
+    "VAL": {
+     "ok": true,
+     "tool_result_error": false,
+     "flags": {
+      "invalid_tool": false,
+      "invalid_args": false,
+      "exec_error": false,
+      "id_not_found": false,
+      "id_needs_review": false
+     },
+     "result": "{\"order_id\": \"#W5565470\", \"user_id\": \"isabella_johansson_2152\", \"address\": {\"address1\": \"812 Cedar Avenue\", \"address2\": "
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 1,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "exact_valid_id": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_order_details all matched",
+      "n_gold": 4,
+      "satisfied": true
+     },
+     "task_success": false,
+     "chain_complete": true
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "exact_valid_id": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_order_details all matched",
+      "n_gold": 4,
+      "satisfied": true
+     },
+     "task_success": true,
+     "chain_complete": true
+    },
+    "VAL_related_requirement": {
+     "B": true,
+     "Q": true
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0741,
+     "tool_errors": 1,
+     "agent_turns": 7,
+     "completion_tokens": 564,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0741,
+     "tool_errors": 1,
+     "agent_turns": 7,
+     "completion_tokens": 508,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 10,
+     "budget_used_frac": 0.0529,
+     "tool_errors": 0,
+     "agent_turns": 5,
+     "completion_tokens": 415,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0741,
+     "tool_errors": 0,
+     "agent_turns": 7,
+     "completion_tokens": 519,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 6,
+     "budget_used_frac": 0.0317,
+     "tool_errors": 0,
+     "agent_turns": 3,
+     "completion_tokens": 307,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 18,
+     "budget_used_frac": 0.0952,
+     "tool_errors": 0,
+     "agent_turns": 9,
+     "completion_tokens": 696,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": -1,
+   "D_PP": 1
+  },
+  {
+   "state_key": "09dc288574be04f4",
+   "category": "wrong_id",
+   "domain": "retail",
+   "task_id": "26",
+   "t": 4,
+   "Y": {
+    "INVB": 1,
+    "INVQ": 0,
+    "VALB": 0,
+    "VALQ": 1,
+    "PPB": 1,
+    "PPQ": 1
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "wrong_id",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "tool_result_error": true,
+     "result": "Error: Order not found",
+     "invalid_value_absent_from_db": true
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "tool_result_error": true,
+     "result": "Error: Order not found",
+     "invalid_value_absent_from_db": true
+    },
+    "VAL": {
+     "ok": true,
+     "tool_result_error": false,
+     "flags": {
+      "invalid_tool": false,
+      "invalid_args": false,
+      "exec_error": false,
+      "id_not_found": false,
+      "id_needs_review": false
+     },
+     "result": "{\"order_id\": \"#W5565470\", \"user_id\": \"isabella_johansson_2152\", \"address\": {\"address1\": \"812 Cedar Avenue\", \"address2\": "
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 1,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "exact_valid_id": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_order_details all matched",
+      "n_gold": 4,
+      "satisfied": false
+     },
+     "task_success": true,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "exact_valid_id": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_order_details all matched",
+      "n_gold": 4,
+      "satisfied": true
+     },
+     "task_success": false,
+     "chain_complete": true
+    },
+    "VAL_related_requirement": {
+     "B": false,
+     "Q": false
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 10,
+     "budget_used_frac": 0.0524,
+     "tool_errors": 1,
+     "agent_turns": 5,
+     "completion_tokens": 273,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0733,
+     "tool_errors": 1,
+     "agent_turns": 7,
+     "completion_tokens": 483,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 4,
+     "budget_used_frac": 0.0209,
+     "tool_errors": 0,
+     "agent_turns": 2,
+     "completion_tokens": 110,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 8,
+     "budget_used_frac": 0.0419,
+     "tool_errors": 0,
+     "agent_turns": 4,
+     "completion_tokens": 281,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 18,
+     "budget_used_frac": 0.0942,
+     "tool_errors": 0,
+     "agent_turns": 9,
+     "completion_tokens": 847,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0628,
+     "tool_errors": 0,
+     "agent_turns": 6,
+     "completion_tokens": 360,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 2,
+   "D_PP": 1
+  },
+  {
+   "state_key": "542bdebf3ccb7919",
+   "category": "wrong_id",
+   "domain": "retail",
+   "task_id": "61",
+   "t": 3,
+   "Y": {
+    "INVB": 1,
+    "INVQ": 1,
+    "VALB": 1,
+    "VALQ": 0,
+    "PPB": 1,
+    "PPQ": 1
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "wrong_id",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "tool_result_error": true,
+     "result": "Error: Item not found",
+     "invalid_value_absent_from_db": true
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "tool_result_error": true,
+     "result": "Error: Item not found",
+     "invalid_value_absent_from_db": true
+    },
+    "VAL": {
+     "ok": true,
+     "tool_result_error": false,
+     "flags": {
+      "invalid_tool": false,
+      "invalid_args": false,
+      "exec_error": false,
+      "id_not_found": false,
+      "id_needs_review": false
+     },
+     "result": "{\"item_id\": \"3694871183\", \"options\": {\"color\": \"white\", \"battery life\": \"8 hours\", \"water resistance\": \"IPX4\"}, \"availab"
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 0,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "related_requirement": {
+      "definition": "gold action checks on get_item_details all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": true,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "related_requirement": {
+      "definition": "gold action checks on get_item_details all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": true,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": null,
+     "Q": null
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0622,
+     "tool_errors": 1,
+     "agent_turns": 6,
+     "completion_tokens": 501,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0622,
+     "tool_errors": 1,
+     "agent_turns": 6,
+     "completion_tokens": 530,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 10,
+     "budget_used_frac": 0.0518,
+     "tool_errors": 0,
+     "agent_turns": 5,
+     "completion_tokens": 379,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 6,
+     "budget_used_frac": 0.0311,
+     "tool_errors": 0,
+     "agent_turns": 3,
+     "completion_tokens": 259,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 10,
+     "budget_used_frac": 0.0518,
+     "tool_errors": 0,
+     "agent_turns": 5,
+     "completion_tokens": 465,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0622,
+     "tool_errors": 0,
+     "agent_turns": 6,
+     "completion_tokens": 619,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": -1,
+   "D_PP": -1
+  },
+  {
+   "state_key": "7fb18c31f97e7fd1",
+   "category": "wrong_id",
+   "domain": "airline",
+   "task_id": "4",
+   "t": 1,
+   "Y": {
+    "INVB": 1,
+    "INVQ": 1,
+    "VALB": 1,
+    "VALQ": 1,
+    "PPB": 1,
+    "PPQ": 1
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "wrong_id",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "tool_result_error": true,
+     "result": "Error: Reservation YX8GI8 not found",
+     "invalid_value_absent_from_db": true
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "tool_result_error": true,
+     "result": "Error: Reservation YX8GI8 not found",
+     "invalid_value_absent_from_db": true
+    },
+    "VAL": {
+     "ok": true,
+     "tool_result_error": false,
+     "flags": {
+      "invalid_tool": false,
+      "invalid_args": false,
+      "exec_error": false,
+      "id_not_found": false,
+      "id_needs_review": false
+     },
+     "result": "{\"reservation_id\": \"NM1VX1\", \"user_id\": \"sophia_silva_7557\", \"origin\": \"MSP\", \"destination\": \"EWR\", \"flight_type\": \"roun"
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 1,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "exact_valid_id": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_reservation_details all matched",
+      "n_gold": 5,
+      "satisfied": true
+     },
+     "task_success": true,
+     "chain_complete": true
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "exact_valid_id": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_reservation_details all matched",
+      "n_gold": 5,
+      "satisfied": true
+     },
+     "task_success": true,
+     "chain_complete": true
+    },
+    "VAL_related_requirement": {
+     "B": true,
+     "Q": true
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 20,
+     "budget_used_frac": 0.1015,
+     "tool_errors": 1,
+     "agent_turns": 10,
+     "completion_tokens": 623,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 16,
+     "budget_used_frac": 0.0812,
+     "tool_errors": 1,
+     "agent_turns": 8,
+     "completion_tokens": 363,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 18,
+     "budget_used_frac": 0.0914,
+     "tool_errors": 0,
+     "agent_turns": 9,
+     "completion_tokens": 792,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 16,
+     "budget_used_frac": 0.0812,
+     "tool_errors": 0,
+     "agent_turns": 8,
+     "completion_tokens": 438,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 18,
+     "budget_used_frac": 0.0914,
+     "tool_errors": 0,
+     "agent_turns": 9,
+     "completion_tokens": 489,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 22,
+     "budget_used_frac": 0.1117,
+     "tool_errors": 0,
+     "agent_turns": 11,
+     "completion_tokens": 665,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 0,
+   "D_PP": 0
+  },
+  {
+   "state_key": "a4dc7fecd4a078c8",
+   "category": "wrong_id",
+   "domain": "retail",
+   "task_id": "93",
+   "t": 3,
+   "Y": {
+    "INVB": 0,
+    "INVQ": 0,
+    "VALB": 0,
+    "VALQ": 0,
+    "PPB": 1,
+    "PPQ": 1
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "wrong_id",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "tool_result_error": true,
+     "result": "Error: Order not found",
+     "invalid_value_absent_from_db": true
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "tool_result_error": true,
+     "result": "Error: Order not found",
+     "invalid_value_absent_from_db": true
+    },
+    "VAL": {
+     "ok": true,
+     "tool_result_error": false,
+     "flags": {
+      "invalid_tool": false,
+      "invalid_args": false,
+      "exec_error": false,
+      "id_not_found": false,
+      "id_needs_review": false
+     },
+     "result": "{\"order_id\": \"#W3826449\", \"user_id\": \"lei_wilson_4541\", \"address\": {\"address1\": \"119 Elm Avenue\", \"address2\": \"Suite 999"
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 0,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "exact_valid_id": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_order_details all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "exact_valid_id": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_order_details all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": null,
+     "Q": null
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0725,
+     "tool_errors": 1,
+     "agent_turns": 7,
+     "completion_tokens": 526,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0725,
+     "tool_errors": 1,
+     "agent_turns": 7,
+     "completion_tokens": 529,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0622,
+     "tool_errors": 0,
+     "agent_turns": 6,
+     "completion_tokens": 513,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0622,
+     "tool_errors": 0,
+     "agent_turns": 6,
+     "completion_tokens": 736,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0622,
+     "tool_errors": 0,
+     "agent_turns": 6,
+     "completion_tokens": 651,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0622,
+     "tool_errors": 0,
+     "agent_turns": 6,
+     "completion_tokens": 582,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 0,
+   "D_PP": 0
+  },
+  {
+   "state_key": "5c7c5203ab4d5577",
+   "category": "wrong_tool",
+   "domain": "retail",
+   "task_id": "62",
+   "t": 7,
+   "Y": {
+    "INVB": 1,
+    "INVQ": 1,
+    "VALB": 1,
+    "VALQ": 1,
+    "PPB": 1,
+    "PPQ": 1
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "wrong_tool",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "called": "find_user_id_by_email",
+     "intended_wrong": "find_user_id_by_email",
+     "valid": "find_user_id_by_name_zip",
+     "tool_result_error": true,
+     "result": "Error: RetailTools.find_user_id_by_email() got an unexpected keyword argument 'first_name'"
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "called": "find_user_id_by_email",
+     "intended_wrong": "find_user_id_by_email",
+     "valid": "find_user_id_by_name_zip",
+     "tool_result_error": true,
+     "result": "Error: RetailTools.find_user_id_by_email() got an unexpected keyword argument 'first_name'"
+    },
+    "VAL": {
+     "ok": true,
+     "tool_result_error": false,
+     "flags": {
+      "invalid_tool": false,
+      "invalid_args": false,
+      "exec_error": false,
+      "id_not_found": false,
+      "id_needs_review": false
+     },
+     "result": "chen_johnson_4204"
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 1,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "same_args": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on find_user_id_by_name_zip all matched",
+      "n_gold": 1,
+      "satisfied": true
+     },
+     "task_success": true,
+     "chain_complete": true
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "same_args": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on find_user_id_by_name_zip all matched",
+      "n_gold": 1,
+      "satisfied": true
+     },
+     "task_success": true,
+     "chain_complete": true
+    },
+    "VAL_related_requirement": {
+     "B": true,
+     "Q": true
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0649,
+     "tool_errors": 1,
+     "agent_turns": 6,
+     "completion_tokens": 573,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0649,
+     "tool_errors": 1,
+     "agent_turns": 6,
+     "completion_tokens": 277,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 10,
+     "budget_used_frac": 0.0541,
+     "tool_errors": 0,
+     "agent_turns": 5,
+     "completion_tokens": 237,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0649,
+     "tool_errors": 0,
+     "agent_turns": 6,
+     "completion_tokens": 341,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0649,
+     "tool_errors": 0,
+     "agent_turns": 6,
+     "completion_tokens": 268,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 10,
+     "budget_used_frac": 0.0541,
+     "tool_errors": 0,
+     "agent_turns": 5,
+     "completion_tokens": 225,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 0,
+   "D_PP": 0
+  },
+  {
+   "state_key": "b5583656ddde0662",
+   "category": "wrong_tool",
+   "domain": "airline",
+   "task_id": "14",
+   "t": 5,
+   "Y": {
+    "INVB": 0,
+    "INVQ": 0,
+    "VALB": 0,
+    "VALQ": 0,
+    "PPB": 0,
+    "PPQ": 0
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "wrong_tool",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "called": "search_direct_flight",
+     "intended_wrong": "search_direct_flight",
+     "valid": "search_onestop_flight",
+     "tool_result_error": false,
+     "result": "[]"
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "called": "search_direct_flight",
+     "intended_wrong": "search_direct_flight",
+     "valid": "search_onestop_flight",
+     "tool_result_error": false,
+     "result": "[]"
+    },
+    "VAL": {
+     "ok": true,
+     "tool_result_error": false,
+     "flags": {
+      "invalid_tool": false,
+      "invalid_args": false,
+      "exec_error": false,
+      "id_not_found": false,
+      "id_needs_review": false
+     },
+     "result": "[]"
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 0,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "same_args": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on search_onestop_flight all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "same_args": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on search_onestop_flight all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": null,
+     "Q": null
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 40,
+     "budget_used_frac": 0.2116,
+     "tool_errors": 1,
+     "agent_turns": 20,
+     "completion_tokens": 1610,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 42,
+     "budget_used_frac": 0.2222,
+     "tool_errors": 0,
+     "agent_turns": 21,
+     "completion_tokens": 1068,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 60,
+     "budget_used_frac": 0.3175,
+     "tool_errors": 0,
+     "agent_turns": 30,
+     "completion_tokens": 1556,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 20,
+     "budget_used_frac": 0.1058,
+     "tool_errors": 1,
+     "agent_turns": 10,
+     "completion_tokens": 478,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 40,
+     "budget_used_frac": 0.2116,
+     "tool_errors": 1,
+     "agent_turns": 20,
+     "completion_tokens": 1610,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 42,
+     "budget_used_frac": 0.2222,
+     "tool_errors": 0,
+     "agent_turns": 21,
+     "completion_tokens": 1068,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 0,
+   "D_PP": 0
+  },
+  {
+   "state_key": "a8fd5fc86f2c3d09",
+   "category": "wrong_tool",
+   "domain": "retail",
+   "task_id": "49",
+   "t": 1,
+   "Y": {
+    "INVB": 1,
+    "INVQ": 1,
+    "VALB": 0,
+    "VALQ": 1,
+    "PPB": 1,
+    "PPQ": 1
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "wrong_tool",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "called": "get_order_details",
+     "intended_wrong": "get_order_details",
+     "valid": "get_user_details",
+     "tool_result_error": true,
+     "result": "Error: RetailTools.get_order_details() got an unexpected keyword argument 'user_id'"
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "called": "get_order_details",
+     "intended_wrong": "get_order_details",
+     "valid": "get_user_details",
+     "tool_result_error": true,
+     "result": "Error: RetailTools.get_order_details() got an unexpected keyword argument 'user_id'"
+    },
+    "VAL": {
+     "ok": true,
+     "tool_result_error": false,
+     "flags": {
+      "invalid_tool": false,
+      "invalid_args": false,
+      "exec_error": false,
+      "id_not_found": false,
+      "id_needs_review": false
+     },
+     "result": "{\"user_id\": \"aarav_anderson_8794\", \"name\": {\"first_name\": \"Aarav\", \"last_name\": \"Anderson\"}, \"address\": {\"address1\": \"93"
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 1,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "same_args": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_user_details all matched",
+      "n_gold": 1,
+      "satisfied": true
+     },
+     "task_success": true,
+     "chain_complete": true
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 2,
+      "same_args": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_user_details all matched",
+      "n_gold": 1,
+      "satisfied": true
+     },
+     "task_success": true,
+     "chain_complete": true
+    },
+    "VAL_related_requirement": {
+     "B": true,
+     "Q": true
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 22,
+     "budget_used_frac": 0.1117,
+     "tool_errors": 1,
+     "agent_turns": 11,
+     "completion_tokens": 926,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 20,
+     "budget_used_frac": 0.1015,
+     "tool_errors": 1,
+     "agent_turns": 10,
+     "completion_tokens": 989,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 32,
+     "budget_used_frac": 0.1624,
+     "tool_errors": 1,
+     "agent_turns": 16,
+     "completion_tokens": 1480,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 18,
+     "budget_used_frac": 0.0914,
+     "tool_errors": 0,
+     "agent_turns": 9,
+     "completion_tokens": 790,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 20,
+     "budget_used_frac": 0.1015,
+     "tool_errors": 1,
+     "agent_turns": 10,
+     "completion_tokens": 751,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 34,
+     "budget_used_frac": 0.1726,
+     "tool_errors": 2,
+     "agent_turns": 17,
+     "completion_tokens": 1332,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 1,
+   "D_PP": 1
+  },
+  {
+   "state_key": "12a5183b9c1dbffb",
+   "category": "wrong_tool",
+   "domain": "retail",
+   "task_id": "21",
+   "t": 18,
+   "Y": {
+    "INVB": 0,
+    "INVQ": 0,
+    "VALB": 0,
+    "VALQ": 0,
+    "PPB": 0,
+    "PPQ": 0
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "wrong_tool",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "called": "get_product_details",
+     "intended_wrong": "get_product_details",
+     "valid": "get_order_details",
+     "tool_result_error": true,
+     "result": "Error: RetailTools.get_product_details() got an unexpected keyword argument 'order_id'"
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "called": "get_product_details",
+     "intended_wrong": "get_product_details",
+     "valid": "get_order_details",
+     "tool_result_error": true,
+     "result": "Error: RetailTools.get_product_details() got an unexpected keyword argument 'order_id'"
+    },
+    "VAL": {
+     "ok": true,
+     "tool_result_error": false,
+     "flags": {
+      "invalid_tool": false,
+      "invalid_args": false,
+      "exec_error": false,
+      "id_not_found": false,
+      "id_needs_review": false
+     },
+     "result": "{\"order_id\": \"#W9911714\", \"user_id\": \"ethan_garcia_1261\", \"address\": {\"address1\": \"667 Highland Drive\", \"address2\": \"Sui"
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 0,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "same_args": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_order_details all matched",
+      "n_gold": 3,
+      "satisfied": true
+     },
+     "task_success": false,
+     "chain_complete": true
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "same_args": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_order_details all matched",
+      "n_gold": 3,
+      "satisfied": true
+     },
+     "task_success": false,
+     "chain_complete": true
+    },
+    "VAL_related_requirement": {
+     "B": true,
+     "Q": true
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0859,
+     "tool_errors": 2,
+     "agent_turns": 7,
+     "completion_tokens": 447,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 10,
+     "budget_used_frac": 0.0613,
+     "tool_errors": 1,
+     "agent_turns": 5,
+     "completion_tokens": 213,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 6,
+     "budget_used_frac": 0.0368,
+     "tool_errors": 0,
+     "agent_turns": 3,
+     "completion_tokens": 149,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 10,
+     "budget_used_frac": 0.0613,
+     "tool_errors": 0,
+     "agent_turns": 5,
+     "completion_tokens": 250,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0859,
+     "tool_errors": 1,
+     "agent_turns": 7,
+     "completion_tokens": 494,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 22,
+     "budget_used_frac": 0.135,
+     "tool_errors": 1,
+     "agent_turns": 11,
+     "completion_tokens": 948,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 0,
+   "D_PP": 0
+  },
+  {
+   "state_key": "53ec44a9a0a79d81",
+   "category": "wrong_tool",
+   "domain": "retail",
+   "task_id": "81",
+   "t": 2,
+   "Y": {
+    "INVB": 1,
+    "INVQ": 1,
+    "VALB": 0,
+    "VALQ": 0,
+    "PPB": 0,
+    "PPQ": 0
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "wrong_tool",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "called": "get_product_details",
+     "intended_wrong": "get_product_details",
+     "valid": "get_order_details",
+     "tool_result_error": true,
+     "result": "Error: RetailTools.get_product_details() got an unexpected keyword argument 'order_id'"
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "called": "get_product_details",
+     "intended_wrong": "get_product_details",
+     "valid": "get_order_details",
+     "tool_result_error": true,
+     "result": "Error: RetailTools.get_product_details() got an unexpected keyword argument 'order_id'"
+    },
+    "VAL": {
+     "ok": false,
+     "tool_result_error": true,
+     "flags": {
+      "invalid_tool": false,
+      "invalid_args": false,
+      "exec_error": true,
+      "id_not_found": true,
+      "id_needs_review": false
+     },
+     "result": "Error: Order not found"
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 0,
+    "all_ok": false
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 4,
+      "same_args": false
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_order_details all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": true,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 4,
+      "same_args": false
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_order_details all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": true,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": null,
+     "Q": null
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 26,
+     "budget_used_frac": 0.1333,
+     "tool_errors": 2,
+     "agent_turns": 13,
+     "completion_tokens": 747,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 26,
+     "budget_used_frac": 0.1333,
+     "tool_errors": 2,
+     "agent_turns": 13,
+     "completion_tokens": 745,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 22,
+     "budget_used_frac": 0.1128,
+     "tool_errors": 1,
+     "agent_turns": 11,
+     "completion_tokens": 523,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0718,
+     "tool_errors": 1,
+     "agent_turns": 7,
+     "completion_tokens": 441,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 16,
+     "budget_used_frac": 0.0821,
+     "tool_errors": 0,
+     "agent_turns": 8,
+     "completion_tokens": 622,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 32,
+     "budget_used_frac": 0.1641,
+     "tool_errors": 1,
+     "agent_turns": 16,
+     "completion_tokens": 1207,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 0,
+   "D_PP": 0
+  },
+  {
+   "state_key": "5b85eb8a81741334",
+   "category": "wrong_tool",
+   "domain": "retail",
+   "task_id": "56",
+   "t": 2,
+   "Y": {
+    "INVB": 0,
+    "INVQ": 0,
+    "VALB": 0,
+    "VALQ": 1,
+    "PPB": 0,
+    "PPQ": 0
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "wrong_tool",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "called": "get_order_details",
+     "intended_wrong": "get_order_details",
+     "valid": "get_user_details",
+     "tool_result_error": true,
+     "result": "Error: RetailTools.get_order_details() got an unexpected keyword argument 'user_id'"
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "called": "get_order_details",
+     "intended_wrong": "get_order_details",
+     "valid": "get_user_details",
+     "tool_result_error": true,
+     "result": "Error: RetailTools.get_order_details() got an unexpected keyword argument 'user_id'"
+    },
+    "VAL": {
+     "ok": true,
+     "tool_result_error": false,
+     "flags": {
+      "invalid_tool": false,
+      "invalid_args": false,
+      "exec_error": false,
+      "id_not_found": false,
+      "id_needs_review": false
+     },
+     "result": "{\"user_id\": \"ivan_hernandez_6923\", \"name\": {\"first_name\": \"Ivan\", \"last_name\": \"Hernandez\"}, \"address\": {\"address1\": \"89"
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 1,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "same_args": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_user_details all matched",
+      "n_gold": 1,
+      "satisfied": true
+     },
+     "task_success": false,
+     "chain_complete": true
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "same_args": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_user_details all matched",
+      "n_gold": 1,
+      "satisfied": true
+     },
+     "task_success": false,
+     "chain_complete": true
+    },
+    "VAL_related_requirement": {
+     "B": true,
+     "Q": true
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 20,
+     "budget_used_frac": 0.1026,
+     "tool_errors": 1,
+     "agent_turns": 10,
+     "completion_tokens": 718,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 16,
+     "budget_used_frac": 0.0821,
+     "tool_errors": 1,
+     "agent_turns": 8,
+     "completion_tokens": 615,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 22,
+     "budget_used_frac": 0.1128,
+     "tool_errors": 0,
+     "agent_turns": 11,
+     "completion_tokens": 862,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 16,
+     "budget_used_frac": 0.0821,
+     "tool_errors": 0,
+     "agent_turns": 8,
+     "completion_tokens": 527,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0718,
+     "tool_errors": 0,
+     "agent_turns": 7,
+     "completion_tokens": 476,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 20,
+     "budget_used_frac": 0.1026,
+     "tool_errors": 0,
+     "agent_turns": 10,
+     "completion_tokens": 1017,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 1,
+   "D_PP": 1
+  },
+  {
+   "state_key": "0a175a7a2b05fddc",
+   "category": "wrong_tool",
+   "domain": "retail",
+   "task_id": "99",
+   "t": 5,
+   "Y": {
+    "INVB": 0,
+    "INVQ": 0,
+    "VALB": 0,
+    "VALQ": 0,
+    "PPB": 0,
+    "PPQ": 0
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "wrong_tool",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "called": "get_product_details",
+     "intended_wrong": "get_product_details",
+     "valid": "get_order_details",
+     "tool_result_error": true,
+     "result": "Error: RetailTools.get_product_details() got an unexpected keyword argument 'order_id'"
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "called": "get_product_details",
+     "intended_wrong": "get_product_details",
+     "valid": "get_order_details",
+     "tool_result_error": true,
+     "result": "Error: RetailTools.get_product_details() got an unexpected keyword argument 'order_id'"
+    },
+    "VAL": {
+     "ok": true,
+     "tool_result_error": false,
+     "flags": {
+      "invalid_tool": false,
+      "invalid_args": false,
+      "exec_error": false,
+      "id_not_found": false,
+      "id_needs_review": false
+     },
+     "result": "{\"order_id\": \"#W8855135\", \"user_id\": \"sofia_li_9219\", \"address\": {\"address1\": \"786 Elm Street\", \"address2\": \"Suite 546\","
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 0,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "same_args": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_order_details all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "same_args": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_order_details all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": null,
+     "Q": null
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 20,
+     "budget_used_frac": 0.1058,
+     "tool_errors": 2,
+     "agent_turns": 10,
+     "completion_tokens": 1710,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 34,
+     "budget_used_frac": 0.1799,
+     "tool_errors": 3,
+     "agent_turns": 17,
+     "completion_tokens": 2142,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0635,
+     "tool_errors": 0,
+     "agent_turns": 6,
+     "completion_tokens": 1146,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 18,
+     "budget_used_frac": 0.0952,
+     "tool_errors": 0,
+     "agent_turns": 9,
+     "completion_tokens": 1549,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 24,
+     "budget_used_frac": 0.127,
+     "tool_errors": 1,
+     "agent_turns": 12,
+     "completion_tokens": 2125,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0741,
+     "tool_errors": 0,
+     "agent_turns": 7,
+     "completion_tokens": 1124,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 0,
+   "D_PP": 0
+  },
+  {
+   "state_key": "f102539471c4c537",
+   "category": "wrong_tool",
+   "domain": "retail",
+   "task_id": "29",
+   "t": 17,
+   "Y": {
+    "INVB": 0,
+    "INVQ": 0,
+    "VALB": 0,
+    "VALQ": 0,
+    "PPB": 0,
+    "PPQ": 0
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "wrong_tool",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "called": "get_order_details",
+     "intended_wrong": "get_order_details",
+     "valid": "get_product_details",
+     "tool_result_error": true,
+     "result": "Error: RetailTools.get_order_details() got an unexpected keyword argument 'product_id'"
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "called": "get_order_details",
+     "intended_wrong": "get_order_details",
+     "valid": "get_product_details",
+     "tool_result_error": true,
+     "result": "Error: RetailTools.get_order_details() got an unexpected keyword argument 'product_id'"
+    },
+    "VAL": {
+     "ok": true,
+     "tool_result_error": false,
+     "flags": {
+      "invalid_tool": false,
+      "invalid_args": false,
+      "exec_error": false,
+      "id_not_found": false,
+      "id_needs_review": false
+     },
+     "result": "{\"name\": \"Skateboard\", \"product_id\": \"1968349452\", \"variants\": {\"6843647669\": {\"item_id\": \"6843647669\", \"options\": {\"dec"
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 0,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "same_args": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_product_details all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "same_args": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_product_details all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": true,
+     "Q": true
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 165,
+     "budget_used_frac": 1.0,
+     "tool_errors": 2,
+     "agent_turns": 83,
+     "completion_tokens": 19476,
+     "termination": "max_steps"
+    },
+    "INVQ": {
+     "extra_steps": 165,
+     "budget_used_frac": 1.0,
+     "tool_errors": 3,
+     "agent_turns": 83,
+     "completion_tokens": 13442,
+     "termination": "max_steps"
+    },
+    "VALB": {
+     "extra_steps": 16,
+     "budget_used_frac": 0.097,
+     "tool_errors": 2,
+     "agent_turns": 8,
+     "completion_tokens": 989,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 16,
+     "budget_used_frac": 0.097,
+     "tool_errors": 2,
+     "agent_turns": 8,
+     "completion_tokens": 920,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 30,
+     "budget_used_frac": 0.1818,
+     "tool_errors": 2,
+     "agent_turns": 15,
+     "completion_tokens": 1380,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 28,
+     "budget_used_frac": 0.1697,
+     "tool_errors": 1,
+     "agent_turns": 14,
+     "completion_tokens": 889,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 0,
+   "D_PP": 0
+  },
+  {
+   "state_key": "4b63072ecd8d71b0",
+   "category": "wrong_tool",
+   "domain": "retail",
+   "task_id": "111",
+   "t": 3,
+   "Y": {
+    "INVB": 0,
+    "INVQ": 0,
+    "VALB": 0,
+    "VALQ": 0,
+    "PPB": 0,
+    "PPQ": 0
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "wrong_tool",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "called": "get_order_details",
+     "intended_wrong": "get_order_details",
+     "valid": "get_product_details",
+     "tool_result_error": true,
+     "result": "Error: RetailTools.get_order_details() got an unexpected keyword argument 'product_id'"
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "called": "get_order_details",
+     "intended_wrong": "get_order_details",
+     "valid": "get_product_details",
+     "tool_result_error": true,
+     "result": "Error: RetailTools.get_order_details() got an unexpected keyword argument 'product_id'"
+    },
+    "VAL": {
+     "ok": true,
+     "tool_result_error": false,
+     "flags": {
+      "invalid_tool": false,
+      "invalid_args": false,
+      "exec_error": false,
+      "id_not_found": false,
+      "id_needs_review": false
+     },
+     "result": "{\"name\": \"Wristwatch\", \"product_id\": \"6066914160\", \"variants\": {\"4510078629\": {\"item_id\": \"4510078629\", \"options\": {\"str"
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 0,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "same_args": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_product_details all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "same_args": true
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on get_product_details all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": null,
+     "Q": null
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 20,
+     "budget_used_frac": 0.1036,
+     "tool_errors": 1,
+     "agent_turns": 10,
+     "completion_tokens": 1987,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 20,
+     "budget_used_frac": 0.1036,
+     "tool_errors": 1,
+     "agent_turns": 10,
+     "completion_tokens": 1736,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 26,
+     "budget_used_frac": 0.1347,
+     "tool_errors": 0,
+     "agent_turns": 13,
+     "completion_tokens": 1801,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 24,
+     "budget_used_frac": 0.1244,
+     "tool_errors": 0,
+     "agent_turns": 12,
+     "completion_tokens": 1745,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0725,
+     "tool_errors": 1,
+     "agent_turns": 7,
+     "completion_tokens": 868,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 18,
+     "budget_used_frac": 0.0933,
+     "tool_errors": 0,
+     "agent_turns": 9,
+     "completion_tokens": 2214,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 0,
+   "D_PP": 0
+  },
+  {
+   "state_key": "f0f235eafe210f03",
+   "category": "wrong_tool",
+   "domain": "airline",
+   "task_id": "13",
+   "t": 1,
+   "Y": {
+    "INVB": 1,
+    "INVQ": 1,
+    "VALB": 0,
+    "VALQ": 1,
+    "PPB": 0,
+    "PPQ": 1
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "wrong_tool",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "called": "search_direct_flight",
+     "intended_wrong": "search_direct_flight",
+     "valid": "search_onestop_flight",
+     "tool_result_error": false,
+     "result": "[]"
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "called": "search_direct_flight",
+     "intended_wrong": "search_direct_flight",
+     "valid": "search_onestop_flight",
+     "tool_result_error": false,
+     "result": "[]"
+    },
+    "VAL": {
+     "ok": true,
+     "tool_result_error": false,
+     "flags": {
+      "invalid_tool": false,
+      "invalid_args": false,
+      "exec_error": false,
+      "id_not_found": false,
+      "id_needs_review": false
+     },
+     "result": "[]"
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 1,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "related_requirement": {
+      "definition": "gold action checks on search_onestop_flight all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": true,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": {
+      "agent_turn": 1,
+      "same_args": false
+     },
+     "corrected": true,
+     "related_requirement": {
+      "definition": "gold action checks on search_onestop_flight all matched",
+      "n_gold": 0,
+      "satisfied": null
+     },
+     "task_success": true,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": null,
+     "Q": null
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 6,
+     "budget_used_frac": 0.0305,
+     "tool_errors": 0,
+     "agent_turns": 3,
+     "completion_tokens": 121,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0609,
+     "tool_errors": 0,
+     "agent_turns": 6,
+     "completion_tokens": 302,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 20,
+     "budget_used_frac": 0.1015,
+     "tool_errors": 0,
+     "agent_turns": 10,
+     "completion_tokens": 1260,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 26,
+     "budget_used_frac": 0.132,
+     "tool_errors": 1,
+     "agent_turns": 13,
+     "completion_tokens": 1414,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0609,
+     "tool_errors": 0,
+     "agent_turns": 6,
+     "completion_tokens": 877,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 16,
+     "budget_used_frac": 0.0812,
+     "tool_errors": 0,
+     "agent_turns": 8,
+     "completion_tokens": 358,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 1,
+   "D_PP": 0
+  },
+  {
+   "state_key": "fe6d2e0940871d2d",
+   "category": "premature_write",
+   "domain": "airline",
+   "task_id": "17",
+   "t": 9,
+   "Y": {
+    "INVB": 0,
+    "INVQ": 0,
+    "VALB": 0,
+    "VALQ": 0,
+    "PPB": 0,
+    "PPQ": 0
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "premature_write",
+    "INVB": {
+     "ok": false,
+     "forced_action_reproduced": true,
+     "write_executed": false,
+     "db_paths_changed": [],
+     "result": "Error: Certificate cannot be used to update reservation"
+    },
+    "INVQ": {
+     "ok": false,
+     "forced_action_reproduced": true,
+     "write_executed": false,
+     "db_paths_changed": [],
+     "result": "Error: Certificate cannot be used to update reservation"
+    },
+    "VAL": {
+     "ok": true,
+     "kind": "talk",
+     "is_text_confirmation_request": true,
+     "db_changed": false
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 0,
+    "all_ok": false
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": false,
+     "correction": null,
+     "corrected": false,
+     "user_objection_msg": null,
+     "later_writes": [
+      [
+       1,
+       "update_reservation_flights"
+      ],
+      [
+       2,
+       "update_reservation_passengers"
+      ],
+      [
+       3,
+       "update_reservation_baggages"
+      ]
+     ],
+     "related_requirement": {
+      "definition": "end DB equals gold on every path the premature write changed",
+      "paths": [],
+      "failing_paths": [],
+      "satisfied": null
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": false,
+     "correction": null,
+     "corrected": false,
+     "user_objection_msg": null,
+     "later_writes": [
+      [
+       2,
+       "update_reservation_flights"
+      ],
+      [
+       3,
+       "update_reservation_passengers"
+      ],
+      [
+       4,
+       "update_reservation_baggages"
+      ]
+     ],
+     "related_requirement": {
+      "definition": "end DB equals gold on every path the premature write changed",
+      "paths": [],
+      "failing_paths": [],
+      "satisfied": null
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": null,
+     "Q": null
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 10,
+     "budget_used_frac": 0.0552,
+     "tool_errors": 1,
+     "agent_turns": 5,
+     "completion_tokens": 445,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0663,
+     "tool_errors": 1,
+     "agent_turns": 6,
+     "completion_tokens": 572,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0773,
+     "tool_errors": 1,
+     "agent_turns": 7,
+     "completion_tokens": 600,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 22,
+     "budget_used_frac": 0.1215,
+     "tool_errors": 2,
+     "agent_turns": 11,
+     "completion_tokens": 897,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0663,
+     "tool_errors": 1,
+     "agent_turns": 6,
+     "completion_tokens": 607,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 16,
+     "budget_used_frac": 0.0884,
+     "tool_errors": 1,
+     "agent_turns": 8,
+     "completion_tokens": 812,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 0,
+   "D_PP": 0
+  },
+  {
+   "state_key": "f4bcf39722fb8fed",
+   "category": "premature_write",
+   "domain": "airline",
+   "task_id": "23",
+   "t": 17,
+   "Y": {
+    "INVB": 0,
+    "INVQ": 0,
+    "VALB": 0,
+    "VALQ": 0,
+    "PPB": 0,
+    "PPQ": 0
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "premature_write",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "write_executed": true,
+     "db_paths_changed": [
+      "/reservations/K1NW8N/payment_history",
+      "/reservations/K1NW8N/status"
+     ],
+     "result": "{\"reservation_id\": \"K1NW8N\", \"user_id\": \"mohamed_silva_9265\", \"origin\": \"JFK\", \"destination\": \"SFO\", \"flight_type\": \"round_trip\", \"cabin\": \"basic_economy\", \"fli"
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "write_executed": true,
+     "db_paths_changed": [
+      "/reservations/K1NW8N/payment_history",
+      "/reservations/K1NW8N/status"
+     ],
+     "result": "{\"reservation_id\": \"K1NW8N\", \"user_id\": \"mohamed_silva_9265\", \"origin\": \"JFK\", \"destination\": \"SFO\", \"flight_type\": \"round_trip\", \"cabin\": \"basic_economy\", \"fli"
+    },
+    "VAL": {
+     "ok": true,
+     "kind": "talk",
+     "is_text_confirmation_request": true,
+     "db_changed": false
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 0,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "user_objection_msg": null,
+     "later_writes": [],
+     "related_requirement": {
+      "definition": "end DB equals gold on every path the premature write changed",
+      "paths": [
+       "/reservations/K1NW8N/payment_history",
+       "/reservations/K1NW8N/status"
+      ],
+      "failing_paths": [],
+      "satisfied": true
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "user_objection_msg": 2,
+     "later_writes": [],
+     "related_requirement": {
+      "definition": "end DB equals gold on every path the premature write changed",
+      "paths": [
+       "/reservations/K1NW8N/payment_history",
+       "/reservations/K1NW8N/status"
+      ],
+      "failing_paths": [],
+      "satisfied": true
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": true,
+     "Q": true
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 4,
+     "budget_used_frac": 0.0242,
+     "tool_errors": 0,
+     "agent_turns": 2,
+     "completion_tokens": 443,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 4,
+     "budget_used_frac": 0.0242,
+     "tool_errors": 0,
+     "agent_turns": 2,
+     "completion_tokens": 466,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0848,
+     "tool_errors": 3,
+     "agent_turns": 7,
+     "completion_tokens": 1729,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 10,
+     "budget_used_frac": 0.0606,
+     "tool_errors": 1,
+     "agent_turns": 5,
+     "completion_tokens": 721,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0848,
+     "tool_errors": 2,
+     "agent_turns": 7,
+     "completion_tokens": 2262,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0727,
+     "tool_errors": 1,
+     "agent_turns": 6,
+     "completion_tokens": 1375,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 0,
+   "D_PP": 0
+  },
+  {
+   "state_key": "0e59c0f9a8260920",
+   "category": "premature_write",
+   "domain": "airline",
+   "task_id": "25",
+   "t": 5,
+   "Y": {
+    "INVB": 0,
+    "INVQ": 0,
+    "VALB": 0,
+    "VALQ": 0,
+    "PPB": 0,
+    "PPQ": 0
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "premature_write",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "write_executed": true,
+     "db_paths_changed": [
+      "/flights/HAT097/dates/2024-05-17/available_seats/economy",
+      "/flights/HAT251/dates/2024-05-17/available_seats/economy",
+      "/reservations/HATHAT",
+      "/users/ivan_muller_7015/payment_methods/certificate_8998287",
+      "/users/ivan_muller_7015/payment_methods/gift_card_8516878/amount",
+      "/users/ivan_muller_7015/reservations"
+     ],
+     "result": "{\"reservation_id\": \"HATHAT\", \"user_id\": \"ivan_muller_7015\", \"origin\": \"DTW\", \"destination\": \"SEA\", \"flight_type\": \"one_way\", \"cabin\": \"economy\", \"flights\": [{\"f"
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "write_executed": true,
+     "db_paths_changed": [
+      "/flights/HAT097/dates/2024-05-17/available_seats/economy",
+      "/flights/HAT251/dates/2024-05-17/available_seats/economy",
+      "/reservations/HATHAT",
+      "/users/ivan_muller_7015/payment_methods/certificate_8998287",
+      "/users/ivan_muller_7015/payment_methods/gift_card_8516878/amount",
+      "/users/ivan_muller_7015/reservations"
+     ],
+     "result": "{\"reservation_id\": \"HATHAT\", \"user_id\": \"ivan_muller_7015\", \"origin\": \"DTW\", \"destination\": \"SEA\", \"flight_type\": \"one_way\", \"cabin\": \"economy\", \"flights\": [{\"f"
+    },
+    "VAL": {
+     "ok": true,
+     "kind": "talk",
+     "is_text_confirmation_request": true,
+     "db_changed": false
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 0,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "user_objection_msg": null,
+     "later_writes": [],
+     "related_requirement": {
+      "definition": "end DB equals gold on every path the premature write changed",
+      "paths": [
+       "/flights/HAT097/dates/2024-05-17/available_seats/economy",
+       "/flights/HAT251/dates/2024-05-17/available_seats/economy",
+       "/reservations/HATHAT",
+       "/users/ivan_muller_7015/payment_methods/certificate_8998287",
+       "/users/ivan_muller_7015/payment_methods/gift_card_8516878/amount",
+       "/users/ivan_muller_7015/reservations"
+      ],
+      "failing_paths": [
+       "db:/reservations/HATHAT/payment_history[0]/amount",
+       "db:/reservations/HATHAT/payment_history[0]/payment_id",
+       "db:/reservations/HATHAT/payment_history[1]/amount",
+       "db:/reservations/HATHAT/payment_history[1]/payment_id",
+       "db:/users/ivan_muller_7015/payment_methods/certificate_8998287",
+       "db:/users/ivan_muller_7015/payment_methods/gift_card_8516878/amount"
+      ],
+      "satisfied": false
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "user_objection_msg": null,
+     "later_writes": [],
+     "related_requirement": {
+      "definition": "end DB equals gold on every path the premature write changed",
+      "paths": [
+       "/flights/HAT097/dates/2024-05-17/available_seats/economy",
+       "/flights/HAT251/dates/2024-05-17/available_seats/economy",
+       "/reservations/HATHAT",
+       "/users/ivan_muller_7015/payment_methods/certificate_8998287",
+       "/users/ivan_muller_7015/payment_methods/gift_card_8516878/amount",
+       "/users/ivan_muller_7015/reservations"
+      ],
+      "failing_paths": [
+       "db:/reservations/HATHAT/payment_history[0]/amount",
+       "db:/reservations/HATHAT/payment_history[0]/payment_id",
+       "db:/reservations/HATHAT/payment_history[1]/amount",
+       "db:/reservations/HATHAT/payment_history[1]/payment_id",
+       "db:/users/ivan_muller_7015/payment_methods/certificate_8998287",
+       "db:/users/ivan_muller_7015/payment_methods/gift_card_8516878/amount"
+      ],
+      "satisfied": false
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": false,
+     "Q": false
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 4,
+     "budget_used_frac": 0.0212,
+     "tool_errors": 0,
+     "agent_turns": 2,
+     "completion_tokens": 191,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 4,
+     "budget_used_frac": 0.0212,
+     "tool_errors": 0,
+     "agent_turns": 2,
+     "completion_tokens": 220,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 6,
+     "budget_used_frac": 0.0317,
+     "tool_errors": 0,
+     "agent_turns": 3,
+     "completion_tokens": 426,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 6,
+     "budget_used_frac": 0.0317,
+     "tool_errors": 0,
+     "agent_turns": 3,
+     "completion_tokens": 625,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 18,
+     "budget_used_frac": 0.0952,
+     "tool_errors": 2,
+     "agent_turns": 9,
+     "completion_tokens": 1338,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 16,
+     "budget_used_frac": 0.0847,
+     "tool_errors": 5,
+     "agent_turns": 8,
+     "completion_tokens": 1811,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 0,
+   "D_PP": 0
+  },
+  {
+   "state_key": "608a828d45682424",
+   "category": "premature_write",
+   "domain": "retail",
+   "task_id": "75",
+   "t": 5,
+   "Y": {
+    "INVB": 1,
+    "INVQ": 1,
+    "VALB": 1,
+    "VALQ": 1,
+    "PPB": 1,
+    "PPQ": 1
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "premature_write",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "write_executed": true,
+     "db_paths_changed": [
+      "/orders/#W6908222/exchange_items",
+      "/orders/#W6908222/exchange_new_items",
+      "/orders/#W6908222/exchange_payment_method_id",
+      "/orders/#W6908222/exchange_price_difference",
+      "/orders/#W6908222/status"
+     ],
+     "result": "{\"order_id\": \"#W6908222\", \"user_id\": \"liam_moore_4057\", \"address\": {\"address1\": \"244 Elm Street\", \"address2\": \"Suite 422\", \"city\": \"Columbus\", \"country\": \"USA\","
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "write_executed": true,
+     "db_paths_changed": [
+      "/orders/#W6908222/exchange_items",
+      "/orders/#W6908222/exchange_new_items",
+      "/orders/#W6908222/exchange_payment_method_id",
+      "/orders/#W6908222/exchange_price_difference",
+      "/orders/#W6908222/status"
+     ],
+     "result": "{\"order_id\": \"#W6908222\", \"user_id\": \"liam_moore_4057\", \"address\": {\"address1\": \"244 Elm Street\", \"address2\": \"Suite 422\", \"city\": \"Columbus\", \"country\": \"USA\","
+    },
+    "VAL": {
+     "ok": true,
+     "kind": "talk",
+     "is_text_confirmation_request": true,
+     "db_changed": false
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 1,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "user_objection_msg": null,
+     "later_writes": [],
+     "related_requirement": {
+      "definition": "end DB equals gold on every path the premature write changed",
+      "paths": [
+       "/orders/#W6908222/exchange_items",
+       "/orders/#W6908222/exchange_new_items",
+       "/orders/#W6908222/exchange_payment_method_id",
+       "/orders/#W6908222/exchange_price_difference",
+       "/orders/#W6908222/status"
+      ],
+      "failing_paths": [],
+      "satisfied": true
+     },
+     "task_success": true,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "user_objection_msg": null,
+     "later_writes": [],
+     "related_requirement": {
+      "definition": "end DB equals gold on every path the premature write changed",
+      "paths": [
+       "/orders/#W6908222/exchange_items",
+       "/orders/#W6908222/exchange_new_items",
+       "/orders/#W6908222/exchange_payment_method_id",
+       "/orders/#W6908222/exchange_price_difference",
+       "/orders/#W6908222/status"
+      ],
+      "failing_paths": [],
+      "satisfied": true
+     },
+     "task_success": true,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": true,
+     "Q": true
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 4,
+     "budget_used_frac": 0.0212,
+     "tool_errors": 0,
+     "agent_turns": 2,
+     "completion_tokens": 110,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 4,
+     "budget_used_frac": 0.0212,
+     "tool_errors": 0,
+     "agent_turns": 2,
+     "completion_tokens": 137,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 6,
+     "budget_used_frac": 0.0317,
+     "tool_errors": 0,
+     "agent_turns": 3,
+     "completion_tokens": 171,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 6,
+     "budget_used_frac": 0.0317,
+     "tool_errors": 0,
+     "agent_turns": 3,
+     "completion_tokens": 176,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 8,
+     "budget_used_frac": 0.0423,
+     "tool_errors": 0,
+     "agent_turns": 4,
+     "completion_tokens": 393,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 8,
+     "budget_used_frac": 0.0423,
+     "tool_errors": 0,
+     "agent_turns": 4,
+     "completion_tokens": 392,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 0,
+   "D_PP": 0
+  },
+  {
+   "state_key": "ceabd7012fbeeaba",
+   "category": "premature_write",
+   "domain": "retail",
+   "task_id": "37",
+   "t": 9,
+   "Y": {
+    "INVB": 0,
+    "INVQ": 0,
+    "VALB": 0,
+    "VALQ": 0,
+    "PPB": 0,
+    "PPQ": 0
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "premature_write",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "write_executed": true,
+     "db_paths_changed": [
+      "/orders/#W9348897/cancel_reason",
+      "/orders/#W9348897/payment_history",
+      "/orders/#W9348897/status"
+     ],
+     "result": "{\"order_id\": \"#W9348897\", \"user_id\": \"daiki_sanchez_3253\", \"address\": {\"address1\": \"113 Hickory Lane\", \"address2\": \"Suite 991\", \"city\": \"Denver\", \"country\": \"US"
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "write_executed": true,
+     "db_paths_changed": [
+      "/orders/#W9348897/cancel_reason",
+      "/orders/#W9348897/payment_history",
+      "/orders/#W9348897/status"
+     ],
+     "result": "{\"order_id\": \"#W9348897\", \"user_id\": \"daiki_sanchez_3253\", \"address\": {\"address1\": \"113 Hickory Lane\", \"address2\": \"Suite 991\", \"city\": \"Denver\", \"country\": \"US"
+    },
+    "VAL": {
+     "ok": true,
+     "kind": "talk",
+     "is_text_confirmation_request": true,
+     "db_changed": false
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 0,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "user_objection_msg": null,
+     "later_writes": [],
+     "related_requirement": {
+      "definition": "end DB equals gold on every path the premature write changed",
+      "paths": [
+       "/orders/#W9348897/cancel_reason",
+       "/orders/#W9348897/payment_history",
+       "/orders/#W9348897/status"
+      ],
+      "failing_paths": [
+       "db:/orders/#W9348897/cancel_reason",
+       "db:/orders/#W9348897/payment_history[1]/amount",
+       "db:/orders/#W9348897/status"
+      ],
+      "satisfied": false
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "user_objection_msg": null,
+     "later_writes": [],
+     "related_requirement": {
+      "definition": "end DB equals gold on every path the premature write changed",
+      "paths": [
+       "/orders/#W9348897/cancel_reason",
+       "/orders/#W9348897/payment_history",
+       "/orders/#W9348897/status"
+      ],
+      "failing_paths": [
+       "db:/orders/#W9348897/cancel_reason",
+       "db:/orders/#W9348897/payment_history[1]/amount",
+       "db:/orders/#W9348897/status"
+      ],
+      "satisfied": false
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": false,
+     "Q": false
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 4,
+     "budget_used_frac": 0.0221,
+     "tool_errors": 0,
+     "agent_turns": 2,
+     "completion_tokens": 80,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 4,
+     "budget_used_frac": 0.0221,
+     "tool_errors": 0,
+     "agent_turns": 2,
+     "completion_tokens": 80,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 8,
+     "budget_used_frac": 0.0442,
+     "tool_errors": 0,
+     "agent_turns": 4,
+     "completion_tokens": 372,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 6,
+     "budget_used_frac": 0.0331,
+     "tool_errors": 0,
+     "agent_turns": 3,
+     "completion_tokens": 124,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 8,
+     "budget_used_frac": 0.0442,
+     "tool_errors": 0,
+     "agent_turns": 4,
+     "completion_tokens": 239,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 10,
+     "budget_used_frac": 0.0552,
+     "tool_errors": 0,
+     "agent_turns": 5,
+     "completion_tokens": 353,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 0,
+   "D_PP": 0
+  },
+  {
+   "state_key": "04ce6d6eccb88734",
+   "category": "premature_write",
+   "domain": "airline",
+   "task_id": "30",
+   "t": 5,
+   "Y": {
+    "INVB": 0,
+    "INVQ": 0,
+    "VALB": 0,
+    "VALQ": 0,
+    "PPB": 0,
+    "PPQ": 0
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "premature_write",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "write_executed": true,
+     "db_paths_changed": [
+      "/reservations/1N99U6/flights",
+      "/reservations/1N99U6/payment_history",
+      "/users/james_taylor_7043/payment_methods/gift_card_5634230/amount"
+     ],
+     "result": "{\"reservation_id\": \"1N99U6\", \"user_id\": \"james_taylor_7043\", \"origin\": \"LAS\", \"destination\": \"IAH\", \"flight_type\": \"round_trip\", \"cabin\": \"economy\", \"flights\": "
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "write_executed": true,
+     "db_paths_changed": [
+      "/reservations/1N99U6/flights",
+      "/reservations/1N99U6/payment_history",
+      "/users/james_taylor_7043/payment_methods/gift_card_5634230/amount"
+     ],
+     "result": "{\"reservation_id\": \"1N99U6\", \"user_id\": \"james_taylor_7043\", \"origin\": \"LAS\", \"destination\": \"IAH\", \"flight_type\": \"round_trip\", \"cabin\": \"economy\", \"flights\": "
+    },
+    "VAL": {
+     "ok": true,
+     "kind": "talk",
+     "is_text_confirmation_request": true,
+     "db_changed": false
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 0,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "user_objection_msg": null,
+     "later_writes": [],
+     "related_requirement": {
+      "definition": "end DB equals gold on every path the premature write changed",
+      "paths": [
+       "/reservations/1N99U6/flights",
+       "/reservations/1N99U6/payment_history",
+       "/users/james_taylor_7043/payment_methods/gift_card_5634230/amount"
+      ],
+      "failing_paths": [
+       "db:/reservations/1N99U6/flights[1]/destination",
+       "db:/reservations/1N99U6/flights[1]/flight_number",
+       "db:/reservations/1N99U6/flights[1]/origin",
+       "db:/reservations/1N99U6/flights[1]/price",
+       "db:/reservations/1N99U6/payment_history[1]/amount",
+       "db:/users/james_taylor_7043/payment_methods/gift_card_5634230/amount"
+      ],
+      "satisfied": false
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "user_objection_msg": null,
+     "later_writes": [],
+     "related_requirement": {
+      "definition": "end DB equals gold on every path the premature write changed",
+      "paths": [
+       "/reservations/1N99U6/flights",
+       "/reservations/1N99U6/payment_history",
+       "/users/james_taylor_7043/payment_methods/gift_card_5634230/amount"
+      ],
+      "failing_paths": [
+       "db:/reservations/1N99U6/flights[1]/destination",
+       "db:/reservations/1N99U6/flights[1]/flight_number",
+       "db:/reservations/1N99U6/flights[1]/origin",
+       "db:/reservations/1N99U6/flights[1]/price",
+       "db:/reservations/1N99U6/payment_history[1]/amount",
+       "db:/users/james_taylor_7043/payment_methods/gift_card_5634230/amount"
+      ],
+      "satisfied": false
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": false,
+     "Q": false
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 4,
+     "budget_used_frac": 0.0212,
+     "tool_errors": 0,
+     "agent_turns": 2,
+     "completion_tokens": 268,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 6,
+     "budget_used_frac": 0.0317,
+     "tool_errors": 0,
+     "agent_turns": 3,
+     "completion_tokens": 356,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 6,
+     "budget_used_frac": 0.0317,
+     "tool_errors": 0,
+     "agent_turns": 3,
+     "completion_tokens": 342,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 6,
+     "budget_used_frac": 0.0317,
+     "tool_errors": 0,
+     "agent_turns": 3,
+     "completion_tokens": 369,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 10,
+     "budget_used_frac": 0.0529,
+     "tool_errors": 0,
+     "agent_turns": 5,
+     "completion_tokens": 1152,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 10,
+     "budget_used_frac": 0.0529,
+     "tool_errors": 0,
+     "agent_turns": 5,
+     "completion_tokens": 1320,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 0,
+   "D_PP": 0
+  },
+  {
+   "state_key": "98e4eb5842b50913",
+   "category": "premature_write",
+   "domain": "retail",
+   "task_id": "13",
+   "t": 8,
+   "Y": {
+    "INVB": 1,
+    "INVQ": 1,
+    "VALB": 1,
+    "VALQ": 1,
+    "PPB": 1,
+    "PPQ": 1
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "premature_write",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "write_executed": true,
+     "db_paths_changed": [
+      "/orders/#W5490111/return_items",
+      "/orders/#W5490111/return_payment_method_id",
+      "/orders/#W5490111/status"
+     ],
+     "result": "{\"order_id\": \"#W5490111\", \"user_id\": \"mia_garcia_4516\", \"address\": {\"address1\": \"537 Main Street\", \"address2\": \"Suite 572\", \"city\": \"Indianapolis\", \"country\": \""
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "write_executed": true,
+     "db_paths_changed": [
+      "/orders/#W5490111/return_items",
+      "/orders/#W5490111/return_payment_method_id",
+      "/orders/#W5490111/status"
+     ],
+     "result": "{\"order_id\": \"#W5490111\", \"user_id\": \"mia_garcia_4516\", \"address\": {\"address1\": \"537 Main Street\", \"address2\": \"Suite 572\", \"city\": \"Indianapolis\", \"country\": \""
+    },
+    "VAL": {
+     "ok": true,
+     "kind": "talk",
+     "is_text_confirmation_request": true,
+     "db_changed": false
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 1,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "user_objection_msg": null,
+     "later_writes": [],
+     "related_requirement": {
+      "definition": "end DB equals gold on every path the premature write changed",
+      "paths": [
+       "/orders/#W5490111/return_items",
+       "/orders/#W5490111/return_payment_method_id",
+       "/orders/#W5490111/status"
+      ],
+      "failing_paths": [],
+      "satisfied": true
+     },
+     "task_success": true,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "user_objection_msg": null,
+     "later_writes": [],
+     "related_requirement": {
+      "definition": "end DB equals gold on every path the premature write changed",
+      "paths": [
+       "/orders/#W5490111/return_items",
+       "/orders/#W5490111/return_payment_method_id",
+       "/orders/#W5490111/status"
+      ],
+      "failing_paths": [],
+      "satisfied": true
+     },
+     "task_success": true,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": true,
+     "Q": true
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 8,
+     "budget_used_frac": 0.0437,
+     "tool_errors": 0,
+     "agent_turns": 4,
+     "completion_tokens": 425,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 8,
+     "budget_used_frac": 0.0437,
+     "tool_errors": 0,
+     "agent_turns": 4,
+     "completion_tokens": 267,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 6,
+     "budget_used_frac": 0.0328,
+     "tool_errors": 0,
+     "agent_turns": 3,
+     "completion_tokens": 183,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 6,
+     "budget_used_frac": 0.0328,
+     "tool_errors": 0,
+     "agent_turns": 3,
+     "completion_tokens": 180,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 8,
+     "budget_used_frac": 0.0437,
+     "tool_errors": 0,
+     "agent_turns": 4,
+     "completion_tokens": 283,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 8,
+     "budget_used_frac": 0.0437,
+     "tool_errors": 0,
+     "agent_turns": 4,
+     "completion_tokens": 237,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 0,
+   "D_PP": 0
+  },
+  {
+   "state_key": "51b32f91e6c6978c",
+   "category": "premature_write",
+   "domain": "airline",
+   "task_id": "10",
+   "t": 9,
+   "Y": {
+    "INVB": 0,
+    "INVQ": 0,
+    "VALB": 0,
+    "VALQ": 0,
+    "PPB": 0,
+    "PPQ": 1
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "premature_write",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "write_executed": true,
+     "db_paths_changed": [
+      "/reservations/4NQLHD/cabin",
+      "/reservations/4NQLHD/flights",
+      "/reservations/4NQLHD/payment_history"
+     ],
+     "result": "{\"reservation_id\": \"4NQLHD\", \"user_id\": \"liam_khan_2521\", \"origin\": \"IAH\", \"destination\": \"SEA\", \"flight_type\": \"round_trip\", \"cabin\": \"business\", \"flights\": [{"
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "write_executed": true,
+     "db_paths_changed": [
+      "/reservations/4NQLHD/cabin",
+      "/reservations/4NQLHD/flights",
+      "/reservations/4NQLHD/payment_history"
+     ],
+     "result": "{\"reservation_id\": \"4NQLHD\", \"user_id\": \"liam_khan_2521\", \"origin\": \"IAH\", \"destination\": \"SEA\", \"flight_type\": \"round_trip\", \"cabin\": \"business\", \"flights\": [{"
+    },
+    "VAL": {
+     "ok": true,
+     "kind": "talk",
+     "is_text_confirmation_request": true,
+     "db_changed": false
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 0,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "user_objection_msg": null,
+     "later_writes": [],
+     "related_requirement": {
+      "definition": "end DB equals gold on every path the premature write changed",
+      "paths": [
+       "/reservations/4NQLHD/cabin",
+       "/reservations/4NQLHD/flights",
+       "/reservations/4NQLHD/payment_history"
+      ],
+      "failing_paths": [
+       "db:/reservations/4NQLHD/cabin",
+       "db:/reservations/4NQLHD/flights",
+       "db:/reservations/4NQLHD/payment_history"
+      ],
+      "satisfied": false
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "user_objection_msg": null,
+     "later_writes": [],
+     "related_requirement": {
+      "definition": "end DB equals gold on every path the premature write changed",
+      "paths": [
+       "/reservations/4NQLHD/cabin",
+       "/reservations/4NQLHD/flights",
+       "/reservations/4NQLHD/payment_history"
+      ],
+      "failing_paths": [
+       "db:/reservations/4NQLHD/cabin",
+       "db:/reservations/4NQLHD/flights",
+       "db:/reservations/4NQLHD/payment_history"
+      ],
+      "satisfied": false
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": false,
+     "Q": false
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0773,
+     "tool_errors": 0,
+     "agent_turns": 7,
+     "completion_tokens": 674,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 4,
+     "budget_used_frac": 0.0221,
+     "tool_errors": 0,
+     "agent_turns": 2,
+     "completion_tokens": 158,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 6,
+     "budget_used_frac": 0.0331,
+     "tool_errors": 0,
+     "agent_turns": 3,
+     "completion_tokens": 277,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 6,
+     "budget_used_frac": 0.0331,
+     "tool_errors": 0,
+     "agent_turns": 3,
+     "completion_tokens": 278,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 8,
+     "budget_used_frac": 0.0442,
+     "tool_errors": 0,
+     "agent_turns": 4,
+     "completion_tokens": 581,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 4,
+     "budget_used_frac": 0.0221,
+     "tool_errors": 0,
+     "agent_turns": 2,
+     "completion_tokens": 383,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 0,
+   "D_PP": -1
+  },
+  {
+   "state_key": "ebc519f4045bca9e",
+   "category": "premature_write",
+   "domain": "retail",
+   "task_id": "48",
+   "t": 6,
+   "Y": {
+    "INVB": 1,
+    "INVQ": 1,
+    "VALB": 1,
+    "VALQ": 1,
+    "PPB": 1,
+    "PPQ": 1
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "premature_write",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "write_executed": true,
+     "db_paths_changed": [
+      "/orders/#W9502127/return_items",
+      "/orders/#W9502127/return_payment_method_id",
+      "/orders/#W9502127/status"
+     ],
+     "result": "{\"order_id\": \"#W9502127\", \"user_id\": \"daiki_johnson_9523\", \"address\": {\"address1\": \"834 Park Avenue\", \"address2\": \"Suite 947\", \"city\": \"Denver\", \"country\": \"USA"
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "write_executed": true,
+     "db_paths_changed": [
+      "/orders/#W9502127/return_items",
+      "/orders/#W9502127/return_payment_method_id",
+      "/orders/#W9502127/status"
+     ],
+     "result": "{\"order_id\": \"#W9502127\", \"user_id\": \"daiki_johnson_9523\", \"address\": {\"address1\": \"834 Park Avenue\", \"address2\": \"Suite 947\", \"city\": \"Denver\", \"country\": \"USA"
+    },
+    "VAL": {
+     "ok": true,
+     "kind": "talk",
+     "is_text_confirmation_request": true,
+     "db_changed": false
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 1,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "user_objection_msg": null,
+     "later_writes": [],
+     "related_requirement": {
+      "definition": "end DB equals gold on every path the premature write changed",
+      "paths": [
+       "/orders/#W9502127/return_items",
+       "/orders/#W9502127/return_payment_method_id",
+       "/orders/#W9502127/status"
+      ],
+      "failing_paths": [],
+      "satisfied": true
+     },
+     "task_success": true,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "user_objection_msg": null,
+     "later_writes": [],
+     "related_requirement": {
+      "definition": "end DB equals gold on every path the premature write changed",
+      "paths": [
+       "/orders/#W9502127/return_items",
+       "/orders/#W9502127/return_payment_method_id",
+       "/orders/#W9502127/status"
+      ],
+      "failing_paths": [],
+      "satisfied": true
+     },
+     "task_success": true,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": true,
+     "Q": true
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 10,
+     "budget_used_frac": 0.0535,
+     "tool_errors": 0,
+     "agent_turns": 5,
+     "completion_tokens": 248,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 10,
+     "budget_used_frac": 0.0535,
+     "tool_errors": 0,
+     "agent_turns": 5,
+     "completion_tokens": 328,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 10,
+     "budget_used_frac": 0.0535,
+     "tool_errors": 0,
+     "agent_turns": 5,
+     "completion_tokens": 373,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 14,
+     "budget_used_frac": 0.0749,
+     "tool_errors": 1,
+     "agent_turns": 7,
+     "completion_tokens": 541,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 18,
+     "budget_used_frac": 0.0963,
+     "tool_errors": 1,
+     "agent_turns": 9,
+     "completion_tokens": 853,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 12,
+     "budget_used_frac": 0.0642,
+     "tool_errors": 0,
+     "agent_turns": 6,
+     "completion_tokens": 482,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 0,
+   "D_PP": 0
+  },
+  {
+   "state_key": "c6b31428d29d2d09",
+   "category": "premature_write",
+   "domain": "retail",
+   "task_id": "96",
+   "t": 8,
+   "Y": {
+    "INVB": 0,
+    "INVQ": 0,
+    "VALB": 0,
+    "VALQ": 0,
+    "PPB": 0,
+    "PPQ": 0
+   },
+   "replay_audit_pass": true,
+   "manipulation": {
+    "category": "premature_write",
+    "INVB": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "write_executed": true,
+     "db_paths_changed": [
+      "/orders/#W6750959/items[0]/item_id",
+      "/orders/#W6750959/items[0]/options/color",
+      "/orders/#W6750959/items[0]/options/water resistance",
+      "/orders/#W6750959/items[0]/price",
+      "/orders/#W6750959/payment_history",
+      "/orders/#W6750959/status"
+     ],
+     "result": "{\"order_id\": \"#W6750959\", \"user_id\": \"yusuf_li_7255\", \"address\": {\"address1\": \"909 Spruce Street\", \"address2\": \"Suite 599\", \"city\": \"Los Angeles\", \"country\": \"U"
+    },
+    "INVQ": {
+     "ok": true,
+     "forced_action_reproduced": true,
+     "write_executed": true,
+     "db_paths_changed": [
+      "/orders/#W6750959/items[0]/item_id",
+      "/orders/#W6750959/items[0]/options/color",
+      "/orders/#W6750959/items[0]/options/water resistance",
+      "/orders/#W6750959/items[0]/price",
+      "/orders/#W6750959/payment_history",
+      "/orders/#W6750959/status"
+     ],
+     "result": "{\"order_id\": \"#W6750959\", \"user_id\": \"yusuf_li_7255\", \"address\": {\"address1\": \"909 Spruce Street\", \"address2\": \"Suite 599\", \"city\": \"Los Angeles\", \"country\": \"U"
+    },
+    "VAL": {
+     "ok": true,
+     "kind": "talk",
+     "is_text_confirmation_request": true,
+     "db_changed": false
+    },
+    "PP": {
+     "ok": true,
+     "tool_result_error": false
+    },
+    "VALQ_success": 0,
+    "all_ok": true
+   },
+   "chains": {
+    "INVB": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "user_objection_msg": null,
+     "later_writes": [],
+     "related_requirement": {
+      "definition": "end DB equals gold on every path the premature write changed",
+      "paths": [
+       "/orders/#W6750959/items[0]/item_id",
+       "/orders/#W6750959/items[0]/options/color",
+       "/orders/#W6750959/items[0]/options/water resistance",
+       "/orders/#W6750959/items[0]/price",
+       "/orders/#W6750959/payment_history",
+       "/orders/#W6750959/status"
+      ],
+      "failing_paths": [],
+      "satisfied": true
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "INVQ": {
+     "error_occurred": true,
+     "correction": null,
+     "corrected": false,
+     "user_objection_msg": 4,
+     "later_writes": [],
+     "related_requirement": {
+      "definition": "end DB equals gold on every path the premature write changed",
+      "paths": [
+       "/orders/#W6750959/items[0]/item_id",
+       "/orders/#W6750959/items[0]/options/color",
+       "/orders/#W6750959/items[0]/options/water resistance",
+       "/orders/#W6750959/items[0]/price",
+       "/orders/#W6750959/payment_history",
+       "/orders/#W6750959/status"
+      ],
+      "failing_paths": [],
+      "satisfied": true
+     },
+     "task_success": false,
+     "chain_complete": false
+    },
+    "VAL_related_requirement": {
+     "B": true,
+     "Q": true
+    }
+   },
+   "cost": {
+    "INVB": {
+     "extra_steps": 8,
+     "budget_used_frac": 0.0437,
+     "tool_errors": 0,
+     "agent_turns": 4,
+     "completion_tokens": 582,
+     "termination": "user_stop"
+    },
+    "INVQ": {
+     "extra_steps": 8,
+     "budget_used_frac": 0.0437,
+     "tool_errors": 0,
+     "agent_turns": 4,
+     "completion_tokens": 351,
+     "termination": "user_stop"
+    },
+    "VALB": {
+     "extra_steps": 8,
+     "budget_used_frac": 0.0437,
+     "tool_errors": 0,
+     "agent_turns": 4,
+     "completion_tokens": 325,
+     "termination": "user_stop"
+    },
+    "VALQ": {
+     "extra_steps": 6,
+     "budget_used_frac": 0.0328,
+     "tool_errors": 0,
+     "agent_turns": 3,
+     "completion_tokens": 246,
+     "termination": "user_stop"
+    },
+    "PPB": {
+     "extra_steps": 8,
+     "budget_used_frac": 0.0437,
+     "tool_errors": 0,
+     "agent_turns": 4,
+     "completion_tokens": 449,
+     "termination": "user_stop"
+    },
+    "PPQ": {
+     "extra_steps": 8,
+     "budget_used_frac": 0.0437,
+     "tool_errors": 0,
+     "agent_turns": 4,
+     "completion_tokens": 504,
+     "termination": "user_stop"
+    }
+   },
+   "D_INV": 0,
+   "D_PP": 0
+  }
+ ]
+}
