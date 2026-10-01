@@ -127,6 +127,9 @@ def main():
     ap.add_argument("--no-gate", action="store_true", help="dry runs only")
     ap.add_argument("--tag", default="")
     ap.add_argument("--manifest", default=None, help="W91: manifests/fork/simctrl_v3.json for the relay run (with --dir analysis/fork/simctrl_relay)")
+    ap.add_argument("--flagged", default=None, help="W96 sensitivity (GPT-6.1 review 7): file of flagged relay request ids "
+                    "(first token per line; mechanical rule: mis-bound answer or corrupted text). Every arm replicate that used a "
+                    "flagged request is set to missing (never imputed or re-scored), so its unit counts as missing.")
     a = ap.parse_args()
     global MAN
     if a.manifest:
@@ -157,6 +160,19 @@ def main():
                 r = json.loads(line)
                 if "unit_id" in r and "Y_sonnet" in r:
                     got[r["unit_id"]] = r
+    dropped = []
+    if a.flagged:
+        fl = {ln.split()[0] for ln in (ROOT / a.flagged).read_text().splitlines() if ln.strip()}
+        inputs[a.flagged] = sha_file(ROOT / a.flagged)
+        for uid, r in got.items():
+            for arm, ids in (r.get("request_ids") or {}).items():
+                hit = {i for i in ids or [] if any(i.startswith(f) for f in fl)}  # flagged file may list an id prefix
+                if hit:
+                    r["Y_sonnet"] = {**r["Y_sonnet"], arm: None}
+                    dropped.append({"unit_id": uid, "arm": arm, "request_ids": sorted(hit)})
+        missing_ids = {f for f in fl if not any(i.startswith(f) for d in dropped for i in d["request_ids"])}
+        if missing_ids:
+            raise SystemExit(f"--flagged: ids not found in any unit's request_ids: {sorted(missing_ids)}")
     units = []
     for u in man["units"]:
         r = got.get(u["unit_id"], {})
@@ -166,7 +182,7 @@ def main():
         units.append(x)
     R = {"generated_utc": time.strftime("%Y%m%dT%H%M%SZ", time.gmtime()), "script": "analysis/fork/analyze_simctrl.py",
          "manifest": str(MAN.relative_to(ROOT)), "replicates": NR, "scope": man["scope"], "blocks": man["blocks"], "user_llm": man["user_llm"], "inputs": inputs, "dry": a.no_gate,
-         "n_units_manifest": len(units), "n_units_with_results": sum(1 for u in units if u["c"]["status"] == "ok")}
+         "flagged_dropped": dropped, "n_units_manifest": len(units), "n_units_with_results": sum(1 for u in units if u["c"]["status"] == "ok")}
     groups = {"all": lambda u: True, **{f"model={m}": (lambda m: lambda u: u["model"] == m)(m) for m in ("q4", "q8")},
               **{f"sub={s}": (lambda s: lambda u: u["sub"] == s)(s) for s in ("U1", "U2B", "U2Q")},
               **{f"sub_cls={s}": (lambda s: lambda u: u["sub_cls"] == s)(s) for s in ("ii_talk", "ii_act")}}

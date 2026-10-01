@@ -1,0 +1,4168 @@
+{
+ "generated_utc": "20261001T225847Z",
+ "script": "analysis/fork/analyze_simctrl.py",
+ "manifest": "manifests/fork/simctrl_v3.json",
+ "replicates": 3,
+ "scope": "Robustness of continuations on FIXED histories generated with the old simulator (Qwen3-4B-Instruct-2507). Only the user simulator after the fork state is replaced. It does NOT replace a full benchmark re-run with a new simulator, and makes no claim about Bank U rates under Sonnet.",
+ "blocks": [
+  "f01"
+ ],
+ "user_llm": {
+  "provider": "relay",
+  "model": "claude-sonnet-5-5 (Claude Code subagent relay)"
+ },
+ "inputs": {
+  "manifests/fork/simctrl_v3.json": "3e430d93c8ee92940059fa3862bf31de7c329d69ba767b05a2f4f5ce9597f712",
+  "analysis/fork/simctrl_relay/gate/gate.json": "34f466a52abac667f7d8b957adf213c78a42f91b30039d1cd7b415da230ebd70",
+  "analysis/fork/simctrl_relay/q4_awq_w4/f01/simctrl_rows.jsonl": "491ce61ee5d3fe0daf10113af918eccd55d65701e5f3da1bd26cbfdc8c9ae90c",
+  "analysis/fork/simctrl_relay/q4_gptq_w4_d1/f01/simctrl_rows.jsonl": "0ac73fc4f8f1f81f2d3b17efa626a92da18408ff21938e098326672e86e2e722",
+  "analysis/fork/simctrl_relay/q4_kvq_int8/f01/simctrl_rows.jsonl": "5d9683e0e70ad1cf31982c15bd49dddba9411786365835d5842dfab2f3fca2c8",
+  "analysis/fork/simctrl_relay/q8_awq_w4/f01/simctrl_rows.jsonl": "58830ea5926839bd5f0628b537fc0b5f5e86c03fca7699b03976cea1c80f346c",
+  "analysis/fork/simctrl_relay/q8_gptq_w4_d1/f01/simctrl_rows.jsonl": "6e03707e056edb3cfd3f4d9e601f31d3c961ac18ed0013c333a3dd0adb6f73d0",
+  "analysis/fork/simctrl_relay/q8_kvq_int8/f01/simctrl_rows.jsonl": "3ed9fec17e9bcd5cf83a66a2cf562b205640736647dee6127a5b718ce5fcfe55",
+  "analysis/fork/simctrl_relay/FLAGGED_requests.txt": "884512e0ed1a74c60332ba4830cf07c69b67514498fe5626d44d4cbff3e5e564"
+ },
+ "dry": false,
+ "flagged_dropped": [
+  {
+   "unit_id": "371c75f11c99e41f",
+   "arm": "BQ#1",
+   "request_ids": [
+    "371c75f11c99e41f-BQ-r1-t02-e756b02a"
+   ]
+  },
+  {
+   "unit_id": "89bc930ee2da3d7d",
+   "arm": "QQ#1",
+   "request_ids": [
+    "89bc930ee2da3d7d-QQ-r1-t01-60f56c68"
+   ]
+  }
+ ],
+ "n_units_manifest": 78,
+ "n_units_with_results": 76,
+ "flips": {
+  "all": {
+   "n": 39,
+   "n_missing": 2,
+   "n_ok": 37,
+   "retained": 6,
+   "retained_ci95": [
+    0.062,
+    0.32
+   ],
+   "reversed": 6,
+   "reversed_ci95": [
+    0.062,
+    0.32
+   ],
+   "vanished": 25,
+   "vanished_ci95": [
+    0.502,
+    0.82
+   ],
+   "vanished_both_succeed": 15,
+   "vanished_both_fail": 2,
+   "vanished_tie_mixed": 8,
+   "units_by_n_rep_same_direction": {
+    "0": 26,
+    "1": 8,
+    "2": 3,
+    "3": 0
+   },
+   "units_by_n_rep_reversed": {
+    "0": 25,
+    "1": 9,
+    "2": 2,
+    "3": 1
+   },
+   "per_replicate": {
+    "0": {
+     "n": 39,
+     "retained": 5,
+     "reversed": 6,
+     "vanished": 28
+    },
+    "1": {
+     "n": 37,
+     "retained": 6,
+     "reversed": 5,
+     "vanished": 26
+    },
+    "2": {
+     "n": 39,
+     "retained": 4,
+     "reversed": 5,
+     "vanished": 30
+    }
+   }
+  },
+  "model=q4": {
+   "n": 31,
+   "n_missing": 2,
+   "n_ok": 29,
+   "retained": 5,
+   "retained_ci95": [
+    0.058,
+    0.358
+   ],
+   "reversed": 6,
+   "reversed_ci95": [
+    0.08,
+    0.397
+   ],
+   "vanished": 18,
+   "vanished_ci95": [
+    0.423,
+    0.793
+   ],
+   "vanished_both_succeed": 11,
+   "vanished_both_fail": 1,
+   "vanished_tie_mixed": 6,
+   "units_by_n_rep_same_direction": {
+    "0": 20,
+    "1": 7,
+    "2": 2,
+    "3": 0
+   },
+   "units_by_n_rep_reversed": {
+    "0": 19,
+    "1": 7,
+    "2": 2,
+    "3": 1
+   },
+   "per_replicate": {
+    "0": {
+     "n": 31,
+     "retained": 3,
+     "reversed": 6,
+     "vanished": 22
+    },
+    "1": {
+     "n": 29,
+     "retained": 6,
+     "reversed": 3,
+     "vanished": 20
+    },
+    "2": {
+     "n": 31,
+     "retained": 3,
+     "reversed": 5,
+     "vanished": 23
+    }
+   }
+  },
+  "model=q8": {
+   "n": 8,
+   "n_missing": 0,
+   "n_ok": 8,
+   "retained": 1,
+   "retained_ci95": [
+    0.003,
+    0.527
+   ],
+   "reversed": 0,
+   "reversed_ci95": [
+    0.0,
+    0.369
+   ],
+   "vanished": 7,
+   "vanished_ci95": [
+    0.473,
+    0.997
+   ],
+   "vanished_both_succeed": 4,
+   "vanished_both_fail": 1,
+   "vanished_tie_mixed": 2,
+   "units_by_n_rep_same_direction": {
+    "0": 6,
+    "1": 1,
+    "2": 1,
+    "3": 0
+   },
+   "units_by_n_rep_reversed": {
+    "0": 6,
+    "1": 2,
+    "2": 0,
+    "3": 0
+   },
+   "per_replicate": {
+    "0": {
+     "n": 8,
+     "retained": 2,
+     "reversed": 0,
+     "vanished": 6
+    },
+    "1": {
+     "n": 8,
+     "retained": 0,
+     "reversed": 2,
+     "vanished": 6
+    },
+    "2": {
+     "n": 8,
+     "retained": 1,
+     "reversed": 0,
+     "vanished": 7
+    }
+   }
+  },
+  "sub=U1": {
+   "n": 21,
+   "n_missing": 0,
+   "n_ok": 21,
+   "retained": 2,
+   "retained_ci95": [
+    0.012,
+    0.304
+   ],
+   "reversed": 4,
+   "reversed_ci95": [
+    0.054,
+    0.419
+   ],
+   "vanished": 15,
+   "vanished_ci95": [
+    0.478,
+    0.887
+   ],
+   "vanished_both_succeed": 8,
+   "vanished_both_fail": 2,
+   "vanished_tie_mixed": 5,
+   "units_by_n_rep_same_direction": {
+    "0": 16,
+    "1": 4,
+    "2": 1,
+    "3": 0
+   },
+   "units_by_n_rep_reversed": {
+    "0": 13,
+    "1": 5,
+    "2": 2,
+    "3": 1
+   },
+   "per_replicate": {
+    "0": {
+     "n": 21,
+     "retained": 2,
+     "reversed": 4,
+     "vanished": 15
+    },
+    "1": {
+     "n": 21,
+     "retained": 2,
+     "reversed": 5,
+     "vanished": 14
+    },
+    "2": {
+     "n": 21,
+     "retained": 2,
+     "reversed": 3,
+     "vanished": 16
+    }
+   }
+  },
+  "sub=U2B": {
+   "n": 17,
+   "n_missing": 2,
+   "n_ok": 15,
+   "retained": 3,
+   "retained_ci95": [
+    0.043,
+    0.481
+   ],
+   "reversed": 2,
+   "reversed_ci95": [
+    0.017,
+    0.405
+   ],
+   "vanished": 10,
+   "vanished_ci95": [
+    0.384,
+    0.882
+   ],
+   "vanished_both_succeed": 7,
+   "vanished_both_fail": 0,
+   "vanished_tie_mixed": 3,
+   "units_by_n_rep_same_direction": {
+    "0": 10,
+    "1": 4,
+    "2": 1,
+    "3": 0
+   },
+   "units_by_n_rep_reversed": {
+    "0": 11,
+    "1": 4,
+    "2": 0,
+    "3": 0
+   },
+   "per_replicate": {
+    "0": {
+     "n": 17,
+     "retained": 2,
+     "reversed": 2,
+     "vanished": 13
+    },
+    "1": {
+     "n": 15,
+     "retained": 4,
+     "reversed": 0,
+     "vanished": 11
+    },
+    "2": {
+     "n": 17,
+     "retained": 1,
+     "reversed": 2,
+     "vanished": 14
+    }
+   }
+  },
+  "sub=U2Q": {
+   "n": 1,
+   "n_missing": 0,
+   "n_ok": 1,
+   "retained": 1,
+   "retained_ci95": [
+    0.025,
+    1.0
+   ],
+   "reversed": 0,
+   "reversed_ci95": [
+    0.0,
+    0.975
+   ],
+   "vanished": 0,
+   "vanished_ci95": [
+    0.0,
+    0.975
+   ],
+   "vanished_both_succeed": 0,
+   "vanished_both_fail": 0,
+   "vanished_tie_mixed": 0,
+   "units_by_n_rep_same_direction": {
+    "0": 0,
+    "1": 0,
+    "2": 1,
+    "3": 0
+   },
+   "units_by_n_rep_reversed": {
+    "0": 1,
+    "1": 0,
+    "2": 0,
+    "3": 0
+   },
+   "per_replicate": {
+    "0": {
+     "n": 1,
+     "retained": 1,
+     "reversed": 0,
+     "vanished": 0
+    },
+    "1": {
+     "n": 1,
+     "retained": 0,
+     "reversed": 0,
+     "vanished": 1
+    },
+    "2": {
+     "n": 1,
+     "retained": 1,
+     "reversed": 0,
+     "vanished": 0
+    }
+   }
+  },
+  "sub_cls=ii_talk": {
+   "n": 37,
+   "n_missing": 2,
+   "n_ok": 35,
+   "retained": 5,
+   "retained_ci95": [
+    0.048,
+    0.303
+   ],
+   "reversed": 5,
+   "reversed_ci95": [
+    0.048,
+    0.303
+   ],
+   "vanished": 25,
+   "vanished_ci95": [
+    0.537,
+    0.854
+   ],
+   "vanished_both_succeed": 15,
+   "vanished_both_fail": 2,
+   "vanished_tie_mixed": 8,
+   "units_by_n_rep_same_direction": {
+    "0": 25,
+    "1": 7,
+    "2": 3,
+    "3": 0
+   },
+   "units_by_n_rep_reversed": {
+    "0": 24,
+    "1": 8,
+    "2": 2,
+    "3": 1
+   },
+   "per_replicate": {
+    "0": {
+     "n": 37,
+     "retained": 5,
+     "reversed": 6,
+     "vanished": 26
+    },
+    "1": {
+     "n": 35,
+     "retained": 5,
+     "reversed": 5,
+     "vanished": 25
+    },
+    "2": {
+     "n": 37,
+     "retained": 4,
+     "reversed": 4,
+     "vanished": 29
+    }
+   }
+  },
+  "sub_cls=ii_act": {
+   "n": 2,
+   "n_missing": 0,
+   "n_ok": 2,
+   "retained": 1,
+   "retained_ci95": [
+    0.013,
+    0.987
+   ],
+   "reversed": 1,
+   "reversed_ci95": [
+    0.013,
+    0.987
+   ],
+   "vanished": 0,
+   "vanished_ci95": [
+    0.0,
+    0.842
+   ],
+   "vanished_both_succeed": 0,
+   "vanished_both_fail": 0,
+   "vanished_tie_mixed": 0,
+   "units_by_n_rep_same_direction": {
+    "0": 1,
+    "1": 1,
+    "2": 0,
+    "3": 0
+   },
+   "units_by_n_rep_reversed": {
+    "0": 1,
+    "1": 1,
+    "2": 0,
+    "3": 0
+   },
+   "per_replicate": {
+    "0": {
+     "n": 2,
+     "retained": 0,
+     "reversed": 0,
+     "vanished": 2
+    },
+    "1": {
+     "n": 2,
+     "retained": 1,
+     "reversed": 0,
+     "vanished": 1
+    },
+    "2": {
+     "n": 2,
+     "retained": 0,
+     "reversed": 1,
+     "vanished": 1
+    }
+   }
+  },
+  "direction_orig=rescue": {
+   "n": 17,
+   "n_missing": 0,
+   "n_ok": 17,
+   "retained": 2,
+   "retained_ci95": [
+    0.015,
+    0.364
+   ],
+   "reversed": 3,
+   "reversed_ci95": [
+    0.038,
+    0.434
+   ],
+   "vanished": 12,
+   "vanished_ci95": [
+    0.44,
+    0.897
+   ],
+   "vanished_both_succeed": 6,
+   "vanished_both_fail": 2,
+   "vanished_tie_mixed": 4,
+   "units_by_n_rep_same_direction": {
+    "0": 12,
+    "1": 4,
+    "2": 1,
+    "3": 0
+   },
+   "units_by_n_rep_reversed": {
+    "0": 11,
+    "1": 5,
+    "2": 0,
+    "3": 1
+   },
+   "per_replicate": {
+    "0": {
+     "n": 17,
+     "retained": 2,
+     "reversed": 3,
+     "vanished": 12
+    },
+    "1": {
+     "n": 17,
+     "retained": 3,
+     "reversed": 3,
+     "vanished": 11
+    },
+    "2": {
+     "n": 17,
+     "retained": 1,
+     "reversed": 2,
+     "vanished": 14
+    }
+   }
+  },
+  "direction_orig=damage": {
+   "n": 22,
+   "n_missing": 2,
+   "n_ok": 20,
+   "retained": 4,
+   "retained_ci95": [
+    0.057,
+    0.437
+   ],
+   "reversed": 3,
+   "reversed_ci95": [
+    0.032,
+    0.379
+   ],
+   "vanished": 13,
+   "vanished_ci95": [
+    0.408,
+    0.846
+   ],
+   "vanished_both_succeed": 9,
+   "vanished_both_fail": 0,
+   "vanished_tie_mixed": 4,
+   "units_by_n_rep_same_direction": {
+    "0": 14,
+    "1": 4,
+    "2": 2,
+    "3": 0
+   },
+   "units_by_n_rep_reversed": {
+    "0": 14,
+    "1": 4,
+    "2": 2,
+    "3": 0
+   },
+   "per_replicate": {
+    "0": {
+     "n": 22,
+     "retained": 3,
+     "reversed": 3,
+     "vanished": 16
+    },
+    "1": {
+     "n": 20,
+     "retained": 3,
+     "reversed": 2,
+     "vanished": 15
+    },
+    "2": {
+     "n": 22,
+     "retained": 3,
+     "reversed": 3,
+     "vanished": 16
+    }
+   }
+  }
+ },
+ "controls": {
+  "all": {
+   "n": 39,
+   "n_missing": 0,
+   "n_ok": 39,
+   "new_flips": 11,
+   "new_flips_ci95": [
+    0.15,
+    0.449
+   ],
+   "new_rescue": 7,
+   "new_damage": 4,
+   "units_by_n_rep_flipping": {
+    "0": 26,
+    "1": 3,
+    "2": 9,
+    "3": 1
+   },
+   "per_replicate": {
+    "0": {
+     "n": 39,
+     "new_flip": 9,
+     "stays_non_flip": 30
+    },
+    "1": {
+     "n": 39,
+     "new_flip": 7,
+     "stays_non_flip": 32
+    },
+    "2": {
+     "n": 39,
+     "new_flip": 8,
+     "stays_non_flip": 31
+    }
+   }
+  },
+  "model=q4": {
+   "n": 31,
+   "n_missing": 0,
+   "n_ok": 31,
+   "new_flips": 10,
+   "new_flips_ci95": [
+    0.167,
+    0.514
+   ],
+   "new_rescue": 6,
+   "new_damage": 4,
+   "units_by_n_rep_flipping": {
+    "0": 19,
+    "1": 3,
+    "2": 8,
+    "3": 1
+   },
+   "per_replicate": {
+    "0": {
+     "n": 31,
+     "new_flip": 8,
+     "stays_non_flip": 23
+    },
+    "1": {
+     "n": 31,
+     "new_flip": 7,
+     "stays_non_flip": 24
+    },
+    "2": {
+     "n": 31,
+     "new_flip": 7,
+     "stays_non_flip": 24
+    }
+   }
+  },
+  "model=q8": {
+   "n": 8,
+   "n_missing": 0,
+   "n_ok": 8,
+   "new_flips": 1,
+   "new_flips_ci95": [
+    0.003,
+    0.527
+   ],
+   "new_rescue": 1,
+   "new_damage": 0,
+   "units_by_n_rep_flipping": {
+    "0": 7,
+    "1": 0,
+    "2": 1,
+    "3": 0
+   },
+   "per_replicate": {
+    "0": {
+     "n": 8,
+     "new_flip": 1,
+     "stays_non_flip": 7
+    },
+    "1": {
+     "n": 8,
+     "new_flip": 0,
+     "stays_non_flip": 8
+    },
+    "2": {
+     "n": 8,
+     "new_flip": 1,
+     "stays_non_flip": 7
+    }
+   }
+  },
+  "sub=U1": {
+   "n": 21,
+   "n_missing": 0,
+   "n_ok": 21,
+   "new_flips": 5,
+   "new_flips_ci95": [
+    0.082,
+    0.472
+   ],
+   "new_rescue": 4,
+   "new_damage": 1,
+   "units_by_n_rep_flipping": {
+    "0": 15,
+    "1": 0,
+    "2": 5,
+    "3": 1
+   },
+   "per_replicate": {
+    "0": {
+     "n": 21,
+     "new_flip": 4,
+     "stays_non_flip": 17
+    },
+    "1": {
+     "n": 21,
+     "new_flip": 4,
+     "stays_non_flip": 17
+    },
+    "2": {
+     "n": 21,
+     "new_flip": 5,
+     "stays_non_flip": 16
+    }
+   }
+  },
+  "sub=U2B": {
+   "n": 17,
+   "n_missing": 0,
+   "n_ok": 17,
+   "new_flips": 6,
+   "new_flips_ci95": [
+    0.142,
+    0.617
+   ],
+   "new_rescue": 3,
+   "new_damage": 3,
+   "units_by_n_rep_flipping": {
+    "0": 10,
+    "1": 3,
+    "2": 4,
+    "3": 0
+   },
+   "per_replicate": {
+    "0": {
+     "n": 17,
+     "new_flip": 5,
+     "stays_non_flip": 12
+    },
+    "1": {
+     "n": 17,
+     "new_flip": 3,
+     "stays_non_flip": 14
+    },
+    "2": {
+     "n": 17,
+     "new_flip": 3,
+     "stays_non_flip": 14
+    }
+   }
+  },
+  "sub=U2Q": {
+   "n": 1,
+   "n_missing": 0,
+   "n_ok": 1,
+   "new_flips": 0,
+   "new_flips_ci95": [
+    0.0,
+    0.975
+   ],
+   "new_rescue": 0,
+   "new_damage": 0,
+   "units_by_n_rep_flipping": {
+    "0": 1,
+    "1": 0,
+    "2": 0,
+    "3": 0
+   },
+   "per_replicate": {
+    "0": {
+     "n": 1,
+     "new_flip": 0,
+     "stays_non_flip": 1
+    },
+    "1": {
+     "n": 1,
+     "new_flip": 0,
+     "stays_non_flip": 1
+    },
+    "2": {
+     "n": 1,
+     "new_flip": 0,
+     "stays_non_flip": 1
+    }
+   }
+  },
+  "sub_cls=ii_talk": {
+   "n": 38,
+   "n_missing": 0,
+   "n_ok": 38,
+   "new_flips": 10,
+   "new_flips_ci95": [
+    0.134,
+    0.431
+   ],
+   "new_rescue": 6,
+   "new_damage": 4,
+   "units_by_n_rep_flipping": {
+    "0": 26,
+    "1": 2,
+    "2": 9,
+    "3": 1
+   },
+   "per_replicate": {
+    "0": {
+     "n": 38,
+     "new_flip": 9,
+     "stays_non_flip": 29
+    },
+    "1": {
+     "n": 38,
+     "new_flip": 7,
+     "stays_non_flip": 31
+    },
+    "2": {
+     "n": 38,
+     "new_flip": 7,
+     "stays_non_flip": 31
+    }
+   }
+  },
+  "sub_cls=ii_act": {
+   "n": 1,
+   "n_missing": 0,
+   "n_ok": 1,
+   "new_flips": 1,
+   "new_flips_ci95": [
+    0.025,
+    1.0
+   ],
+   "new_rescue": 1,
+   "new_damage": 0,
+   "units_by_n_rep_flipping": {
+    "0": 0,
+    "1": 1,
+    "2": 0,
+    "3": 0
+   },
+   "per_replicate": {
+    "0": {
+     "n": 1,
+     "new_flip": 0,
+     "stays_non_flip": 1
+    },
+    "1": {
+     "n": 1,
+     "new_flip": 0,
+     "stays_non_flip": 1
+    },
+    "2": {
+     "n": 1,
+     "new_flip": 1,
+     "stays_non_flip": 0
+    }
+   }
+  }
+ },
+ "paired": {
+  "flip_not_retained|control_no_flip": 24,
+  "flip_not_retained|control_new_flip": 7,
+  "incomplete_pair": 2,
+  "flip_retained|control_no_flip": 3,
+  "flip_retained|control_new_flip": 3
+ },
+ "variability": {
+  "flip:BQ": {
+   "replicates_disagree": 15,
+   "n": 38,
+   "share": 0.395,
+   "ci95": [
+    0.24,
+    0.566
+   ]
+  },
+  "flip:QQ": {
+   "replicates_disagree": 16,
+   "n": 38,
+   "share": 0.421,
+   "ci95": [
+    0.263,
+    0.592
+   ]
+  },
+  "control:BQ": {
+   "replicates_disagree": 10,
+   "n": 39,
+   "share": 0.256,
+   "ci95": [
+    0.13,
+    0.421
+   ]
+  },
+  "control:QQ": {
+   "replicates_disagree": 8,
+   "n": 39,
+   "share": 0.205,
+   "ci95": [
+    0.093,
+    0.365
+   ]
+  }
+ },
+ "arm_agreement_with_original": {
+  "flip:BQ": {
+   "agree_replicates": 50,
+   "n_replicates": 116,
+   "ci95": [
+    0.339,
+    0.526
+   ]
+  },
+  "flip:QQ": {
+   "agree_replicates": 65,
+   "n_replicates": 116,
+   "ci95": [
+    0.465,
+    0.652
+   ]
+  },
+  "control:BQ": {
+   "agree_replicates": 86,
+   "n_replicates": 117,
+   "ci95": [
+    0.645,
+    0.812
+   ]
+  },
+  "control:QQ": {
+   "agree_replicates": 94,
+   "n_replicates": 117,
+   "ci95": [
+    0.72,
+    0.871
+   ]
+  }
+ },
+ "termination": {
+  "user_stop": 467,
+  "too_many_errors": 1
+ },
+ "user_llm_usage": {
+  "n_calls": 2337,
+  "prompt_tokens": 0,
+  "completion_tokens": 0,
+  "cost_usd": 0,
+  "n_request_ids": 2337
+ },
+ "units": [
+  {
+   "unit_id": "b150f768f3f1d5b8",
+   "role": "flip",
+   "pair_id": "fe9c830b9161",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "9e4052ccf4f7c871",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 1,
+    "QQ": 1,
+    "BB": 0
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "vanished",
+    "vanished",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "8d507e66543fba73",
+   "role": "control",
+   "pair_id": "fe9c830b9161",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "384bb9b3f3690958",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "dbda3612364ae6d9",
+   "role": "flip",
+   "pair_id": "625fa380b01c",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "124a6c29ce4e6ac1",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "vanished",
+    "vanished",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "a7f1fed4cb511528",
+   "role": "control",
+   "pair_id": "625fa380b01c",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "66ff99cd314c9046",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 0,
+    "BQ#2": 0,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "0ffc0de82a241fcc",
+   "role": "flip",
+   "pair_id": "21991b9f0323",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "384bb9b3f3690958",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 1,
+    "BQ#2": 0,
+    "QQ#0": 0,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "reversed",
+   "status": "ok",
+   "Dbar": -0.3333333333333333,
+   "per_rep_fate": [
+    "vanished",
+    "vanished",
+    "reversed"
+   ]
+  },
+  {
+   "unit_id": "c728aa01787ca6f2",
+   "role": "control",
+   "pair_id": "21991b9f0323",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "c9fdae7618108b6d",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 1,
+    "BQ#2": 0,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "new_flip",
+   "status": "ok",
+   "Dbar": 0.3333333333333333,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "new_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "89bc930ee2da3d7d",
+   "role": "flip",
+   "pair_id": "5ebc32303d61",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "7a28bf6ec2861b72",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 1,
+    "QQ": 1,
+    "BB": 0
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 0,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": null,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": null,
+   "status": "missing",
+   "Dbar": null,
+   "per_rep_fate": [
+    "retained",
+    null,
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "5de2b89d04775302",
+   "role": "control",
+   "pair_id": "5ebc32303d61",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "5c8c0800532c5dac",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 0,
+    "BQ#2": 1,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "947abc753eb4ff97",
+   "role": "flip",
+   "pair_id": "551354c84cf9",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_act",
+   "state_key": "c9f6129a9d3fb140",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1,
+    "BB": 0
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "reversed",
+   "status": "ok",
+   "Dbar": 0.3333333333333333,
+   "per_rep_fate": [
+    "vanished",
+    "vanished",
+    "reversed"
+   ]
+  },
+  {
+   "unit_id": "92bda179c4860177",
+   "role": "control",
+   "pair_id": "551354c84cf9",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_act",
+   "state_key": "92460cbc72a9c3f1",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "new_flip",
+   "status": "ok",
+   "Dbar": 0.3333333333333333,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "new_flip"
+   ]
+  },
+  {
+   "unit_id": "554f82184ea7f656",
+   "role": "flip",
+   "pair_id": "f9c31da7de77",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "c9d317f7377a15f6",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 0,
+    "BB": 1
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "reversed",
+    "vanished",
+    "retained"
+   ]
+  },
+  {
+   "unit_id": "054a2b9e3a4472e4",
+   "role": "control",
+   "pair_id": "f9c31da7de77",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "3cebbe0526f0b09a",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 0,
+    "QQ#0": 0,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "new_flip",
+    "stays_non_flip",
+    "new_flip"
+   ]
+  },
+  {
+   "unit_id": "52df93f2b15c4a23",
+   "role": "flip",
+   "pair_id": "f01d48e4622e",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U2Q",
+   "sub_cls": "ii_talk",
+   "state_key": "a0ac13854e86607a",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 0,
+    "BQ#2": 0,
+    "QQ#0": 1,
+    "QQ#1": 0,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "retained",
+   "status": "ok",
+   "Dbar": -0.6666666666666666,
+   "per_rep_fate": [
+    "retained",
+    "vanished",
+    "retained"
+   ]
+  },
+  {
+   "unit_id": "a9761d42c49d8b73",
+   "role": "control",
+   "pair_id": "f01d48e4622e",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U2Q",
+   "sub_cls": "ii_talk",
+   "state_key": "f2911a6ec18f1f1e",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "b79d735a1c2a1e9f",
+   "role": "flip",
+   "pair_id": "e13db9ebf925",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "e5f642fda84d408d",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 0,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "reversed",
+   "status": "ok",
+   "Dbar": 0.6666666666666666,
+   "per_rep_fate": [
+    "vanished",
+    "reversed",
+    "reversed"
+   ]
+  },
+  {
+   "unit_id": "c251314fd8d2cc1a",
+   "role": "control",
+   "pair_id": "e13db9ebf925",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "1cb9ccd126171577",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 0,
+    "BQ#2": 0,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "13ae57ad8cf30caf",
+   "role": "flip",
+   "pair_id": "81217c7db2d7",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "c8aa472075f621ca",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "vanished",
+    "vanished",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "7c5bb648a8f83648",
+   "role": "control",
+   "pair_id": "81217c7db2d7",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "5aeff461ca7436cf",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 0,
+    "BQ#2": 0,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "08044ab8687ad804",
+   "role": "flip",
+   "pair_id": "91a432869c8b",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_act",
+   "state_key": "a372a9704ce920bc",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 0,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "retained",
+   "status": "ok",
+   "Dbar": -0.3333333333333333,
+   "per_rep_fate": [
+    "vanished",
+    "retained",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "1fdf3e6552a80d55",
+   "role": "control",
+   "pair_id": "91a432869c8b",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "484e4a56ef86b38b",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 0,
+    "BQ#2": 0,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "492082a2e4cbed55",
+   "role": "flip",
+   "pair_id": "9edba1850be1",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "384bb9b3f3690958",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 0,
+    "BQ#2": 1,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "vanished",
+    "vanished",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "aea8d796f0a53901",
+   "role": "control",
+   "pair_id": "9edba1850be1",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "c9fdae7618108b6d",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "new_flip",
+   "status": "ok",
+   "Dbar": -0.3333333333333333,
+   "per_rep_fate": [
+    "new_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "1247a8545a377f4f",
+   "role": "flip",
+   "pair_id": "daa9dde1afc5",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "aaf8d095e97d6383",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 1,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "vanished",
+    "vanished",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "b7ab11acef28b747",
+   "role": "control",
+   "pair_id": "daa9dde1afc5",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "35eb42b16d0c9323",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "new_flip",
+   "status": "ok",
+   "Dbar": 0.6666666666666666,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "new_flip",
+    "new_flip"
+   ]
+  },
+  {
+   "unit_id": "0b82643f54e22b76",
+   "role": "flip",
+   "pair_id": "cf331d4f9533",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "7bff34505b91f647",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 0,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "vanished",
+    "vanished",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "64a4a695c801935c",
+   "role": "control",
+   "pair_id": "cf331d4f9533",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "1a946b99154816ff",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 1,
+    "BQ#2": 0,
+    "QQ#0": 1,
+    "QQ#1": 0,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "new_flip",
+   "status": "ok",
+   "Dbar": -0.3333333333333333,
+   "per_rep_fate": [
+    "new_flip",
+    "new_flip",
+    "new_flip"
+   ]
+  },
+  {
+   "unit_id": "7bdc152e957682e3",
+   "role": "flip",
+   "pair_id": "50a689eae342",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "d44170ea3158b140",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 0,
+    "BQ#2": 1,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "reversed",
+   "status": "ok",
+   "Dbar": 0.6666666666666666,
+   "per_rep_fate": [
+    "reversed",
+    "vanished",
+    "reversed"
+   ]
+  },
+  {
+   "unit_id": "ecd2f579e24a9c3a",
+   "role": "control",
+   "pair_id": "50a689eae342",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "b0d69d54f03d12d5",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "bd233959543f1ed2",
+   "role": "flip",
+   "pair_id": "d823f6d0482a",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "443429f83d5b93c2",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 0,
+    "BQ#2": 0,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "reversed",
+   "status": "ok",
+   "Dbar": -1.0,
+   "per_rep_fate": [
+    "reversed",
+    "reversed",
+    "reversed"
+   ]
+  },
+  {
+   "unit_id": "d911531a93821ecf",
+   "role": "control",
+   "pair_id": "d823f6d0482a",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "66d33786db6f5658",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 0,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "new_flip",
+    "new_flip"
+   ]
+  },
+  {
+   "unit_id": "03aad5df2197b7d8",
+   "role": "flip",
+   "pair_id": "a1d99f2d36d6",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "c8aa472075f621ca",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "too_many_errors",
+    "QQ#2": "user_stop"
+   },
+   "fate": "retained",
+   "status": "ok",
+   "Dbar": 0.6666666666666666,
+   "per_rep_fate": [
+    "retained",
+    "retained",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "5599904e25a36fc4",
+   "role": "control",
+   "pair_id": "a1d99f2d36d6",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "7b739f96669646c8",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 0,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "new_flip",
+   "status": "ok",
+   "Dbar": -0.6666666666666666,
+   "per_rep_fate": [
+    "new_flip",
+    "new_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "c76cd43b7e08a0fe",
+   "role": "flip",
+   "pair_id": "2ecbd1154ab6",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "778f1ab7bb4c916a",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "vanished",
+    "vanished",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "f23dee810b6ccfd0",
+   "role": "control",
+   "pair_id": "2ecbd1154ab6",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "b6783b2d98705df5",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 0,
+    "BQ#2": 0,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "371c75f11c99e41f",
+   "role": "flip",
+   "pair_id": "ce0d2aa71425",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "9e4052ccf4f7c871",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1,
+    "BB": 0
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": null,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 0,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": null,
+   "status": "missing",
+   "Dbar": null,
+   "per_rep_fate": [
+    "vanished",
+    null,
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "0b136819a405538c",
+   "role": "control",
+   "pair_id": "ce0d2aa71425",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "af78328416d54c90",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 0,
+    "BQ#2": 0,
+    "QQ#0": 1,
+    "QQ#1": 0,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "new_flip",
+   "status": "ok",
+   "Dbar": -0.6666666666666666,
+   "per_rep_fate": [
+    "new_flip",
+    "stays_non_flip",
+    "new_flip"
+   ]
+  },
+  {
+   "unit_id": "67f80a3020658fd0",
+   "role": "flip",
+   "pair_id": "618bc69f051f",
+   "model": "q8",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "33c21870189fac08",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 1,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 0,
+    "BQ#2": 1,
+    "QQ#0": 0,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "retained",
+    "reversed",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "f7a2d3a12fc86f32",
+   "role": "control",
+   "pair_id": "618bc69f051f",
+   "model": "q8",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "f72574b02329be06",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 0,
+    "BQ#2": 0,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "86a94c766b62e19a",
+   "role": "flip",
+   "pair_id": "64017bd9038d",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "35bad8e87e90f3f6",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 1,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 0,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "reversed",
+   "status": "ok",
+   "Dbar": -0.3333333333333333,
+   "per_rep_fate": [
+    "vanished",
+    "reversed",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "b454b579a4c6589e",
+   "role": "control",
+   "pair_id": "64017bd9038d",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "5a7b52f1c9313894",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 0,
+    "BQ#2": 0,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "27a15f2fd0bcf7d4",
+   "role": "flip",
+   "pair_id": "cf91b423e99e",
+   "model": "q8",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "5505429f9d581c4e",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "vanished",
+    "vanished",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "41755134469d0267",
+   "role": "control",
+   "pair_id": "cf91b423e99e",
+   "model": "q8",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "2716c737106376ea",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "e5dd4066d1ab8300",
+   "role": "flip",
+   "pair_id": "75f12db72b77",
+   "model": "q8",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "b71cab00c60057d2",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 1,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "vanished",
+    "vanished",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "9fa7ea103f6a9ed2",
+   "role": "control",
+   "pair_id": "75f12db72b77",
+   "model": "q8",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "613a7b79935d632b",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 0,
+    "QQ#1": 1,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "new_flip",
+   "status": "ok",
+   "Dbar": 0.6666666666666666,
+   "per_rep_fate": [
+    "new_flip",
+    "stays_non_flip",
+    "new_flip"
+   ]
+  },
+  {
+   "unit_id": "28ca58dbb6c95616",
+   "role": "flip",
+   "pair_id": "789179dac625",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "80bae34a671fcfab",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 0,
+    "BQ#2": 0,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "reversed",
+    "vanished",
+    "retained"
+   ]
+  },
+  {
+   "unit_id": "1520c755a8d97c38",
+   "role": "control",
+   "pair_id": "789179dac625",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "a2beba57fad4537e",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "4588489ed2896e7a",
+   "role": "flip",
+   "pair_id": "226f6f20dacd",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "0e653de55174f7c7",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 1
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "vanished",
+    "vanished",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "02b2c8422c5f3983",
+   "role": "control",
+   "pair_id": "226f6f20dacd",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "6b24cc5834de8464",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1,
+    "BB": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "b98cec6b9ea442fa",
+   "role": "flip",
+   "pair_id": "c9d2e6b07437",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "65f979ce4fb51158",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 0,
+    "BB": 1
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "vanished",
+    "vanished",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "b9297d3b4d7246d7",
+   "role": "control",
+   "pair_id": "c9d2e6b07437",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "51facb01cb51f01a",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 1,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 0,
+    "BQ#2": 0,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "ae29643149780d56",
+   "role": "flip",
+   "pair_id": "2b2f390b0b54",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "7a28bf6ec2861b72",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 0,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "reversed",
+    "retained",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "604db23f5bbeca68",
+   "role": "control",
+   "pair_id": "2b2f390b0b54",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "672a05a4361a43b1",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 0,
+    "BQ#2": 0,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "881d528dcbde4554",
+   "role": "flip",
+   "pair_id": "f53b6f545185",
+   "model": "q8",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "ea53f5c48d35ad60",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 1,
+    "BQ#2": 0,
+    "QQ#0": 1,
+    "QQ#1": 0,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "retained",
+   "status": "ok",
+   "Dbar": -0.3333333333333333,
+   "per_rep_fate": [
+    "retained",
+    "reversed",
+    "retained"
+   ]
+  },
+  {
+   "unit_id": "4a94a05c3a690e3e",
+   "role": "control",
+   "pair_id": "f53b6f545185",
+   "model": "q8",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "df611066ff46964c",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "d1efe1b7077d0628",
+   "role": "flip",
+   "pair_id": "34031ea61a0a",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "b23cae2fb24e11a3",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 1,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 0,
+    "BQ#2": 0,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "vanished",
+    "vanished",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "e0deff246eecb06a",
+   "role": "control",
+   "pair_id": "34031ea61a0a",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "682bf9e017477b9e",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "6ce8089a1f852ba8",
+   "role": "flip",
+   "pair_id": "81caeb76ba1e",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "c06ff483747421c8",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 0,
+    "BQ#2": 0,
+    "QQ#0": 0,
+    "QQ#1": 1,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "reversed",
+    "retained",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "a6983510d0fb79a3",
+   "role": "control",
+   "pair_id": "81caeb76ba1e",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "e90e0904371f58fc",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 0,
+    "BQ#2": 1,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "new_flip",
+   "status": "ok",
+   "Dbar": 0.6666666666666666,
+   "per_rep_fate": [
+    "new_flip",
+    "stays_non_flip",
+    "new_flip"
+   ]
+  },
+  {
+   "unit_id": "6686ae64f26d8179",
+   "role": "flip",
+   "pair_id": "525852e4ed98",
+   "model": "q8",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "461c131bc651cf32",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 1,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 0,
+    "BQ#2": 0,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "vanished",
+    "vanished",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "d698fb17c256f36a",
+   "role": "control",
+   "pair_id": "525852e4ed98",
+   "model": "q8",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "b3938b3622f07bd3",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "b112ca9760d02e69",
+   "role": "flip",
+   "pair_id": "57ceab99b06c",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "3b340693ad39ee4b",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 1,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "vanished",
+    "vanished",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "6deb8f6f7c64d8de",
+   "role": "control",
+   "pair_id": "57ceab99b06c",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "fd41063558f86fd4",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "acb194053544e135",
+   "role": "flip",
+   "pair_id": "db524b49f43b",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "1c0f492eb804250d",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 1,
+    "QQ": 1,
+    "BB": 0
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "vanished",
+    "vanished",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "a345783a4f37c9bc",
+   "role": "control",
+   "pair_id": "db524b49f43b",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "14768abd3ff7395a",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1,
+    "BB": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "5f344aae6705b8f2",
+   "role": "flip",
+   "pair_id": "e6cb2f8c544a",
+   "model": "q8",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "5efd42cebe0780b9",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 0,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "vanished",
+    "vanished",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "b821118440d94032",
+   "role": "control",
+   "pair_id": "e6cb2f8c544a",
+   "model": "q8",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "6f98fafe934c9eab",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 0,
+    "BQ#2": 0,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "24de226fad498d95",
+   "role": "flip",
+   "pair_id": "9554568e049d",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "4fb22e95d705a024",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 0,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 0,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "vanished",
+    "vanished",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "8b1b6d8c14abfe63",
+   "role": "control",
+   "pair_id": "9554568e049d",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "9e15640f8f74721a",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 0,
+    "BQ#2": 0,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "222d3433b6ffa197",
+   "role": "flip",
+   "pair_id": "24037ecc83c7",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "77d3dfce4b1fcef3",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 1,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 0,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "retained",
+   "status": "ok",
+   "Dbar": 0.3333333333333333,
+   "per_rep_fate": [
+    "vanished",
+    "retained",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "6340ded83bee7c69",
+   "role": "control",
+   "pair_id": "24037ecc83c7",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "ca7b6fb84841724b",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 0,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "new_flip",
+   "status": "ok",
+   "Dbar": 0.6666666666666666,
+   "per_rep_fate": [
+    "new_flip",
+    "new_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "e2629a11bab442f3",
+   "role": "flip",
+   "pair_id": "2209bbba38db",
+   "model": "q8",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "7c68e507e803e37d",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1,
+    "BB": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "vanished",
+    "vanished",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "d282692f2b86e53f",
+   "role": "control",
+   "pair_id": "2209bbba38db",
+   "model": "q8",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "7869e90a4c2c1d89",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1,
+    "BB": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "efa2eac35b28eb3f",
+   "role": "flip",
+   "pair_id": "3f6870899174",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "9e4052ccf4f7c871",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1,
+    "BB": 0
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 0,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "retained",
+   "status": "ok",
+   "Dbar": -0.3333333333333333,
+   "per_rep_fate": [
+    "vanished",
+    "retained",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "0c03657b95f2c6d7",
+   "role": "control",
+   "pair_id": "3f6870899174",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "65f979ce4fb51158",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "new_flip",
+   "status": "ok",
+   "Dbar": 0.6666666666666666,
+   "per_rep_fate": [
+    "new_flip",
+    "new_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "28d98e7918ee6771",
+   "role": "flip",
+   "pair_id": "c9016c16d776",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "1c0f492eb804250d",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 1,
+    "QQ": 1,
+    "BB": 0
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "vanished",
+    "vanished",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "75e3184135b8a91c",
+   "role": "control",
+   "pair_id": "c9016c16d776",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "14768abd3ff7395a",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1,
+    "BB": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 1,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 1,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  },
+  {
+   "unit_id": "f87d78b6f15f5aa1",
+   "role": "flip",
+   "pair_id": "79b224a29f9e",
+   "model": "q8",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "237b1d6dfba5bd09",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": {
+    "BQ#0": 1,
+    "BQ#1": 0,
+    "BQ#2": 1,
+    "QQ#0": 1,
+    "QQ#1": 0,
+    "QQ#2": 1
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "vanished",
+    "vanished",
+    "vanished"
+   ]
+  },
+  {
+   "unit_id": "7325631d7aa1292b",
+   "role": "control",
+   "pair_id": "79b224a29f9e",
+   "model": "q8",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "acb9223d610a23f7",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ#0": 0,
+    "BQ#1": 0,
+    "BQ#2": 0,
+    "QQ#0": 0,
+    "QQ#1": 0,
+    "QQ#2": 0
+   },
+   "termination": {
+    "BQ#0": "user_stop",
+    "BQ#1": "user_stop",
+    "BQ#2": "user_stop",
+    "QQ#0": "user_stop",
+    "QQ#1": "user_stop",
+    "QQ#2": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok",
+   "Dbar": 0.0,
+   "per_rep_fate": [
+    "stays_non_flip",
+    "stays_non_flip",
+    "stays_non_flip"
+   ]
+  }
+ ]
+}

@@ -70,7 +70,8 @@ q8 RTN-W3  & 58 t $\cdot$ 174 st $\cdot$ 3/3 b & 27 t $\cdot$ 81 st $\cdot$ 3/3 
 q4 / q8 KV4 (unrotated) & -- & -- & -- & -- & 788 $\cdot$ 787 / 788 $\cdot$ 788 st; q8 ALFWorld 134 $\cdot$ 134 st \\
 \bottomrule
 \end{tabular}}
-\caption{Completed crossed-intervention coverage (t = tasks, st = states, b = complete/found blocks; BFCL and ALFWorld: items $\cdot$ states, one run). Bank U: blocks completed and state rows per domain; only block f01 is analysed in this paper. ``holdout dirs'': telecom holdout fork directories exist and were not opened. The q14, q32 and l8 checkpoints of the source matrix have end-to-end runs only, and q4 RTN-W3 has no complete Bank P block. The telecom development analysis of \S\ref{sec:r3} uses the planning fit over these 6 blocks. Source: \nolinkurl{analysis/fork/out/ghf_20261001T211519Z.md} (\S5).}
+\caption{Completed crossed-intervention coverage (t = tasks, st = states, b = complete/found blocks; BFCL and ALFWorld: items $\cdot$ states, one run). Bank U: blocks completed and state rows per domain; only block f01 is analysed in this paper. ``holdout dirs'': telecom holdout fork directories exist and were not opened. The q14, q32 and l8 checkpoints of the source matrix have end-to-end runs only, and q4 RTN-W3 has no complete Bank P block. The telecom development analysis of \S\ref{sec:r3} uses the planning fit over these 6 blocks. Source: \nolinkurl{analysis/fork/out/ghf_20261001T211519Z.md} (\S5). The end-to-end q4 AWQ-W3 run is incomplete: two airline episodes hit 600\,s serving timeouts (infrastructure), so it is not reported; its completed episodes and failure logs are kept. % src: /data/ziyangs/cloq_work/queue/deferred/a6k2_q4_awq_w3_qx.json; runs/a6k2_q4_awq_w3_q5/airline/infra_causes.json
+}
 \label{tab:coverage}
 \end{table*}
 
@@ -97,6 +98,31 @@ q8 KV8     & .047 (1/3) & .012 (1/0) & 0 (0/0) \\
 \caption{Bank U, block f01: per-state turnover $M$ (rescues/damages), task-equal, one state per task. $G$ lies within $\pm0.035$ in every cell, and every interval includes 0. $^\ast$GPTQ-W4's U2Q states are its own U1 states, with concordant outcomes on 20/20 duplicates; they are counted once in cross-sub-bank totals. One block, so the intervals reflect task resampling only. Source: \nolinkurl{analysis/fork/out/bank_u_f01_20261001T134456Z.md}.}
 \label{tab:banku}
 \end{table}
+
+\begin{table}[h]
+\centering\scriptsize\setlength{\tabcolsep}{2.6pt}
+% src: analysis/fork/out/bank_u_f01_20261001T134456Z.md (§3 class composition and consequence per sub-bank; comparator block, unique states)
+% src: docs/REPORT_GPT61_20261001_0915.md (correction 1: 39/56 after deduplication)
+\begin{tabular}{@{}lllll@{}}
+\toprule
+& (i) identical & (ii) same tool & (iii) different & (iv) act vs.\ \\
+Model:sub & & structure, text & tool or args & talk \\
+\midrule
+q4:U1  & 141: 0 & 93: 14 (.151) & 8: 0 & 13: 7 (.538) \\
+q8:U1  & 173: 0 & 59: 7 (.119) & 13: 2 (.154) & 10: 0 \\
+q4:U2B & 141: 0 & 91: 16 (.176) & 11: 2 (.182) & 12: 1 (.083) \\
+q8:U2B & 172: 0 & 51: 1 (.020) & 11: 1 (.091) & 21: 3 (.143) \\
+q4:U2Q & 34: 0 & 21: 3 (.143)$^\ast$ & 2: 0 & 3: 1 (.333) \\
+q8:U2Q & 50: 0 & 5: 0 & 2: 0 & 3: 0 \\
+\midrule
+unique rows & 684: 0 & 310: 39 (.126) & 46: 5 (.109) & 60: 12 (.200) \\ % derived: 310=296+13+1; 46=1+19+26; 60=14+46; .126=39/(296+13+1); .109=5/(1+19+26); .200=12/(14+46)
+\bottomrule
+\end{tabular}
+\caption{Which kind of action difference changes the outcome at ordinary states (Bank U, block f01). Entries: ``state rows: outcome-changing rows (flip rate)'', pooled over the three cells of a model within a sub-bank. The last row counts each (cell, state) once: q4/q8 GPTQ-W4's U2Q states repeat their U1 states ($^\ast$ includes the two repeated class-(ii) flips), so 58 flipping rows become 56. Source: \nolinkurl{analysis/fork/out/bank_u_f01_20261001T134456Z.md}.}
+\label{tab:taxonomy}
+\end{table}
+
+\input{sections/gen_simctrl_fates}
 
 \paragraph{Shared fragility across quantizers (a lead).} On the 85 shared q4 U2B states, cell pairs co-flip 7 times, against about 1.4 expected under independence, and 6 of the 7 co-flips go in the same direction. None of the joint flips has an identical quantized action across cells. These 7 co-flips come from only \textbf{5 distinct states} in one block. % src: analysis/fork/out/bank_u_f01_20261001T134456Z.md (§6, q4:U2B); docs/REPORT_GPT61_20261001_0915.md (correction 2)
 On q8 U2B, the 5 flipping states each flip under a single cell. We therefore read this as a lead toward \emph{state-level} fragility, where different actions at the same state flip the outcome, and not yet as a finding.
