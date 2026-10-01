@@ -119,13 +119,9 @@ def main():
         if L["quarantined"]:
             for u in L["units"]:
                 u.setdefault("excluded", "quarantined")
-    AD.mark_incomplete_blocks(allu, "dev")
-    seen, units = set(), []
-    for u in allu:
-        k = (u["run_id"], u["domain"], u["task"])
-        if k not in seen and "excluded" not in u and u["domain"] in ("retail", "airline"):
-            seen.add(k)
-            units.append(u)
+    units, _ = AD.dedupe_units(allu)
+    AD.mark_incomplete_blocks(units, "dev", strict=True)
+    units = [u for u in units if "excluded" not in u and u["domain"] in ("retail", "airline")]
     by = defaultdict(dict)
     for u in units:
         e = AD.effects(u["Y"], u["div"])
@@ -224,6 +220,34 @@ def main():
                                  "spearman_pred_vs_GB": spearman(pred, gB), "spearman_GA_vs_GB": spearman(gA, gB)}})
         return res
 
+    # BF16 task difficulty (success over every admitted bfpair block of the model), for the partial-association test
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import analyze_difficulty as ADF
+    bfst = ADF.bf16_task_stats(snap)
+
+    def partial(D, mc, sa, sb, key):
+        """B task rate of `key` regressed on A task rate + QQ success propensity q_A + flip opportunity q_A(1-q_A) +
+        BF16 task difficulty; coefficient and partial correlation of the A rate; reference: B task vectors permuted
+        within domain (refit each time)."""
+        yA, yB = D[key][:, cols(sa)].mean(1), D[key][:, cols(sb)].mean(1)
+        q = D["QQ"][:, cols(sa)].mean(1)
+        bf = np.array([(bfst.get((mc[0], t.split(":")[0], t)) or {}).get("succ", np.nan) for t in tasks])
+        okm = np.isfinite(bf)
+        Z = np.column_stack([np.ones(len(q)), q, q * (1 - q), np.nan_to_num(bf, nan=np.nanmean(bf))])
+
+        def coef(yb):
+            X = np.column_stack([Z, yA])
+            beta, *_ = np.linalg.lstsq(X, yb, rcond=None)
+            rz = lambda v: v - Z @ np.linalg.lstsq(Z, v, rcond=None)[0]
+            ra, rb = rz(yA), rz(yb)
+            pc = float(np.corrcoef(ra, rb)[0, 1]) if ra.std() > 0 and rb.std() > 0 else float("nan")
+            return float(beta[-1]), pc
+        b0, pc0 = coef(yB)
+        nb, npc = zip(*[coef(yB[perm_within_domain(rng, dom_idx)]) for _ in range(a.B)])
+        return {"beta_A": round(b0, 4), "partial_corr_A": round(pc0, 4), "p_beta": pval(b0, nb), "p_partial_corr": pval(pc0, npc),
+                "covariates": ["QQ success propensity (A)", "q(1-q) flip opportunity (A)", "BF16 task success over bfpair blocks"],
+                "n_tasks_without_bf16": int((~okm).sum())}
+
     out = {"label": "INTERNAL REPLICATION (development outcomes already viewed, W67); not confirmation",
            "snapshot_id": sid, "split": split_info, "population": {"cells": [f"{m}:{c}" for m, c in present], "n_tasks": T,
                                                                      "n_blocks": K, "blocks": blocks, "domains": {d: len(v) for d, v in dom_idx.items()}},
@@ -234,6 +258,7 @@ def main():
         lab = f"{mc[0]}:{mc[1]}"
         r = {"concentration": {"A->B": concentration(D, A0, B0), "B->A": concentration(D, B0, A0)},
              "direction": {"A->B": direction(D, A0, B0), "B->A": direction(D, B0, A0)}}
+        r["beyond_baselines"] = {key: {"A->B": partial(D, mc, A0, B0, key), "B->A": partial(D, mc, B0, A0, key)} for key in ("M", "G")}
         sens = []
         for sa, sb in extra:
             gA, gB = D["G"][:, cols(sa)].mean(1), D["G"][:, cols(sb)].mean(1)
@@ -314,6 +339,15 @@ def markdown(o: dict, jp: Path) -> str:
     for k, v in o["overlap"].items():
         L.append(f"| {k} | {v['phi_M']} | {v['task_identity_null']['p']:.4f} ({v['task_identity_null']['q95']}) | "
                  f"{v['nonce_alignment_null']['p']:.4f} ({v['nonce_alignment_null']['q95']}) | {v['same_direction_share_when_both_flip']} |")
+    L += ["", "## Beyond baseline propensity: B task rate ~ A task rate + QQ success + q(1-q) + BF16 task difficulty (perm p)", "",
+          "| cell | dir | M: beta_A (p) | M: partial corr | G: beta_A (p) | G: partial corr |", "|---|---|---|---|---|---|"]
+    for k, v in o["cells"].items():
+        bb = v["beyond_baselines"]
+        for d in ("A->B", "B->A"):
+            mm, gg = bb["M"][d], bb["G"][d]
+            L.append(f"| {k} | {d} | {mm['beta_A']} ({mm['p_beta']:.4f}) | {mm['partial_corr_A']} | {gg['beta_A']} ({gg['p_beta']:.4f}) | {gg['partial_corr_A']} |")
+    L += ["", "Note: the frequency of I != 0 on divergent states (about 15-30%) is not the same as a significant mean I; the mean I "
+          "intervals of the W4 cells cover 0 (consequence_estimands, W68).", ""]
     L += ["", "## Task-heterogeneity diagnostic (stable task variance; negative kept)", ""]
     for k, v in o["cells"].items():
         h = v["task_heterogeneity_diagnostic"]

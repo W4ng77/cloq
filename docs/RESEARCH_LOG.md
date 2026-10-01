@@ -10,6 +10,22 @@ Newest first.
 
 ---
 
+## W70 — Review fixes A1–A3 (strict complete blocks, common panel, stress pools), W67 beyond-baseline test, Bank U driver + replay gate (2026-10-01)
+**TL;DR**
+- **Strict block rule (A1).** A block with any unit missing for infrastructure reasons now leaves the primary analysis. The old rule is kept as a labelled complete-case sensitivity (`--complete-case`, outputs `dev_cc_*`, `*_cc_*`). Only q4 AWQ-W4 moves: 1699 → 1642 units, G −0.3 → −0.9 [−3.1, +1.2] pp. Every other headline is unchanged.
+- **Infra-missing run-domains.** 10 of the 11 are agent-side context overflow, which is deterministic and a valid failure (W10), so a closed-loop re-run is pointless. Those units are recovered by `repair` fork tasks at −18, which re-execute deterministically and require every recorded prompt to reproduce. The one genuine outage (a6k2_q4_tel_awq_w4_f01, telecom) has no single-episode re-run path; this is a proposal for the matrix owner.
+- **Common panel (A2).** Cells and pools use the 85-task retail/airline panel; telecom is reported separately. q8 GPTQ-W4 full-pool G is +2.9 [+1.4, +4.4] pp (block bootstrap). The +3.3 [+1.6, +5.0] figure is conditional on divergence, which is a different estimand, and is labelled as such.
+- **Stress pools (A3).** These resample only real common blocks. Stress cells share 1 block, so they are reported as `not_poolable` with k_blocks. Do not cite pooled-stress significance.
+- **W67 beyond-baseline test.** Split-B task flip rates were regressed on split-A rates plus QQ success propensity, q(1−q) and BF16 task difficulty, with a within-domain permutation p. The A rate stays predictive for M in 11/12 cell-directions (partial r 0.53–0.87; the exception is q8 KV8 B→A, p 0.15) and for G in 11/12 (q4 KV8 A→B p 0.06). The frequency of I ≠ 0 is not a significant mean I: the W4 mean-I intervals cover 0.
+- **Bank U.** The driver mode, generator and §15 amendment 1 are committed (U1 Q→Q; U2B BF16-sourced plus U2Q Q-sourced, B→B; Q0 on a frozen 25% U2 subsample, reported separately; uniform-within-trajectory sampling; no zero-imputed suffix effect). The replay gate (3 tasks, no-op fraction 1.0) is queued at −17 behind about 34 running tasks. Gate result and first-block throughput: see W71.
+
+**Evidence**
+- Strict: `analysis/fork/out/dev_all_20261001T032236Z.{md,json}`; complete-case: `dev_cc_all_20261001T032304Z.{md,json}`.
+- Patterns: `consequence_estimands_20261001T0255Z.json`, `patterns16_20261001T0255Z.csv` (and `*_cc_*`); coverage: `coverage_20261001T0255Z.json`, `block_coverage_20261001T0255Z.json`, `population_panel_20261001T0255Z.md`.
+- W67: `analysis/fork/out/w67_audit_20261001T0255Z.md` (section "Beyond baseline propensity"), `direction_replication_20261001T0255Z.json`.
+- Code: `analysis/fork/analyze_dev.py` (`mark_incomplete_blocks`, `dedupe_units`, `boot_for`, common-block pools), `analysis/fork/audit_w67.py`, `scripts/a6000/fork_driver.py` (`bank_u`, `rerun_episode`, `repair_mode`), `scripts/a6000/make_tasks_bank_u.py`, `manifests/fork/bank_u_v1.json`, `docs/insights/FORK_PROTOCOL.md` §15.
+- Queue: `fork_repair_q4_awq_w4`, `fork_repair_q4_rtn_w3` (−18); `bank_u_gate_{q4_gptq_w4_d1,q4_kvq_int8,q8_awq_w4}` (−17). The KV8 gate's earlier coverage failure was caused by an orphaned server on the port; it is fixed by the pre-launch port guard in `run_fork` (df3db7c).
+
 ## W73 — Loop guard revised to lg-v2 (window 32, ≥ 8 repeats) and pinned; W2 panel queued with an original-cap sample (2026-10-01)
 **TL;DR** Per plan §8.4.3, the guard is tightened instead of disabled.
 - **Revision:** lg-v2 changes only two thresholds, window 16 → 32 and repeats 4 → 8. It is recorded in `manifests/stress/loop_guard_v2.json`; v1 is marked superseded and was never used for a run.

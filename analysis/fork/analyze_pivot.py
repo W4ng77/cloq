@@ -131,17 +131,9 @@ def main():
     snap = json.load(open(a.snapshot))
     loaded = [AD.load_dir(d, snap, {}) for d in AD.discover(False)]
     split_info = AD.split_guard([u for L in loaded for u in L["units"]], a.split, "analyze_pivot")
-    split_info["incomplete_blocks"] = AD.mark_incomplete_blocks([u for L in loaded for u in L["units"]], a.split)
-    units, seen = [], set()
-    for L in loaded:
-        if L["quarantined"]:
-            continue
-        for u in L["units"]:
-            k = (u["run_id"], u["domain"], u["task"])
-            if "excluded" in u or k in seen or (a.cells and u["cell"] not in a.cells):
-                continue
-            seen.add(k)
-            units.append(u)
+    _all, _ = AD.dedupe_units([u for L in loaded for u in L["units"] if not L["quarantined"]])
+    split_info["incomplete_blocks"] = AD.mark_incomplete_blocks(_all, a.split, strict=True)
+    units = [u for u in _all if "excluded" not in u and (not a.cells or u["cell"] in a.cells)]
     if not units:
         print("analyze_pivot: no analysable fork units; nothing to do.")
         return

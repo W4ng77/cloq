@@ -136,13 +136,9 @@ def main():
         if L["quarantined"]:
             for u in L["units"]:
                 u.setdefault("excluded", "quarantined")
-    AD.mark_incomplete_blocks(allu, "dev")
-    seen, units = set(), []
-    for u in allu:
-        k = (u["run_id"], u["domain"], u["task"])
-        if k not in seen and "excluded" not in u:
-            seen.add(k)
-            units.append(u)
+    units, _ = AD.dedupe_units(allu)
+    AD.mark_incomplete_blocks(units, "dev", strict=True)
+    units = [u for u in units if "excluded" not in u]
     for u in units:
         u["E"] = AD.effects(u["Y"], u["div"])
     compared = [(m, c) for m in ("q4", "q8") for c in ("gptq_w4_d1", "awq_w4", "kvq_int8")]

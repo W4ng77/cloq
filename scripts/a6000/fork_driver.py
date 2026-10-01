@@ -128,8 +128,15 @@ def search_task(block: F.Block, task_id: str, bases: dict, user_base: str, state
         row["exclusion"] = f"decision/trajectory count mismatch {len(decs)} vs {len(pos)}"
         return row
     if tr["termination_reason"] not in ("user_stop", "agent_stop", "max_steps", "too_many_errors"):
-        row["exclusion"] = f"termination {tr['termination_reason']} (infrastructure)"
-        return row
+        cause = None
+        ic = ROOT / "runs" / block.run_id / block.domain / "infra_causes.json"
+        if tr["termination_reason"] == "infrastructure_error" and ic.exists():
+            cause = json.loads(ic.read_text()).get(str(task_id))
+        if cause in ("context_overflow", "agent_parse_error"):
+            row["orig_infra_cause"] = cause  # W10/W70: agent-side failure of the frozen policy, a valid failure outcome (Y_QQ = 0)
+        else:
+            row["exclusion"] = f"termination {tr['termination_reason']} (infrastructure{', ' + cause if cause else ''})"
+            return row
     t_search = 0.0
     for t in range(len(pos)):
         st = F.make_state(block, task_id, t)
@@ -726,6 +733,75 @@ def bank_u(spec, bases, user_base, servers, out):
     return res
 
 
+def rerun_episode(block: F.Block, task_id: str, bases: dict, user_base: str, tag: str) -> dict:
+    """W70: deterministically re-execute Q's original episode from the start (same task dump, simulation seed, nonce, tau2
+    config, Q server) when its saved trajectory was lost (tau2 stores no messages for an episode that raised). An
+    agent-side context-window error is caught and the partial trajectory kept. The re-run is accepted only if every
+    re-run decision's prompt ids equal the originally recorded ones (and the counts agree)."""
+    from tau2.data_model.tasks import Task
+    from tau2.runner.build import build_text_orchestrator
+
+    tr = block.traj[task_id]
+    task = Task.model_validate(tr["task"])
+    cfg = F.run_config(block.run_config, bases["Q"], user_base)
+    orch = build_text_orchestrator(cfg, task, seed=tr["seed"])
+    A = F.fork_agent_cls()
+    orch.agent = A(tools=orch.environment.get_tools(), domain_policy=orch.environment.get_policy(), llm=cfg.llm_agent,
+                   llm_args=json.loads(json.dumps(cfg.llm_args_agent)), task=task, nonce=block.nonce, forced=None, tag=tag, decision_idx=0)
+    err = None
+    try:
+        orch.run()
+    except Exception as e:
+        err = repr(e)
+    recs = F._W.pop(tag)
+    msgs = [F.msg_to_dict(m) for m in sorted(orch.trajectory, key=lambda x: x.timestamp)]
+    orig = block.dec[task_id]
+    same = len(recs) == len(orig) and all(F.ids_sha(r.get("prompt_token_ids")) == F.ids_sha(o["prompt_token_ids"]) for r, o in zip(recs, orig))
+    return {"messages": msgs, "error": err, "n_decisions_rerun": len(recs), "n_decisions_orig": len(orig), "reproduces_original": same,
+            "agent_side": bool(err and "ContextWindowExceeded" in err)}
+
+
+def repair_mode(spec, bases, user_base, servers, out):
+    """W70: complete fork units that the original task could not finish.
+      kind "branches": the state was frozen but a branch failed with a context-window error (now a recorded failure):
+                       the state file is copied unchanged and branched again.
+      kind "search":   the original episode ended in an agent-side context overflow and tau2 kept no messages, so no
+                       state could be built: the episode is re-executed deterministically (rerun_episode), accepted only if
+                       it reproduces every recorded prompt, and then searched with the dev-fork rule (Y_QQ = failure).
+    spec["units"] = [{"dir", "run_id", "domain", "task_id", "kind"}]. analyze_dev reads analysis/fork/repair/ and prefers a
+    unit's non-excluded record."""
+    import shutil
+    rows, sdir = [], out / "states"
+    sdir.mkdir(parents=True, exist_ok=True)
+    blocks, reruns = {}, {}
+    for unit in spec["units"]:
+        od = ROOT / unit["dir"]
+        orig = next((r for r in json.load(open(od / "search.json"))["rows"]
+                     if r.get("run_id") == unit["run_id"] and r.get("domain") == unit["domain"] and str(r.get("task_id")) == str(unit["task_id"])), None)
+        if unit["kind"] == "branches" and orig is not None and orig.get("state_id"):
+            shutil.copy(od / "states" / f"{orig['state_id']}.json", sdir / f"{orig['state_id']}.json")
+            rows.append({**orig, "repair": "branches re-run"})
+            continue
+        k = (unit["run_id"], unit["domain"])
+        if k not in blocks:
+            blocks[k] = F.Block(ROOT, *k)
+        b = blocks[k]
+        tid = str(unit["task_id"])
+        rr = _safe(rerun_episode, b, tid, bases, user_base, f"rerun-{unit['run_id']}-{tid}")
+        reruns[f"{unit['run_id']}|{unit['domain']}|{tid}"] = {kk: v for kk, v in rr.items() if kk != "messages"}
+        if "error" in rr and "messages" not in rr or not rr.get("reproduces_original") or not rr.get("agent_side"):
+            rows.append({**(orig or {}), "run_id": unit["run_id"], "domain": unit["domain"], "task_id": tid,
+                         "exclusion": f"repair: re-run not accepted ({ {kk: rr.get(kk) for kk in ('reproduces_original', 'agent_side', 'n_decisions_rerun', 'n_decisions_orig')} })",
+                         "repair": "re-run rejected"})
+            continue
+        b.traj[tid] = {**b.traj[tid], "messages": rr["messages"], "n_messages": len(rr["messages"])}
+        r = _safe(search_task, b, tid, bases, user_base, sdir, spec.get("q_check", True))
+        rows.append({**r, "repair": "episode re-executed (reproduces original prompts) and searched"})
+    dump(out / "search.json", {"rows": rows, "repair_of": spec["units"], "reruns": reruns})
+    b = branches_mode({**spec, "states_dir": str(sdir.relative_to(ROOT)), "branches": ["BB", "BQ", "QB"], "noop_frac": 0.1}, bases, user_base, servers, out)
+    return {"n_units": len(rows), "n_states": len(list(sdir.glob("*.json"))), "branches": len(b["rows"])}
+
+
 def branches_mode(spec, bases, user_base, servers, out):
     sdir = ROOT / spec["states_dir"]
     states = [json.loads(p.read_text()) for p in sorted(sdir.glob("*.json"))]
@@ -877,7 +953,7 @@ def main():
     bases = {"B": a.b_base, "Q": a.q_base}
     out = ROOT / spec["out"]
     out.mkdir(parents=True, exist_ok=True)
-    fn = {"gate": gate, "gate_same": gate_same, "search": search_mode, "branches": branches_mode, "dev": dev_mode, "pivot_arms": pivot_arms, "bank_u": bank_u}[spec["mode"]]
+    fn = {"gate": gate, "gate_same": gate_same, "search": search_mode, "branches": branches_mode, "dev": dev_mode, "pivot_arms": pivot_arms, "bank_u": bank_u, "repair": repair_mode}[spec["mode"]]
     r = fn(spec, bases, a.user_base, servers, out)
     v = r.get("verdict")
     print(json.dumps({"verdict": v}, default=str))

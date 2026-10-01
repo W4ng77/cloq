@@ -74,6 +74,7 @@ def main():
     ap.add_argument("--snapshot", required=True)
     ap.add_argument("--split", default="dev")
     ap.add_argument("--B", type=int, default=AD.B_BOOT)
+    ap.add_argument("--complete-case", action="store_true", help="sensitivity: pre-W70 complete-block rule")
     a = ap.parse_args()
     t0 = time.time()
     try:
@@ -84,7 +85,7 @@ def main():
         pass
     check_table()
     snap = json.load(open(a.snapshot))
-    sid = snap.get("snapshot_id")
+    sid = ("cc_" if a.complete_case else "") + str(snap.get("snapshot_id"))
     loaded = [AD.load_dir(d, snap, {}) for d in AD.discover(False)]
     allu = [u for L in loaded for u in L["units"]]
     split_info = AD.split_guard(allu, a.split, "analyze_patterns")
@@ -93,14 +94,8 @@ def main():
         if L["quarantined"]:
             for u in L["units"]:
                 u.setdefault("excluded", "quarantined fork task (QQ no-op mismatch)")
-    incomplete = AD.mark_incomplete_blocks(allu, a.split)
-    units, seen = [], set()
-    for u in allu:
-        k = (u["run_id"], u["domain"], u["task"])
-        if k in seen:
-            continue
-        seen.add(k)
-        units.append(u)
+    units, _dups = AD.dedupe_units(allu)
+    incomplete = AD.mark_incomplete_blocks(units, a.split, strict=not a.complete_case)
     ok = [u for u in units if "excluded" not in u]
     for u in ok:
         u["E"] = AD.effects(u["Y"], u["div"])
@@ -261,7 +256,7 @@ def main():
     cp = OUT / f"coverage_{sid}.json"
     cp.write_text(json.dumps({"snapshot_id": sid, "split": split_info, "quarantined_dirs": sorted(quarantined),
                               "incomplete_blocks": incomplete, "tensor": cov, "common_intersections": common,
-                              "duplicate_units_dropped": len(allu) - len(units)}, indent=1))
+                              "duplicate_units_dropped": len(allu) - len(units), "block_rule": "complete-case sensitivity" if a.complete_case else "strict (W70)"}, indent=1))
     print(f"analyze_patterns: wrote {up.name}, {pp.name}, {ep.name}, {cp.name} ({time.time() - t0:.0f} s)")
 
 

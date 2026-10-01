@@ -149,20 +149,9 @@ def main():
     cache: dict = {}
     loaded = [AD.load_dir(d, snap, cache) for d in dirs]
     split_info = AD.split_guard([u for L in loaded for u in L["units"]], a.split, "analyze_difficulty")
-    split_info["incomplete_blocks"] = AD.mark_incomplete_blocks([u for L in loaded for u in L["units"]], a.split)
-    units, seen = [], set()
-    for L in loaded:
-        if L["quarantined"]:
-            continue
-        gate = "analysis/fork/gate" in L["dir"]
-        for u in L["units"]:
-            if "excluded" in u or (gate and u["domain"] != "telecom"):
-                continue
-            k = (u["run_id"], u["domain"], u["task"])
-            if k in seen:
-                continue
-            seen.add(k)
-            units.append(u)
+    _all, _ = AD.dedupe_units([u for L in loaded for u in L["units"] if not L["quarantined"]])
+    split_info["incomplete_blocks"] = AD.mark_incomplete_blocks(_all, a.split, strict=True)
+    units = [u for u in _all if "excluded" not in u and ("analysis/fork/gate" not in u["dir"] or u["domain"] == "telecom")]
     if a.cells:
         known = sorted({u["cell"] for u in units})
         units = [u for u in units if u["cell"] in a.cells]

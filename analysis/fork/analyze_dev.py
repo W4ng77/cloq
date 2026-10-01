@@ -64,7 +64,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "analysis/fork/out"
-ROOTS = ["analysis/fork/dev", "analysis/fork/kv", "analysis/fork/stress", "analysis/fork/telecom", "analysis/fork/restore", "analysis/fork/holdout"]
+ROOTS = ["analysis/fork/dev", "analysis/fork/kv", "analysis/fork/stress", "analysis/fork/telecom", "analysis/fork/repair", "analysis/fork/restore", "analysis/fork/holdout"]
 # Pre-declared pooling families (equal weight per cell within a family; families are never pooled together).
 FAMILIES = {"W4": ("gptq_w4_d1", "awq_w4"), "KV8": ("kvq_int8",), "stress": ("gptq_w3", "kvq_int4_rot", "kvq_int4", "rtn_w3")}
 
@@ -91,25 +91,38 @@ def unit_key(u: dict) -> tuple[str, str]:
 PENDING = "state without branches"
 
 
-def mark_incomplete_blocks(units: list[dict], split: str) -> dict:
-    """Primary inference uses complete shared blocks only (W63): a (model, cell, domain, block) counts when every split
-    task of that domain has a unit in it and none is still pending (a frozen state whose branches have not run yet).
-    Other exclusions (search / branch infrastructure failures) leave a block complete and are counted as usual.
-    Units of incomplete blocks are excluded with that reason. Returns {(model:cell, domain, block): reason}."""
+def dedupe_units(units: list[dict]) -> tuple[list[dict], int]:
+    """One record per (Q run, domain, task). A unit found in several directories (an original fork task and a W70 repair)
+    keeps its non-excluded record; among equals the first (sorted directory order) wins."""
+    best: dict = {}
+    for u in units:
+        k = (u["run_id"], u["domain"], u["task"])
+        if k not in best or ("excluded" in best[k] and "excluded" not in u):
+            best[k] = u
+    return list(best.values()), len(units) - len(best)
+
+
+def mark_incomplete_blocks(units: list[dict], split: str, strict: bool = True) -> dict:
+    """Primary inference uses complete shared blocks only (W63, W70). A (model, cell, domain, block) is complete when every
+    split task of that domain has a unit in it and, with strict=True (primary), none of its units is missing for any
+    reason (pending branches, search or branch infrastructure failures, quarantine). strict=False reproduces the earlier
+    rule (only missing tasks and pending branches make a block incomplete) and is a labelled complete-case sensitivity.
+    Call after dedupe_units. Units of incomplete blocks are excluded with that reason. Returns {key: reason}."""
     need = {d: {str(t) for t in ts} for d, ts in json.load(open(SPLITS))["splits"][split]["tasks"].items()}
     groups = defaultdict(list)
     for u in units:
         groups[(u["model"], u["cell"], u["domain"], u["block"])].append(u)
     out = {}
     for (m, c, d, b), us in groups.items():
-        have = {unit_key(u)[1] for u in us if u.get("excluded", "").startswith("not in split") is False}
+        have = {unit_key(u)[1] for u in us if not u.get("excluded", "").startswith("not in split")}
         missing = len(need.get(d, set()) - have)
         pending = sum(1 for u in us if u.get("excluded") == PENDING)
-        if missing or pending:
-            out[f"{m}:{c}|{d}|{b}"] = f"{missing} tasks missing, {pending} pending"
+        other = sum(1 for u in us if "excluded" in u and u["excluded"] != PENDING and not u["excluded"].startswith("not in split"))
+        if missing or pending or (strict and other):
+            out[f"{m}:{c}|{d}|{b}"] = f"{missing} tasks missing, {pending} pending, {other} other missing units"
             for u in us:
                 if "excluded" not in u:
-                    u["excluded"] = "incomplete block (tasks missing or branches pending)"
+                    u["excluded"] = "incomplete block (tasks missing, branches pending or missing units)"
     return out
 
 
@@ -397,9 +410,11 @@ class Boot:
         bmz = np.where(has, bm, 0.0)
         pt = float(bmz[has].mean()) if has.any() else float("nan")
         w = self.Vb * has
-        draws = (w * bmz).sum(-1) / np.maximum(w.sum(-1), 1e-12)
+        ws = w.sum(-1)
+        draws = np.where(ws > 0, (w * bmz).sum(-1) / np.maximum(ws, 1e-12), np.nan)  # a draw without data is missing, not 0
         cw = self.Wc[:, :, None] * self.Vc[:, None, :]
-        crossed = (cw * X * M).sum((-1, -2)) / np.maximum((cw * M).sum((-1, -2)), 1e-12)
+        cden = (cw * M).sum((-1, -2))
+        crossed = np.where(cden > 0, (cw * X * M).sum((-1, -2)) / np.maximum(cden, 1e-12), np.nan)
         self.last = {"block_means": bm, "crossed": crossed, "crossed_pt": float((X * M).sum() / max(M.sum(), 1e-12)),
                      "t": t_interval(bm[has])}
         return pt, Draws(draws, self.last["t"], crossed, self.last["crossed_pt"], bm)
@@ -408,9 +423,11 @@ class Boot:
         """Ratio form over the masked units (conditional on divergence) with block sums; crossed draws in self.last."""
         S, N = (X * M).sum(0), M.sum(0)
         pt = float(S.sum() / max(N.sum(), 1e-12))
-        draws = (self.Vb * S).sum(-1) / np.maximum((self.Vb * N).sum(-1), 1e-12)
+        dn = (self.Vb * N).sum(-1)
+        draws = np.where(dn > 0, (self.Vb * S).sum(-1) / np.maximum(dn, 1e-12), np.nan)
         cw = self.Wc[:, :, None] * self.Vc[:, None, :]
-        crossed = (cw * X * M).sum((-1, -2)) / np.maximum((cw * M).sum((-1, -2)), 1e-12)
+        cden = (cw * M).sum((-1, -2))
+        crossed = np.where(cden > 0, (cw * X * M).sum((-1, -2)) / np.maximum(cden, 1e-12), np.nan)
         br = np.where(N > 0, S / np.maximum(N, 1e-12), np.nan)
         self.last = {"block_means": br, "crossed": crossed, "crossed_pt": pt, "t": t_interval(br), "t_note": "t over per-block ratios"}
         return pt, Draws(draws, self.last["t"], crossed, pt, br)
@@ -555,6 +572,7 @@ def main():
     ap.add_argument("--include-gate", action="store_true", help="also read analysis/fork/gate (selected states; testing only)")
     ap.add_argument("--B", type=int, default=B_BOOT)
     ap.add_argument("--split", default="dev", help="dev (default) | holdout (only after the prereg freeze); manifests/fork/splits_v1.json")
+    ap.add_argument("--complete-case", action="store_true", help="sensitivity: blocks with infrastructure-missing units stay complete (pre-W70 rule)")
     a = ap.parse_args()
     t0 = time.time()
     try:  # tau2 (imported for the telecom user-tool list) logs at INFO on import
@@ -580,11 +598,11 @@ def main():
     if not loaded:
         print(f"analyze_dev: no fork output directories under {ROOTS}{' + gate' if a.include_gate else ''}; nothing to do.")
         return
-    tag = ("gatetest_" if a.include_gate else "") + ("" if a.split == "dev" else f"{a.split}_") + ("_".join(sorted(a.cells)) if a.cells else "all")
+    tag = ("gatetest_" if a.include_gate else "") + ("cc_" if a.complete_case else "") + ("" if a.split == "dev" else f"{a.split}_") + ("_".join(sorted(a.cells)) if a.cells else "all")
     script_sha = sha256(__file__)
     files = {k: v for L in loaded for k, v in L["files"].items()}
     fp = hashlib.sha256(json.dumps({"script": script_sha, "snapshot": sha256(a.snapshot), "files": files, "cells": a.cells,
-                                    "gate": a.include_gate, "B": a.B, "split": a.split, "splits": sha256(SPLITS)},
+                                    "gate": a.include_gate, "B": a.B, "split": a.split, "splits": sha256(SPLITS), "complete_case": a.complete_case},
                                    sort_keys=True).encode()).hexdigest()[:16]
     OUT.mkdir(parents=True, exist_ok=True)
     for p in sorted(OUT.glob(f"dev_{tag}_*.json")):
@@ -596,44 +614,37 @@ def main():
             continue
     split_info = split_guard([u for L in loaded for u in L["units"]], a.split, "analyze_dev")
     quarantine = [L["dir"] for L in loaded if L["quarantined"]]
-    units, seen, dups = [], set(), 0
-    for L in loaded:  # a unit (Q run, domain, task) found in several output dirs is counted once (first dir, sorted)
+    for L in loaded:
         if L["quarantined"]:
-            continue
-        for u in L["units"]:
-            k = (u["run_id"], u["domain"], u["task"])
-            if k in seen:
-                dups += 1
-                continue
-            seen.add(k)
-            units.append(u)
-    incomplete = mark_incomplete_blocks(units, a.split)
+            for u in L["units"]:
+                u.setdefault("excluded", "quarantined fork task (QQ no-op mismatch)")
+    units, dups = dedupe_units([u for L in loaded for u in L["units"]])
+    incomplete = mark_incomplete_blocks(units, a.split, strict=not a.complete_case)
     excluded = [u for u in units if "excluded" in u]
     ok = [u for u in units if "excluded" not in u]
     for u in ok:
         u["E"] = effects(u["Y"], u["div"])
-    # shared draws over the union of tasks and their blocks (crossed across cells)
-    blocks_of: dict = defaultdict(set)
-    for u in ok:
-        blocks_of[u["task"]].add(u["block"])
-    tasks = sorted(blocks_of)
-    boot = Boot(tasks, {t: sorted(v) for t, v in blocks_of.items()}, B=a.B)
-    draws: dict = {}
-    cells = sorted({(u["model"], u["cell"]) for u in units})
-    res_cells = {}
-    for m, c in cells:
-        cu = [u for u in ok if u["model"] == m and u["cell"] == c]
-        lab = f"{m}:{c}"
-        r = analyse(cu, boot, draws, lab)
+    PRIMARY_DOMAINS = ("retail", "airline")  # W70: common 85-task retail/airline panel is primary; telecom reported separately
+
+    def boot_for(us):  # resampling frame = exactly the tasks and blocks these units have (no empty draws, W70)
+        bo = defaultdict(set)
+        for u in us:
+            bo[u["task"]].add(u["block"])
+        return Boot(sorted(bo), {t: sorted(v) for t, v in bo.items()}, B=a.B)
+
+    def cell_result(cu, allc, m, c):
+        boot = boot_for(cu)
+        r = analyse(cu, boot)
         r["by_type"] = breakdown(cu, boot, "type", TYPES)
-        r["by_domain"] = {d: analyse([u for u in cu if u["domain"] == d], boot) for d in sorted({u["domain"] for u in cu})}
+        r["by_domain"] = {d: analyse([u for u in cu if u["domain"] == d], boot_for([u for u in cu if u["domain"] == d]))
+                          for d in sorted({u["domain"] for u in cu})} if len({u["domain"] for u in cu}) > 1 else {}
         ex = defaultdict(int)
-        for u in excluded:
-            if u["model"] == m and u["cell"] == c:
+        for u in allc:
+            if "excluded" in u:
                 ex[u["excluded"].split(":")[0] if u["excluded"].startswith(("search", "branch error")) else u["excluded"]] += 1
-        r["incomplete_blocks"] = sorted(k.split("|", 1)[1] for k in incomplete if k.startswith(f"{m}:{c}|"))
+        r["incomplete_blocks"] = sorted(k.split("|", 1)[1] for k in incomplete if k.startswith(f"{m}:{c}|")
+                                        and k.split("|")[1] in {u["domain"] for u in allc})
         r["excluded"] = dict(ex)
-        allc = [u for u in units if u["model"] == m and u["cell"] == c]
         r["coverage"] = {"units_found": len(allc), "units_analysed": len(cu), "states": r["n_states"],
                          "excluded_by_reason": dict(ex), "tasks": r["n_tasks"], "blocks": sorted({u["block"] for u in cu}),
                          "blocks_found": sorted({u["block"] for u in allc}),
@@ -641,16 +652,43 @@ def main():
                                          "task_ids": sorted({u["task"].split(":", 1)[1] for u in cu if u["domain"] == d})}
                                      for d in sorted({u["domain"] for u in allc})},
                          "source_dirs": sorted({u["dir"] for u in allc})}
-        res_cells[lab] = r
+        return r
+
+    cells = sorted({(u["model"], u["cell"]) for u in units})
+    res_cells, res_tel = {}, {}
+    for m, c in cells:
+        cu = [u for u in ok if u["model"] == m and u["cell"] == c and u["domain"] in PRIMARY_DOMAINS]
+        allc = [u for u in units if u["model"] == m and u["cell"] == c and u["domain"] in PRIMARY_DOMAINS]
+        if allc:
+            res_cells[f"{m}:{c}"] = cell_result(cu, allc, m, c) if cu else {"n_units": 0, "note": "no complete block"}
+        tu = [u for u in ok if u["model"] == m and u["cell"] == c and u["domain"] == "telecom"]
+        tall = [u for u in units if u["model"] == m and u["cell"] == c and u["domain"] == "telecom"]
+        if tall:
+            res_tel[f"{m}:{c}"] = cell_result(tu, tall, m, c) if tu else {"n_units": 0, "note": "no complete telecom block"}
+    # pools: only over the complete blocks shared by every pooled cell (W70); otherwise not poolable
     models = sorted({m for m, _ in cells})
     pools = {}
     for fam in sorted({family(c) for _, c in cells}):
         fc = [(m, c) for m, c in cells if family(c) == fam]
-        for m in models:
-            labs = [f"{mm}:{c}" for mm, c in fc if mm == m]
-            if labs:
-                pools[f"{fam}:{m}:pooled_equal_weight"] = pooled(draws, labs)
-        pools[f"{fam}:all:pooled_equal_weight"] = pooled(draws, [f"{m}:{c}" for m, c in fc])
+        groups = {f"{fam}:{m}:pooled_equal_weight": [(mm, c) for mm, c in fc if mm == m] for m in models}
+        groups[f"{fam}:all:pooled_equal_weight"] = fc
+        for name, gcells in groups.items():
+            gcells = [mc for mc in gcells if any(u["model"] == mc[0] and u["cell"] == mc[1] and u["domain"] in PRIMARY_DOMAINS for u in ok)]
+            if not gcells:
+                continue
+            per = {mc: {(u["domain"], u["block"]) for u in ok if (u["model"], u["cell"]) == mc and u["domain"] in PRIMARY_DOMAINS} for mc in gcells}
+            common = set.intersection(*per.values())
+            nblk = len({b for _, b in common})
+            if nblk < 2:
+                pools[name] = {"not_poolable": f"{nblk} common complete block(s) across {[f'{x}:{y}' for x, y in gcells]}"}
+                continue
+            pu = [u for u in ok if (u["model"], u["cell"]) in per and (u["domain"], u["block"]) in common]
+            boot = boot_for(pu)
+            draws: dict = {}
+            for mc in gcells:
+                analyse([u for u in pu if (u["model"], u["cell"]) == mc], boot, draws, f"{mc[0]}:{mc[1]}")
+            pools[name] = {**pooled(draws, [f"{x}:{y}" for x, y in gcells]), "cells": [f"{x}:{y}" for x, y in gcells],
+                           "common_blocks": sorted({b for _, b in common}), "k_blocks": nblk}
     noop = [x for L in loaded for x in L["noop"]]
     res = {
         "protocol": "fork-v1 / protocol A", "analysis": "analysis/fork/analyze_dev.py", "input_fingerprint": fp,
@@ -663,13 +701,16 @@ def main():
                       "secondary": "generalisation to new tasks: crossed two-way bootstrap, tasks and blocks resampled jointly (crossed_ci95)",
                       "draws": "shared by all cells (same task ids and nonces), so equal-weight pools are valid"},
         "split": split_info, "incomplete_blocks": incomplete, "sign_dictionary": SIGN_DICTIONARY,
+        "block_rule": ("COMPLETE-CASE SENSITIVITY: blocks with infrastructure-missing units kept (pre-W70 rule)" if a.complete_case else
+                       "primary (W70): a block with any missing unit is incomplete and leaves the analysis"),
         "estimand_ids": {"all_pp": "primary_pivot_G_all (+ r/d/M and pivot-policy H_policy/F_policy on the same full-pool denominator)",
                          "conditional_on_divergence_pp": "pivot_G_conditional and pivot_four_branch_conditional (A/C/I/H/F, strict reversal)"},
         "thresholds": {"g_min_pp": 100 * G_MIN, "eps_pp": 100 * G_MIN, "sensitivity_pp": 5.0},
         "success_definition": {"retail/airline": "DB success (db_match and user_stop/agent_stop)", "telecom": "official task-basis success (official_reward == 1)"},
         "input_dirs": [L["dir"] for L in loaded], "quarantined_dirs": quarantine, "duplicate_units_dropped": dups,
         "noop_sample": {"n": len(noop), "n_pass": sum(x["ok"] for x in noop), "fails": [x for x in noop if not x["ok"]]},
-        "cells": res_cells, "pooled": pools, "n_input_files": len(files), "input_files": files,
+        "cells": res_cells, "telecom_cells": res_tel, "pooled": pools,
+        "population": "cells/pooled = common retail/airline panel (85 split tasks, complete blocks); telecom_cells reported separately (W70)", "n_input_files": len(files), "input_files": files,
         "seconds": round(time.time() - t0, 1),
     }
     utc = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
@@ -703,14 +744,15 @@ def markdown(res: dict, jp: Path) -> str:
          f"Full numbers: `{jp.relative_to(ROOT)}`.",
          "Units = task x block; pp. Primary intervals over complete shared blocks: block bootstrap with >= 10 blocks, else t over block means (both in the JSON); "
          "secondary: crossed task x block bootstrap (generalisation to new tasks). G_all is the primary endpoint (g_min = eps = 3 pp).", "",
-         "## Two-sided consequences (full pool, one denominator)", "",
+         f"Block rule: {res['block_rule']}. Population: {res['population']}.", "",
+         "## Two-sided consequences (full pool = every admitted unit of the retail/airline panel, equal task weight within block, equal block weight)", "",
          "| cell | units | states | r | d | M | G (primary) | G t-over-blocks | G crossed |", "|---|---|---|---|---|---|---|---|---|"]
     for k, v in cells.items():
         if "all_pp" not in v:
             continue
         a = v["all_pp"]
         L.append(f"| {k} | {v['n_units']} | {v['n_states']} | {fr(a['rescue'])} | {fr(a['damage'])} | {fr(a['M'])} | {f(a['G'])} | {tci(a['G'])} | {cc(a['G'])} |")
-    L += ["", "Conditional on divergence (r, d, M):", ""]
+    L += ["", "Conditional on divergence (ratio of sums over divergent states; a different estimand from the full-pool figures above):", ""]
     for k, v in cells.items():
         c = v.get("conditional_on_divergence_pp")
         if c:
@@ -726,10 +768,22 @@ def markdown(res: dict, jp: Path) -> str:
             a = v["all_pp"]
             L.append(f"| {k} | {f(c['A'])} | {f(c['C'])} | {f(c['I'])} | {f(c['G'])} | {f(c['H'])} | {f(c['F'])} | "
                      f"{fr(c['strict_reversal'])} | {f(a['H_policy'])} | {f(a['F_policy'])} |")
-    L += ["", "| pool (equal weight, full pool) | r | d | M | G | G t-over-blocks | H_policy | F_policy |", "|---|---|---|---|---|---|---|---|"]
+    L += ["", "| pool (equal weight per cell, full pool, common complete blocks only) | k blocks | r | d | M | G | G t-over-blocks | H_policy | F_policy |",
+          "|---|---|---|---|---|---|---|---|---|"]
     for k, v in res["pooled"].items():
-        if v:
-            L.append(f"| {k} | {fr(v['rescue'])} | {fr(v['damage'])} | {fr(v['M'])} | {f(v['G'])} | {tci(v['G'])} | {f(v['H_policy'])} | {f(v['F_policy'])} |")
+        if "not_poolable" in v:
+            L.append(f"| {k} | not poolable: {v['not_poolable']} | | | | | | | |")
+        elif v.get("G"):
+            L.append(f"| {k} | {v['k_blocks']} | {fr(v['rescue'])} | {fr(v['damage'])} | {fr(v['M'])} | {f(v['G'])} | {tci(v['G'])} | {f(v['H_policy'])} | {f(v['F_policy'])} |")
+    if res.get("telecom_cells"):
+        L += ["", "## Telecom development (separate population, official task-basis success)", "",
+              "| cell | units | states | k blocks | r | d | M | G (full pool) |", "|---|---|---|---|---|---|---|---|"]
+        for k, v in res["telecom_cells"].items():
+            if "all_pp" in v:
+                a = v["all_pp"]
+                L.append(f"| {k} | {v['n_units']} | {v['n_states']} | {v['n_blocks']} | {fr(a['rescue'])} | {fr(a['damage'])} | {fr(a['M'])} | {f(a['G'])} |")
+            else:
+                L.append(f"| {k} | 0 | | | | | | {v.get('note')} |")
     L += ["", "## Coverage and sources", "", "| cell | units found | analysed | states | blocks | tasks per domain | excluded by reason | source dirs |",
           "|---|---|---|---|---|---|---|---|"]
     for k, v in cells.items():
