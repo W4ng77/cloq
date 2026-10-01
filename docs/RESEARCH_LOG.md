@@ -10,6 +10,19 @@ Newest first.
 
 ---
 
+## W74 — W×KV interaction does not survive matched rotated controls or the pre-registered q8 replication; paused restoration tasks stopped (2026-09-30 22:50 PDT)
+**TL;DR** The secondary claim "W4 × KV4 interaction" (legacy I_WK|A16 = −14.9 [−23.8, −6.0] on q4) does **not** hold.
+- **q4, matched rotated KV16 reference (kv16r):** I_WK|A16 = −9.0 [−30.6, +12.5] (k=3); crossed [−24.7, +4.7]. The interval covers 0.
+- **q8, pre-registered replication** (WAKV_PREREG.md, 27a3802; interim at 5 of 6 blocks): I_WK|A16 = **+4.0** [−4.4, +12.4] (k=5); crossed [−7.5, +15.3]. That is the opposite sign and covers 0.
+- **Verdict:** the legacy effect is attributed to the rotation confound plus small-k noise. The W×KV interaction is dropped as a claim and reported as a negative replication. The final q8 number follows when block 6 (`w4a16kv4_fdev456`) finishes.
+- **Still standing (q8, kv16r reference):** W4 at A16/KV16 is −6.7 [−11.6, −1.7] (k=6; crossed [−14.1, +0.6]). The q4 A4 single effect is −8.6 [−25.8, +8.5].
+- **Ops:**
+  - With author approval ("停 pert"), 8 paused restoration tasks were stopped. They had run 4–16 h with ≤1 of 6 run-domains done. They were requeued at −4; completed run-domains are kept, and `restore_middle` (4/6) was left running.
+  - Their vLLM servers were orphaned (PPID 1) and were killed by pgid.
+  - One collision failure (`fork_tel_q8_awq_w4_g3_s1of2`) was requeued.
+  - Lesson repeated from W72: `kill -- -pgid` on a worker does not reach its vLLM server, which is in its own process group. Kill the server pgid too, before the runner reassigns the GPU.
+- **Evidence:** `analysis/ahook/out/wakv_20261001T054021Z.{md,json}` (q4 + q8) and `wakv_20261001T054023Z.{md,json}` (q8); snapshot 20261001T0538Z.
+
 ## W71 — WP5 annotation package (sample, events, blinded packets, frozen rubric, LLM labels) and the recovery-intervention design (2026-10-01)
 **TL;DR** WP5 is ready for human review on 10-02/03.
 - **Sample:** 80 τ² development fork states, 20 of them double-reviewed, plus 2 calibration states. 20 states per consequence sign, stratified by family × domain. The sample manifest and the rubric were frozen before any label.
