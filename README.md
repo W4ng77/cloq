@@ -1,4 +1,4 @@
-> **Reviewers start here:** [`docs/REVIEW_PACKET.md`](docs/REVIEW_PACKET.md) — question, setup, methodology, current results, storyline v5 and its internal reviews, open questions (2026-09-29). Project log: `docs/RESEARCH_LOG.md`.
+> **Current research entry:** [review packet](docs/REVIEW_PACKET.md), [execution plan](docs/EXECUTION_PLAN_20260930.md), and [storyline](docs/insights/STORYLINE_v6.md) — *Tracing the Consequences of Quantization in Closed-Loop Agents* (2026-09-30 Toronto). The implementation notes below describe the original v0 diagnostic; the linked plans cover the current multi-model A6000 program. Project log: [docs/RESEARCH_LOG.md](docs/RESEARCH_LOG.md).
 
 # CLOQ v0 — Closed-Loop Calibration for Quantized LLM Agents (2×RTX 4080 diagnostic)
 
