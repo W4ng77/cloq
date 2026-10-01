@@ -530,3 +530,56 @@ actual escalation policy must be evaluated closed loop. The target is "escalatio
 | q8 RTN-W3 (2 GPUs) | 20 + 5 BF16 | ≈ 3–4 | ≈ 60–85 GPU-h |
 
 KV4-rot costs ≈ 8 GPU-h; KV4-rot + RTN-W3 ≈ 110–135 GPU-h. Escalation may shorten RTN loops, so these figures are upper bounds.
+
+## 15. Bank U: outcome-independent ordinary Q-state bank (design only, W68; not queued)
+
+Purpose: CONSEQUENCE_ANALYSIS_PLAN §5.2/§6 and EXECUTION_PLAN §5.2. Bank P (first semantic divergence) answers the selected
+pivot question. Bank U supports cross-quantizer comparison on identical states, proxy evaluation, label transport and
+deployable triggers. It is never selected on branch outcomes, M, G, BF16 agreement or a favourable quantizer.
+
+**Two sub-banks.**
+- **U1 (own-history states).** For each cell's own completed Q trajectories, one pre-decision state per task × cell × block.
+  This answers "what happens at an ordinary state of this Q's own episodes".
+- **U2 (common states).** States sampled from the BF16 trajectories (`a6k2_<m>_bfpair_<blk>`, a neutral origin), queried by
+  every compared configuration of that model from the identical stored history. This is the only design that supports
+  same-state cross-quantizer claims (plan §6 point 4–5). Cross-model comparisons share the text/history hash but not
+  prompt ids.
+
+**Sampling (frozen in `manifests/fork/bank_u_v1.json` before any action or branch is computed).**
+- Eligible decisions: every agent decision of the admitted, complete episode (agreement, text-only and tool decisions all
+  included). Stratified by prefix-visible features only: action type of the previous agent turn, decision-index tertile,
+  remaining-budget tertile.
+- One decision per (task, cell, block): t = floor(u × n_decisions), with u from sha256("bank-u-v1|run|domain|task").
+  Selection probability 1/n_decisions is recorded. The target is uniform over tasks, then uniform over that episode's
+  decisions; reweighting to "every logged decision" uses n_decisions.
+- Saved per state before any generation: full history, env/device hashes, used and remaining budgets, prompt-ids sha, task
+  sha, origin run, nonce, selection metadata. Failed or uninteresting states are never replaced.
+
+**Per state (fork-v1 machinery, deterministic protocol A).**
+- Generate a_B and a_Q at the identical prompt (a_Q is recorded for U1; for U2 each Q is generated). Compare semantically.
+- **Exact token equality** (a_B == a_Q): BB ≡ QB and BQ ≡ QQ under protocol A. Run QQ and QB only; the suffix effect H is
+  never imputed as zero.
+- **Otherwise:** run BB, BQ, QB and QQ (QQ is new for U2 and for U1 states that are not the trajectory's end).
+- 10% QQ no-op sample against the original for U1, with the same quarantine.
+
+**Population and cells.** The first floor is 3 complete shared blocks (f01–f03), retail/airline 85 tasks, cells
+q4/q8 × {GPTQ-W4 d1, AWQ-W4, KV8}. Telecom dev (80) is a separate optional stratum. Stress cells (RTN-W3) only after the floor.
+
+**Analysis.** Per state: the 16 patterns, A/C/I/G/H/F, strict reversal. Two tables: (a) U1 per cell (ordinary-state
+estimands); (b) U2 common-state agreement of actions and of advantages across quantizers, with the numbers of unique
+tasks, states, nonces and draws. Inference by complete blocks (W63) and crossed. Multiple states per episode are not
+used in the first floor (one per task × cell × block).
+
+**Cost** (measured branch throughput: q4 ≈ 18.6 s wall per branch on 1 GPU at concurrency 8 ≈ 0.005 GPU-h; q8 ≈ 47 s on
+2 GPUs ≈ 0.026 GPU-h; assume ≈ 50% exact-agreement states, so ≈ 2 new branches per state on average, plus one or two
+shadow generations):
+
+| sub-bank | states | q4 GPU-h | q8 GPU-h | total |
+|---|---|---|---|---|
+| U1 own-history | 85 × 3 blocks × 3 cells = 765 per model | ≈ 8 | ≈ 40 | ≈ 48 |
+| U2 common (BF16 origin) | 85 × 3 blocks = 255 per model, × 3 cells queried | ≈ 8 | ≈ 40 | ≈ 48 |
+| optional telecom dev stratum (q8 W4, 2 cells) | 80 × 3 × 2 = 480 | – | ≈ 25–40 (long telecom branches) | ≈ 25–40 |
+
+The core is ≈ 95–100 GPU-h for U1 + U2, ≈ 2–3 h wall on 40 GPUs once queued. Engineering: a `bank_u` driver mode (state
+sampler and manifest freeze, U2 multi-config querying, skip of duplicate branches under exact agreement) is ≈ 3–4 h.
+A replay/no-op gate on 10 U1 and 10 U2 states per cell runs before the bank.

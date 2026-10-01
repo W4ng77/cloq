@@ -165,7 +165,7 @@ def main():
     for m, c in sorted({(u["model"], u["cell"]) for u in units}):
         cu = [u for u in units if u["model"] == m and u["cell"] == c]
         for u in cu:
-            u["E"] = AD.effects(u["Y"])
+            u["E"] = AD.effects(u["Y"], u["div"])
         rows, all_ftm, miss = [], [], 0  # labelled decisions: (task, block, domain, t, label, feats)
         for u in cu:
             fl = feats[(u["run_id"], u["domain"])].get(u["task"])
@@ -222,9 +222,13 @@ def main():
                            "pivot_recall": round(float(np.mean(caught)), 4) if caught else None,
                            "oracle_upper_bound_proxy_pp": AD.summarise(*boot.task_mean(X, M))})
         vals = {}
-        for key in ("G", "QB_minus_QQ", "BB_minus_QQ"):
+        for key in ("G", "H_policy", "F_policy"):
             X, M = boot.arrays(cu, key)
             vals[key] = AD.summarise(*boot.task_mean(X, M))
+        dv = [u for u in cu if u["div"]]
+        for key in ("G", "H", "F"):
+            X, M = boot.arrays(dv, key)
+            vals[f"{key}_cond"] = AD.summarise(*boot.ratio(X, M))
         res_cells[f"{m}:{c}"] = {"n_units": len(cu), "n_pivots": int(y.sum()), "n_negatives": int((1 - y).sum()),
                                  "n_units_without_decisions": miss, "auroc": auc,
                                  "threshold_rule_oracle_upper_bound_proxy": {
@@ -233,9 +237,10 @@ def main():
                                               "actions can still differ in wording. Oracle upper-bound proxy only."),
                                      "rows": policy},
                                  "oracle_contrasts_all_pp": {
-                                     "replace_current_action_only (Y_BQ-Y_QQ)": vals["G"],
-                                     "keep_Q_action_then_switch_to_BF16 (Y_QB-Y_QQ = C+I)": vals["QB_minus_QQ"],
-                                     "BF16_action_and_suffix (Y_BB-Y_QQ = A+C+I; oracle intervention value, not an escalation-policy effect)": vals["BB_minus_QQ"]}}
+                                     "replace_current_action_only G = Y_BQ-Y_QQ (full pool, pivot policy)": vals["G"],
+                                     "keep_Q_action_then_BF16 H = Y_QB-Y_QQ = C+I (full pool, pivot policy H_policy)": vals["H_policy"],
+                                     "BF16_action_and_suffix F = Y_BB-Y_QQ = A+C+I (full pool, pivot policy F_policy; oracle intervention value, not an escalation-policy effect)": vals["F_policy"]},
+                                 "oracle_contrasts_conditional_on_divergence_pp": {"G": vals["G_cond"], "H": vals["H_cond"], "F": vals["F_cond"]}}
     res = {"label": "EXPLORATORY (development data)", "analysis": "analysis/fork/analyze_pivot.py", "input_fingerprint": fp,
            "snapshot": {"id": snap.get("snapshot_id"), "sha256": AD.sha256(a.snapshot), "path": str(Path(a.snapshot).resolve())},
            "script": {"sha256": AD.sha256(__file__), "analyze_dev_sha256": AD.sha256(AD.__file__),

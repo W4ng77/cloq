@@ -122,7 +122,7 @@ def strata(units, boot, label_of, levels, conditional_only=False):
             r = AD.analyse(su, boot)
             r = {k: r[k] for k in ("n_units", "n_tasks", "n_states", "divergence_rate", "all_pp", "conditional_on_divergence_pp", "counts") if k in r}
             if "all_pp" in r:  # keep the headline r/d/M/G and the decomposition; drop the per-branch levels for size
-                r["all_pp"] = {k: v for k, v in r["all_pp"].items() if k in ("G", "rescue", "damage", "M", "A", "C", "I", "QB_minus_QQ", "BB_minus_QQ")}
+                r["all_pp"] = {k: v for k, v in r["all_pp"].items() if k in ("G", "rescue", "damage", "M", "H_policy", "F_policy")}
         out[lv] = r
     return out
 
@@ -185,7 +185,7 @@ def main():
         except Exception:
             continue
     for u in units:
-        u["E"] = AD.effects(u["Y"])
+        u["E"] = AD.effects(u["Y"], u["div"])
         s = bf.get((u["model"], u["domain"], u["task"]))
         u["bf_succ"] = s["succ"] if s else None
         u["bf_len"] = s["len"] if s else None

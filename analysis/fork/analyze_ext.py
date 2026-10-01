@@ -8,6 +8,7 @@ with all four branches equal to the original outcome (zero effect). Excluded ite
 quarantined task) leave the denominator and are counted per reason; never coded as "no divergence".
 Unit = item (ALFWorld game, BFCL entry); one run (block) per item and cell. G_all (primary) = mean over the full item
 pool; conditional-on-divergence effects are secondary (ratio form).
+Sign dictionary (W68): analyze_dev.SIGN_DICTIONARY (CONSEQUENCE_ANALYSIS_PLAN §2); A/C/I are reported on divergent items only.
 Headline (W63): r = P(Y_BQ=1, Y_QQ=0), d = P(Y_BQ=0, Y_QQ=1), M = r + d, G = r - d on one denominator (all items,
 non-divergent = 0), plus r/d/M conditional on divergence; same definitions as analyze_dev.
 ITEM-LEVEL INFERENCE: the external environments have one run (block) per item and cell, so there is no shared-block
@@ -226,7 +227,7 @@ def main():
     excluded = [u for u in units if "excluded" in u]
     ok = [u for u in units if "excluded" not in u]
     for u in ok:
-        u["E"] = effects(u["Y"])
+        u["E"] = effects(u["Y"], u.get("div", True))
     strata: dict = defaultdict(set)
     for u in ok:
         strata[u["stratum"]].add(u["task"])
@@ -297,12 +298,13 @@ def markdown(res: dict, jp: Path) -> str:
          f"{res['bootstrap']['B']}, seed {res['bootstrap']['seed']}. G = Y_BQ - Y_QQ; A/C/I on L = 1 - Y. g_min = 3 pp.", "",
          f"Quarantined: {res['quarantined_dirs'] or 'none'}. Incomplete (skipped): {len(res['incomplete_dirs'])}. "
          f"Excluded by reason: {res['excluded_by_reason'] or 'none'}.", "",
-         "| env:model:arm | items | divergent | r (pp) | d (pp) | M (pp) | both succeed | both fail | G_all | A | C | I |",
+         "| env:model:arm | items | divergent | r (pp) | d (pp) | M (pp) | both succeed | both fail | G_all | A (div.) | C (div.) | I (div.) |",
          "|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for k, v in cells.items():
         c, a = v["counts"], v["all_pp"]
+        cd = v.get("conditional_on_divergence_pp") or {}
         L.append(f"| {k} | {v['n_units']} | {v['n_states']} ({100 * v['divergence_rate']:.0f}%) | {f(a['rescue'])} | {f(a['damage'])} | "
-                 f"{f(a['M'])} | {c['both_succeed']} | {c['both_fail']} | {f(a['G'])} | {f(a['A'])} | {f(a['C'])} | {f(a['I'])} |")
+                 f"{f(a['M'])} | {c['both_succeed']} | {c['both_fail']} | {f(a['G'])} | {f(cd.get('A'))} | {f(cd.get('C'))} | {f(cd.get('I'))} |")
     L += ["", "Per category (G_all, pp):", ""]
     for k, v in cells.items():
         if len(v["by_category"]) > 1:

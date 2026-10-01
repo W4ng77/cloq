@@ -14,3 +14,6 @@
 | success NI/TOST | `analysis/insights/iter_4/out/success_ni_REAL_*.json` | `analysis/insights/iter_4/success_ni.py` |
 
 The integrity snapshots (`analysis/insights/iter_3/out/snapshot_auto_*.json`) are the admitted-run manifests the analyses read. Each output file cites its snapshot by path and sha.
+| four-arm consequences, 16 patterns, unit registry (W68, exploratory) | `analysis/fork/out/{consequence_estimands,patterns16,consequence_units,coverage}_*` | `analysis/fork/analyze_patterns.py` |
+| reuse manifest, population panel, block coverage (W68) | `docs/OLD_RESULT_REUSE.csv`, `analysis/fork/out/{population_panel,block_coverage}_*` | `analysis/fork/audit_reuse.py` |
+| W67 audit (internal replication, W68) | `analysis/fork/out/{w67_audit,direction_replication}_*` | `analysis/fork/audit_w67.py` |

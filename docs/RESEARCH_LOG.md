@@ -10,6 +10,35 @@ Newest first.
 
 ---
 
+## W68 — Plan dictionary, complete four-arm consequences (WP1), reuse and population audit (WP0), W67 audit, Bank U design (2026-10-01)
+**TL;DR** Analyses follow CONSEQUENCE_ANALYSIS_PLAN §2. All 16 outcome patterns and every contrast are reported on their correct denominators. Strict reversals are rare (1.2–4.6% of divergent states) and distinct from I ≠ 0 (≈ 15–30%).
+
+The W67 audit (internal replication only) re-grades the claims:
+- **Task concentration of M:** replicates across a frozen nonce split.
+- **Direction:** survives beyond opportunity mainly for rescues (11/12 split-directions) and less for damage (7/12).
+- **Cross-quantizer "same units":** is task-level co-susceptibility. Nonce-specific co-flipping beyond task propensity holds only for q4 AWQ vs q8 AWQ, and direction when both flip is near a coin toss.
+- **Caveat:** QQ outcomes are nearly fixed across nonces (Spearman 0.88–0.95), so all of this is persistence under prompt perturbation on the same tasks, not new-task evidence.
+
+- **Sign dictionary (analyze_dev and siblings).**
+  - Definitions: A = Y_BB−Y_QB, C = Y_BB−Y_BQ, I = Y_BQ+Y_QB−Y_BB−Y_QQ, G = A+I, H = C+I, F = A+C+I. These are numerically identical to W63's A/C/I and are stated in every output (`sign_dictionary`).
+  - **Real change:** no-divergence units no longer count as four equal outcomes. A/C/I/H/F are reported on divergent states only. Full-pool quantities are the primary pivot policy (G, r, d, M) and the explicit pivot policies H_policy/F_policy. The W63 full-pool A/C/I and Y_QB−Y_QQ / Y_BB−Y_QQ columns are withdrawn.
+  - Previous outputs are kept; the new run is `dev_all_20261001T024918Z`.
+- **WP1, `analysis/fork/analyze_patterns.py`.**
+  - Outputs: the §13.1 unit registry (`consequence_units_<s>.jsonl`, 13,029 units including no-divergence and missing), `patterns16_<s>.csv` (all 16 patterns including zeros, by model × cell × domain, asserted against the plan table), `consequence_estimands_<s>.json` and `coverage_<s>.json`.
+  - Per contrast: mean, P(+1), P(−1), turnover; full-pool G/r/d/M with asserted G = r−d and M = r+d; fixed-task and crossed intervals.
+  - Readings: divergent-state turnover is ≈ 16–28% for every contrast. Conditional G is +3.3 [+1.7, +5.0] pp for q8 GPTQ-W4. q4 KV4-rot H = +9.4 and F = +12.4 pp (3 blocks).
+- **WP0, `analysis/fork/audit_reuse.py`.**
+  - `docs/OLD_RESULT_REUSE.csv`: 17 sources with path, sha, script and commit, backend, population, checkpoint, blocks, endpoint, integrity, permitted claim and required reanalysis.
+  - Population panel: the common 85-task retail/airline pool on the 20 blocks complete in all of q4/q8 × GPTQ-W4, AWQ-W4, KV8, vs each cell's own population. Little changes: q8 GPTQ-W4 G is +2.9 [+1.5, +4.5] common vs +2.8 own (165 tasks with telecom); q8 KV8 is +0.9 vs +0.6.
+  - Block coverage: 11/408 admitted run-domains do not cover their frozen pool, all from infra-missing episodes (mostly q4 RTN-W3, one q4 AWQ q5 retail task, q4 telecom). They are listed for completion, not filtered.
+- **W67 audit, `analysis/fork/audit_w67.py`** (W67's file and output kept; 84 tasks × 20 common blocks; frozen hash nonce split A/B, both directions, plus 50 hash splits; references permute whole task vectors within domain or whole block columns; p = (1+k)/(B+1)).
+  - Concentration: Spearman of task M rates A↔B is 0.52–0.86 (p 0.0005). Top-20% capture is 0.44–0.64 (null ≈ 0.20), above an opportunity-only ranking (0.35–0.54).
+  - Direction: A-positive minus A-negative mean G on B is 14–51 pp, against 1–21 pp predicted by opportunity alone.
+  - Overlap: φ(M) 0.07–0.18; the task-identity null is rejected in 7/8 pairs.
+- **Bank U design** (FORK_PROTOCOL §15, not queued). U1 is own-history states; U2 is BF16-origin common states queried by every configuration. Outcome-independent hash sampling, frozen manifest, all agreement states included, no zero imputation of suffix effects. Core cost ≈ 95–100 GPU-h (q4 ≈ 16, q8 ≈ 80) plus an optional telecom stratum (≈ 25–40); about 3–4 h of engineering.
+
+Evidence: `analysis/fork/{analyze_dev,analyze_patterns,audit_reuse,audit_w67}.py`; `analysis/fork/out/{dev_all_20261001T024918Z,consequence_estimands_20261001T0224Z,coverage_20261001T0224Z,population_panel_20261001T0224Z,block_coverage_20261001T0224Z,direction_replication_20261001T0224Z}.json`, `patterns16_20261001T0224Z.csv`, `consequence_units_20261001T0224Z.jsonl`, `w67_audit_20261001T0224Z.md`; `docs/OLD_RESULT_REUSE.csv`; `docs/insights/FORK_PROTOCOL.md` §15.
+
 ## W67 — Resumed tasks no longer turn classified episodes into "outages" (2026-09-30 19:10 PDT)
 **TL;DR** `a6k2_q4_quarot_w4a4kv16_fdev` failed with "1 infrastructure_error episodes (outage)" on f03/retail.
 - **What happened in the episode:** in task 61 the agent's last decision was a clean text reply. The error that followed was a ToolCall validation error, `user_sim_error` under W41.

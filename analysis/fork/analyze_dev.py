@@ -10,8 +10,9 @@ Y_QQ is the original episode (no-op replay verified on a 10% sample per fork tas
 enter with all four branches equal to the original outcome (zero effect). Excluded units (search / branch
 infrastructure failures, Q block not admitted in the snapshot, quarantined fork task) leave the denominator and are
 counted per reason; they are never coded as "no divergence".
-  Explicit secondary endpoints: Y_QB - Y_QQ (escalate to B after Q's pivot action; = L_QQ - L_QB = C + I) and Y_BB - Y_QQ
-(B from the pivot on; = L_QQ - L_BB = A + C + I).
+  Sign dictionary (W68, CONSEQUENCE_ANALYSIS_PLAN §2): A = Y_BB-Y_QB, C = Y_BB-Y_BQ, I = Y_BQ+Y_QB-Y_BB-Y_QQ, G = A+I,
+H = Y_QB-Y_QQ = C+I, F = Y_BB-Y_QQ = A+C+I. No-divergence units: primary-policy quantities G/r/d/M (and the explicit
+pivot policies H_policy/F_policy) are zero; raw A/C/I/H/F are null, so those are reported on divergent states only.
   G_all (primary)       mean over the full task pool: mean over blocks of the block's mean over tasks.
   G_div (secondary)     ratio form over divergent units only (sum of effects / number of states).
 Headline (review of 7528f2e): the two-sided consequence decomposition on one denominator (all units of the fixed task
@@ -283,21 +284,50 @@ def load_dir(d: Path, snap: dict, traj_sha_cache: dict) -> dict:
 # ----------------------------------------------------------------------------
 
 
-def effects(Y: dict) -> dict:
-    L = {k: 1 - v for k, v in Y.items()}
+# Sign dictionary (docs/insights/CONSEQUENCE_ANALYSIS_PLAN.md §2, W68). Success scale; A and C keep the loss-oriented
+# reading (positive = loss from replacing that BF16 component with Q). Numerically identical to the earlier
+# L-scale definitions (A = L_QB - L_BB, C = L_BQ - L_BB, I = L_QQ - L_QB - L_BQ + L_BB).
+SIGN_DICTIONARY = {
+    "source": "docs/insights/CONSEQUENCE_ANALYSIS_PLAN.md §2 (W68)",
+    "A": "Y_BB - Y_QB", "C": "Y_BB - Y_BQ", "I": "Y_BQ + Y_QB - Y_BB - Y_QQ",
+    "G": "Y_BQ - Y_QQ = A + I (replace the current action only)",
+    "H": "Y_QB - Y_QQ = C + I (keep Q's action, BF16 suffix)",
+    "F": "Y_BB - Y_QQ = A + C + I (BF16 action and suffix)",
+    "r": "P(Y_BQ=1, Y_QQ=0)", "d": "P(Y_BQ=0, Y_QQ=1)", "M": "r + d",
+    "strict_reversal": "(Y_BB - Y_QB)(Y_BQ - Y_QQ) < 0, i.e. A*G < 0 (patterns 0110, 1001); reported apart from I != 0",
+    "no_divergence": ("no eligible divergence = the primary pivot policy does nothing: G, r, d, M, H_policy, F_policy = 0 "
+                      "(effect_source no_intervention); raw Y_BB/Y_BQ/Y_QB, A, C, I, H, F and the 16-pattern are null, "
+                      "so A/C/I/H/F are reported only on observed divergent states"),
+    "change_vs_W63": ("names G/H/F per the plan (H was QB_minus_QQ, F was BB_minus_QQ); full-pool A/C/I and full-pool H/F as "
+                      "if no-divergence units had four equal outcomes are withdrawn; H/F on the full pool are now the "
+                      "explicit pivot policies H_policy/F_policy (switch at the pivot, do nothing without one)"),
+}
+
+
+def effects(Y: dict, div: bool = True) -> dict:
+    """Unit contrasts. For a no-divergence unit (div=False) only the primary-policy quantities are defined (zero)."""
+    if not div:
+        return {"G": 0, "rescue": 0, "damage": 0, "M": 0, "H_policy": 0, "F_policy": 0, "Y_QQ": Y["QQ"],
+                "both_succeed": None, "both_fail": None, "A": None, "C": None, "I": None, "H": None, "F": None,
+                "Y_BB": None, "Y_BQ": None, "Y_QB": None, "strict_reversal": None, "pattern": None, "effect_source": "no_intervention"}
+    A, C = Y["BB"] - Y["QB"], Y["BB"] - Y["BQ"]
+    I = Y["BQ"] + Y["QB"] - Y["BB"] - Y["QQ"]
+    G, H, F = Y["BQ"] - Y["QQ"], Y["QB"] - Y["QQ"], Y["BB"] - Y["QQ"]
+    assert G == A + I and H == C + I and F == A + C + I
     r = int(Y["BQ"] == 1 and Y["QQ"] == 0)
     d = int(Y["BQ"] == 0 and Y["QQ"] == 1)
-    return {"G": Y["BQ"] - Y["QQ"], "rescue": r, "damage": d, "M": r + d,
+    return {"G": G, "rescue": r, "damage": d, "M": r + d, "H_policy": H, "F_policy": F, "Y_QQ": Y["QQ"],
             "both_succeed": int(Y["BQ"] == 1 and Y["QQ"] == 1), "both_fail": int(Y["BQ"] == 0 and Y["QQ"] == 0),
-            "A": L["QB"] - L["BB"], "C": L["BQ"] - L["BB"], "I": L["QQ"] - L["QB"] - L["BQ"] + L["BB"],
-            "Y_QQ": Y["QQ"], "Y_BB": Y["BB"], "Y_BQ": Y["BQ"], "Y_QB": Y["QB"],
-            "QB_minus_QQ": Y["QB"] - Y["QQ"], "BB_minus_QQ": Y["BB"] - Y["QQ"]}
+            "A": A, "C": C, "I": I, "H": H, "F": F, "Y_BB": Y["BB"], "Y_BQ": Y["BQ"], "Y_QB": Y["QB"],
+            "strict_reversal": int(A * G < 0), "pattern": f"{Y['BB']}{Y['BQ']}{Y['QB']}{Y['QQ']}",
+            "effect_source": "observed-deterministic-forks"}
 
 
-# r = rescue, d = new damage, M = r + d (outcome changes in either direction), G = r - d
-STATS = ["G", "rescue", "damage", "M", "both_succeed", "both_fail", "A", "C", "I", "Y_QQ", "Y_BB", "Y_BQ", "Y_QB",
-         "QB_minus_QQ", "BB_minus_QQ"]  # Y_QB-Y_QQ = C + I, Y_BB-Y_QQ = A + C + I
-COND_STATS = ("G", "rescue", "damage", "M", "both_succeed", "both_fail", "A", "C", "I", "QB_minus_QQ", "BB_minus_QQ")
+# Full pool (every admitted unit; the primary pivot policy: zero when there is no divergence)
+STATS = ["G", "rescue", "damage", "M", "H_policy", "F_policy", "Y_QQ"]
+# Observed divergent states only (pivot_four_branch_conditional)
+COND_STATS = ("G", "rescue", "damage", "M", "both_succeed", "both_fail", "A", "C", "I", "H", "F", "strict_reversal",
+              "Y_BB", "Y_BQ", "Y_QB", "Y_QQ")
 
 
 class Draws(np.ndarray):
@@ -348,8 +378,11 @@ class Boot:
         for u in units:
             if mask_key and not u.get(mask_key):
                 continue
+            v = u["E"][key]
+            if v is None:  # undefined for this unit (e.g. raw four-branch contrasts of a no-divergence unit)
+                continue
             t, k = self.tix[u["task"]], self.bix[u["block"]]
-            X[t, k] = u["E"][key]
+            X[t, k] = v
             M[t, k] = 1
         return X, M
 
@@ -465,7 +498,7 @@ def analyse(units: list[dict], boot: Boot, draws_out: dict | None = None, label:
             pt, dr = boot.ratio(X, M)
             cond[s] = summarise(pt, dr, boot=boot)
         res["conditional_on_divergence_pp"] = cond
-        res["counts"] = {k: int(sum(u["E"][k] for u in div)) for k in ("rescue", "damage", "M", "both_succeed", "both_fail")}
+        res["counts"] = {k: int(sum(u["E"][k] for u in div)) for k in ("rescue", "damage", "M", "both_succeed", "both_fail", "strict_reversal")}
         ts = np.array([u["t"] for u in div])
         rel = np.array([u["t"] / max(1, u["n_decisions"] or 1) for u in div])
         res["t_star"] = {"quantiles": {str(q): float(np.quantile(ts, q)) for q in (0.1, 0.25, 0.5, 0.75, 0.9)},
@@ -502,7 +535,7 @@ def pooled(draws: dict, labels: list[str]) -> dict:
     """Equal-weight pool over cells (pre-declared) on the shared draws: block bootstrap, t over the per-block pooled means
     (blocks present in every pooled cell), crossed; primary per summarise(). Accepts (pt, draws) pairs from siblings."""
     out = {}
-    for s in ("G", "rescue", "damage", "M", "A", "C", "I", "QB_minus_QQ", "BB_minus_QQ"):
+    for s in ("G", "rescue", "damage", "M", "H_policy", "F_policy"):
         vals = [draws[l][s] for l in labels if l in draws and s in draws[l]]
         if not vals:
             continue
@@ -578,7 +611,7 @@ def main():
     excluded = [u for u in units if "excluded" in u]
     ok = [u for u in units if "excluded" not in u]
     for u in ok:
-        u["E"] = effects(u["Y"])
+        u["E"] = effects(u["Y"], u["div"])
     # shared draws over the union of tasks and their blocks (crossed across cells)
     blocks_of: dict = defaultdict(set)
     for u in ok:
@@ -629,7 +662,9 @@ def main():
                       "primary": "fixed task pool: statistic per complete shared block; ci95 = block bootstrap if >= 10 blocks else t over block means; both reported (block_boot_ci95, t_ci95)",
                       "secondary": "generalisation to new tasks: crossed two-way bootstrap, tasks and blocks resampled jointly (crossed_ci95)",
                       "draws": "shared by all cells (same task ids and nonces), so equal-weight pools are valid"},
-        "split": split_info, "incomplete_blocks": incomplete,
+        "split": split_info, "incomplete_blocks": incomplete, "sign_dictionary": SIGN_DICTIONARY,
+        "estimand_ids": {"all_pp": "primary_pivot_G_all (+ r/d/M and pivot-policy H_policy/F_policy on the same full-pool denominator)",
+                         "conditional_on_divergence_pp": "pivot_G_conditional and pivot_four_branch_conditional (A/C/I/H/F, strict reversal)"},
         "thresholds": {"g_min_pp": 100 * G_MIN, "eps_pp": 100 * G_MIN, "sensitivity_pp": 5.0},
         "success_definition": {"retail/airline": "DB success (db_match and user_stop/agent_stop)", "telecom": "official task-basis success (official_reward == 1)"},
         "input_dirs": [L["dir"] for L in loaded], "quarantined_dirs": quarantine, "duplicate_units_dropped": dups,
@@ -680,16 +715,21 @@ def markdown(res: dict, jp: Path) -> str:
         c = v.get("conditional_on_divergence_pp")
         if c:
             L.append(f"- {k}: r {fr(c['rescue'])}, d {fr(c['damage'])}, M {fr(c['M'])}, G {f(c['G'])}")
-    L += ["", "## Four-branch decomposition and escalation contrasts (full pool)", "",
-          "| cell | A | C | I | Y_QB-Y_QQ (= C+I) | Y_BB-Y_QQ (= A+C+I) |", "|---|---|---|---|---|---|"]
+    L += ["", "## Four-branch decomposition on observed divergent states (pivot_four_branch_conditional)", "",
+          "Sign dictionary (CONSEQUENCE_ANALYSIS_PLAN §2, W68): A = Y_BB-Y_QB, C = Y_BB-Y_BQ, I = Y_BQ+Y_QB-Y_BB-Y_QQ; "
+          "G = A+I, H = Y_QB-Y_QQ = C+I, F = Y_BB-Y_QQ = A+C+I. Numerically identical to W63's A/C/I; the W63 full-pool "
+          "A/C/I and Y_QB-Y_QQ / Y_BB-Y_QQ columns are withdrawn (no-divergence units are not four equal outcomes).", "",
+          "| cell | A | C | I | G | H | F | strict reversal | full-pool H_policy | full-pool F_policy |", "|---|---|---|---|---|---|---|---|---|---|"]
     for k, v in cells.items():
-        if "all_pp" in v:
+        c = v.get("conditional_on_divergence_pp")
+        if c:
             a = v["all_pp"]
-            L.append(f"| {k} | {f(a['A'])} | {f(a['C'])} | {f(a['I'])} | {f(a['QB_minus_QQ'])} | {f(a['BB_minus_QQ'])} |")
-    L += ["", "| pool (equal weight) | r | d | M | G | G t-over-blocks | A | C | I |", "|---|---|---|---|---|---|---|---|---|"]
+            L.append(f"| {k} | {f(c['A'])} | {f(c['C'])} | {f(c['I'])} | {f(c['G'])} | {f(c['H'])} | {f(c['F'])} | "
+                     f"{fr(c['strict_reversal'])} | {f(a['H_policy'])} | {f(a['F_policy'])} |")
+    L += ["", "| pool (equal weight, full pool) | r | d | M | G | G t-over-blocks | H_policy | F_policy |", "|---|---|---|---|---|---|---|---|"]
     for k, v in res["pooled"].items():
         if v:
-            L.append(f"| {k} | {fr(v['rescue'])} | {fr(v['damage'])} | {fr(v['M'])} | {f(v['G'])} | {tci(v['G'])} | {f(v['A'])} | {f(v['C'])} | {f(v['I'])} |")
+            L.append(f"| {k} | {fr(v['rescue'])} | {fr(v['damage'])} | {fr(v['M'])} | {f(v['G'])} | {tci(v['G'])} | {f(v['H_policy'])} | {f(v['F_policy'])} |")
     L += ["", "## Coverage and sources", "", "| cell | units found | analysed | states | blocks | tasks per domain | excluded by reason | source dirs |",
           "|---|---|---|---|---|---|---|---|"]
     for k, v in cells.items():
