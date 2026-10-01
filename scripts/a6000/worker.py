@@ -624,7 +624,8 @@ def run_fork(task, args, st: Status):
                    "--b-base", f"http://127.0.0.1:{plan['B'][1]}/v1", "--q-base", f"http://127.0.0.1:{plan['Q'][1]}/v1",
                    "--servers", str(sfile)]
         else:
-            cmd = [sys.executable, str(ROOT / "scripts/a6000/fork_driver.py"), "--task", args.task,
+            drv_script = {"inject": "inject_driver.py"}.get(task["fork"].get("driver"), "fork_driver.py")  # W71 recovery injections
+            cmd = [sys.executable, str(ROOT / "scripts/a6000" / drv_script), "--task", args.task,
                    "--b-base", f"http://127.0.0.1:{plan['B'][1]}/v1", "--q-base", f"http://127.0.0.1:{plan['Q'][1]}/v1",
                    "--user-base", ubase, "--servers", str(sfile)]
         drv = subprocess.Popen(cmd, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT)

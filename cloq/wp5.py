@@ -332,9 +332,22 @@ def cmd_packets(a) -> None:
     keys, index = [], []
     fields1 = ["groundedness", "tool_validity", "argument_validity", "permission_consent", "goal_relevance", "state_ambiguity", "defensible"]
     fields2 = ["retries", "defect_corrected", "irreversible_change", "user_clarification", "loop", "budget_exhaustion", "requirements_satisfied"]
-    for u in man["units"]:
+    calib = []
+    src = ROOT / man["frame_source"]
+    insample = {u["state_id"] for u in man["units"]}
+    cand = []
+    for l in open(src):
+        x = json.loads(l)
+        if x.get("eligibility_status") == "divergent" and x.get("replay_gate_pass") and x.get("cell") in FAMILY and x["state_id"] not in insample:
+            d = ROOT / x["branch_artifact_refs"]["dir"]
+            if (d / "branches" / f"{x['state_id']}.json").exists():
+                cand.append({"state_id": x["state_id"], "dir": x["branch_artifact_refs"]["dir"], "domain": x["domain"], "double_review": True})
+    for x in sorted(cand, key=lambda x: sha(f"{SALT}|calib|{x['state_id']}"))[:2]:
+        x["review_id"] = "calib_" + sha(f"{SALT}|review|{x['state_id']}|{x['dir']}")[:6]
+        calib.append(x)
+    for u in calib + man["units"]:
         v = views(u)
-        keys.append(v["key"])
+        keys.append({**v["key"], "calibration": u in calib})
         p1, p2 = v["pass1"], v["pass2"]
         rid = u["review_id"]
         h1 = [CSS, f"<title>WP5 {rid} pass 1</title><h1>State {rid} — pass 1 (current decision)</h1>",
@@ -355,7 +368,7 @@ def cmd_packets(a) -> None:
         h2.append("<h2>Labels</h2><table><tr><th>field</th>" + "".join(f"<th>{s}</th><th>{s} evidence</th>" for s in p2["suffixes"]) + "</tr>"
                   + "".join(f"<tr><td>{f}</td>" + "<td></td><td></td>" * len(p2["suffixes"]) + "</tr>" for f in fields2) + "</table>")
         (pdir / f"{rid}_pass2.html").write_text("<!doctype html><meta charset=utf-8>" + "".join(h2))
-        index.append({"review_id": rid, "domain": p1["domain"], "double_review": u["double_review"]})
+        index.append({"review_id": rid, "domain": p1["domain"], "double_review": u["double_review"], "calibration": u in calib})
     kp = KEYD / "wp5_KEY_unblinding.jsonl"
     ktxt = "".join(json.dumps(k) + "\n" for k in keys)
     kp.write_text(ktxt)
@@ -366,9 +379,10 @@ def cmd_packets(a) -> None:
     (pdir / "index.html").write_text(f"<!doctype html><meta charset=utf-8>{CSS}<title>WP5 review</title><h1>WP5 blinded review ({len(index)} states)</h1>"
                                      "<p>Do all pass-1 labels before opening any pass-2 page of the same state.</p>"
                                      f"<table><tr><th>state</th><th>domain</th><th>reviewers</th><th></th><th></th></tr>{rows}</table>")
-    meta = {"packets": len(index), "double": sum(i["double_review"] for i in index), "key_path": str(kp), "key_sha256": sha(ktxt),
+    meta = {"packets": len(index), "calibration_states": [i["review_id"] for i in index if i["calibration"]],
+            "double": sum(i["double_review"] for i in index if not i["calibration"]), "key_path": str(kp), "key_sha256": sha(ktxt),
             "sample_sha256": sha_file(SAMPLE), "script_sha256": sha_file(__file__), "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            "assignment": {i["review_id"]: ("both" if i["double_review"] else ("R1" if int(sha(f"{SALT}|assign|{i['review_id']}")[:8], 16) % 2 else "R2")) for i in index}}
+            "assignment": {i["review_id"]: ("both" if (i["double_review"] or i["calibration"]) else ("R1" if int(sha(f"{SALT}|assign|{i['review_id']}")[:8], 16) % 2 else "R2")) for i in index}}
     (OUTD / "packets_meta.json").write_text(json.dumps(meta, indent=1))
     print(f"packets: {len(index)} states -> {pdir.relative_to(ROOT)}; key outside repo ({kp}), sha {meta['key_sha256'][:12]}")
 
