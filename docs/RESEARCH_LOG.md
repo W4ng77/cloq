@@ -10,6 +10,19 @@ Newest first.
 
 ---
 
+## W82 — WP5 30-state check done by a Sonnet 5.5 proxy (author decision; NOT human) (2026-10-01 07:00 PDT)
+**TL;DR** Two fresh Sonnet 5.5 instances, blind and with evidence quotes, labelled the frozen 30-state human-check subset. The `labels_human` slot remains open. Results:
+- **Mechanical fields:** they agree with the programmatic verifier (write executed κ 1.00, budget exhaustion κ 1.00).
+- **Semantic fields:** they agree with the adjudicated R1/R2/R3 labels at κ 0.67–0.93.
+- **Consent recorded:** agreement with the programmatic rule is only κ 0.36. Consent stays an unreliable field.
+- **The Table 4 v2 key pattern replicates on the subset under the proxy's separate "unintended" judgement:**
+  - rescue: QQ 4/8 vs BQ 0/8;
+  - damage: QQ 0/9 vs BQ 6/9.
+- **Evidence:** `analysis/annotation/wp5/human_check_v1/labels_proxy_sonnet.jsonl` (sha committed 7b516b9 before the comparison), `proxy_compare_v1.json`, `analysis/annotation/wp5_proxy_compare.py`.
+- **Caveats:**
+  - Same model family as the annotators, so this shows reproducibility, not correctness. Per GPT-6.1 review 3, it does not substitute for human review.
+  - "requirements_satisfied == yes" vs the true Y gives κ 0.53, so the evaluator outcome stays the endpoint.
+
 ## W81 — Morning results: recovery q4 (null), Bank U f01 (descriptive), W×KV final, all 6 Bank U gates pass (2026-10-01 06:30 PDT)
 **TL;DR** (1) Injected defects barely move q4 success under either controller: D ≈ 0. (2) On ordinary Bank U states, consequential pivots occur at M 2–11% per state with G ≈ 0. (3) The pre-registered q8 W×KV replication is not supported at 6/6 blocks.
 - **Recovery q4** (`analysis/recovery/inject_q4/inject.json`, `summary.json`; design Amendment 1 applied before reading).
