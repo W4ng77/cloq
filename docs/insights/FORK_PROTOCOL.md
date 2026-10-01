@@ -583,3 +583,39 @@ shadow generations):
 The core is ≈ 95–100 GPU-h for U1 + U2, ≈ 2–3 h wall on 40 GPUs once queued. Engineering: a `bank_u` driver mode (state
 sampler and manifest freeze, U2 multi-config querying, skip of duplicate branches under exact agreement) is ≈ 3–4 h.
 A replay/no-op gate on 10 U1 and 10 U2 states per cell runs before the bank.
+
+### §15 amendment 1 (W70): Bank U protocol frozen before any Bank U generation
+
+This replaces the corresponding parts of §15 (review of 87a08d9, relayed by the user).
+
+- **U1 (own-trajectory states).** States are sampled from each quantized configuration's own completed trajectories, i.e. states
+  that quantized policy actually reaches. Gate: Q→Q from the saved state reproduces the original trajectory.
+- **U2 (shared states, every configuration gets the identical full state).**
+  - U2-B ("BF16-sourced shared states", the main U2 set): states from the paired BF16 runs (`a6k2_<m>_bfpair_<blk>`). It is
+    not a neutral distribution; it is the BF16 policy's state distribution. Gate: B→B reproduces the original trajectory.
+  - U2-Q ("Q-sourced shared states"): a small pre-fixed set from the GPTQ-W4 d1 trajectories of the same model (the first 20
+    tasks by sha256("bank-u2q-v1|" + task) per model and block, retail/airline). It is queried by every configuration of that model.
+- **Continuation.**
+  - Native: each quantizer's own four arms (B or Q_c current action × B or Q_c suffix) give conditional advantages under
+    its own continuation.
+  - Q0: separately, on a frozen subsample (25% of U2 states by sha256("bank-u-q0-v1|" + state_key) < 0.25), one common
+    continuation controller Q0 = GPTQ-W4 d1 of the same model (q4 → q4 GPTQ-W4 d1, q8 → q8 GPTQ-W4 d1). Every
+    configuration's current action (and B's) is followed by the Q0 suffix, so action values are comparable across quantizers.
+  - Native and Q0 tables are reported separately.
+- **Sampling, exactly as implemented.** One decision per (source run, domain, task): t = floor(u × n_decisions), with
+  u = int(sha256("bank-u-v1|" + run + "|" + domain + "|" + task)[:12], 16) / 16^12. That is uniform within the trajectory,
+  and selection probability = 1/n_decisions. **No stratification.** Final-trajectory length or its tertiles are not
+  deployment-visible; they are never used as strata or features. They enter only as the recorded selection weight.
+- **Agreement states.** The suffix effect is never set to zero.
+  - When the two current actions are token-identical (canonical message equal), their branches are identical by
+    deterministic protocol A. Only then is a branch reused, and the reuse is recorded per arm. The suffix branch itself
+    (QB for U1; BQ, QB, QQ as needed for U2) is always run.
+  - When the actions differ in any way, every needed arm is run.
+- **Branch reuse (explicit and validated).**
+  - U1: QQ = the original continuation (validated on a 10% hash sample by running QQ and requiring the W30 no-op equality).
+  - U2-B: BB = the original continuation (same 10% validation).
+  - No other reuse.
+- **Population and order.** Retail/airline, the 85-task split pool. Cells q4/q8 × {GPTQ-W4 d1, AWQ-W4, KV8}. Blocks f01, then
+  f02, then f03 (all have complete Q and BF16 runs). The first balanced block is f01 for every cell (U1 and U2). Telecom later.
+- **Manifest.** `manifests/fork/bank_u_v1.json` is written by `scripts/a6000/make_bank_u.py` and committed before any
+  generation. Its sha256 is recorded in every Bank U output. Sampled states that fail are kept as missing, never replaced.
