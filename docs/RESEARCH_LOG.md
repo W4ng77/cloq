@@ -10,6 +10,65 @@ Newest first.
 
 ---
 
+## W88 — Token-level scoring of Bank U states (2606.00206-style uncertainty mechanism) + frozen Q-visible escalation trigger; f01 only, validation pending (2026-10-01 PDT)
+**TL;DR** On all 6 f01 cells (1140 cell × state rows, 58 flips), Q's uncertainty predicts **whether B and Q act differently**, not **whether the difference matters**:
+- **Whether B and Q differ:** Q's truncated top-20 entropy at the action start separates differing from identical actions, AUC 0.66–0.91 per sub-bank × model.
+- **Over all ordinary states:** flips sit at lower Q min-margin. U1 q4 Δ −2.0 [−2.9, −1.1], AUC 0.31 [0.22, 0.40]; U1 q8 AUC 0.24 [0.13, 0.36]. These are stratified by cell × action-length tercile.
+- **Among differing states only:** the U1 effect vanishes (point AUCs 0.27–0.68, every CI covers 0.5). Only q4 U2B keeps a moderate one: mean Htk_Q AUC 0.73 [0.53, 0.89].
+- **At the first divergent token (diagnostic only):** entropy and top-k-union KL do not separate flips (AUCs 0.39–0.63, CIs cover 0.5; the one exception is U2Q q4 KLu_k AUC 0.80 [0.65, 0.93] on 4 flips).
+- **Frozen trigger:** S_mm = −(min Q margin over a_Q), frozen on f01 before any f02/f03 scoring. Its validation is **pending**.
+- Exploratory throughout; f01 is development.
+
+- **Scoring (Part A).**
+  - Code:
+    - `scripts/a6000/score_driver.py`, dispatched by `worker.py` run_fork when `fork.driver == "score"` (one-line hunk);
+    - generator `scripts/a6000/make_tasks_score.py` (q4 on 1 GPU at 0.44, q8 on 2 GPUs, no pins, priority −15).
+  - Per state:
+    - rebuild the ForkAgent prompt and require sha256(prompt ids) == the Bank U row's prompt_ids_sha;
+    - regenerate a_B on B and a_Q on Q (greedy);
+    - teacher-force the **generated token ids** (the source run's logged completion ids where it logged the action, else the regeneration) under both servers on the identical prompt ids, with vLLM prompt_logprobs top-20;
+    - store per token: the chosen logprob and rank, the top-20, the truncated top-20 entropy Htk (+ one tail bucket), the margin, and KLu(B‖Q) on the top-20 union with a tail bucket. These are never called full entropy or KL.
+  - Checks, all 6 f01 cells:
+    - 1140/1140 rows scored; prompt sha 1140/1140;
+    - regeneration == recorded generation 1060/1060 recorded actions, which also confirms the serving configs incl. AWQ/GPTQ rebuilds and KV8 hooks;
+    - every own-action token is the generating model's argmax 1140/1140 (tie-aware; vLLM ranks exact ties as 2);
+    - teacher-forced vs decode-time logprob |Δ| ≤ 5e-5;
+    - chat-template re-tokenization ≠ generated ids for 2–8 actions per q4 cell (flagged; scoring uses the generated ids). These are text+tool-call messages whose trailing whitespace before `<tool_call>` the parser strips.
+  - The 5-state dry run (`analysis/fork/token_scores/dry/`) passed before the bank was queued.
+- **Whole-action analysis (primary view; GPT-6.1 review 5 point 4).**
+  - Design: consequential vs non-consequential ordinary states per sub-bank × model, stratified by cell × a_Q length tercile, plus 5 relative-position bins over a_Q.
+  - All states: Q-visible uncertainty is higher for flips in every sub-bank. U2B q4: mean Htk_Q AUC 0.81 [0.65, 0.93]; Htk_Q is higher at every position bin.
+  - Differing states only (removes the "any difference at all" selection): U1 shows nothing. q4 U2B keeps mean Htk_Q +0.065 [+0.009, +0.112] and mean lp_Q AUC 0.27 [0.12, 0.47].
+  - Reading: Q uncertainty marks where quantization changes the action, not which changes are consequential. The analogy to the 2606.00206 mechanism holds only at the "differs at all" level.
+- **First divergence (diagnostic only; needs B; conditions on differing states).**
+  - Htk_Q_k, Htk_B_k, KLu_k, Q's margin and log-odds at k show no flip/no-flip difference in any pooled sub-bank × model.
+  - Rescue vs damage is n ≤ 13 per side. Q's margin at k is larger for rescues in U2B q4: AUC 0.82 [0.56, 0.98] (n 9/10).
+- **Divergence-token taxonomy** (first divergent token; descriptive; the classifier is a regex over decoded tokens).
+  - q4 (255 differing, 44 flips):
+    - `other_lexical` (word-choice divergences) is mildly enriched: rate ratio 1.89, Fisher p .019;
+    - `format_punct` is depleted: 2/42.
+  - q8 (175 differing, 14 flips): `confirmation` 2/3 (p .017; n tiny) and `tool_name` 3/19 (rate ratio 2.24, p .18).
+  - Tool-argument and closing divergences never flip (0/13, 0/11). Discourse markers flip in q4 at 5/20 (4 rescues).
+  - No class reproduces the strong overthinking-marker enrichment of 2606.00206.
+- **Frozen repair candidates** (for a later panel; the repair intervention is NOT built): `manifests/fork/token_repair_candidates_v1.json`, sha256 `6ea164d43ca63ed614fc6909ebcd4adf39d3c2945142305aff2dc52c4993ed87`.
+  - Rule: classes with ≥ 3 f01 flips and a rate ratio ≥ 1.5.
+  - Result: q4 {discourse_marker, other_lexical}; q8 {tool_name}.
+  - Plus a Q-defined span rule: a_Q tokens whose Q margin is below the f01 U1 10th percentile (q4 1.625, q8 2.5).
+- **Sampled-state intervention value of one-step BF16 escalation (not a token mechanism; not a closed-loop policy).**
+  - Rule: `manifests/fork/token_trigger_rule_v1.json`, sha256 `335e737d54bf59b948022b8054897ba703a1b9df6665f55bf6ab19b70333c052`, committed in d70d712 before any f02/f03 scoring task was queued.
+  - Candidates (Q-visible only): Htk_Q at the action start, −(min Q margin over a_Q), −(mean lp_Q of a_Q).
+  - Selection on f01 U1: maximise the mean over 5/10/20% of in-sample net gain minus its random expectation.
+  - Chosen: **S_mm**, with per-cell thresholds.
+  - In-sample (selection only; not a policy value): net +0 / +2 / −2 at 5/10/20% vs random −0.38 / −0.75 / −1.60, out of 30 f01 U1 turnover states.
+  - Caveat: in every cell more than 10% of U1 states contain an exact (bf16-resolution) top-2 tie inside a_Q. At 5/10% the rule is therefore "a_Q contains a tie", with ties broken by a frozen sha256(state_key) hash.
+  - An uncommitted first freeze without that tie-break escalated nobody. It was discarded before commit; no validation data existed.
+  - **Validation is pending.** It covers f02/f03, net gain vs a same-count random trigger (exact hypergeometric null), rescues, damages and turnover captured. The 12 f02/f03 score tasks are queued; 6 wait on their bank_u task. Rerun `python analysis/fork/analyze_token_mech.py` when they land; it reads the frozen rule and reports validation.
+- **GPU:** ≈ 4.6 GPU-h. q4 3 × ~25 min on 1 GPU, q8 3 × ~31 min on 2 GPUs, dry run 10 min; mostly AWQ/GPTQ rebuilds and server start.
+- **Evidence:**
+  - `analysis/fork/out/token_mech_20261001T185031Z.{md,json}`;
+  - `analysis/fork/token_scores/<m>_<cell>/f01/score_summary.json` (per-token scores in `scores.jsonl.gz`, not in git);
+  - `analysis/fork/analyze_token_mech.py`; `scripts/a6000/score_driver.py`; commits 49ccaa6 (code) and d70d712 (frozen rule and repair list).
+
 ## W89 — Paper LaTeX rewritten to storyline v7 (ARR October → NAACL long) (2026-10-01 PDT)
 **TL;DR** `paper/latex/` now follows `docs/STORYLINE_v7.md`. It leads with the same-state 2×2 fork and has three layers: L1 atlas, L2 Bank U and L3 bounding results. The build is clean with tectonic (12 pp; main text 8 pp; 0 overfull boxes, 0 undefined references). Every number carries a `% src:` comment, and pending results are `\todo{}` placeholders.
 - **Sections:** abstract, intro, related work, method, atlas, bank_u, intervention, discussion, limitations, ethics, appendix.
