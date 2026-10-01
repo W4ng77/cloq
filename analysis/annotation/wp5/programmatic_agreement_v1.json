@@ -1,0 +1,169 @@
+{
+ "version": "wp5-verify-v1",
+ "script_sha256": "dfc67dbc02e83dafa78867e678be89e38091d156db381831cefccecce2b1a4c1",
+ "sample_sha256": "cd77f1707a91188a6a081321600ec6a8abc899c3d775e9324be1954986a714b4",
+ "key_sha256": "18e40069cbc732e1f8793829554a38b1b6da634c9cf6469020b2c0019f428836",
+ "labels_sha256": {
+  "labels_R1.jsonl": "5cc9eaf004a5e3a3e2e4bd6fade6cb716ba8470076714a6a6a6eb8b581b5442d",
+  "labels_R2.jsonl": "c41a3c71693cb5102a112cf926003001dfb72e05044e86799fb932081ca6e0d4",
+  "adjudication_R3.jsonl": "014082a99bf8d37fc97c6e8dad05b78c958de1f3301f7a49d61f1a468278ccef"
+ },
+ "tool_types_sha256": null,
+ "note": "Programmatic (rule-based on transcripts + tool/DB logs) vs adjudicated Sonnet 5.5 labels. 'unintended' is a semantic judgement and has no mechanical counterpart; the unconsented_write row compares a mechanical construct with the merged LLM category and is NOT an agreement on the same construct.",
+ "fields": {
+  "write_executed vs LLM irreversible_change in {intended, unintended_or_unconsented}": {
+   "n": 318,
+   "agree": 0.9969,
+   "kappa": 0.9932,
+   "ac1": 0.9941,
+   "crosstab": {
+    "prog=False|llm=False": 115,
+    "prog=True|llm=False": 1,
+    "prog=True|llm=True": 202
+   },
+   "llm_missing": 2
+  },
+  "unconsented_write (mechanical) vs LLM unintended_or_unconsented_change": {
+   "n": 318,
+   "agree": 0.8333,
+   "kappa": 0.5362,
+   "ac1": 0.7401,
+   "crosstab": {
+    "prog=False|llm=False": 217,
+    "prog=False|llm=True": 32,
+    "prog=True|llm=False": 21,
+    "prog=True|llm=True": 48
+   },
+   "llm_missing": 2
+  },
+  "consent_recorded vs LLM (intended_change -> consented), branches where both see a write": {
+   "n": 202,
+   "agree": 0.7376,
+   "kappa": 0.4382,
+   "ac1": 0.509,
+   "crosstab": {
+    "prog=False|llm=False": 48,
+    "prog=False|llm=True": 21,
+    "prog=True|llm=False": 32,
+    "prog=True|llm=True": 101
+   },
+   "llm_missing": 0
+  },
+  "CHECK write_executed vs DB hash changed (BB/BQ/QB; mechanical vs mechanical)": {
+   "n": 240,
+   "agree": 0.9917,
+   "kappa": 0.9823,
+   "ac1": 0.9843,
+   "crosstab": {
+    "prog=False|llm=False": 90,
+    "prog=True|llm=False": 2,
+    "prog=True|llm=True": 148
+   },
+   "llm_missing": 0
+  },
+  "budget_exhaustion": {
+   "n": 319,
+   "agree": 1.0,
+   "kappa": 1.0,
+   "ac1": 1.0,
+   "crosstab": {
+    "prog=False|llm=False": 303,
+    "prog=True|llm=True": 16
+   },
+   "llm_missing": 1
+  },
+  "loop (proxy: identical call or agent text >= 3x) vs LLM loop": {
+   "n": 320,
+   "agree": 0.9406,
+   "kappa": 0.6839,
+   "ac1": 0.9269,
+   "crosstab": {
+    "prog=False|llm=False": 277,
+    "prog=False|llm=True": 14,
+    "prog=True|llm=False": 5,
+    "prog=True|llm=True": 24
+   },
+   "llm_missing": 0
+  },
+  "repeated_same_call (identical call >= 3x) vs LLM retries == repeated_same_call": {
+   "n": 320,
+   "agree": 0.975,
+   "kappa": 0.82,
+   "ac1": 0.971,
+   "crosstab": {
+    "prog=False|llm=False": 292,
+    "prog=False|llm=True": 7,
+    "prog=True|llm=False": 1,
+    "prog=True|llm=True": 20
+   },
+   "llm_missing": 0
+  },
+  "retries (3-way)": {
+   "n": 320,
+   "agree": 0.9125,
+   "kappa": 0.7754,
+   "ac1": 0.8914,
+   "crosstab": {
+    "prog=none|llm=none": 230,
+    "prog=none|llm=repeated_same_call": 7,
+    "prog=none|llm=retry_after_error": 15,
+    "prog=repeated_same_call|llm=repeated_same_call": 20,
+    "prog=repeated_same_call|llm=retry_after_error": 1,
+    "prog=retry_after_error|llm=none": 5,
+    "prog=retry_after_error|llm=retry_after_error": 42
+   },
+   "llm_missing": 0
+  },
+  "pass1 permission_consent (3-way)": {
+   "n": 160,
+   "agree": 0.9812,
+   "kappa": 0.904,
+   "ac1": 0.9792,
+   "crosstab": {
+    "prog=consent_obtained|llm=consent_obtained": 9,
+    "prog=consent_obtained|llm=write_without_consent": 2,
+    "prog=not_a_write|llm=not_a_write": 143,
+    "prog=write_without_consent|llm=consent_obtained": 1,
+    "prog=write_without_consent|llm=write_without_consent": 5
+   },
+   "llm_missing": 0
+  },
+  "pass1 is_write vs LLM permission_consent != not_a_write": {
+   "n": 160,
+   "agree": 1.0,
+   "kappa": 1.0,
+   "ac1": 1.0,
+   "crosstab": {
+    "prog=False|llm=False": 143,
+    "prog=True|llm=True": 17
+   },
+   "llm_missing": 0
+  },
+  "pass1 invalid tool name vs LLM tool_validity == wrong_tool": {
+   "n": 160,
+   "agree": 0.9,
+   "kappa": 0.0824,
+   "ac1": 0.8881,
+   "crosstab": {
+    "prog=False|llm=False": 143,
+    "prog=False|llm=True": 14,
+    "prog=True|llm=False": 2,
+    "prog=True|llm=True": 1
+   },
+   "llm_missing": 0
+  },
+  "pass1 execution error vs LLM argument_validity != valid (tool-call actions)": {
+   "n": 107,
+   "agree": 0.9346,
+   "kappa": 0.8326,
+   "ac1": 0.8926,
+   "crosstab": {
+    "prog=False|llm=False": 75,
+    "prog=False|llm=True": 3,
+    "prog=True|llm=False": 4,
+    "prog=True|llm=True": 25
+   },
+   "llm_missing": 1
+  }
+ }
+}

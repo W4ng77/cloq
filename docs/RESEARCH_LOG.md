@@ -10,6 +10,63 @@ Newest first.
 
 ---
 
+## W79 — WP5 Table 4 v2: rubric label restored, programmatic verification, within-state paired statistics, human-check packet frozen (2026-10-01)
+**TL;DR** GPT-6.1 review applied to Table 4 (W75).
+- In both groups where the two branches differ, the failing continuation carries the rubric label **`unintended_or_unconsented_change`** more often than the succeeding continuation of the same state. Rescue: QQ vs BQ 9 vs 2, diff +0.35 [+0.08, +0.57]. Damage: 1 vs 9, diff −0.40 [−0.62, −0.11].
+- **Mechanically, though:**
+  - Whether a write executes does not separate the branches (17 vs 17; 15 vs 14).
+  - Executed writes without recorded operation-specific consent differ only weakly in rescue (9 vs 5, +0.20 [−0.06, +0.43]) and not at all in damage (3 vs 3).
+  - In damage states, 7 of the 9 BQ labels sit on writes **with** recorded consent. That is the semantic "unintended" part (a consented but wrong change), which overlaps with the DB-based outcome by construction.
+- **Wording:** local defects and final failure do not correspond one-to-one; some successful continuations contain later corrections.
+- **Scope:** a process description conditional on outcome-defined groups, not causal evidence. LLM-annotated (Sonnet 5.5, two independent instances + R3), plus rule-based programmatic labels. n = 20 per sign.
+- **Changes vs v1** (`table4_v1.json` is kept unchanged):
+  1. **Label name.** The original rubric category name, `unintended_or_unconsented_change`, is used everywhere. v1's "unconsented irreversible write" merged three judgements; the W75 entry now carries a correction note. The interim report `docs/REPORT_GPT61_20261001_0000.md` was already sent and is left as is.
+  2. **Three judgements kept apart:**
+     - "write executed" (programmatic);
+     - "consent recorded" (programmatic, operation-specific);
+     - "unintended" (LLM only, semantic).
+  3. **Paired within state:** 2×2 discordant counts, McNemar exact p (descriptive), and the paired difference with a Newcombe score 95% CI and a task-clustered bootstrap (clusters = (domain, task_id), 10k reps, seed 0). There are no independent-proportion tests. Single rows get Wilson 95% intervals.
+  4. **tool_validity (κ 0.29)** is dropped from the core. The core "local defect" = groundedness / argument_validity / permission_consent. The tool_validity rows and the v1 composite are in the appendix of `table4_v2.md`.
+- **Corrected key rows** (within-state paired, first − second; Newcombe 95%):
+
+  | row | rescue | damage | both succeed | both fail |
+  |---|---|---|---|---|
+  | `unintended_or_unconsented_change` QQ vs BQ (LLM) | 9 vs 2 (8:1), +0.35 [+0.08, +0.57] | 1 vs 9 (1:9), −0.40 [−0.62, −0.11] | 1 vs 1 | 5 vs 7, −0.10 [−0.35, +0.17] |
+  | write executed QQ vs BQ (prog) | 17 vs 17, 0.00 [−0.25, +0.25] | 15 vs 14, +0.05 [−0.26, +0.35] | 10 vs 9 | 11 vs 13 |
+  | executed write w/o recorded consent QQ vs BQ (prog) | 9 vs 5, +0.20 [−0.06, +0.43] | 3 vs 3, 0.00 [−0.21, +0.21] | 3 vs 2 | 4 vs 3 |
+  | loop or budget exhaustion QQ vs BQ (LLM) | 5 vs 0, +0.25 [+0.04, +0.47] | 0 vs 2, −0.10 [−0.30, +0.08] | 1 vs 2 | 7 vs 4 |
+  | Q vs B action indefensible (LLM) | 7 vs 8, −0.05 [−0.37, +0.28] | 12 vs 5, +0.35 [−0.05, +0.65] | 10 vs 6 | 12 vs 9 |
+  | Q vs B local defect, core (LLM) | 4 vs 6, −0.10 [−0.33, +0.14] | 12 vs 7, +0.25 [−0.09, +0.53] | 6 vs 3 | 11 vs 7 |
+  | QQ first-action defect corrected later (LLM; Wilson) | 4/20 [0.08, 0.42] | 10/20 [0.30, 0.70] | 4/20 | 7/20 |
+
+- **Programmatic vs adjudicated LLM, per field** (`programmatic_agreement_v1.json`; 320 branches / 160 actions):
+
+  | field | agreement | κ |
+  |---|---|---|
+  | write executed vs irreversible_change ≠ none | 0.997 | 0.99 |
+  | budget exhaustion | 1.00 | 1.00 |
+  | identical call ≥ 3× vs retries = repeated_same_call | 0.975 | 0.82 |
+  | retries, 3-way | 0.91 | 0.78 |
+  | loop proxy vs loop | 0.94 | 0.68 |
+  | pass-1 permission_consent, 3-way | 0.98 | 0.90 |
+  | pass-1 is-write | 1.00 | 1.00 |
+  | pass-1 execution error vs argument_validity ≠ valid | 0.93 | 0.83 |
+  | pass-1 invalid tool name vs wrong_tool | 0.90 | 0.08 (LLM wrong_tool is mostly semantic) |
+  | consent recorded vs intended_change (on 202 writes both see) | 0.74 | 0.44 |
+  | unconsented executed write vs `unintended_or_unconsented_change` (different constructs) | 0.83 | 0.54 |
+
+  - Mechanical sanity check: write executed vs DB hash change (BB/BQ/QB) agree 0.99.
+  - The consent disagreements are mostly user-initiated instructions ("just cancel the entire order") that carry no listed-details-plus-yes. The LLM calls these intended; the rule calls them not consented.
+  - The consent rule was fixed twice after a first look at disagreements: an over-broad negation regex ("I confirm that I do **not** want …"), and a batch of writes approved by one listed reply. Both were bugs, not tuning toward the LLM. The rule is frozen in the script sha.
+- **Human-check packet** (not yet labelled): `analysis/annotation/wp5/human_check_v1/index.html`.
+  - 30 states covering all four signs (rescue 8, damage 9, both succeed 6, both fail 7).
+  - Positives plus matched negatives (same sign, then family × domain) for the failing-branch `unintended_or_unconsented_change` and for "QQ defect corrected".
+  - Also 1 state per direction of programmatic-vs-LLM consent disagreement, and 2 fill states.
+  - The subset was frozen by hash before any human label: `subset_v1.json` (sorted-id sha256 2ef55225…) and `freeze_v1.json`. The strata are sealed in `SEALED_strata_v1.json`.
+  - The reviewer labels the existing blinded packets with evidence spans and quotes, then commits `labels_human.jsonl` and its sha. Only then does `wp5_human_check.py reveal` show model identity, sign and existing labels. See ANNOTATION_PROTOCOL Amendment 2.
+
+Evidence: `analysis/annotation/wp5_verify.py` → `analysis/annotation/wp5/programmatic_v1.jsonl`, `programmatic_agreement_v1.json`; `analysis/annotation/wp5_table4.py` → `analysis/annotation/wp5/table4_v2.{json,md}` (`--v1` reproduces the v1 table values); `analysis/annotation/wp5_human_check.py`, `analysis/annotation/wp5/human_check_v1/`; `docs/insights/ANNOTATION_PROTOCOL.md` Amendment 2; key `/data/ziyangs/cloq_work/annotation/wp5_KEY_unblinding.jsonl` (cluster only). CPU only; no telecom holdout data read (all 4 telecom states are development fork states).
+
 ## W80 — GPT-6.1 review 3 decisions applied; holdout repeatability secondary drafted (2026-10-01 00:40 PDT)
 **TL;DR** The second pillar is "how consequences propagate", in three parts:
 - **Recovery intervention** (primary identification): D measures the controller dependence of the injection effect.
@@ -29,7 +86,8 @@ Changes made:
 Evidence: `docs/insights/RECOVERY_INTERVENTION_DESIGN.md` (Amendment 1), `docs/insights/FORK_PROTOCOL.md` §12 amendment 1, `scripts/a6000/fork_driver.py` (bank_u gate raise), GPT-6.1 review text as relayed by the author.
 
 ## W75 — WP5 Table 4: Sonnet 5.5 blinded labels, adjudicated and unblinded (2026-10-01 00:00 PDT)
-**TL;DR** In this sample, how the pivot action itself looks does **not** separate rescue from damage. What separates them is what happens later in the failing branch, mainly **unconsented irreversible writes**. This is descriptive and LLM-annotated, not human.
+**TL;DR** In this sample, how the pivot action itself looks does **not** separate rescue from damage. What separates them is what happens later in the failing branch, mainly the rubric label **`unintended_or_unconsented_change`** ("unintended or unconsented change"). This is descriptive and LLM-annotated, not human.
+> **Superseded by W79** (GPT-6.1 review): the label name below is restored to the rubric category (v1 wrongly called it "unconsented irreversible write", merging three judgements), the QQ/BQ comparison is now paired within state with intervals, tool_validity is out of the core, and Reading 1 is reworded. Use `table4_v2.md`.
 - **Annotation (Amendment 1, author decision):**
   - R1 and R2 are independent Sonnet 5.5 instances (8 chunks); R3 (Sonnet 5.5) adjudicated.
   - Labels and adjudication shas were committed (62ec2a1, bd6164d) before the key was opened. The key's sha matches `packets_meta` (18e40069…).
@@ -44,14 +102,14 @@ Evidence: `docs/insights/RECOVERY_INTERVENTION_DESIGN.md` (Amendment 1), `docs/i
   | quantized action Q judged indefensible | 7 | **12** | 10 | 12 |
   | Q action has a local defect | 9 | **14** | 9 | 16 |
   | BF16 action B judged indefensible | 8 | 5 | 6 | 9 |
-  | unconsented irreversible write in QQ | **9** | 1 | 1 | 5 |
-  | unconsented irreversible write in BQ | 2 | **9** | 1 | 7 |
+  | `unintended_or_unconsented_change` in QQ | **9** | 1 | 1 | 5 |
+  | `unintended_or_unconsented_change` in BQ | 2 | **9** | 1 | 7 |
   | QQ: Q's first-action defect corrected later | 4 | **10** | 4 | 7 |
   | QQ: loop or budget exhaustion | **5** | 0 | 1 | 7 |
 
 - **Reading:**
   1. **Local action quality does not predict the consequence's sign.** In *damage* states the quantized action looks worse than in rescue states (12 vs 7 indefensible), yet that is where it leads to success. In half of them (10/20) its defect is corrected later.
-  2. **The failing branch is marked by unconsented irreversible writes.** These occur in QQ when QQ fails (rescue: 9/20) and in BQ when BQ fails (damage: 9/20); the sign flips with the outcome. Loops and budget exhaustion also mark failing QQ branches.
+  2. **The failing branch is marked by `unintended_or_unconsented_change`.** These occur in QQ when QQ fails (rescue: 9/20) and in BQ when BQ fails (damage: 9/20); the sign flips with the outcome. Loops and budget exhaustion also mark failing QQ branches.
   3. **Implication:** consequence is decided along the trajectory (recovery vs an irreversible write), not at the pivot. This is consistent with "behavioural closeness ≠ task improvement" (§4 of STATUS_night).
 - **Caveats:**
   - n = 20 per sign, no intervals, a stratified sample, LLM annotators.
