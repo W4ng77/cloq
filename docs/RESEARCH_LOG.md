@@ -10,6 +10,22 @@ Newest first.
 
 ---
 
+## W72 — Long-tail fork tasks split into resumable shards (2026-09-30 20:40 PDT)
+**TL;DR** The user asked to keep every card busy and split the slow tasks. Five fork tasks dominated the remaining wall-clock:
+- q4 RTN-W3 stress, 45/232 states branched after 6 h, est. >20 h remaining;
+- q8 RTN-W3 stress;
+- telecom q8 GPTQ g1/g3 and AWQ g3.
+
+`scripts/a6000/fork_driver.py` `branches_mode` now accepts:
+- `shard: [k, n]`, which selects states by hash(`"shard|"`+state_id) mod n. Noop membership is still decided on the full state set, so the design is unchanged.
+- `resume: true`, which reuses a complete, error-free branch file.
+
+Sharded output goes to `branches_shard{k}of{n}.json`; analyses read the per-state branch files, so nothing downstream changes. 15 shard tasks are queued (4 + 3 + 3 + 3 + 2) with no node pin and priority one above the original. The originals were stopped (SIGTERM to the worker process group) and moved to deferred. States frozen by the original searches are reused, so no search is repeated and finished branches are kept.
+
+The patch is not committed separately because fork_driver.py also holds agent a5468c1's in-progress Bank U edits; that agent commits the file including this hunk.
+
+Evidence: queue `todo/fork_*_s*of*.json`, `deferred/fork_{stress_q4_rtn_w3,...}.json`.
+
 ## W69 — Loop early-stop guard lg-v1: built and pinned, but FAILS its pre-declared premature-stop check; W2 panel frozen, gates queued, panel NOT queued (2026-10-01)
 **TL;DR** The opt-in guard of plan §8.4 is implemented (`cloq/loop_guard.py`, sha `88ac7cdd…`) and gives the same result live and offline.
 - **Frozen sample of 20 loops and 30 legitimate traces:** 0 false positives and 0 false negatives.
