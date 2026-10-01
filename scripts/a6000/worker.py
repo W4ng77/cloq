@@ -543,6 +543,8 @@ def run_fork(task, args, st: Status):
                 senv["GPU_UTIL"] = str(task.get("gpu_util", 0.44))
             senv.update(cfg[role]["serve_env"])  # same semantics as run_eval: the role's serve_env over the model env
             launch = [str(ROOT / "scripts/a6000/serve.sh"), g, str(port), path, "agent", str(AGENT_MAXLEN), *cfg[role]["serve_extra"]]
+            if healthy(port):  # W70: an orphaned server on this port would be mistaken for ours (bank_u_gate_q4_kvq_int8)
+                raise RuntimeError(f"fork {role}: port {port} already serves a model before launch (orphaned server?); refusing")
             lp = logdir / f"{task['id']}.{role}.vllm.log"
             off = lp.stat().st_size if lp.exists() else 0
             slog = open(lp, "a")
