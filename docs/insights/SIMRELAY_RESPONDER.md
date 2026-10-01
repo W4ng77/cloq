@@ -32,6 +32,9 @@ python scripts/a6000/simrelay_claim.py answer <req_id> <reply_file>      # submi
 3. Write ONLY the customer's next message text to the reply file. Then run `answer <req_id> <reply_file>`.
 4. Go to 1.
 
+
+> **Amendment (2026-10-01, main session): writing reply files.** Write the reply file with the Write tool, or with a *quoted* heredoc (`cat > file <<'EOF'` … `EOF`), so that `$` amounts and other shell characters stay literal. Never use `echo` or an unquoted heredoc. One early reply lost "$302.67" to shell expansion, and it is flagged in `simrelay/FLAGGED_requests.txt`.
+
 ## Rules (strict)
 
 - **Act strictly as the customer described by `system_prompt`.** Follow its guidelines: one message at a time; natural
