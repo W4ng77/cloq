@@ -594,22 +594,172 @@ def pivot_arms(spec, bases, user_base, servers, out):
     return res
 
 
+def _y(domain: str, rec: dict) -> int | None:
+    """Success under the domain's evaluator (retail/airline DB success, telecom official task-basis success)."""
+    if rec is None:
+        return None
+    if domain == "telecom":
+        return int(rec.get("official_reward") == 1.0)
+    return int(bool(rec.get("db_match")) and rec.get("termination_reason") in ("user_stop", "agent_stop"))
+
+
+def bank_u(spec, bases, user_base, servers, out):
+    """Bank U (FORK_PROTOCOL §15 + amendment 1, W70). Servers: B = BF16, Q = the cell's configuration.
+    Rows from the frozen manifest for this model, cell and blocks: U1 (this cell's own trajectories), U2B (BF16-sourced
+    shared states), U2Q (Q-sourced shared states). Native four arms; reuse only between token-identical current actions
+    and of the source's own original continuation (U1: QQ, U2B: BB, U2Q with this cell = source: QQ), validated by running
+    that arm on a 10% hash sample (spec noop_frac; the gate uses 1.0)."""
+    man_path = ROOT / spec["manifest"]
+    import hashlib as _h
+    man_sha = _h.sha256(man_path.read_bytes()).hexdigest()
+    if spec.get("manifest_sha256") and spec["manifest_sha256"] != man_sha:
+        raise SystemExit(f"bank_u: manifest sha {man_sha} != frozen {spec['manifest_sha256']}")
+    man = json.loads(man_path.read_text())
+    m, cell = spec["model"], spec["cell"]
+    rows = [r for r in man["rows"] if r["model"] == m and r["block"] in spec["blocks"] and r["sub"] in spec.get("subs", ["U1", "U2B", "U2Q"])
+            and (r["sub"] != "U1" or r["cell"] == cell)]
+    if spec.get("limit_per_sub"):
+        lim = spec["limit_per_sub"]
+        rows = [r for sub in ("U1", "U2B", "U2Q") for r in sorted([x for x in rows if x["sub"] == sub], key=lambda x: x["state_key"])[:lim]]
+    blocks = {}
+    src_cell = "gptq_w4_d1"
+
+    def one(r):
+        rec = {k: r[k] for k in ("state_key", "sub", "model", "block", "domain", "task_id", "t", "n_decisions", "selection_probability", "q0", "source_run")}
+        rec["cell"] = cell
+        if r["missing_reason"]:
+            return {**rec, "missing_reason": r["missing_reason"]}
+        k = (r["source_run"], r["domain"])
+        if k not in blocks:
+            blocks[k] = F.Block(ROOT, *k)
+        st = F.make_state(blocks[k], r["task_id"], r["t"])
+        recorded = st["a_Q"]["message"]  # the source run's own action at t
+        noop = int(_h.sha256(f"bank-u-noop-v1|{r['state_key']}|{cell}".encode()).hexdigest()[:8], 16) / 16 ** 8 < spec.get("noop_frac", 0.1)
+        orig_y = _y(r["domain"], {**st["orig"], "termination_reason": st["orig"]["termination_reason"]})
+        checks = {}
+        tagb = f"bu-{cell}-{r['state_key']}"
+        if r["sub"] == "U1":
+            a_b, rb = F.shadow(st, bases["B"], tagb + "-sB")
+            checks["B_prompt_ok"] = F.ids_sha(rb.get("prompt_token_ids")) == st["q_decision"]["prompt_ids_sha"]
+            a_q, orig_arm = recorded, "QQ"
+        elif r["sub"] == "U2B":
+            a_q, rq = F.shadow(st, bases["Q"], tagb + "-sQ")
+            checks["Q_prompt_ok"] = F.ids_sha(rq.get("prompt_token_ids")) == st["q_decision"]["prompt_ids_sha"]
+            a_b, orig_arm = recorded, "BB"
+        else:  # U2Q
+            a_b, rb = F.shadow(st, bases["B"], tagb + "-sB")
+            checks["B_prompt_ok"] = F.ids_sha(rb.get("prompt_token_ids")) == st["q_decision"]["prompt_ids_sha"]
+            if cell == src_cell:
+                a_q, orig_arm = recorded, "QQ"
+            else:
+                a_q, rq = F.shadow(st, bases["Q"], tagb + "-sQ")
+                checks["Q_prompt_ok"] = F.ids_sha(rq.get("prompt_token_ids")) == st["q_decision"]["prompt_ids_sha"]
+                orig_arm = None
+        if not all(checks.values()):
+            return {**rec, "missing_reason": f"prompt id mismatch {checks}"}
+        st["a_B"] = {"message": a_b}
+        st["a_Q"] = {"message": a_q}
+        exact = F.canon_msg(a_b) == F.canon_msg(a_q)
+        sch = F.tool_schemas(_tools_schema(st))
+        cmpc = F.compare_actions(a_q, a_b, sch)
+        # which arms to run (never impute a suffix effect; reuse only identical actions or the source's original arm)
+        need = {"BB", "BQ", "QB", "QQ"}
+        reuse = {}
+        if orig_arm and not noop:
+            need.discard(orig_arm)
+            reuse[orig_arm] = "orig"
+        if exact:  # identical current action: B-first and Q-first arms with the same controller are identical
+            for a1, a2 in (("BB", "QB"), ("BQ", "QQ")):
+                if a1 in need and a2 in need:
+                    need.discard(a1)
+                    reuse[a1] = f"={a2}"
+                elif a1 in need and a2 in reuse:
+                    need.discard(a1)
+                    reuse[a1] = f"={a2}"
+                elif a2 in need and a1 in reuse:
+                    need.discard(a2)
+                    reuse[a2] = f"={a1}"
+        res = {}
+        for arm in ("BB", "BQ", "QB", "QQ"):
+            if arm in need:
+                br = F.run_branch(st, arm[0], arm[1], bases, user_base, f"{tagb}-{arm}")
+                res[arm] = br
+        Y, src = {}, {}
+        for arm in ("BB", "BQ", "QB", "QQ"):
+            if arm in res:
+                Y[arm] = None if "error" in res[arm] else _y(r["domain"], res[arm])
+                src[arm] = "run" if "error" not in res[arm] else f"error: {res[arm]['error'][:120]}"
+        for arm, how in reuse.items():
+            if how == "orig":
+                Y[arm], src[arm] = orig_y, "orig"
+        for arm, how in reuse.items():
+            if how.startswith("="):
+                Y[arm], src[arm] = Y.get(how[1:]), f"reuse{how}"
+        if noop and orig_arm and orig_arm in res and "error" not in res[orig_arm]:
+            checks["noop_" + orig_arm] = noop_check(st, res[orig_arm], orig_final_hash(st, blocks[k]))
+        rec.update({"state_id": st["state_id"], "history_sha": st["history_sha"], "prompt_ids_sha": st["q_decision"]["prompt_ids_sha"],
+                    "steps_left": st["budget"]["steps_left"], "exact_agreement": exact, "agreement_category": cmpc["category"],
+                    "Y": Y, "arm_source": src, "noop_sample": noop, "checks": checks, "budget_ok": {a: budget_check(st, b)["ok"] for a, b in res.items() if "error" not in b},
+                    "context_overflow_arms": [a for a, b in res.items() if b.get("infra_cause") == "context_overflow"],
+                    "durations": {a: b.get("duration") for a, b in res.items()}, "a_B": a_b, "a_Q": a_q})
+        dump(out / "branches" / f"{r['state_key']}.json", res)
+        return rec
+
+    t0 = time.time()
+    with ThreadPoolExecutor(spec.get("concurrency", 8)) as ex:
+        recs = list(ex.map(lambda r: _safe(one, r), rows))
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "bank_rows.jsonl").write_text("".join(json.dumps(x, ensure_ascii=False, default=str) + "\n" for x in recs))
+    ok = [x for x in recs if "Y" in x]
+    noops = [x for x in ok if any(k.startswith("noop_") for k in x["checks"])]
+    res = {"protocol": "bank_u_v1 (FORK_PROTOCOL §15 + amendment 1)", "manifest_sha256": man_sha, "spec": spec, "servers": servers,
+           "n_rows": len(rows), "n_ok": len(ok), "n_missing": sum(1 for x in recs if "missing_reason" in x), "n_errors": sum(1 for x in recs if "error" in x),
+           "n_exact_agreement": sum(1 for x in ok if x["exact_agreement"]),
+           "noop": {"n": len(noops), "n_pass": sum(1 for x in noops if all(v["ok"] for kk, v in x["checks"].items() if kk.startswith("noop_")))},
+           "budget_ok": all(all(x["budget_ok"].values()) for x in ok),
+           "n_branches_run": sum(sum(1 for v in x["arm_source"].values() if v == "run") for x in ok),
+           "branch_seconds": [d for x in ok for d in x["durations"].values() if d], "seconds": time.time() - t0}
+    res["gate_pass"] = res["n_errors"] == 0 and res["n_missing"] == 0 and res["noop"]["n"] > 0 and res["noop"]["n_pass"] == res["noop"]["n"] and res["budget_ok"]
+    dump(out / "bank_summary.json", res)
+    log(f"bank_u {m}:{cell} {spec['blocks']}: ok {res['n_ok']}/{res['n_rows']}, exact {res['n_exact_agreement']}, noop {res['noop']}, "
+        f"branches {res['n_branches_run']}, {res['seconds']:.0f} s, gate_pass {res['gate_pass']}")
+    return res
+
+
 def branches_mode(spec, bases, user_base, servers, out):
     sdir = ROOT / spec["states_dir"]
     states = [json.loads(p.read_text()) for p in sorted(sdir.glob("*.json"))]
     order = spec.get("branches", ["BB", "BQ", "QB"])
+    # noop membership is decided on the full state set (before sharding), so shards reproduce the unsharded design
     noop_ids = {s["state_id"] for s in states if int(hsel("noop|" + s["state_id"])[:8], 16) / 16 ** 8 < spec.get("noop_frac", 0.1)}
+    shard = spec.get("shard")  # W72: [k, n] -> this task branches only states with hash(state_id) % n == k
+    if shard:
+        k, n = shard
+        states = [s for s in states if int(hsel("shard|" + s["state_id"])[:8], 16) % n == k]
+
+    def done_file(st):  # W72 resume: a complete branch file (every requested branch present, none errored) is reused
+        p = out / "branches" / f"{st['state_id']}.json"
+        if not spec.get("resume") or not p.exists():
+            return None
+        try:
+            r = json.loads(p.read_text())
+        except Exception:
+            return None
+        need = order + (["QQ"] if st["state_id"] in noop_ids else [])
+        return r if all(b in r and "error" not in r[b] for b in need) else None
 
     def one(st):
-        r = run_4(st, bases, user_base, order + (["QQ"] if st["state_id"] in noop_ids else []), "dev")
-        dump(out / "branches" / f"{st['state_id']}.json", r)
+        r = done_file(st)
+        if r is None:
+            r = run_4(st, bases, user_base, order + (["QQ"] if st["state_id"] in noop_ids else []), "dev")
+            dump(out / "branches" / f"{st['state_id']}.json", r)
         return {"state_id": st["state_id"], "outcomes": {b: {k: v.get(k) for k in ("reward", "db_match", "official_reward", "termination_reason", "duration", "error")} for b, v in r.items()}}
 
     t0 = time.time()
     with ThreadPoolExecutor(spec.get("concurrency", 8)) as ex:
         rows = list(ex.map(lambda s: _safe(one, s), states))
     res = {"protocol": F.PROTOCOL, "spec": spec, "servers": servers, "seconds": time.time() - t0, "rows": rows}
-    dump(out / "branches.json", res)
+    dump(out / (f"branches_shard{shard[0]}of{shard[1]}.json" if shard else "branches.json"), res)
     return res
 
 
@@ -727,7 +877,7 @@ def main():
     bases = {"B": a.b_base, "Q": a.q_base}
     out = ROOT / spec["out"]
     out.mkdir(parents=True, exist_ok=True)
-    fn = {"gate": gate, "gate_same": gate_same, "search": search_mode, "branches": branches_mode, "dev": dev_mode, "pivot_arms": pivot_arms}[spec["mode"]]
+    fn = {"gate": gate, "gate_same": gate_same, "search": search_mode, "branches": branches_mode, "dev": dev_mode, "pivot_arms": pivot_arms, "bank_u": bank_u}[spec["mode"]]
     r = fn(spec, bases, a.user_base, servers, out)
     v = r.get("verdict")
     print(json.dumps({"verdict": v}, default=str))

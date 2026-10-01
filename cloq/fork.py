@@ -571,6 +571,20 @@ def run_branch(st: dict, first: str, controller: str, bases: dict[str, str], use
         sim = orch.run()
     except Exception as e:
         recs = _W.pop(tag)
+        if "ContextWindowExceeded" in repr(e):
+            # W10 / W70: a conversation that outgrows the simulator or agent window is the agent's own failure (it loops or
+            # rambles), not an outage. It is a valid failure outcome of the frozen policy: Y = 0 under every evaluator.
+            return {"tag": tag, "state_id": st["state_id"], "branch": first + controller, "first": first, "controller": controller,
+                    "controller_base": bases[controller], "termination_reason": "infrastructure_error", "infra_cause": "context_overflow",
+                    "reward": 0.0, "db_match": False, "official_reward": 0.0, "env_assert_all": None, "reward_info": None,
+                    "step_count_final": orch.step_count, "num_errors_final": orch.num_errors, "budget_recount": None,
+                    "prefix_ok": None, "env_hash_init": probe.get("env_hash_init"), "env_hash_init_ok": probe.get("env_hash_init") == st["env_hash"],
+                    "counters_tau2_default": probe.get("counters_tau2"), "to_role_at_init": probe.get("to_role"), "env_hash_final": None,
+                    "suffix": None, "suffix_sha": None, "n_messages": None, "duration": time.time() - t0, "sim_seed": st["simulator"]["sim_seed"],
+                    "n_user_msgs": None, "error_text": repr(e)[:300],
+                    "decisions": [{"decision_idx": r["decision_idx"], "forced": bool(r.get("forced")),
+                                   "prompt_ids_sha": ids_sha(r.get("prompt_token_ids")), "n_prompt_tokens": r.get("n_prompt_tokens"),
+                                   "completion_ids_sha": ids_sha(r.get("completion_token_ids"))} for r in recs]}
         return {"tag": tag, "branch": first + controller, "error": repr(e), "n_decisions": len(recs), "probe": probe}
     dur = time.time() - t0
     rinfo = evaluate_simulation(simulation=sim, task=task, evaluation_type=EvaluationType.ALL_IGNORE_BASIS,
