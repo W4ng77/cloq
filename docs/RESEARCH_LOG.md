@@ -10,6 +10,47 @@ Newest first.
 
 ---
 
+## W84 — Bank U f01 analysis: sub-banks separate, unique states, action taxonomy, text-content split, Q0, cross-quantizer transfer (2026-10-01 06:45 PDT)
+**TL;DR** Bank U f01 is now analysed per sub-bank (U1 / U2B / U2Q never pooled), on unique states, with the task-equal estimand (no n_decisions weighting; k = 1 block, so the intervals are task-cluster bootstraps). Results:
+- **Outcome changes are mostly class (ii): same tool structure, different text.** Of the M = 1 rows, U1 has 21/30, U2B 17/24 and U2Q 3/4. Nearly all are talk–talk; class (i) has none.
+- **The text features separate nothing.** Question, confirmation, commitment/claim and new-entity flags show no consistent association with outcome change.
+- **Length difference co-occurs with outcome change only in q4** (descriptive only).
+- **Q0 n is 6–21 per cell × sub.** Q0 M is ≥ native M on the same rows.
+- **In q4 U2B, the same states flip under several quantizers** above independence (7 joint flips vs ≈ 1.4 expected). None of these joint flips has identical a_Q across cells.
+- **Native M, task-equal, U1 / U2B / U2Q (unique n 85 / 85 / 20):**
+  - q4 GPTQ .118 / .094 / .100
+  - q4 AWQ .106 / .082 / .100
+  - q4 KV8 .024 / .047 / 0
+  - q8 GPTQ .012 / .024 / 0
+  - q8 AWQ .047 / .024 / 0
+  - q8 KV8 .047 / .012 / 0
+
+  G is within ±0.035 everywhere, and all intervals cover 0. GPTQ's U2Q is its own U1 (170 unique of 190; the duplicates' Y are concordant 20/20). It is reported but counted once in cross-sub tables.
+- **Taxonomy** (a_B vs a_Q):
+  - Classes: (i) identical; (ii) same calls or both talk, different text; (iii) different tool name/args/count; (iv) act/talk kind differs.
+  - M rate by class, q4 U1: (ii) .15 and (iv) .54. q4 U2B: (ii) .18, (iii) .18, (iv) .08. q8 U2B: the flips are spread over (ii)/(iii)/(iv) at 1/1/3.
+  - The comparator's `same` hides 13 act–act pairs whose text differs (ii_act). `text_only` = ii_talk.
+- **Text split of class (ii)** (regex; descriptive):
+  - Relative length difference above the median, q4: U1 9/46 vs 5/47; U2B 11/45 vs 5/46; U2Q 3/10 vs 0/11. q8 U1: 4/29 vs 3/30.
+  - Median |Δlen| for flips vs non-flips, q4: 118 vs 71 chars (U1) and 97 vs 48 (U2B).
+  - Questions and confirmations usually appear on both sides. Claims of completed action are rare, and none occurs in a flip.
+- **Q0** (U2 Q0 subsample; q4 KV8 Q0 still running):
+  - Y(a_B→Q0) is identical across cells on all 46 shared states. This is a determinism check.
+  - U2B, Q0 vs native M:
+    - q4 AWQ 3/21 vs 1/21;
+    - q8 AWQ 2/13 vs 1/13;
+    - q8 KV8 0/13 vs 0/13.
+  - GPTQ's Q0 is native by construction. Too small to conclude.
+- **Transfer** (native, shared state_ids; U1 states are never shared):
+  - q4 U2B, states flipping in 0/1/2/3 cells: 72/8/4/1. Pairwise joint flips 3/2/2 vs 0.66/0.38/0.33 expected under independence; 6/7 have the same direction.
+  - q4 U2Q: 2 states flip under both GPTQ and AWQ.
+  - q8 U2B: 5 single-cell flips.
+- **Evidence:** `analysis/fork/analyze_bank_u.py`; `analysis/fork/out/bank_u_f01_20261001T134456Z.{json,md}` (input sha256s, flipping pairs and flip states are in the JSON). It reruns unchanged when f02/f03 land: t over blocks for k < 10, block bootstrap at k ≥ 10. The multi-block path was tested on a synthetic f02 copy.
+- **Caveats:**
+  - One block: no run-level uncertainty.
+  - The regex features are coarse, and "new entity" is pairwise, not relative to the history.
+  - The pooled Q0 numbers in the JSON use equal weight per cell × state row.
+
 ## W82 — WP5 30-state check done by a Sonnet 5.5 proxy (author decision; NOT human) (2026-10-01 07:00 PDT)
 **TL;DR** Two fresh Sonnet 5.5 instances, blind and with evidence quotes, labelled the frozen 30-state human-check subset. The `labels_human` slot remains open. Results:
 - **Mechanical fields:** they agree with the programmatic verifier (write executed κ 1.00, budget exhaustion κ 1.00).
