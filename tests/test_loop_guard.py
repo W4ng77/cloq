@@ -49,47 +49,48 @@ def tool_loop(k, vary_result=False, vary_id=False):
 
 
 def test_rules():
-    n, ev = run(tool_loop(4))
-    assert n == 4 and ev["cycle_len"] == 1 and ev["repeats"] == 4, (n, ev)  # fires once 4 copies are complete (greeting excluded, n0=1)
-    assert run(tool_loop(3))[0] is None, "3 repeats must not fire"
-    assert run(tool_loop(8, vary_result=True))[0] is None, "different tool results must not fire"
-    assert run(tool_loop(8, vary_id=True))[0] is None, "calls on different IDs must not fire"
+    R = G.MIN_REPEATS
+    n, ev = run(tool_loop(R))
+    assert n == R and ev["cycle_len"] == 1 and ev["repeats"] == R, (n, ev)  # fires once 4 copies are complete (greeting excluded, n0=1)
+    assert run(tool_loop(R - 1))[0] is None, "R-1 repeats must not fire"
+    assert run(tool_loop(2 * R, vary_result=True))[0] is None, "different tool results must not fire"
+    assert run(tool_loop(2 * R, vary_id=True))[0] is None, "calls on different IDs must not fire"
     # state changes between repeats (iterative write): DB hash differs
-    m = tool_loop(6)
+    m = tool_loop(R + 2)
     assert run(m, hashes=lambda k: f"h{k}")[0] is None, "changing DB hash must not fire"
     assert run(m, hashes=lambda k: None)[0] is None, "missing DB hash must not fire"
     # talk loop with identical user replies (L=2: ask + tool), fires; with different user replies, does not
     m = list(GREET)
-    for i in range(5):
+    for i in range(R + 1):
         m += [A(text="Please give me your zip code."), U("98187")]
     n, ev = run(m)
     assert n is not None and ev["cycle_len"] == 1
     m = list(GREET)
-    for i in range(6):
+    for i in range(R + 2):
         m += [A(text="Please give me your zip code."), U(f"98187 (attempt {i})")]
     assert run(m)[0] is None, "new user information must not fire"
     # talk decision without its user reply yet: incomplete evidence
     m = list(GREET)
-    for i in range(4):
+    for i in range(R):
         m += [A(text="Please give me your zip code."), U("98187")]
     m += [A(text="Please give me your zip code.")]
     decs = G.decisions_from_messages(m, 1)
     assert decs[-1]["evidence"] is None
     # cycle of length 2 (lookup, lookup) repeated 4x fires; 4-cycle repeated 4x fires (16 decisions)
     m = list(GREET)
-    for i in range(4):
+    for i in range(R):
         m += [A("find_user", {"zip": "1"}), T("not found"), A("get_order", {"id": "W1"}), T("error", True)]
     n, ev = run(m)
-    assert ev and ev["cycle_len"] == 2 and ev["repeats"] == 4
+    assert ev and ev["cycle_len"] == 2 and ev["repeats"] == R
     m = list(GREET)
-    for i in range(4):
+    for i in range(R):
         for j in range(4):
             m += [A(f"t{j}", {"x": 1}), T("same")]
     n, ev = run(m)
-    assert ev and ev["cycle_len"] == 4 and ev["repeats"] == 4
+    assert ev and ev["cycle_len"] == 4 and ev["repeats"] == R
     # user-side tool call (dual control) in the span breaks it
     m = list(GREET)
-    for i in range(5):
+    for i in range(R + 1):
         m += [A(text="Toggle airplane mode."), U("ok", tool_calls=[{"name": "toggle_airplane_mode", "arguments": {}}]),
               {"role": "tool", "content": "done", "requestor": "user", "error": False}]
     assert run(m)[0] is None
@@ -131,7 +132,7 @@ def test_live_matches_offline():
     lg = G.LiveGuard([Tool()], None)
     state = [AssistantMessage(role="assistant", content="Hi! How can I help you today?"), UserMessage(role="user", content="help")]
     fired = None
-    for d in range(8):
+    for d in range(2 * G.MIN_REPEATS):
         out = lg.before_decision(state, "t1", "tr1", d)
         if out is not None:
             fired = d
@@ -140,10 +141,10 @@ def test_live_matches_offline():
         state.append(AssistantMessage(role="assistant", content=None,
                                       tool_calls=[ToolCall(id=f"c{d}", name="get_order_details", arguments={"order_id": "W1"})]))
         state.append(ToolMessage(id=f"c{d}", role="tool", content="same", requestor="assistant"))
-    assert fired == 4, fired  # 4 complete identical decisions -> stop before the 5th agent decision (index 4)
+    assert fired == G.MIN_REPEATS, fired  # R complete identical decisions -> stop before the next one
     msgs = [m.model_dump() for m in state]
     n, ev = run(msgs + [A(text="next")])
-    assert n == 4 and ev["repeats"] == 4
+    assert n == G.MIN_REPEATS and ev["repeats"] == G.MIN_REPEATS
     os.environ.pop("CLOQ_LOOP_GUARD")
     os.environ.pop("CLOQ_LOOP_GUARD_SHA")
     from cloq.agent import CLOQAgent

@@ -11,7 +11,8 @@ tasks    Print (or --write) the gate tasks (build + two-bit grid check + serve +
          scripts/a6000/w2_gate.py) and the guarded panel eval tasks (deps on the gates):
            q4 RTN-W2, q8 RTN-W2, q8 GPTQ-W2 (c1, same solver settings as W3/W4) on the panel tasks x block q3;
            q4 BF16 under the same guard on the same tasks x block: live-vs-offline guard equivalence check.
-         Every run carries env CLOQ_LOOP_GUARD=lg-v1 and the pinned CLOQ_LOOP_GUARD_SHA (manifests/stress/loop_guard_v1.json).
+         Every guarded run carries env CLOQ_LOOP_GUARD=lg-v2 and the pinned CLOQ_LOOP_GUARD_SHA (manifests/stress/loop_guard_v2.json);
+         each W2 task also runs the original-cap sensitivity sample (manifests/stress/w2_panel_v1_capsample.json, no guard).
          BF16 / W4 / W3 references on the same tasks x q3 are existing unguarded runs, scored with the identical guard
          offline (analysis/loop_guard/guard_validation.py replay): under deterministic serving a guarded run equals the
          unguarded episode truncated where the guard fires; the q4 BF16 guarded run checks that.
@@ -29,7 +30,8 @@ from pathlib import Path
 ROOT = Path("/data/ziyangs/cloq")
 Q = Path("/data/ziyangs/cloq_work/queue")
 PANEL = ROOT / "manifests/stress/w2_panel_v1.json"
-GUARD = ROOT / "manifests/stress/loop_guard_v1.json"
+GUARD = ROOT / "manifests/stress/loop_guard_v2.json"  # W73: lg-v2 (lg-v1 failed its premature-stop check)
+CAP = ROOT / "manifests/stress/w2_panel_v1_capsample.json"  # W73: original-cap sensitivity sample (6 tasks, no guard)
 BLOCK, NONCE = "q3", "4c8e1a7f"
 N_TOTAL, ALLOC = 24, {"retail": 16, "airline": 8}
 CELLS = [("q4", "rtn_w2", {"kind": "rtn", "wbits": 2}), ("q8", "rtn_w2", {"kind": "rtn", "wbits": 2}),
@@ -94,9 +96,12 @@ def tasks(write: bool, gates_only: bool = False):
                    "note": "W69: W2 build / two-bit grid / serve / finite-output gate; a failure is a support result"})
         ts.append({"id": f"a6k2_w2p_{m}_{cell}_{BLOCK}", "kind": "eval", "model": m, "arm": ck["kind"], "ckpt": ck,
                    "runs": [{"run_id": f"a6k2_w2p_{m}_{cell}_{BLOCK}", "task_file": str(PANEL.relative_to(ROOT)),
-                             "nonce": NONCE, "env": env}],
+                             "nonce": NONCE, "env": env},
+                            # original-cap sensitivity (W73): same server, declared 6-task sample, registered caps only
+                            {"run_id": f"a6k2_w2p_{m}_{cell}_cap_{BLOCK}", "task_file": str(CAP.relative_to(ROOT)),
+                             "nonce": NONCE}],
                    "priority": -10, "deps": [gid] + ([f"a6k2_{m}_calib_c1"] if "calib" in ck else []),
-                   "note": "W69: W2 stress panel (frozen 24-task subset x block q3, loop guard lg-v1)"})
+                   "note": "W69/W73: W2 stress panel (frozen 24-task subset x block q3, loop guard lg-v2) + original-cap sample"})
     ts.append({"id": f"a6k2_w2p_q4_bf16_{BLOCK}", "kind": "eval", "model": "q4", "arm": "bf16", "ckpt": {"kind": "bf16"},
                "runs": [{"run_id": f"a6k2_w2p_q4_bf16_{BLOCK}", "task_file": str(PANEL.relative_to(ROOT)), "nonce": NONCE, "env": env}],
                "priority": -10, "deps": [],

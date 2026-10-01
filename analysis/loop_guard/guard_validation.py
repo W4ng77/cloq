@@ -1,4 +1,4 @@
-"""Validation of the lg-v1 loop early-stop guard (cloq/loop_guard.py) on existing trajectories (W69, plan §8.4.3).
+"""Validation of the loop early-stop guard (lg-v1, then lg-v2 from W73) (cloq/loop_guard.py) on existing trajectories (W69, plan §8.4.3).
 
 Subcommands
   freeze-sample  Build the frozen, configuration-blinded validation sample from completed runs and write
@@ -16,7 +16,9 @@ Subcommands
                  negatives (does not fire on an obvious loop); write a blinded trace export for human audit.
   scan           Premature-stopping scan: replay the guard over every episode of every existing stress run (and,
                  separately, BF16 runs) and list each episode the guard would have stopped that later succeeded.
-Pre-declared pass rule: 0 false positives in the sample AND 0 guard stops on later-successful episodes in the scan.
+Pass rule: lg-v1 (pre-declared): 0 false positives in the sample AND 0 guard stops on later-successful episodes in
+the scan -> failed (18). lg-v2 (W73, coordinator decision under plan §8.4): 0 FP and 0 FN on the frozen sample, 0
+premature stops on BF16, and stress premature stops REPORTED as a measured rate (not required to be 0).
 False negatives are allowed (the rule is deliberately conservative) and reported.
 
 usage: python analysis/loop_guard/guard_validation.py freeze-sample|score|scan [--procs 4]
@@ -191,7 +193,7 @@ def score(procs):
     fp = [r for r in rows if r["pool"] != "loop" and r["fired"]]
     fn = [r for r in rows if r["pool"] == "loop" and not r["fired"]]
     n_loop = sum(r["pool"] == "loop" for r in rows)
-    summ = {"policy": "lg-v1", "code_sha256": __import__("cloq.loop_guard", fromlist=["x"]).code_sha(),
+    summ = {"policy": __import__("cloq.loop_guard", fromlist=["x"]).POLICY, "code_sha256": __import__("cloq.loop_guard", fromlist=["x"]).code_sha(),
             "sample": str(SAMPLE.relative_to(ROOT)), "sample_items_sha256": s["items_sha256"],
             "n_loop": n_loop, "n_legit": len(rows) - n_loop, "false_positives": len(fp), "false_negatives": len(fn),
             "sensitivity": round(1 - len(fn) / max(n_loop, 1), 3), "fp_items": [r["blind_id"] for r in fp],
@@ -223,7 +225,7 @@ def scan(procs):
     groups = {"stress": runs(STRESS_RE), "bf16": runs(BF16_RE)}
     OUT.mkdir(parents=True, exist_ok=True)
     utc = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
-    summ = {"policy": "lg-v1", "code_sha256": __import__("cloq.loop_guard", fromlist=["x"]).code_sha(), "utc": utc}
+    summ = {"policy": __import__("cloq.loop_guard", fromlist=["x"]).POLICY, "code_sha256": __import__("cloq.loop_guard", fromlist=["x"]).code_sha(), "utc": utc}
     for g, rds in groups.items():
         rows = []
         with ProcessPoolExecutor(procs) as ex:

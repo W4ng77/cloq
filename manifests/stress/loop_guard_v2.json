@@ -1,0 +1,113 @@
+{
+ "policy": "lg-v2",
+ "revises": "manifests/stress/loop_guard_v1.json (lg-v1)",
+ "code": "cloq/loop_guard.py",
+ "code_sha256": "8f593c55ce2317ddbd56a2b4f6c6c33a69cd907be441ac8d81029cd339f57433",
+ "pinned_utc": "2026-10-01T03:25:38Z",
+ "commit": null,
+ "thresholds": {
+  "window_decisions": 32,
+  "min_repeats": 8,
+  "max_cycle_len": 4
+ },
+ "unchanged_from_v1": "canonical actions, tool-result / user-reply digests, unchanged agent-side DB hash, no user event, missing evidence -> no fire, termination loop_early_stop, evidence log",
+ "revision_reason": "lg-v1 (window 16, >= 4 repeats) stopped 18 of 5874 later-successful stress episodes in the offline premature-stop scan (W69). Plan \u00a78.4.3: tighten and record the revision before new runs. Coordinator decision (W73): window 32, >= 8 repeats. These thresholds were chosen on already-viewed development stress traces (the W69 scan and an exploratory threshold sweep on it), before any W2 outcome existed.",
+ "termination_reason": "loop_early_stop",
+ "evidence_log": "runs/<run>/<domain>/loop_guard.jsonl",
+ "validation": {
+  "pass_rule": "0 FP and 0 FN on the frozen 50-trace sample; 0 premature stops on BF16; stress premature stops reported as a measured rate (W73 change from lg-v1's '0 premature stops')",
+  "sample": "manifests/stress/loop_guard_validation_v1.json",
+  "sample_result": {
+   "n_loop": 20,
+   "n_legit": 30,
+   "false_positives": 0,
+   "false_negatives": 0,
+   "sensitivity": 1.0
+  },
+  "sample_output": "analysis/loop_guard/out/validation_20261001T031501Z.json",
+  "premature_scan_output": "analysis/loop_guard/out/scan_20261001T031501Z.json",
+  "stress": {
+   "episodes": 19488,
+   "fired": 848,
+   "premature_stops_on_successes": 8,
+   "successes": 5874,
+   "premature_rate_of_successes": 0.00136,
+   "premature_rate_of_firings": 0.0094,
+   "premature_list": [
+    {
+     "run": "a6k2_pert_q8_gptq_w3_restore_late_q3/retail",
+     "task_id": "40",
+     "termination": "user_stop",
+     "n_decisions": 97,
+     "stop_before_decision": 41,
+     "cycle_len": 2
+    },
+    {
+     "run": "a6k2_pert_q8_gptq_w3_restore_mlp_q5/airline",
+     "task_id": "2",
+     "termination": "user_stop",
+     "n_decisions": 31,
+     "stop_before_decision": 19,
+     "cycle_len": 1
+    },
+    {
+     "run": "a6k2_pert_q8_gptq_w3_restore_rand_attn_s3_q3/airline",
+     "task_id": "2",
+     "termination": "user_stop",
+     "n_decisions": 77,
+     "stop_before_decision": 48,
+     "cycle_len": 2
+    },
+    {
+     "run": "a6k2_pert_q8_gptq_w3_restore_rand_attn_s3_q4/retail",
+     "task_id": "62",
+     "termination": "user_stop",
+     "n_decisions": 37,
+     "stop_before_decision": 30,
+     "cycle_len": 1
+    },
+    {
+     "run": "a6k2_pert_q8_gptq_w3_restore_rand_third_s1_q3/retail",
+     "task_id": "35",
+     "termination": "user_stop",
+     "n_decisions": 55,
+     "stop_before_decision": 18,
+     "cycle_len": 1
+    },
+    {
+     "run": "a6k2_pert_q8_gptq_w3_restore_rand_third_s2_q4/retail",
+     "task_id": "24",
+     "termination": "user_stop",
+     "n_decisions": 35,
+     "stop_before_decision": 13,
+     "cycle_len": 1
+    },
+    {
+     "run": "a6k2_pert_q8_gptq_w3_restore_recal_late_q3/retail",
+     "task_id": "40",
+     "termination": "user_stop",
+     "n_decisions": 97,
+     "stop_before_decision": 41,
+     "cycle_len": 2
+    },
+    {
+     "run": "a6k2_pert_q8_rtn_w3_restore_rand_third_s1_q5/retail",
+     "task_id": "24",
+     "termination": "user_stop",
+     "n_decisions": 42,
+     "stop_before_decision": 25,
+     "cycle_len": 1
+    }
+   ],
+   "decisions_saved": 49275,
+   "decisions_total": 335241
+  },
+  "bf16": {
+   "episodes": 6460,
+   "fired": 64,
+   "premature_stops_on_successes": 0
+  },
+  "passed": true
+ },
+ "reporting_contract": "every W2 / stress panel result reports guarded success (loop-guarded endpoint), loop incidence, and original-cap sensitivity: reused unguarded references -> offline guarded vs unguarded success; new W2 cells -> manifests/stress/w2_panel_v1_capsample.json run with the original caps"
+}

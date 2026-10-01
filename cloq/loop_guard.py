@@ -1,12 +1,15 @@
 """Conservative loop early-stop guard for NEW stress panels only (W69; docs/EXECUTION_PLAN_20260930.md §8.4).
 
-Opt-in: active only when the run's environment sets CLOQ_LOOP_GUARD=lg-v1 and CLOQ_LOOP_GUARD_SHA equals the sha256 of
-this file (pinned in manifests/stress/loop_guard_v1.json before any W2 outcome). Frozen / primary runs never set it, and
+Opt-in: active only when the run's environment sets CLOQ_LOOP_GUARD=lg-v2 and CLOQ_LOOP_GUARD_SHA equals the sha256 of
+this file (pinned in manifests/stress/loop_guard_v2.json before any W2 outcome).
+Revision history: lg-v1 (window 16, >= 4 repeats; manifests/stress/loop_guard_v1.json) failed its premature-stop check
+(18 / 5874 later-successful stress episodes stopped); lg-v2 (W73) tightens to window 32, >= 8 repeats, everything else
+unchanged. The lg-v2 thresholds were chosen on already-viewed development stress traces, before any W2 outcome existed. Frozen / primary runs never set it, and
 an unset guard changes nothing (cloq.agent imports this module only when enabled).
 
-Rule (policy lg-v1). Before the agent generates decision n, look at the completed decisions in the last WINDOW = 16.
-The guard fires iff for some cycle length L in 1..4 the most recent R >= 4 complete copies of an L-decision cycle
-(L * R <= 16) are identical in ALL of:
+Rule (policy lg-v2). Before the agent generates decision n, look at the completed decisions in the last WINDOW = 32.
+The guard fires iff for some cycle length L in 1..4 the most recent R >= 8 complete copies of an L-decision cycle
+(L * R <= 32) are identical in ALL of:
   - canonical action: tool name + fully normalised arguments for every tool call, in order (cloq.metrics
     normalize_tool_call: IDs, numbers, list order preserved; whitespace collapsed), or the full normalised talk text;
   - evidence: digest of the tool results answering the decision (content + error flag, in order) for tool decisions;
@@ -26,9 +29,9 @@ import json
 from pathlib import Path
 from typing import Callable, Optional
 
-POLICY = "lg-v1"
-WINDOW = 16
-MIN_REPEATS = 4
+POLICY = "lg-v2"
+WINDOW = 32
+MIN_REPEATS = 8
 MAX_CYCLE = 4
 LOOP_STOP_CONTENT = "###CLOQ_LOOP_EARLY_STOP###"
 
