@@ -1,0 +1,193 @@
+{
+ "protocol": "simctrl_v1 (W90)",
+ "manifest_sha256": "3e430d93c8ee92940059fa3862bf31de7c329d69ba767b05a2f4f5ce9597f712",
+ "spec": {
+  "mode": "simctrl",
+  "manifest": "manifests/fork/simctrl_v3.json",
+  "manifest_sha256": "3e430d93c8ee92940059fa3862bf31de7c329d69ba767b05a2f4f5ce9597f712",
+  "model": "q4",
+  "cell": "kvq_int8",
+  "unit_ids": [
+   "b150f768f3f1d5b8",
+   "8d507e66543fba73",
+   "dbda3612364ae6d9",
+   "a7f1fed4cb511528",
+   "89bc930ee2da3d7d",
+   "5de2b89d04775302",
+   "554f82184ea7f656",
+   "054a2b9e3a4472e4",
+   "6ce8089a1f852ba8",
+   "a6983510d0fb79a3",
+   "acb194053544e135",
+   "a345783a4f37c9bc"
+  ],
+  "user_llm": {
+   "provider": "relay",
+   "model": "claude-sonnet-5-5 (Claude Code subagent relay)"
+  },
+  "arms": [
+   "BQ",
+   "QQ"
+  ],
+  "replicates": 3,
+  "concurrency": 6,
+  "out": "analysis/fork/simctrl_relay/q4_kvq_int8/f01",
+  "gate": false
+ },
+ "servers": {
+  "B": {
+   "gpu": "2",
+   "port": 8103,
+   "pid": 1225849,
+   "ckpt": {
+    "kind": "bf16"
+   },
+   "path": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "2",
+    "8103",
+    "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.44",
+   "hook_coverage": null,
+   "canary": "c7343b60da095480",
+   "ckpt_sha256": null,
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+     "chat_template_kwargs": {}
+    },
+    "weights": "Qwen/Qwen3-4B-Instruct-2507@cdbee75f17c01a7cc42f958dc650907174af0554",
+    "ckpt": {
+     "kind": "bf16"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 16,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "efce043e33600dcc",
+   "canary_ref_ok": true
+  },
+  "Q": {
+   "gpu": "2",
+   "port": 8203,
+   "pid": 1226393,
+   "ckpt": {
+    "kind": "bf16"
+   },
+   "path": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+   "serve_env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_KVQ_BITS": "8"
+   },
+   "serve_extra": [],
+   "launch_args": [
+    "2",
+    "8203",
+    "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.44",
+   "hook_coverage": {
+    "kvq": {
+     "bits": 8,
+     "rot": false,
+     "rot_mode": "0",
+     "rot_v_online": false,
+     "which": "kv",
+     "fmt": "minmax",
+     "kclip": 1.0,
+     "vclip": 1.0,
+     "active": true,
+     "namespace": "kvq_b8_r0_kv"
+    },
+    "aq": null,
+    "cache_roots": [
+     "/tmp/cloq_49731/vllm_cache/kvq_b8_r0_kv"
+    ],
+    "n_wrapped_processes": 1,
+    "decoder_attention_hooked": 36,
+    "expected_layers": 36,
+    "ok": true
+   },
+   "canary": "42f358a11e348a84",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+     "chat_template_kwargs": {}
+    },
+    "weights": "Qwen/Qwen3-4B-Instruct-2507@cdbee75f17c01a7cc42f958dc650907174af0554",
+    "ckpt": {
+     "kind": "bf16"
+    },
+    "serve_env": {
+     "CLOQ_PYHOOKS": "1",
+     "CLOQ_KVQ_BITS": "8"
+    },
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 16,
+     "A": 16,
+     "K": 8,
+     "V": 8
+    },
+    "hook_version": "ca3e42d2ba543122",
+    "cache_namespace": "kvq_b8_r0_kv"
+   },
+   "effective_config_sha": "6fe3f3f21dbac71a"
+  },
+  "same_effective_config": false,
+  "q_quantization": {},
+  "user_base": "http://127.0.0.1:8000/v1",
+  "host": "node006",
+  "job": "49731"
+ },
+ "n_units": 12,
+ "n_ran": 12,
+ "n_state_ok": 12,
+ "n_missing": 0,
+ "n_errors": 0,
+ "n_arm_errors": 0,
+ "protocol_ok": true,
+ "protocol_failures": [],
+ "termination": {
+  "user_stop": 72
+ },
+ "user_llm_usage": {
+  "n_calls": 335,
+  "prompt_tokens": 0,
+  "completion_tokens": 0,
+  "cost_usd": 0
+ },
+ "seconds": 963.0558190345764,
+ "dry": false,
+ "pass": true
+}

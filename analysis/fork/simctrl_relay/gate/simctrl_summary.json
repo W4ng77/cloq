@@ -1,0 +1,211 @@
+{
+ "protocol": "simctrl_v1 (W90)",
+ "manifest_sha256": "3e430d93c8ee92940059fa3862bf31de7c329d69ba767b05a2f4f5ce9597f712",
+ "spec": {
+  "mode": "simctrl",
+  "manifest": "manifests/fork/simctrl_v3.json",
+  "manifest_sha256": "3e430d93c8ee92940059fa3862bf31de7c329d69ba767b05a2f4f5ce9597f712",
+  "model": "q4",
+  "cell": "gptq_w4_d1",
+  "unit_ids": [
+   "aea8d796f0a53901",
+   "b9297d3b4d7246d7",
+   "86a94c766b62e19a"
+  ],
+  "user_llm": {
+   "provider": "relay",
+   "model": "claude-sonnet-5-5 (Claude Code subagent relay)"
+  },
+  "arms": [
+   "BQ",
+   "QQ"
+  ],
+  "replicates": 3,
+  "concurrency": 6,
+  "out": "analysis/fork/simctrl_relay/gate",
+  "gate": true
+ },
+ "servers": {
+  "B": {
+   "gpu": "2",
+   "port": 8103,
+   "pid": 1217622,
+   "ckpt": {
+    "kind": "bf16"
+   },
+   "path": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "2",
+    "8103",
+    "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.44",
+   "hook_coverage": null,
+   "canary": "c7343b60da095480",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+     "chat_template_kwargs": {}
+    },
+    "weights": "Qwen/Qwen3-4B-Instruct-2507@cdbee75f17c01a7cc42f958dc650907174af0554",
+    "ckpt": {
+     "kind": "bf16"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 16,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "efce043e33600dcc",
+   "canary_ref_ok": true
+  },
+  "Q": {
+   "gpu": "2",
+   "port": 8203,
+   "pid": 1218151,
+   "ckpt": {
+    "kind": "gptq",
+    "wbits": 4,
+    "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+   },
+   "path": "/tmp/cloq_49731/ckpt_simctrl_relay_gate_q4_gptq_w4_d1_Q",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "2",
+    "8203",
+    "/tmp/cloq_49731/ckpt_simctrl_relay_gate_q4_gptq_w4_d1_Q",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.44",
+   "hook_coverage": null,
+   "canary": "a72b3da03409576e",
+   "ckpt_sha256": "e6c24bc24d5d2729f0ae2de9cbcee08d7291a829cdc3d1eb2d48fefd1a9605a1",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+     "chat_template_kwargs": {}
+    },
+    "weights": "sha256:e6c24bc24d5d2729f0ae2de9cbcee08d7291a829cdc3d1eb2d48fefd1a9605a1",
+    "ckpt": {
+     "kind": "gptq",
+     "wbits": 4,
+     "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 4,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "29ba0176bfc6a4e0"
+  },
+  "same_effective_config": false,
+  "q_quantization": {
+   "method": "GPTQ",
+   "wbits": 4,
+   "group_size": 128,
+   "sym": false,
+   "percdamp": 0.01,
+   "blocksize": 128,
+   "act_order": true,
+   "true_sequential": true,
+   "source_model": "Qwen/Qwen3-4B-Instruct-2507",
+   "source_revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+   "storage": "fake-quant bf16",
+   "calibration_manifest": "/data/ziyangs/cloq/manifests/a6k2/q4/calib_fp_traj_c1.json",
+   "moe_experts": null,
+   "calibration": {
+    "protocol": "v1",
+    "arm": "fp_traj",
+    "draw": "c1",
+    "draw_seed": 20260729,
+    "budget_rows": 64000,
+    "total_rows": 64000,
+    "rows_within_budget": true,
+    "n_states": 57,
+    "n_tasks": 57,
+    "rows_per_state_min": 1122,
+    "rows_per_state_max": 1123,
+    "median_context_tokens": 6041.0,
+    "total_context_tokens": 372294,
+    "states_by_source": {
+     "fp": 57
+    },
+    "states_by_depth_quartile": {
+     "0": 16,
+     "1": 13,
+     "2": 14,
+     "3": 14
+    },
+    "states_by_domain": {
+     "retail": 39,
+     "airline": 18
+    },
+    "fp_run": "a6k2_q4_bf16_cal",
+    "q_run": null,
+    "novelty": null,
+    "notes": [],
+    "split_file_sha256": "7d1671154c37375990fd01999df2257e1bef916ee8201158b850846876315a79",
+    "manifest_sha256": "780875fe8a38bd31c9687ffafb512b09061db1c3b8786ecacbbbb9547cd5a20a"
+   },
+   "seconds_quantize": 381.6290354728699,
+   "n_expert_tensors_rtn": 0
+  },
+  "user_base": "http://127.0.0.1:8000/v1",
+  "host": "node006",
+  "job": "49731"
+ },
+ "n_units": 3,
+ "n_ran": 3,
+ "n_state_ok": 3,
+ "n_missing": 0,
+ "n_errors": 0,
+ "n_arm_errors": 0,
+ "protocol_ok": true,
+ "protocol_failures": [],
+ "termination": {
+  "user_stop": 18
+ },
+ "user_llm_usage": {
+  "n_calls": 163,
+  "prompt_tokens": 0,
+  "completion_tokens": 0,
+  "cost_usd": 0
+ },
+ "seconds": 507.65461564064026,
+ "dry": false,
+ "pass": true
+}

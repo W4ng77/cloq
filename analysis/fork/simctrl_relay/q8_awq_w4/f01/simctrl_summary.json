@@ -1,0 +1,218 @@
+{
+ "protocol": "simctrl_v1 (W90)",
+ "manifest_sha256": "3e430d93c8ee92940059fa3862bf31de7c329d69ba767b05a2f4f5ce9597f712",
+ "spec": {
+  "mode": "simctrl",
+  "manifest": "manifests/fork/simctrl_v3.json",
+  "manifest_sha256": "3e430d93c8ee92940059fa3862bf31de7c329d69ba767b05a2f4f5ce9597f712",
+  "model": "q8",
+  "cell": "awq_w4",
+  "unit_ids": [
+   "67f80a3020658fd0",
+   "f7a2d3a12fc86f32",
+   "27a15f2fd0bcf7d4",
+   "41755134469d0267",
+   "6686ae64f26d8179",
+   "d698fb17c256f36a"
+  ],
+  "user_llm": {
+   "provider": "relay",
+   "model": "claude-sonnet-5-5 (Claude Code subagent relay)"
+  },
+  "arms": [
+   "BQ",
+   "QQ"
+  ],
+  "replicates": 3,
+  "concurrency": 6,
+  "out": "analysis/fork/simctrl_relay/q8_awq_w4/f01",
+  "gate": false
+ },
+ "servers": {
+  "B": {
+   "gpu": "6",
+   "port": 8107,
+   "pid": 366638,
+   "ckpt": {
+    "kind": "bf16"
+   },
+   "path": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "6",
+    "8107",
+    "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.90",
+   "hook_coverage": null,
+   "canary": "e340c7991fa5bc08",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-8B",
+     "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+     "chat_template_kwargs": {
+      "enable_thinking": false
+     }
+    },
+    "weights": "Qwen/Qwen3-8B@b968826d9c46dd6066d109eabc6255188de91218",
+    "ckpt": {
+     "kind": "bf16"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 16,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "0d4bf272db1da1c5",
+   "canary_ref_ok": true
+  },
+  "Q": {
+   "gpu": "7",
+   "port": 8207,
+   "pid": 370254,
+   "ckpt": {
+    "kind": "awq",
+    "wbits": 4,
+    "calib": "manifests/a6k2/q8/calib_fp_traj_c1.json"
+   },
+   "path": "/tmp/cloq_49672/ckpt_simctrl_relay_q8_awq_w4_f01_Q",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "7",
+    "8207",
+    "/tmp/cloq_49672/ckpt_simctrl_relay_q8_awq_w4_f01_Q",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.90",
+   "hook_coverage": null,
+   "canary": "db76cab1da9700d1",
+   "ckpt_sha256": "9ce71e4aa7a5b1afcb2a1358e16e673e62313f32e8ca8877d22b87b3622135d9",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-8B",
+     "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+     "chat_template_kwargs": {
+      "enable_thinking": false
+     }
+    },
+    "weights": "sha256:9ce71e4aa7a5b1afcb2a1358e16e673e62313f32e8ca8877d22b87b3622135d9",
+    "ckpt": {
+     "kind": "awq",
+     "wbits": 4,
+     "calib": "manifests/a6k2/q8/calib_fp_traj_c1.json"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 4,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "b8608c0732512633"
+  },
+  "same_effective_config": false,
+  "q_quantization": {
+   "method": "AWQ-style",
+   "wbits": 4,
+   "group_size": 128,
+   "sym": false,
+   "percdamp": 0.01,
+   "blocksize": 128,
+   "act_order": true,
+   "true_sequential": true,
+   "source_model": "Qwen/Qwen3-8B",
+   "source_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+   "storage": "fake-quant bf16",
+   "calibration_manifest": "/data/ziyangs/cloq/manifests/a6k2/q8/calib_fp_traj_c1.json",
+   "moe_experts": null,
+   "calibration": {
+    "protocol": "v1",
+    "arm": "fp_traj",
+    "draw": "c1",
+    "draw_seed": 20260729,
+    "budget_rows": 64000,
+    "total_rows": 64000,
+    "rows_within_budget": true,
+    "n_states": 57,
+    "n_tasks": 57,
+    "rows_per_state_min": 1122,
+    "rows_per_state_max": 1123,
+    "median_context_tokens": 6310.0,
+    "total_context_tokens": 401883,
+    "states_by_source": {
+     "fp": 57
+    },
+    "states_by_depth_quartile": {
+     "0": 15,
+     "1": 14,
+     "2": 13,
+     "3": 15
+    },
+    "states_by_domain": {
+     "retail": 39,
+     "airline": 18
+    },
+    "fp_run": "a6k2_q8_bf16_cal",
+    "q_run": null,
+    "novelty": null,
+    "notes": [],
+    "split_file_sha256": "7d1671154c37375990fd01999df2257e1bef916ee8201158b850846876315a79",
+    "manifest_sha256": "f371bcafe843e95327a3f7bc72325862405ead830bf456fea172656ebb9fc108"
+   },
+   "seconds_quantize": 614.4263255596161,
+   "n_expert_tensors_rtn": 0
+  },
+  "user_base": "http://127.0.0.1:8000/v1",
+  "host": "node005",
+  "job": "49672"
+ },
+ "n_units": 6,
+ "n_ran": 6,
+ "n_state_ok": 6,
+ "n_missing": 0,
+ "n_errors": 0,
+ "n_arm_errors": 0,
+ "protocol_ok": true,
+ "protocol_failures": [],
+ "termination": {
+  "user_stop": 36
+ },
+ "user_llm_usage": {
+  "n_calls": 130,
+  "prompt_tokens": 0,
+  "completion_tokens": 0,
+  "cost_usd": 0
+ },
+ "seconds": 974.6111571788788,
+ "dry": false,
+ "pass": true
+}

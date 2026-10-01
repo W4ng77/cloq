@@ -1,0 +1,193 @@
+{
+ "protocol": "simctrl_v1 (W90)",
+ "manifest_sha256": "3e430d93c8ee92940059fa3862bf31de7c329d69ba767b05a2f4f5ce9597f712",
+ "spec": {
+  "mode": "simctrl",
+  "manifest": "manifests/fork/simctrl_v3.json",
+  "manifest_sha256": "3e430d93c8ee92940059fa3862bf31de7c329d69ba767b05a2f4f5ce9597f712",
+  "model": "q8",
+  "cell": "kvq_int8",
+  "unit_ids": [
+   "e5dd4066d1ab8300",
+   "9fa7ea103f6a9ed2",
+   "881d528dcbde4554",
+   "4a94a05c3a690e3e",
+   "5f344aae6705b8f2",
+   "b821118440d94032",
+   "f87d78b6f15f5aa1",
+   "7325631d7aa1292b"
+  ],
+  "user_llm": {
+   "provider": "relay",
+   "model": "claude-sonnet-5-5 (Claude Code subagent relay)"
+  },
+  "arms": [
+   "BQ",
+   "QQ"
+  ],
+  "replicates": 3,
+  "concurrency": 6,
+  "out": "analysis/fork/simctrl_relay/q8_kvq_int8/f01",
+  "gate": false
+ },
+ "servers": {
+  "B": {
+   "gpu": "4",
+   "port": 8105,
+   "pid": 391967,
+   "ckpt": {
+    "kind": "bf16"
+   },
+   "path": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "4",
+    "8105",
+    "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.90",
+   "hook_coverage": null,
+   "canary": "e340c7991fa5bc08",
+   "ckpt_sha256": null,
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-8B",
+     "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+     "chat_template_kwargs": {
+      "enable_thinking": false
+     }
+    },
+    "weights": "Qwen/Qwen3-8B@b968826d9c46dd6066d109eabc6255188de91218",
+    "ckpt": {
+     "kind": "bf16"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 16,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "0d4bf272db1da1c5",
+   "canary_ref_ok": true
+  },
+  "Q": {
+   "gpu": "5",
+   "port": 8205,
+   "pid": 394608,
+   "ckpt": {
+    "kind": "bf16"
+   },
+   "path": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+   "serve_env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_KVQ_BITS": "8"
+   },
+   "serve_extra": [],
+   "launch_args": [
+    "5",
+    "8205",
+    "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.90",
+   "hook_coverage": {
+    "kvq": {
+     "bits": 8,
+     "rot": false,
+     "rot_mode": "0",
+     "rot_v_online": false,
+     "which": "kv",
+     "fmt": "minmax",
+     "kclip": 1.0,
+     "vclip": 1.0,
+     "active": true,
+     "namespace": "kvq_b8_r0_kv"
+    },
+    "aq": null,
+    "cache_roots": [
+     "/tmp/cloq_49671/vllm_cache/kvq_b8_r0_kv"
+    ],
+    "n_wrapped_processes": 1,
+    "decoder_attention_hooked": 36,
+    "expected_layers": 36,
+    "ok": true
+   },
+   "canary": "18f22e1d2cfbc1f3",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-8B",
+     "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+     "chat_template_kwargs": {
+      "enable_thinking": false
+     }
+    },
+    "weights": "Qwen/Qwen3-8B@b968826d9c46dd6066d109eabc6255188de91218",
+    "ckpt": {
+     "kind": "bf16"
+    },
+    "serve_env": {
+     "CLOQ_PYHOOKS": "1",
+     "CLOQ_KVQ_BITS": "8"
+    },
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 16,
+     "A": 16,
+     "K": 8,
+     "V": 8
+    },
+    "hook_version": "ca3e42d2ba543122",
+    "cache_namespace": "kvq_b8_r0_kv"
+   },
+   "effective_config_sha": "85d54c1985196e20"
+  },
+  "same_effective_config": false,
+  "q_quantization": {},
+  "user_base": "http://127.0.0.1:8000/v1",
+  "host": "node004",
+  "job": "49671"
+ },
+ "n_units": 8,
+ "n_ran": 8,
+ "n_state_ok": 8,
+ "n_missing": 0,
+ "n_errors": 0,
+ "n_arm_errors": 0,
+ "protocol_ok": true,
+ "protocol_failures": [],
+ "termination": {
+  "user_stop": 48
+ },
+ "user_llm_usage": {
+  "n_calls": 252,
+  "prompt_tokens": 0,
+  "completion_tokens": 0,
+  "cost_usd": 0
+ },
+ "seconds": 576.3407201766968,
+ "dry": false,
+ "pass": true
+}

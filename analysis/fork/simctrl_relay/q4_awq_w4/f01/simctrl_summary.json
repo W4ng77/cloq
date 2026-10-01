@@ -1,0 +1,231 @@
+{
+ "protocol": "simctrl_v1 (W90)",
+ "manifest_sha256": "3e430d93c8ee92940059fa3862bf31de7c329d69ba767b05a2f4f5ce9597f712",
+ "spec": {
+  "mode": "simctrl",
+  "manifest": "manifests/fork/simctrl_v3.json",
+  "manifest_sha256": "3e430d93c8ee92940059fa3862bf31de7c329d69ba767b05a2f4f5ce9597f712",
+  "model": "q4",
+  "cell": "awq_w4",
+  "unit_ids": [
+   "0ffc0de82a241fcc",
+   "c728aa01787ca6f2",
+   "52df93f2b15c4a23",
+   "a9761d42c49d8b73",
+   "b79d735a1c2a1e9f",
+   "c251314fd8d2cc1a",
+   "1247a8545a377f4f",
+   "b7ab11acef28b747",
+   "0b82643f54e22b76",
+   "64a4a695c801935c",
+   "7bdc152e957682e3",
+   "ecd2f579e24a9c3a",
+   "03aad5df2197b7d8",
+   "5599904e25a36fc4",
+   "24de226fad498d95",
+   "8b1b6d8c14abfe63",
+   "222d3433b6ffa197",
+   "6340ded83bee7c69",
+   "efa2eac35b28eb3f",
+   "0c03657b95f2c6d7",
+   "28d98e7918ee6771",
+   "75e3184135b8a91c"
+  ],
+  "user_llm": {
+   "provider": "relay",
+   "model": "claude-sonnet-5-5 (Claude Code subagent relay)"
+  },
+  "arms": [
+   "BQ",
+   "QQ"
+  ],
+  "replicates": 3,
+  "concurrency": 6,
+  "out": "analysis/fork/simctrl_relay/q4_awq_w4/f01",
+  "gate": false
+ },
+ "servers": {
+  "B": {
+   "gpu": "3",
+   "port": 8104,
+   "pid": 338604,
+   "ckpt": {
+    "kind": "bf16"
+   },
+   "path": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "3",
+    "8104",
+    "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.44",
+   "hook_coverage": null,
+   "canary": "c7343b60da095480",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+     "chat_template_kwargs": {}
+    },
+    "weights": "Qwen/Qwen3-4B-Instruct-2507@cdbee75f17c01a7cc42f958dc650907174af0554",
+    "ckpt": {
+     "kind": "bf16"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 16,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "efce043e33600dcc",
+   "canary_ref_ok": true
+  },
+  "Q": {
+   "gpu": "3",
+   "port": 8204,
+   "pid": 341990,
+   "ckpt": {
+    "kind": "awq",
+    "wbits": 4,
+    "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+   },
+   "path": "/tmp/cloq_49672/ckpt_simctrl_relay_q4_awq_w4_f01_Q",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "3",
+    "8204",
+    "/tmp/cloq_49672/ckpt_simctrl_relay_q4_awq_w4_f01_Q",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.44",
+   "hook_coverage": null,
+   "canary": "b12f07db77bedb00",
+   "ckpt_sha256": "0cfdf65cdc3fcc02e7aaa36bd1619ea0086d8c6be5a8f804364fd5812d2cba66",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+     "chat_template_kwargs": {}
+    },
+    "weights": "sha256:0cfdf65cdc3fcc02e7aaa36bd1619ea0086d8c6be5a8f804364fd5812d2cba66",
+    "ckpt": {
+     "kind": "awq",
+     "wbits": 4,
+     "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 4,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "b978c3b81626e5d6"
+  },
+  "same_effective_config": false,
+  "q_quantization": {
+   "method": "AWQ-style",
+   "wbits": 4,
+   "group_size": 128,
+   "sym": false,
+   "percdamp": 0.01,
+   "blocksize": 128,
+   "act_order": true,
+   "true_sequential": true,
+   "source_model": "Qwen/Qwen3-4B-Instruct-2507",
+   "source_revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+   "storage": "fake-quant bf16",
+   "calibration_manifest": "/data/ziyangs/cloq/manifests/a6k2/q4/calib_fp_traj_c1.json",
+   "moe_experts": null,
+   "calibration": {
+    "protocol": "v1",
+    "arm": "fp_traj",
+    "draw": "c1",
+    "draw_seed": 20260729,
+    "budget_rows": 64000,
+    "total_rows": 64000,
+    "rows_within_budget": true,
+    "n_states": 57,
+    "n_tasks": 57,
+    "rows_per_state_min": 1122,
+    "rows_per_state_max": 1123,
+    "median_context_tokens": 6041.0,
+    "total_context_tokens": 372294,
+    "states_by_source": {
+     "fp": 57
+    },
+    "states_by_depth_quartile": {
+     "0": 16,
+     "1": 13,
+     "2": 14,
+     "3": 14
+    },
+    "states_by_domain": {
+     "retail": 39,
+     "airline": 18
+    },
+    "fp_run": "a6k2_q4_bf16_cal",
+    "q_run": null,
+    "novelty": null,
+    "notes": [],
+    "split_file_sha256": "7d1671154c37375990fd01999df2257e1bef916ee8201158b850846876315a79",
+    "manifest_sha256": "780875fe8a38bd31c9687ffafb512b09061db1c3b8786ecacbbbb9547cd5a20a"
+   },
+   "seconds_quantize": 431.0247573852539,
+   "n_expert_tensors_rtn": 0
+  },
+  "user_base": "http://127.0.0.1:8000/v1",
+  "host": "node005",
+  "job": "49672"
+ },
+ "n_units": 22,
+ "n_ran": 22,
+ "n_state_ok": 22,
+ "n_missing": 0,
+ "n_errors": 0,
+ "n_arm_errors": 0,
+ "protocol_ok": true,
+ "protocol_failures": [],
+ "termination": {
+  "user_stop": 131,
+  "too_many_errors": 1
+ },
+ "user_llm_usage": {
+  "n_calls": 682,
+  "prompt_tokens": 0,
+  "completion_tokens": 0,
+  "cost_usd": 0
+ },
+ "seconds": 1366.554232597351,
+ "dry": false,
+ "pass": true
+}

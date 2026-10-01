@@ -10,6 +10,21 @@ Newest first.
 
 ---
 
+## W95 — Sonnet 5.5 user-simulator control (relay): text-difference flips are not robust to changing the simulator (2026-10-01 14:30 PDT)
+**TL;DR** On 39 Bank U text-structure flips (f01) and 39 matched non-flip controls, the user simulator after the fork state was replaced by Sonnet 5.5 (Claude Code subagent relay, R = 3).
+- **Flips:** the original direction is retained in 7/39 [0.08, 0.34], reversed in 6/39, and vanished in 26/39.
+- **Controls:** new flips appear in 11/39 [0.15, 0.45].
+- **Reading:** retained + reversed ≈ the control new-flip rate, so these flips are indistinguishable from flips arising at matched non-flip states. The consequences of text-only action differences on ordinary states are largely simulator-dependent, not a stable property of the action.
+- **Within-simulator variability:** replicates disagree in 41% of flip arms and 21–26% of control arms.
+- **Scope and caveats:**
+  - fixed histories from the old simulator; f01 only;
+  - the relay simulator is stochastic (temperature 0 is impossible) and is a Claude Code subagent, not API Sonnet;
+  - responder-ID attribution is unreliable (shared helper scripts);
+  - 2 replies are flagged (`simrelay/FLAGGED_requests.txt`);
+  - this does NOT test the Bank P tool-structure forks (R1/R2).
+- **Implication:** R3's text-action statement is downgraded. The 69.6% composition share stands as an observation under one simulator only.
+- **Evidence:** `analysis/fork/out/simctrl_20261001T212742Z.{md,json}`, `manifests/fork/simctrl_v3.json` (sha 3e430d93…), `analysis/fork/simctrl_relay/`, W90/W91.
+
 ## W93 — 2×2 fork re-centred (GPT-6.1 review 6): G/H/F with paired differences, (Δ_Q, Δ_B) 3×3 table, 16 patterns, frozen-rule cases, coverage matrix (2026-10-01 PDT)
 **TL;DR** On each cell's own divergent states (same admitted units as `dev_all_20261001T070326Z`, units digest 11/11 equal): replacing only the current action (G), only the continuation (H) or both (F) moves success by a few pp at most in the W4/KV8 cells. Examples: q8 GPTQ-W4 G +3.3 [+1.6, +5.0], H +0.4, F +5.4 [+3.5, +7.2], G − H +2.9 [+1.3, +4.7]; q4 GPTQ-W4 G −2.9 [−5.7, −0.2], G − H −3.6 [−6.6, −0.6]. Stress RTN-W3 (q8) is dominated by the continuation: H +15.3, F +18.4, G − H −15.7 [−27.5, −3.9]. The action effect depends on which controller continues (Δ_Q ≠ Δ_B, off-diagonal) in 23–30% of W4 states (pool 26.9% [25.7, 28.1]) and about 15% of KV8 states (pool 15.3% [13.2, 17.3]). Yet the mean interaction is about 0 (W4 pool +0.0, KV8 −1.9 pp) because I > 0 and I < 0 are equally frequent. Strict sign reversals are only 1–4% of states (8–14% of the off-diagonal mass). The rest is "an effect under one controller, none under the other".
 - **Estimands** (first index = action at the first divergence, second = controller afterwards; all four arms come from the same frozen state).
