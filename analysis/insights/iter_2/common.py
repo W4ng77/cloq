@@ -24,7 +24,7 @@ from pathlib import Path
 import numpy as np
 
 # infra_causes.json labels that are the agent's own behaviour (count as task failure, not missing): W10, W27
-AGENT_SIDE = {"context_overflow", "agent_parse_error"}
+AGENT_SIDE = {"context_overflow", "agent_parse_error", "agent_empty_output"}  # W92: + empty agent message
 
 ROOT = Path("/data/ziyangs/cloq")
 RUNS = ROOT / "runs"

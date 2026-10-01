@@ -135,7 +135,7 @@ def search_task(block: F.Block, task_id: str, bases: dict, user_base: str, state
         ic = ROOT / "runs" / block.run_id / block.domain / "infra_causes.json"
         if tr["termination_reason"] == "infrastructure_error" and ic.exists():
             cause = json.loads(ic.read_text()).get(str(task_id))
-        if cause in ("context_overflow", "agent_parse_error"):
+        if cause in ("context_overflow", "agent_parse_error", "agent_empty_output"):
             row["orig_infra_cause"] = cause  # W10/W70: agent-side failure of the frozen policy, a valid failure outcome (Y_QQ = 0)
         else:
             row["exclusion"] = f"termination {tr['termination_reason']} (infrastructure{', ' + cause if cause else ''})"
@@ -748,7 +748,10 @@ def _user_protocol(st: dict, br: dict) -> dict:
     from tau2.utils.llm_utils import to_litellm_messages
 
     calls = br.get("user_llm_calls") or []
-    want_model = "anthropic/" + br["user_llm"]["model"]
+    from cloq import user_llm as UL
+
+    want_model = UL.litellm_model(br["user_llm"])
+    relay = br["user_llm"].get("provider") == "relay"
     task = Task.model_validate(st["task"])
     env = build_environment(st["domain"])
     u = build_user(st["run_config"].get("user", "user_simulator"), env, task, llm="expected", llm_args={})
@@ -777,6 +780,8 @@ def _user_protocol(st: dict, br: dict) -> dict:
         "stop_token_only_last": not any(has_tok[:-1]),
         "user_stop_has_token": term != "user_stop" or (bool(has_tok) and has_tok[-1]),
     }
+    if relay:  # W91: every user turn answered through the file relay by a named responder
+        chk["relay_all_answered"] = all((c.get("relay") or {}).get("responder") for c in calls) and len(calls) > 0
     return {"ok": all(chk.values()), "checks": chk, "termination_reason": term, "n_user_calls": len(calls),
             "expected_system_sha256": F.sha(exp_sys), "n_expected_prefix": len(exp_prefix)}
 
@@ -804,7 +809,11 @@ def simctrl(spec, bases, user_base, servers, out):
     R = int(spec.get("replicates", 1))
     if R != int(man.get("replicates", 1)):
         raise SystemExit(f"simctrl: task replicates {R} != manifest {man.get('replicates', 1)}")
-    if not ul.get("api_base"):
+    relay = ul.get("provider") == "relay"
+    if relay:  # W91: Claude Code subagent responders through the file relay; no key, no litellm call
+        rd = UL.relay_dirs()
+        log(f"simctrl relay: requests in {rd['pending']}, answers expected in {rd['done']}")
+    elif not ul.get("api_base"):
         UL.load_key()  # raises without the key file; never printed
     elif not os.environ.get("ANTHROPIC_API_KEY"):
         os.environ["ANTHROPIC_API_KEY"] = "mock-not-a-key"
@@ -860,9 +869,23 @@ def simctrl(spec, bases, user_base, servers, out):
         st["a_B"], st["a_Q"] = {"message": a_b}, {"message": a_q}
         res, Y, proto = {}, {}, {}
         # W90 amendment: R independent replicates per arm (Sonnet has no T = 0 / seed); results keyed "<arm>#<r>"
-        for arm0, rep in [(a0, r_) for a0 in spec.get("arms", ["BQ", "QQ"]) for r_ in range(R)]:
+        jobs = [(a0, r_) for a0 in spec.get("arms", ["BQ", "QQ"]) for r_ in range(R)]
+
+        def run1(job):
+            arm0, rep = job
+            UL.set_context({"state_id": st["state_id"], "unit_id": u["unit_id"], "arm": arm0, "replicate": rep})
+            try:
+                return F.run_branch(st, arm0[0], arm0[1], bases, user_base, f"{tag}-{arm0}-r{rep}", user_llm=ul)
+            finally:
+                UL.set_context(None)
+
+        if relay:  # W91: the branches of a unit wait on human-speed responders, so run them concurrently
+            with ThreadPoolExecutor(len(jobs)) as ex2:
+                brs = list(ex2.map(run1, jobs))
+        else:
+            brs = [run1(j) for j in jobs]
+        for (arm0, rep), br in zip(jobs, brs):
             arm = f"{arm0}#{rep}"
-            br = F.run_branch(st, arm0[0], arm0[1], bases, user_base, f"{tag}-{arm0}-r{rep}", user_llm=ul)
             res[arm] = br
             Y[arm] = None if "error" in br else _y(u["domain"], br)
             proto[arm] = _user_protocol(st, br) if "error" not in br else {"ok": False, "error": br["error"][:300]}

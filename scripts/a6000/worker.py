@@ -439,6 +439,9 @@ def run_eval(task, args, st: Status):
                         def classify(tid: str, err: str) -> str:
                             return ("context_overflow" if "ContextWindowExceeded" in err else
                                     "agent_parse_error" if "only supports single tool-calls" in err else
+                                    # W92: the agent model returned an empty message (no content, no tool call), e.g. a
+                                    # degenerate W2 model; an algorithmic agent failure, not an outage
+                                    "agent_empty_output" if "AssistantMessage must have either content or tool_calls" in err else
                                     toolcall_side(rid, d, tid) if "validation error for ToolCall" in err else "outage")
                         if res.exists():
                             for sim in json.load(open(res)).get("simulations", []):
