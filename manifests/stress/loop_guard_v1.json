@@ -1,0 +1,62 @@
+{
+ "policy": "lg-v1",
+ "code": "cloq/loop_guard.py",
+ "code_sha256": "88ac7cddc75fd5b1e35c81dd9d85d9c4a690a8789682f2e8e7a17864ee4354de",
+ "pinned_utc": "2026-10-01T03:11:46Z",
+ "thresholds": {
+  "window_decisions": 16,
+  "min_repeats": 4,
+  "max_cycle_len": 4
+ },
+ "evidence_required": [
+  "canonical action (tool name + normalised arguments, or normalised talk text)",
+  "tool-result digest (tool decisions) / full user-reply digest (talk decisions)",
+  "agent-side DB hash unchanged over the span",
+  "no user-side tool call / extra user event"
+ ],
+ "termination_reason": "loop_early_stop",
+ "evidence_log": "runs/<run>/<domain>/loop_guard.jsonl",
+ "validation": {
+  "sample": "manifests/stress/loop_guard_validation_v1.json",
+  "sample_result": {
+   "n_loop": 20,
+   "n_legit": 30,
+   "false_positives": 0,
+   "false_negatives": 0,
+   "sensitivity": 1.0
+  },
+  "sample_output": "analysis/loop_guard/out/validation_20261001T024438Z.json",
+  "premature_scan": {
+   "stress": {
+    "n_runs": 460,
+    "n_episodes": 19488,
+    "n_fired": 1064,
+    "fired_by_termination": {
+     "max_steps": 718,
+     "too_many_errors": 235,
+     "user_stop": 111
+    },
+    "decisions_saved": 57220,
+    "decisions_total": 335241,
+    "n_premature": 18
+   },
+   "bf16": {
+    "n_runs": 152,
+    "n_episodes": 6460,
+    "n_fired": 79,
+    "fired_by_termination": {
+     "user_stop": 11,
+     "max_steps": 66,
+     "too_many_errors": 2
+    },
+    "decisions_saved": 4912,
+    "decisions_total": 96339,
+    "n_premature": 0
+   }
+  },
+  "premature_scan_output": "analysis/loop_guard/out/scan_20261001T024438Z.json",
+  "pass_rule": "0 false positives in the frozen sample AND 0 guard stops on later-successful episodes in the scan",
+  "passed": false,
+  "reason": "18 of 5874 successful stress episodes (0.31%; 1.7% of 1064 stress firings) contain a strict >=4x identical cycle (same action, same result, unchanged DB) and still succeed later; BF16 0 of 2206. Exploratory tightening on the same data (window/repeats 24/6, 32/8, 48/12) leaves 9 / 8 / 7, so no repetition threshold reaches 0. Not used for any run; decision on revision/disable pending."
+ }
+}

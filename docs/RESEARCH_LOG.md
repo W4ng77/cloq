@@ -10,6 +10,51 @@ Newest first.
 
 ---
 
+## W69 — Loop early-stop guard lg-v1: built and pinned, but FAILS its pre-declared premature-stop check; W2 panel frozen, gates queued, panel NOT queued (2026-10-01)
+**TL;DR** The opt-in guard of plan §8.4 is implemented (`cloq/loop_guard.py`, sha `88ac7cdd…`) and gives the same result live and offline.
+- **Frozen sample of 20 loops and 30 legitimate traces:** 0 false positives and 0 false negatives.
+- **Offline replay over all 19,488 existing stress episodes:** it would have stopped 18 episodes that later **succeeded**. That is 0.31 % of 5,874 stress successes and 1.7 % of 1,064 firings; BF16 was 0 of 2,206. These are real ≥ 4× identical cycles, up to 32 identical lookups, after which the agent recovered.
+- **Verdict:** under the pre-declared rule (0 premature stops) lg-v1 fails. Tighter thresholds tried on the same data still leave 9 / 8 / 7 premature stops (24/6, 32/8, 48/12).
+- **W2 panel:** the 24-task subset, block q3 and its selection hash are frozen. The three implementation gates are queued. Following "queue only after validation passes", **no W2 panel run is queued**. Revise or disable: decision pending.
+
+**Guard (policy lg-v1)**
+- **When it applies:** only if a run sets `CLOQ_LOOP_GUARD=lg-v1` and `CLOQ_LOOP_GUARD_SHA` equals the file sha (the agent refuses an unpinned sha). Frozen and primary runs are unchanged: the hooks are inert without the variable.
+- **Rule:** within the last ≤ 16 decisions, a cycle of length 1–4 repeats ≥ 4 complete times, with all of:
+  - an identical canonical action (normalised tool call with IDs, numbers and order kept, or full talk text);
+  - an identical tool-result digest, or user-reply digest for talk decisions;
+  - an unchanged agent-side DB hash;
+  - no user-side tool call or other user event.
+  If any evidence is missing, the guard does not fire.
+- **Termination:** reason `loop_early_stop` with official reward 0. The evidence (cycle, repeats, hashes, budget counters, tokens) goes to `loop_guard.jsonl`. Each run also records a live-vs-offline consistency check.
+- **Code:** `cloq/agent.py` (opt-in hook and an `is_stop` marker), `cloq/run_arm.py` (termination recoding and config record).
+- **Tests:** `tests/test_loop_guard.py`, ALL PASS. They cover the rule cases (different IDs, different results, DB change, new user information, missing hash, dual control), the live guard matching the offline replay, and refusal of an unpinned sha.
+
+**Validation**
+- **Sample:** frozen and selected by trace content and an independent reference criterion before scoring (`manifests/stress/loop_guard_validation_v1.json`). There is a blinded export for human audit (`analysis/loop_guard/out/validation_blinded_20261001T024438Z.md`). Result: 0 FP, 0 FN, sensitivity 1.0.
+- **Premature-stop scan** (`analysis/loop_guard/out/scan_20261001T024438Z.json`; 460 stress runs, 152 BF16 runs):
+
+  | | stress | BF16 |
+  |---|---|---|
+  | fired | 1,064 (953 of 1,654 max_steps / too_many_errors) | 79 |
+  | premature stops on later successes | 18 (listed in the scan) | 0 |
+  | agent decisions that would be saved | 57k of 335k | — |
+
+- **Manifest:** `manifests/stress/loop_guard_v1.json` pins the sha and records `passed: false` with the reason.
+
+**W2 stress panel (build and dry run only)**
+- **Tasks:** `manifests/stress/w2_panel_v1.json`, selection hash `a6a4ce8b…`. 24 of the canonical 85, stratified as domain × gold-action-count tercile, 16 retail and 8 airline.
+  - Retail: 4, 11, 27, 34, 44, 47, 50, 51, 68, 77, 83, 86, 90, 103, 111, 113.
+  - Airline: 17, 23, 28, 31, 37, 45, 46, 47.
+  - Block: q3, nonce 4c8e1a7f.
+- **Gates queued** (`w2gate_{q4_rtn_w2,q8_rtn_w2,q8_gptq_w2}`, priority −10, `scripts/a6000/w2_gate.py`): build, finite 2-bit grid (≤ 4 distinct values per group, required for RTN), vLLM serve, and a finite non-empty canary completion. The result is written to `analysis/stress/w2_gate_<m>_<cell>.json`; a failure is a support result.
+- **Prepared but not queued** (`make_w2_panel.py tasks` refuses until `validation.passed`):
+  - 3 guarded W2 runs (q4 RTN-W2, q8 RTN-W2, q8 GPTQ-W2), each depending on its gate;
+  - 1 guarded q4 BF16 equivalence run.
+  - BF16 / W4 / W3 references on the same tasks × q3 would reuse existing runs, scored with the identical guard offline.
+- **Estimated cost:** gates ~1 GPU-h; panel ~3–4 GPU-h (24 tasks per run; RTN-W3 runs take ~0.75–1 h per 24 tasks unguarded).
+
+**Evidence:** the files named above, plus `analysis/loop_guard/guard_validation.py` and `scripts/a6000/make_w2_panel.py`.
+
 ## W68 — Plan dictionary, complete four-arm consequences (WP1), reuse and population audit (WP0), W67 audit, Bank U design (2026-10-01)
 **TL;DR** Analyses follow CONSEQUENCE_ANALYSIS_PLAN §2. All 16 outcome patterns and every contrast are reported on their correct denominators. Strict reversals are rare (1.2–4.6% of divergent states) and distinct from I ≠ 0 (≈ 15–30%).
 

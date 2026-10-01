@@ -87,6 +87,15 @@ class CLOQAgent(LLMAgent[LLMAgentState]):
         self.tools_schema = [t.openai_schema for t in self.tools]
         self.tools_sha = sha256_text(canonical_json(self.tools_schema))
         self.system_sha = sha256_text(self.system_prompt)
+        self._lg = None
+        if os.environ.get("CLOQ_LOOP_GUARD"):  # W69: opt-in loop early-stop guard, new stress panels only (cloq/loop_guard.py)
+            from cloq.loop_guard import LiveGuard
+            self._lg = LiveGuard(tools, task)
+
+    @classmethod
+    def is_stop(cls, message) -> bool:
+        # tau2's LLMAgent never stops by itself; only the opt-in loop guard's marker ends an episode from the agent side
+        return getattr(message, "content", None) == "###CLOQ_LOOP_EARLY_STOP###"
 
     @property
     def system_prompt(self) -> str:
@@ -102,6 +111,10 @@ class CLOQAgent(LLMAgent[LLMAgentState]):
             state.messages.extend(message.tool_messages)
         else:
             state.messages.append(message)
+        if self._lg is not None:  # W69 loop guard: evaluated before generating, on completed decisions only
+            stop = self._lg.before_decision(state.messages, self.task_id, self.trajectory_id, self.decision_idx)
+            if stop is not None:
+                return stop
 
         full_msgs = state.system_messages + state.messages
         full_lm = to_litellm_messages(full_msgs)
@@ -159,6 +172,8 @@ class CLOQAgent(LLMAgent[LLMAgentState]):
             "generation_seconds": dt,
             **margins,
         }
+        if self._lg is not None:
+            self._lg.after_decision(rec)
         if _WRITER is not None:
             _WRITER.write(rec)
         else:

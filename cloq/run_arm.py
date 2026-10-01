@@ -109,6 +109,13 @@ def simulation_to_trajectory(sim, task) -> dict:
         "task": task.model_dump(),
     }
     rec.update(basis_reward(sim, task))
+    msgs = rec["messages"]
+    if msgs and msgs[-1].get("role") == "assistant" and msgs[-1].get("content") == "###CLOQ_LOOP_EARLY_STOP###":
+        # W69 opt-in loop guard (cloq/loop_guard.py): an algorithmic failure under the panel's guarded success definition
+        rec["tau2_termination_reason"] = rec["termination_reason"]
+        rec["termination_reason"] = "loop_early_stop"
+        rec["official_reward_unguarded_eval"] = rec.get("official_reward")
+        rec["official_reward"] = 0.0
     return rec
 
 
@@ -221,9 +228,16 @@ def main():
     )
 
     run_meta = {"run_id": args.run_id, "arm": args.arm, "domain": args.domain}
+    loop_guard = None
+    if os.environ.get("CLOQ_LOOP_GUARD"):  # W69: opt-in stress-panel loop guard; the agent refuses an unpinned sha
+        from cloq import loop_guard as LG
+        os.environ["CLOQ_LOOP_GUARD_LOG"] = str(run_dir / "loop_guard.jsonl")
+        loop_guard = {"policy": os.environ["CLOQ_LOOP_GUARD"], "code_sha256": LG.code_sha(),
+                      "pinned_sha256": os.environ.get("CLOQ_LOOP_GUARD_SHA"), "window": LG.WINDOW,
+                      "min_repeats": LG.MIN_REPEATS, "max_cycle": LG.MAX_CYCLE, "log": "loop_guard.jsonl"}
     (run_dir / "config.json").write_text(json.dumps({
         "run_id": args.run_id, "arm": args.arm, "domain": args.domain, "note": args.note,
-        "checkpoint": args.checkpoint, "frozen": C.FROZEN,
+        "checkpoint": args.checkpoint, "frozen": C.FROZEN, "loop_guard": loop_guard,
         "tau2_run_config": json.loads(cfg.model_dump_json()),
         "evaluation_type_at_run": "all_ignore_basis (DB/ENV_ASSERTION/ACTION/COMMUNICATE computed; NL assertions judged offline by cloq.nl_judge;"
                                   " official_reward = product over the task's own reward_basis, the telecom primary endpoint)",
@@ -260,6 +274,12 @@ def main():
     with open(run_dir / "trajectory.jsonl", "w", encoding="utf-8") as f:
         for sim in results.simulations:
             rec = simulation_to_trajectory(sim, task_by_id[sim.task_id])
+            if loop_guard is not None:  # live and offline guard must agree on the produced episode (W69 consistency)
+                from cloq import loop_guard as LG
+                off = LG.replay_episode(rec, args.domain)
+                rec["loop_guard_check"] = {"live_fired": rec["termination_reason"] == "loop_early_stop",
+                                           "offline_fires": off is not None,
+                                           "offline_stop_before_decision": off and off["stop_before_decision"]}
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
             n_ok += 1
 
