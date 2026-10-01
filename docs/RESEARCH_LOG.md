@@ -10,6 +10,25 @@ Newest first.
 
 ---
 
+## W87 — PREREG_FORK_CONFIRM frozen (2026-10-01 08:00 PDT, author approval "按建议冻结")
+**TL;DR** `docs/insights/PREREG_FORK_CONFIRM.md` is frozen: sha256 `902892dd63e99e16ab9beefee9d39319d835eacdada3d4d92c4a1022d13fd622`, recorded in `manifests/fork/splits_v1.json` `splits.holdout.prereg_sha256`. No holdout unit had been run or read before the freeze.
+- **Author decisions:**
+  - cells: q4 GPTQ-W4 d1, q8 GPTQ-W4 d1, q8 AWQ-W4;
+  - weights: 1/2 per model (q4 1/2, each q8 cell 1/4);
+  - the crossed interval decides, with block-t reported alongside;
+  - cells with more than 3 structural exclusions are kept and reported;
+  - K = 12 (h01–h12), with reserves h13/h14 for infrastructure repair only;
+  - budget about 100–200 GPU-h.
+- **Agent choices accepted by the main session:**
+  - S1 and the strata also use the crossed interval;
+  - S2 uses the 1/2, 1/4, 1/4 weights;
+  - the fault-load stratum is split into two families;
+  - tertiles allow ties;
+  - a QQ no-op mismatch excludes only that unit's task in that cell;
+  - q8 closed-loop runs on 1 GPU and forks on 2, as on dev.
+- **Known risk:** q4 telecom forks have never run at gpu_util 0.44. The per-state no-op checks catch any failure; a failure is repaired under the frozen completeness rule, never dropped silently.
+- **Evidence:** W85/W86, `analysis/fork/out/holdout_confirm_DRYRUN_DEV_20261001T144457Z.md`, `manifests/fork/holdout_cutpoints_v1.json`, `scripts/a6000/make_tasks_holdout.py`, `analysis/fork/analyze_holdout_confirm.py`.
+
 ## W86 — PREREG_FORK_CONFIRM.md completed to READY TO FREEZE; dev cut points, confirmatory analysis script (dry run on dev), holdout task generator (2026-10-01 PDT)
 **TL;DR** The holdout prereg now encodes the author's six decisions, with no open items. The main session can record its sha256 `902892dd63e99e16ab9beefee9d39319d835eacdada3d4d92c4a1022d13fd622` in `splits_v1.json` (nothing was frozen here).
 - **Prereg** (`docs/insights/PREREG_FORK_CONFIRM.md`):
