@@ -10,6 +10,32 @@ Newest first.
 
 ---
 
+## W81 — Morning results: recovery q4 (null), Bank U f01 (descriptive), W×KV final, all 6 Bank U gates pass (2026-10-01 06:30 PDT)
+**TL;DR** (1) Injected defects barely move q4 success under either controller: D ≈ 0. (2) On ordinary Bank U states, consequential pivots occur at M 2–11% per state with G ≈ 0. (3) The pre-registered q8 W×KV replication is not supported at 6/6 blocks.
+- **Recovery q4** (`analysis/recovery/inject_q4/inject.json`, `summary.json`; design Amendment 1 applied before reading).
+  - Per-state replay: 30/30 pass (reward, termination and suffix sha all equal); 0 branch errors.
+  - Success rates:
+
+    | arm | INV×B | VAL×B | INV×Q | VAL×Q | process-perturbation ×B | process-perturbation ×Q |
+    |---|---|---|---|---|---|---|
+    | success | 10/30 | 9/30 | 10/30 | 10/30 | 10/30 | 11/30 |
+
+  - R_B = +0.03 [−0.13, +0.20]; R_Q = 0.00 [−0.13, +0.13]; D = R_B − R_Q = +0.03 [−0.17, +0.27].
+  - By category:
+    - premature_write: 3/10 in every arm.
+    - wrong_tool: R_B +0.30 [+0.10, +0.60], from VAL×B 1/10; n = 10, exploratory.
+    - wrong_id: R_B −0.20 [−0.60, +0.20].
+  - Reading: in q4, single injected local defects at ordinary states seldom change the outcome, under either controller. This is consistent with Table 4 v2 (defects are often corrected later; there is no one-to-one defect→failure link).
+  - Not yet computed: correction events and process cost.
+  - q8 was released per Amendment 1.
+- **Bank U f01** (native, 190 states per cell = U1 85 + U2B 85 + U2Q 20; unweighted, descriptive; one block):
+  - M per state: q4 AWQ 0.09, q4 GPTQ 0.11, q8 AWQ 0.03, q8 GPTQ 0.02, q8 KV8 0.03. G within ±0.02 everywhere.
+  - Exact action agreement: 0.47–0.80.
+  - q4 KV8 native and its Q0 are still running; the Q0 tasks for q4 AWQ, q8 AWQ and q8 KV8 are done (not yet analysed).
+  - A Bank U analysis script with inclusion weights and block intervals is still to be written.
+- **All 6 Bank U per-config gates pass:** 30/30 rows each, with no-op pass 20/20, 30/30, 20/20, 15/15, 30/30 and 20/20.
+- **W×KV final** (`analysis/ahook/out/wakv_20261001T094405Z.md`): q8 I_WK|A16 = +2.1 [−5.8, +10.1] (k = 6); crossed [−8.2, +12.4]. The pre-registered replication is **not supported**. q8 single W4 = −6.7 [−11.6, −1.7].
+
 ## W78 — W70/W67 statistics corrected: full 85-task panel, Freedman–Lane conditional test, complete-panel blocks only (2026-10-01 00:15 PDT)
 **TL;DR** GPT-6.1 was right on all three counts, but fixing them does **not** kill the claim.
 - **The W70 "11/12" was airline-only.** The 0255Z audit intersected task ids across blocks. One airline-only block (q4 AWQ-W4 q5) silently dropped all 58 retail tasks, leaving 27 × 20.

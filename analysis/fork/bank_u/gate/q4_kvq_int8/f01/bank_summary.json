@@ -1,0 +1,246 @@
+{
+ "protocol": "bank_u_v1 (FORK_PROTOCOL §15 + amendment 1)",
+ "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907",
+ "spec": {
+  "mode": "bank_u",
+  "manifest": "manifests/fork/bank_u_v1.json",
+  "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907",
+  "model": "q4",
+  "cell": "kvq_int8",
+  "blocks": [
+   "f01"
+  ],
+  "subs": [
+   "U1",
+   "U2B",
+   "U2Q"
+  ],
+  "noop_frac": 1.0,
+  "concurrency": 8,
+  "out": "analysis/fork/bank_u/gate/q4_kvq_int8/f01",
+  "limit_per_sub": 10
+ },
+ "servers": {
+  "B": {
+   "gpu": "2",
+   "port": 8103,
+   "pid": 583453,
+   "ckpt": {
+    "kind": "bf16"
+   },
+   "path": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "2",
+    "8103",
+    "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.44",
+   "hook_coverage": null,
+   "canary": "c7343b60da095480",
+   "ckpt_sha256": null,
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+     "chat_template_kwargs": {}
+    },
+    "weights": "Qwen/Qwen3-4B-Instruct-2507@cdbee75f17c01a7cc42f958dc650907174af0554",
+    "ckpt": {
+     "kind": "bf16"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 16,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "efce043e33600dcc",
+   "canary_ref_ok": true
+  },
+  "Q": {
+   "gpu": "2",
+   "port": 8203,
+   "pid": 586264,
+   "ckpt": {
+    "kind": "bf16"
+   },
+   "path": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+   "serve_env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_KVQ_BITS": "8"
+   },
+   "serve_extra": [],
+   "launch_args": [
+    "2",
+    "8203",
+    "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.44",
+   "hook_coverage": {
+    "kvq": {
+     "bits": 8,
+     "rot": false,
+     "rot_mode": "0",
+     "rot_v_online": false,
+     "which": "kv",
+     "fmt": "minmax",
+     "kclip": 1.0,
+     "vclip": 1.0,
+     "active": true,
+     "namespace": "kvq_b8_r0_kv"
+    },
+    "aq": null,
+    "cache_roots": [
+     "/tmp/cloq_49672/vllm_cache/kvq_b8_r0_kv"
+    ],
+    "n_wrapped_processes": 1,
+    "decoder_attention_hooked": 36,
+    "expected_layers": 36,
+    "ok": true
+   },
+   "canary": "42f358a11e348a84",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+     "chat_template_kwargs": {}
+    },
+    "weights": "Qwen/Qwen3-4B-Instruct-2507@cdbee75f17c01a7cc42f958dc650907174af0554",
+    "ckpt": {
+     "kind": "bf16"
+    },
+    "serve_env": {
+     "CLOQ_PYHOOKS": "1",
+     "CLOQ_KVQ_BITS": "8"
+    },
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 16,
+     "A": 16,
+     "K": 8,
+     "V": 8
+    },
+    "hook_version": "ca3e42d2ba543122",
+    "cache_namespace": "kvq_b8_r0_kv"
+   },
+   "effective_config_sha": "6fe3f3f21dbac71a"
+  },
+  "same_effective_config": false,
+  "q_quantization": {},
+  "user_base": "http://127.0.0.1:8000/v1",
+  "host": "node005",
+  "job": "49672"
+ },
+ "n_rows": 30,
+ "n_ok": 30,
+ "n_missing": 0,
+ "n_errors": 0,
+ "n_exact_agreement": 24,
+ "noop": {
+  "n": 20,
+  "n_pass": 20
+ },
+ "budget_ok": true,
+ "n_branches_run": 72,
+ "branch_seconds": [
+  49.455673933029175,
+  56.33034706115723,
+  57.32305335998535,
+  83.95341372489929,
+  116.36322665214539,
+  144.5208261013031,
+  24.685561418533325,
+  18.44864010810852,
+  25.32842707633972,
+  38.87193202972412,
+  132.05850791931152,
+  105.0987696647644,
+  139.15387511253357,
+  121.5725486278534,
+  90.12064838409424,
+  132.12386751174927,
+  59.170616149902344,
+  38.20805382728577,
+  6.154183626174927,
+  12.544291496276855,
+  87.43130278587341,
+  118.81121158599854,
+  34.85090708732605,
+  25.554357528686523,
+  35.19261574745178,
+  82.83482336997986,
+  364.6666123867035,
+  602.5820899009705,
+  80.80893063545227,
+  115.99815058708191,
+  64.39524245262146,
+  63.4018828868866,
+  75.58031845092773,
+  72.1174807548523,
+  18.636775970458984,
+  14.30534315109253,
+  78.10519433021545,
+  66.52768063545227,
+  11.819822311401367,
+  12.242347478866577,
+  1265.472936630249,
+  776.4272618293762,
+  35.94642734527588,
+  28.884873151779175,
+  56.78965353965759,
+  50.37572884559631,
+  408.21764397621155,
+  81.61460304260254,
+  158.12918710708618,
+  101.91281080245972,
+  50.56712460517883,
+  39.32658529281616,
+  63.65707564353943,
+  69.33629012107849,
+  100.61567282676697,
+  71.1726303100586,
+  121.75759601593018,
+  138.25059151649475,
+  0.38436460494995117,
+  0.2731435298919678,
+  0.4910247325897217,
+  0.39822840690612793,
+  95.52049994468689,
+  78.56227040290833,
+  90.98914837837219,
+  80.16117405891418,
+  190.20775413513184,
+  130.18365001678467,
+  359.7488465309143,
+  60.920297145843506,
+  131.88420629501343,
+  131.9952826499939
+ ],
+ "seconds": 2357.0691871643066,
+ "gate_pass": true
+}

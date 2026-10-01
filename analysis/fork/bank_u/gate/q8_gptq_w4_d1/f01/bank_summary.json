@@ -1,0 +1,283 @@
+{
+ "protocol": "bank_u_v1 (FORK_PROTOCOL §15 + amendment 1)",
+ "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907",
+ "spec": {
+  "mode": "bank_u",
+  "manifest": "manifests/fork/bank_u_v1.json",
+  "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907",
+  "model": "q8",
+  "cell": "gptq_w4_d1",
+  "blocks": [
+   "f01"
+  ],
+  "subs": [
+   "U1",
+   "U2B",
+   "U2Q"
+  ],
+  "noop_frac": 1.0,
+  "concurrency": 8,
+  "out": "analysis/fork/bank_u/gate/q8_gptq_w4_d1/f01",
+  "limit_per_sub": 10
+ },
+ "servers": {
+  "B": {
+   "gpu": "4",
+   "port": 8105,
+   "pid": 1908460,
+   "ckpt": {
+    "kind": "bf16"
+   },
+   "path": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "4",
+    "8105",
+    "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.90",
+   "hook_coverage": null,
+   "canary": "e340c7991fa5bc08",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-8B",
+     "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+     "chat_template_kwargs": {
+      "enable_thinking": false
+     }
+    },
+    "weights": "Qwen/Qwen3-8B@b968826d9c46dd6066d109eabc6255188de91218",
+    "ckpt": {
+     "kind": "bf16"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 16,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "0d4bf272db1da1c5",
+   "canary_ref_ok": true
+  },
+  "Q": {
+   "gpu": "5",
+   "port": 8205,
+   "pid": 1909933,
+   "ckpt": {
+    "kind": "gptq",
+    "wbits": 4,
+    "calib": "manifests/a6k2/q8/calib_fp_traj_c1.json"
+   },
+   "path": "/tmp/cloq_49673/ckpt_bank_u_gate_q8_gptq_w4_d1_Q",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "5",
+    "8205",
+    "/tmp/cloq_49673/ckpt_bank_u_gate_q8_gptq_w4_d1_Q",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.90",
+   "hook_coverage": null,
+   "canary": "a9f812fb17241b72",
+   "ckpt_sha256": "6ee628e67194f0c073cb8efe917eaa083fe53281f507a48b1d6146f636e10d70",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-8B",
+     "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+     "chat_template_kwargs": {
+      "enable_thinking": false
+     }
+    },
+    "weights": "sha256:6ee628e67194f0c073cb8efe917eaa083fe53281f507a48b1d6146f636e10d70",
+    "ckpt": {
+     "kind": "gptq",
+     "wbits": 4,
+     "calib": "manifests/a6k2/q8/calib_fp_traj_c1.json"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 4,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "cd7c70f5e9fe40d4"
+  },
+  "same_effective_config": false,
+  "q_quantization": {
+   "method": "GPTQ",
+   "wbits": 4,
+   "group_size": 128,
+   "sym": false,
+   "percdamp": 0.01,
+   "blocksize": 128,
+   "act_order": true,
+   "true_sequential": true,
+   "source_model": "Qwen/Qwen3-8B",
+   "source_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+   "storage": "fake-quant bf16",
+   "calibration_manifest": "/data/ziyangs/cloq/manifests/a6k2/q8/calib_fp_traj_c1.json",
+   "moe_experts": null,
+   "calibration": {
+    "protocol": "v1",
+    "arm": "fp_traj",
+    "draw": "c1",
+    "draw_seed": 20260729,
+    "budget_rows": 64000,
+    "total_rows": 64000,
+    "rows_within_budget": true,
+    "n_states": 57,
+    "n_tasks": 57,
+    "rows_per_state_min": 1122,
+    "rows_per_state_max": 1123,
+    "median_context_tokens": 6310.0,
+    "total_context_tokens": 401883,
+    "states_by_source": {
+     "fp": 57
+    },
+    "states_by_depth_quartile": {
+     "0": 15,
+     "1": 14,
+     "2": 13,
+     "3": 15
+    },
+    "states_by_domain": {
+     "retail": 39,
+     "airline": 18
+    },
+    "fp_run": "a6k2_q8_bf16_cal",
+    "q_run": null,
+    "novelty": null,
+    "notes": [],
+    "split_file_sha256": "7d1671154c37375990fd01999df2257e1bef916ee8201158b850846876315a79",
+    "manifest_sha256": "f371bcafe843e95327a3f7bc72325862405ead830bf456fea172656ebb9fc108"
+   },
+   "seconds_quantize": 616.3947765827179,
+   "n_expert_tensors_rtn": 0
+  },
+  "user_base": "http://127.0.0.1:8000/v1",
+  "host": "node007",
+  "job": "49673"
+ },
+ "n_rows": 30,
+ "n_ok": 30,
+ "n_missing": 0,
+ "n_errors": 0,
+ "n_exact_agreement": 21,
+ "noop": {
+  "n": 30,
+  "n_pass": 30
+ },
+ "budget_ok": true,
+ "n_branches_run": 78,
+ "branch_seconds": [
+  44.1443874835968,
+  35.95842099189758,
+  33.80807971954346,
+  65.31260371208191,
+  25.09088683128357,
+  22.640753984451294,
+  23.104180812835693,
+  24.224276065826416,
+  12.035398721694946,
+  10.21406078338623,
+  28.913790225982666,
+  39.14393615722656,
+  63.88131022453308,
+  58.770548582077026,
+  11.176120281219482,
+  23.76535153388977,
+  30.37385058403015,
+  18.73047161102295,
+  83.04472041130066,
+  100.21680045127869,
+  88.78820657730103,
+  89.88154768943787,
+  70.3488118648529,
+  56.60162377357483,
+  63.36636471748352,
+  76.35782432556152,
+  24.19691801071167,
+  19.927937507629395,
+  17.411407947540283,
+  14.683754444122314,
+  6.049808025360107,
+  6.732860088348389,
+  32.68809652328491,
+  19.622806310653687,
+  27.580318212509155,
+  9.859363079071045,
+  20.82800531387329,
+  19.631630897521973,
+  34.33826041221619,
+  20.955787897109985,
+  13.607523918151855,
+  15.477875232696533,
+  105.9658784866333,
+  86.34513974189758,
+  17.77138352394104,
+  16.32415747642517,
+  12.410830736160278,
+  16.50316023826599,
+  64.87580609321594,
+  136.5568652153015,
+  108.90094113349915,
+  18.263786792755127,
+  108.16235828399658,
+  83.41257452964783,
+  96.2492344379425,
+  92.65184354782104,
+  65.48884797096252,
+  49.830862045288086,
+  57.56416702270508,
+  69.015389919281,
+  51.94804787635803,
+  35.74086833000183,
+  192.3449628353119,
+  156.0278844833374,
+  5.871156930923462,
+  7.001550197601318,
+  21.848855018615723,
+  19.72338843345642,
+  43.178165674209595,
+  46.86533570289612,
+  204.47121691703796,
+  42.788575410842896,
+  61.67145395278931,
+  67.44490694999695,
+  61.78288412094116,
+  64.16103148460388,
+  23.725278854370117,
+  22.306235313415527
+ ],
+ "seconds": 670.3303437232971,
+ "gate_pass": true
+}
