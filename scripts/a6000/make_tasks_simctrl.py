@@ -1,5 +1,6 @@
 """Simulator robustness control for Bank U text-structure flips (W90; GPT-6.1 review 5, author-approved option A).
 
+  --freeze-v2  (W90 amendment) manifests/fork/simctrl_v2.json = v1 + R = 3 independent replicates per arm; gate/tasks use v2.
   --freeze   build manifests/fork/simctrl_v1.json from the finished Bank U f01 rows: every deduplicated class (ii)
              outcome change (M = 1; same tool structure, different text) plus a 1:1 matched class (ii) NON-flip control
              (M = 0) from the same model x cell x sub-bank x block and the same sub-class (ii_talk / ii_act), nearest in
@@ -33,7 +34,9 @@ ROOT = Path("/data/ziyangs/cloq")
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "analysis" / "fork"))
 QUEUE = Path("/data/ziyangs/cloq_work/queue")
-MAN = "manifests/fork/simctrl_v1.json"
+MAN_V1 = "manifests/fork/simctrl_v1.json"
+MAN = "manifests/fork/simctrl_v2.json"  # W90 amendment: v1 units + R = 3 replicates per arm; tasks use v2
+REPLICATES = 3
 BANK = "manifests/fork/bank_u_v1.json"
 NODES = ("node004", "node005", "node007")
 SALT = "simctrl-v1"
@@ -197,6 +200,34 @@ def freeze(blocks: list[str]) -> dict:
     return man
 
 
+def freeze_v2() -> dict:
+    """v2 = v1 (same units, matching, user_llm, gate) + R = 3 independent replicates per arm and the amended analysis plan
+    (main-session amendment, before any Sonnet run: one stochastic run per arm confounds retention with sampling noise)."""
+    v1p = ROOT / MAN_V1
+    man = json.loads(v1p.read_text())
+    man["version"] = "simctrl_v2"
+    man["frozen_utc"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    man["amends"] = {"manifest": MAN_V1, "sha256": sha_file(v1p), "commit": "769dc36",
+                     "reason": ("claude-sonnet-5-5 has no temperature 0 and no seed, so one run per arm confounds retained / reversed / "
+                                "vanished with simulator sampling noise. Units, matching, user_llm and the gate checks are unchanged.")}
+    man["replicates"] = REPLICATES
+    man["branches"]["replicates"] = (f"R = {REPLICATES} independent Sonnet runs per arm (BQ and QQ) per unit, flips and controls alike; "
+                                     "replicate r of BQ is paired with replicate r of QQ; results keyed '<arm>#<r>'.")
+    man["analysis_plan"].update({
+        "estimand": ("Per unit, per replicate r: signed flip D_r = Y'_BQ,r - Y'_QQ,r in {-1, 0, +1}. Replicate-mean flip indicator "
+                     "Dbar = mean_r D_r. Original direction s = +1 (rescue) / -1 (damage)."),
+        "flips": ("Primary: retained = sign(Dbar) == s; reversed = sign(Dbar) == -s; vanished = Dbar == 0. Shown with the per-replicate "
+                  "distribution: per unit the number of replicates (0..R) with D_r == s, == -s, == 0, and per replicate r the "
+                  "retained / reversed / vanished counts."),
+        "controls": ("Newly appearing flip = Dbar != 0 (direction = sign(Dbar)); also per replicate r the counts with D_r != 0, and per "
+                     "unit the number of replicates (0..R) with D_r != 0."),
+        "variability": ("Within-simulator outcome variability: per arm (BQ, QQ) and role, the share of units whose R replicates of Y' "
+                        "are not all equal (Clopper-Pearson 95%)."),
+        "missing": "A unit with any errored replicate of either arm is missing for the primary (never imputed); per-replicate tables use the complete replicates."})
+    man["acceptance_gate"]["task"] = "simctrl_gate_q4_gptq_w4_d1 (3 manifest units of q4 GPTQ-W4 d1, first 3 by sha256 order; R = 3)"
+    return man
+
+
 def gate_units(man: dict) -> list[str]:
     us = sorted([u for u in man["units"] if (u["model"], u["cell"]) == ("q4", "gptq_w4_d1")], key=lambda u: h(f"{SALT}|gate|{u['unit_id']}"))
     return [u["unit_id"] for u in us[:3]]
@@ -204,7 +235,7 @@ def gate_units(man: dict) -> list[str]:
 
 def task(m, c, man_sha, units, tid, out, prio, deps, i):
     spec = {"mode": "simctrl", "manifest": MAN, "manifest_sha256": man_sha, "model": m, "cell": c, "unit_ids": units,
-            "user_llm": USER_LLM, "arms": ["BQ", "QQ"], "concurrency": 6, "out": out}
+            "user_llm": USER_LLM, "arms": ["BQ", "QQ"], "replicates": REPLICATES, "concurrency": 6, "out": out}
     return {"id": tid, "kind": "fork", "model": m, "gpus": 1 if m == "q4" else 2, **({"gpu_util": 0.44} if m == "q4" else {"node": NODES[i % 3]}),
             "priority": prio, "deps": deps, "B": {"ckpt": {"kind": "bf16"}}, "Q": qrole(m, c), "fork": spec,
             "note": "W90 simulator control (make_tasks_simctrl.py; Sonnet 5.5 user, Bank U f01 class (ii) flips + matched controls)"}
@@ -212,16 +243,24 @@ def task(m, c, man_sha, units, tid, out, prio, deps, i):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--freeze", action="store_true")
+    ap.add_argument("--freeze", action="store_true", help="build v1 (done: commit 769dc36)")
+    ap.add_argument("--freeze-v2", action="store_true", help="build v2 = v1 + R = 3 replicates (W90 amendment)")
     ap.add_argument("--blocks", nargs="*", default=["f01"])
     ap.add_argument("--gate", action="store_true")
     ap.add_argument("--tasks", action="store_true")
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args()
     mp = ROOT / MAN
-    if a.freeze:
+    if a.freeze_v2:
         if mp.exists():
             raise SystemExit(f"{MAN} exists (frozen); never overwritten")
+        mp.write_text(json.dumps(freeze_v2(), indent=1, ensure_ascii=False) + "\n")
+        print("sha256", sha_file(mp))
+        return
+    if a.freeze:
+        mp = ROOT / MAN_V1
+        if mp.exists():
+            raise SystemExit(f"{MAN_V1} exists (frozen); never overwritten")
         man = freeze(a.blocks)
         mp.write_text(json.dumps(man, indent=1, ensure_ascii=False) + "\n")
         print(json.dumps(man["counts"], indent=1))

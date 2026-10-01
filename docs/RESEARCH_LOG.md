@@ -62,6 +62,13 @@ Newest first.
   - The request body is exactly {model, system, messages, max_tokens 512, thinking between_tools}: no temperature, no seed.
   - Negative tests: a tampered system prompt, a dropped history message and an early ###STOP### each fail their check.
   - The analysis script ran on the dry outputs.
+- **Amendment (main session, before any Sonnet run):** R = 3 independent replicates per arm (BQ and QQ) per unit, flips and controls alike. One stochastic run per arm would confound retention with simulator sampling noise.
+  - Frozen as `manifests/fork/simctrl_v2.json`, sha256 `73e37c3c4cad96f9e978f7b442adc2bed6f89bbcd2482154f7ac4af04f3fd31e`. Units are those of v1; v2 amends v1 (sha `15b9b228…`, commit 769dc36), and tasks now use v2.
+  - Primary: the sign of the replicate-mean flip indicator Dbar = mean_r (Y'_BQ,r − Y'_QQ,r) against the original direction (retained / reversed / vanished; controls: Dbar ≠ 0 = new flip).
+  - Also reported: the per-replicate distribution, and within-simulator variability (the share of units whose replicates disagree, per arm and role).
+  - The driver checks that the task's R equals the manifest's.
+  - v2 dry run (mock, 3 gate units × 2 arms × 3 replicates): 18 branches and 54 user calls, all protocol checks pass. Output: `analysis/fork/simctrl/dry_v2/`, `analysis/fork/out/simctrl_dry_v2_20261001T194700Z.{json,md}`.
+  - Estimate ×3: ≈ 2,000 user calls, ≈ 2.9M input + 0.11M output tokens, ≈ $7.
 - **Evidence:**
   - `analysis/fork/simctrl/dry/*/simctrl_{rows.jsonl,summary.json}` (+ branches);
   - `analysis/fork/out/simctrl_dry_20261001T194252Z.{json,md}` (DRY: mock user, not results);

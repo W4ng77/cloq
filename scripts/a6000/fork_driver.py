@@ -786,7 +786,8 @@ def simctrl(spec, bases, user_base, servers, out):
     unit (Bank U f01 class (ii) flips + matched non-flip controls) of this model x cell: rebuild the fork state, check it
     against the Bank U row (history and prompt-id sha; B regenerates a_B and Q regenerates a_Q exactly), then run the
     original native arms BQ and QQ with the recorded a_B / a_Q forced and the cell's Q continuing, with ONLY the user
-    simulator replaced by spec["user_llm"] (Sonnet 5.5). spec["gate"]: write gate.json and fail unless every check
+    simulator replaced by spec["user_llm"] (Sonnet 5.5); spec["replicates"] (= manifest "replicates"; v2: 3) independent
+    runs per arm, keyed "<arm>#<r>". spec["gate"]: write gate.json and fail unless every check
     passes. spec["dry"]: CPU dry run (mock servers): the regeneration check is replaced by the local prompt-id render,
     and only the first spec["branch_limit"] units run branches."""
     import hashlib as _h
@@ -800,6 +801,9 @@ def simctrl(spec, bases, user_base, servers, out):
     ul = dict(spec["user_llm"])
     if ul != man["user_llm"] and not spec.get("dry"):
         raise SystemExit(f"simctrl: task user_llm {ul} != manifest {man['user_llm']}")
+    R = int(spec.get("replicates", 1))
+    if R != int(man.get("replicates", 1)):
+        raise SystemExit(f"simctrl: task replicates {R} != manifest {man.get('replicates', 1)}")
     if not ul.get("api_base"):
         UL.load_key()  # raises without the key file; never printed
     elif not os.environ.get("ANTHROPIC_API_KEY"):
@@ -855,8 +859,10 @@ def simctrl(spec, bases, user_base, servers, out):
             return {**rec, "skipped": "dry run: state checks only"}
         st["a_B"], st["a_Q"] = {"message": a_b}, {"message": a_q}
         res, Y, proto = {}, {}, {}
-        for arm in spec.get("arms", ["BQ", "QQ"]):
-            br = F.run_branch(st, arm[0], arm[1], bases, user_base, f"{tag}-{arm}", user_llm=ul)
+        # W90 amendment: R independent replicates per arm (Sonnet has no T = 0 / seed); results keyed "<arm>#<r>"
+        for arm0, rep in [(a0, r_) for a0 in spec.get("arms", ["BQ", "QQ"]) for r_ in range(R)]:
+            arm = f"{arm0}#{rep}"
+            br = F.run_branch(st, arm0[0], arm0[1], bases, user_base, f"{tag}-{arm0}-r{rep}", user_llm=ul)
             res[arm] = br
             Y[arm] = None if "error" in br else _y(u["domain"], br)
             proto[arm] = _user_protocol(st, br) if "error" not in br else {"ok": False, "error": br["error"][:300]}
