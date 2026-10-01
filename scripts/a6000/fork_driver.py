@@ -678,8 +678,9 @@ def bank_u(spec, bases, user_base, servers, out):
         if exact:  # identical current action: B-first and Q-first arms with the same controller are identical
             for a1, a2 in (("BB", "QB"), ("BQ", "QQ")):
                 if a1 in need and a2 in need:
-                    need.discard(a1)
-                    reuse[a1] = f"={a2}"
+                    keep, drop = (a1, a2) if (noop and a1 == orig_arm) else (a2, a1)  # a no-op sample always runs the original arm
+                    need.discard(drop)
+                    reuse[drop] = f"={keep}"
                 elif a1 in need and a2 in reuse:
                     need.discard(a1)
                     reuse[a1] = f"={a2}"
