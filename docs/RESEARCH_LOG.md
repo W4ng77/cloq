@@ -10,6 +10,51 @@ Newest first.
 
 ---
 
+## W85 — Holdout K planning simulation (telecom dev only) and draft PREREG_FORK_CONFIRM.md (NOT frozen) (2026-10-01 PDT)
+**TL;DR** K = 12 is adequate, as confirmed on telecom dev data only; it was not selected from this simulation.
+- **Planning results** (34 simulated tasks, 3 equal-weight cells, fitted dev heterogeneity), K = 6 / 8 / 12 / 16:
+  - 90% CI width of G_all (t over block means): 5.7 / 4.7 / **3.6** / 3.1 pp. The crossed task × block width is about the same (5.4 / 4.6 / 3.7 / 3.3 pp).
+  - Repeatability test power: 0.99 / 1.00 / 1.00 / 1.00. With the task heterogeneity halved, which is below its dev 95% profile lower bound, power is 0.46 / 0.57 / **0.76** / 0.86. Size is 0.03–0.06.
+  - Power to show a positive gain (one-sided 95% lower bound > 0) at the §F planning value G = 3 pp: 0.54 / 0.64 / **0.83** / 0.91.
+- **Draft protocol.** `docs/insights/PREREG_FORK_CONFIRM.md` merges FORK_PROTOCOL §12, §12 amendment 1 and every holdout point of GPT-6.1 review 4:
+  - K = 12, blocks h01–h12 with fixed nonces, a hash split into halves, and reserve blocks h13–h14.
+  - The complete 34 × 12 × 3 matrix, with outcome-blind repair rules.
+  - Fixed cells and weights.
+  - The ≥ 10-flipping-task screen is removed: the only "not estimable" condition is a constant vector, which is invariant under the permutation.
+  - The permutation's claim is worded honestly.
+  - G_all is the sole primary with ±3 pp bounds; the test families are stated.
+  - Dev results are not retroactively confirmed.
+- **Cost.** About **96 GPU-h** (67–144) from measured telecom dev logs; 195 GPU-h conservative, counting failed attempts and using the larger q4/q8 ratio.
+- `splits_v1.json` was not edited and nothing was frozen. No holdout task was read.
+- **Dev fit.** On q8 telecom dev (80 tasks × f01–f06; all 12 cell-blocks complete), from a logistic GLMM with persona intercepts, block effects and a task random effect:
+
+  | cell | M rate | G_all | task-effect SD s_u (95% profile) | block-shock SD |
+  |---|---|---|---|---|
+  | GPTQ-W4 | .148 | +2.7 pp | 2.22 [1.73, 2.85] | 0.57 |
+  | AWQ-W4 | .123 | −0.6 pp | 1.62 [1.27, 2.09] | 0.35 |
+
+  - The cross-cell task-effect correlation is 0.80.
+  - The rescue share shows no task-level heterogeneity.
+  - Dev split-half ρ (3 + 3 blocks, the holdout hash rule) is +0.63 for GPTQ and +0.51 for AWQ. It is descriptive and exploratory.
+- **Caveats.**
+  - The holdout cell q4 GPTQ-W4 has no telecom dev forks, so it borrows q8 GPTQ parameters.
+  - The block-t interval treats the tasks as fixed. At G = 3 pp, P(90% CI inside ±3 pp) = 0.09, against a nominal ≤ 0.05, so the crossed interval is reported for new-task generalisation.
+- **Open author decisions** (PREREG §14):
+  - the cells, especially q4 GPTQ;
+  - equal weights 1/3 vs 1/2 per model;
+  - whether the t or the crossed interval is decisional;
+  - the structural-exclusion cap;
+  - the dev cut-point file and `analyze_holdout_confirm.py`, both still to be written;
+  - re-checking the nonces at freeze;
+  - the budget.
+
+Evidence:
+- `analysis/fork/holdout_k_planning.py` → `analysis/fork/out/holdout_k_planning_20261001T134838Z.{json,md}`. Run with `--reps 1000 --perms 2000`, seed 20261001, snapshot `snapshot_auto_20261001T1322Z`.
+- `docs/insights/PREREG_FORK_CONFIRM.md` (DRAFT).
+- Cost inputs: `/data/ziyangs/cloq_work/logs/node_*.out` (cluster only).
+- Sources: `outputs/gpt61-review4-response-review.md`, FORK_PROTOCOL §12 and §12 amendment 1.
+- CPU only.
+
 ## W84 — Bank U f01 analysis: sub-banks separate, unique states, action taxonomy, text-content split, Q0, cross-quantizer transfer (2026-10-01 06:45 PDT)
 **TL;DR** Bank U f01 is now analysed per sub-bank (U1 / U2B / U2Q never pooled), on unique states, with the task-equal estimand (no n_decisions weighting; k = 1 block, so the intervals are task-cluster bootstraps). Results:
 - **Outcome changes are mostly class (ii): same tool structure, different text.** Of the M = 1 rows, U1 has 21/30, U2B 17/24 and U2Q 3/4. Nearly all are talk–talk; class (i) has none.
