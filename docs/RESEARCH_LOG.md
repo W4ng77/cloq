@@ -44,6 +44,10 @@ Newest first.
   - Evidence or an explicit unknown/n/a is present on 65% of field labels.
   - Limitation: the labeller is the same model as the τ² simulator.
 - **Packets:** `analysis/annotation/wp5/packets/index.html`, with pass 1 (actions X/Y in hashed order) and pass 2 (suffixes S1–S4) per state. They show no model, precision, outcome or effect value. Assignment: R1 34, R2 26, both 22. Protocol, adjudication rule and unblinding conditions: `docs/insights/ANNOTATION_PROTOCOL.md`.
+- **Recovery tasks queued (approved 10-01).**
+  - CPU dry-run first: all 6 branch message sets built for 2 states per category and model (72/72), with no exception.
+  - `inject_q4_gptq_w4_d1_q3` (1 GPU, priority −13) is queued.
+  - `inject_q8_gptq_w4_d1_q3` (strictly 2 GPUs, −13, deps on q4) is parked in `queue/deferred/` until the q4 VALID×Q no-op agreement is checked, and is released only if it is ≥ 90%.
 - **Recovery design:** `docs/insights/RECOVERY_INTERVENTION_DESIGN.md`.
   - Categories: wrong_id, wrong_tool, premature_write (only writes whose arguments are all in the history at t).
   - States frozen in `manifests/recovery/inject_v1.json`. Eligible counts: q4 247/299/62, q8 317/394/78.
