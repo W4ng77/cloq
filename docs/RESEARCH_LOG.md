@@ -10,6 +10,47 @@ Newest first.
 
 ---
 
+## W97 — Bank P simulator control (GPT-6.1 review 7): 80 states frozen outcome-blind, simrelay-v2 with integrity hashes, one clean `claude -p` call per user turn; dry run and relay test PASS; NOT queued (2026-10-01 PDT)
+**TL;DR** The four-arm Bank P control approved in W96 is built, frozen and validated, and is not yet queued.
+- **Manifest.** `manifests/fork/simctrl_p_v1.json` (sha `fa3dbf36…a48a3`) freezes 80 first-tool-structure-divergence states, 20 per core W4 cell. The selection is outcome-blind: admitted, re-checkable dev units; two-level Hamilton allocation over domain and block; sha256 order. There are two batches of 40. Batch 2 is gated on throughput or time only.
+- **Runs.** Each state runs BB/BQ/QB/QQ × R = 5 with a_B/a_Q forced. The user simulator is Sonnet 5.5 via the new login-node daemon `simrelay_cli.py`.
+- **Unexposed branches.** A branch that ends before any user call (no user call made) keeps its Y and is not missing.
+- **Integrity.** v2 requests carry no identifiers, and every answer must echo req_id and msg_sha256.
+- **Estimate.** Batch 1 is about 4.8k user calls, about 0.9 h at daemon concurrency 12, and $36–144.
+- **Sampling** (`scripts/a6000/make_tasks_simctrl_p.py --freeze`).
+  - Eligible units use the analyze_ghf/analyze_dev admission (dev split; units digests = `dev_all_20261001T070326Z` in all 4 cells) and are divergent and re-checkable:
+    - the Q pivot replay passed;
+    - the QQ no-op replay reproduced suffix, prompts, termination and counters (the outcome key is not used);
+    - BB/BQ/QB have prefix_ok and env_ok.
+  - Eligible per cell: q4 GPTQ 116/1102, q4 AWQ 149/1439, q8 GPTQ 149/1473, q8 AWQ 170/1562.
+  - Sampled retail/airline: 13/7, 13/7, 14/6, 14/6. Batch 1: 6/4, 6/4, 7/3, 7/3.
+  - Blocks covered: 16, 14, 16, 16.
+  - Divergence types: talk→act 32, tool_name 18, tool_args 14, act→talk 12, other 4.
+- **Run mode** `fork_driver.py` `simctrl_p` (new; `simctrl` and every other mode are unchanged).
+  - State checks: state file sha, the rebuilt state id/history/prompt-id shas, the a_B/a_Q shas; on GPU, B regenerates a_B and Q regenerates a_Q.
+  - Then 4 arms × 5 replicates run concurrently per state, keyed `<arm>#<r>`.
+  - Outputs are `simctrl_p_rows.jsonl` and `simctrl_p_summary.json`.
+  - Unexposed: `_user_protocol_p` requires the relay checks only when n_user_calls > 0.
+- **Relay simrelay-v2** (`cloq/user_llm.py`; active only with context protocol `simrelay-v2`; v1 unchanged; own root `simrelay/v2`).
+  - The request holds only req_id (random), protocol, system_prompt, messages, max_tokens, msg_sha256 (canonical JSON of the exact litellm list incl. system) and the stop convention.
+  - Bookkeeping goes in the sidecar `meta/`.
+  - Answers must echo req_id, protocol and msg_sha256; otherwise `RelayIntegrityError` (infra).
+- **Responder** (`scripts/a6000/simrelay_cli.py`).
+  - Atomic rename claim; responder `cli-<n>`; concurrency 12.
+  - Each request gets one fresh `claude -p --model claude-sonnet-5-5 --tools "" --strict-mcp-config --setting-sources "" --max-turns 1 --no-session-persistence --system-prompt … --output-format json`, in an empty cwd, with `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` (removes a side Haiku call).
+  - The frozen template `simrelay-cli-template-v1` (sha `b4ac8a7e…927d`) renders "Agent:" / "Customer (you):" turns.
+  - Minimal cleaning; 3 retries, then back to pending; never a garbage answer.
+  - Residual context: Claude Code appends an environment block and an account reminder to every user message. These are identical across requests and carry no identifiers.
+- **Validation.**
+  - (a) CPU dry run (mocks; 2 q4 GPTQ units × 4 arms × 5): state checks 2/2; 40 branches; 70 v2 calls, all integrity/protocol checks pass; 10 unexposed branches (forced tool call → mock Q stops) kept with Y and exposed=false; pass.
+  - (b) Relay test (temporary root): 3 real retail requests answered by the real daemon (2.3–3.2 s, $0.006–0.008 each, Sonnet 5.5 only); hashes echoed and verified; `$302.67` preserved. A tampered msg_sha256, a tampered req_id echo and a request altered after hashing are all rejected (`RelayIntegrityError`).
+- **Estimate** (`--estimate`).
+  - Inputs: 6.07 dev user turns per branch on these states, so 4,805 calls (batch 1) and 9,710 (both); W95 agent time 12.2 s per turn; CLI ~4 s + 1.8 s poll.
+  - FIFO model (4 tasks at once, excluding checkpoint/server start): batch 1 0.92 h (c = 12) / 0.67 h (c = 24); both 1.41 h / 0.89 h.
+  - Cost: $36 (batch 1) / $72 (both) at the measured $0.0074 per call; $72–144 / $146–291 at $0.015–0.03.
+- **Not done (main session):** start `simrelay_cli.py` on the login node; queue `make_tasks_simctrl_p.py --tasks --batch 1 --write` (priority −14; q4 1 GPU, q8 2 GPUs on node004/005/007; one task per cell per batch); write the analysis script; decide on batch 2.
+- **Evidence:** `docs/insights/SIMCTRL_P_PROTOCOL.md`; `manifests/fork/simctrl_p_v1.json`; `scripts/a6000/{make_tasks_simctrl_p.py,simrelay_cli.py,fork_driver.py}`; `cloq/user_llm.py`; `tests/test_simrelay_v2.py`, `tests/mock_anthropic.py` (`--agent-stop`); `analysis/fork/simctrl_p/{dry/q4_gptq_w4_d1/,validation/relay_test_20261001.json,estimate.json}`.
+
 ## W96 — GPT-6.1 review 7 decisions applied: R2 centre narrowed, fit mechanism removed, text claim narrowed, Bank P control approved (2026-10-01 16:10 PDT)
 **TL;DR** GPT-6.1 accepted R2 as the centre ("an action's task consequence depends on the subsequent controller"; 26.9% [25.7, 28.1], crossed [22.1, 32.0]), required removing the q4 GPTQ "action–controller fit" mechanism, narrowing the Bank U text claim further, approving a Bank P four-arm simulator control (W97), and set 10-03 as a completion target with 10-05 kept for audit.
 - **Decisions (user-delegated to GPT-6.1):**

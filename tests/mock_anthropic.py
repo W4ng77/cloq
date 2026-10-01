@@ -21,6 +21,9 @@ def main():
     ap.add_argument("--port", type=int, default=18765)
     ap.add_argument("--log", required=True)
     ap.add_argument("--stop-after", type=int, default=3, help="reply ###STOP### on this user turn of a branch (1-based)")
+    ap.add_argument("--agent-stop", action="store_true", help="(W97 dry runs) the mock agent answers the CLOQ agent's stop "
+                    "content '###CLOQ_LOOP_EARLY_STOP###' (cloq/agent.py is_stop) at once, so a branch whose forced action is a "
+                    "tool call ends (agent_stop) before any user call: unexposed")
     a = ap.parse_args()
 
     class H(BaseHTTPRequestHandler):
@@ -34,7 +37,7 @@ def main():
                 k = 1 + sum(1 for m in body.get("messages", []) if m.get("role") == "assistant")
                 out = {"id": "chatcmpl-mock", "object": "chat.completion", "created": 0, "model": body.get("model"),
                        "choices": [{"index": 0, "finish_reason": "stop",
-                                    "message": {"role": "assistant", "content": f"[mock agent {k}] Is there anything else I can help you with?"}}],
+                                    "message": {"role": "assistant", "content": "###CLOQ_LOOP_EARLY_STOP###" if a.agent_stop else f"[mock agent {k}] Is there anything else I can help you with?"}}],
                        "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2}}
                 b = json.dumps(out).encode()
                 self.send_response(200)

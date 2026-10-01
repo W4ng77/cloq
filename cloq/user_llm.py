@@ -152,10 +152,112 @@ def _relog(msg: str) -> None:
     print(f"[simrelay {time.strftime('%H:%M:%S')}] {msg}", file=sys.stderr, flush=True)
 
 
+# ---------------------------------------------------------------------------- simrelay-v2 (W97)
+# Used only when the branch context sets {"protocol": "simrelay-v2"} (fork_driver mode simctrl_p); v1 is unchanged.
+# Differences from v1: (1) the request the responder reads holds ONLY req_id, protocol, system_prompt, messages,
+# max_tokens, msg_sha256 and the stop-token convention; bookkeeping (state, unit, arm, replicate, branch tag) goes to a
+# sidecar <v2 root>/meta/<req_id>.json that responders never read; req_id is random (no identifiers). (2) Integrity:
+# msg_sha256 = sha256 of the canonical JSON of the exact litellm message list (system first); the answer must echo
+# req_id, protocol and msg_sha256, and relay_call raises RelayIntegrityError (infra) on any mismatch. (3) v2 lives in its
+# own root <relay_dir()>/v2 ($CLOQ_SIMRELAY_DIR/v2), so v1 claimers never see v2 requests and vice versa.
+RELAY_V2 = "simrelay-v2"
+RELAY_V2_KEYS = ("req_id", "protocol", "system_prompt", "messages", "max_tokens", "msg_sha256", "stop_token_convention")
+
+
+class RelayIntegrityError(RuntimeError):
+    """A v2 answer does not echo the request's req_id / protocol / msg_sha256: infrastructure failure of the branch."""
+
+
+def canon_sha(obj: Any) -> str:
+    """sha256 of the canonical JSON (sorted keys, no whitespace, UTF-8) of obj; the v2 msg_sha256."""
+    return hashlib.sha256(json.dumps(obj, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
+
+
+def v2_messages(system_prompt: str, messages: list) -> list:
+    """The litellm message list a v2 request stands for (what msg_sha256 hashes)."""
+    return [{"role": "system", "content": system_prompt}] + list(messages)
+
+
+def relay_v2_dirs(root: Optional[Path] = None) -> dict:
+    root = Path(root) if root else relay_dir() / "v2"
+    d = {k: root / k for k in ("pending", "claimed", "done", "expired", "meta")}
+    for p in d.values():
+        p.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _relay_call_v2(model: str, msgs: list, max_tokens: int, tag: Optional[str], n_prev: int, ctx: dict) -> tuple[str, dict]:
+    d = relay_v2_dirs()
+    sys_msgs = [m for m in msgs if m.get("role") == "system"]
+    rest = [m for m in msgs if m.get("role") != "system"]
+    if len(sys_msgs) != 1 or msgs[0] is not sys_msgs[0]:
+        raise RuntimeError(f"simrelay-v2 infra: expected exactly one leading system message, got {len(sys_msgs)}")
+    sp = sys_msgs[0].get("content") or ""
+    msg_sha = canon_sha(msgs)
+    if canon_sha(v2_messages(sp, rest)) != msg_sha:  # the responder must be able to rebuild the hashed list exactly
+        raise RuntimeError("simrelay-v2 infra: system message carries fields beyond role/content; request not reconstructible")
+    req_id = "v2-" + uuid.uuid4().hex
+    req = {"req_id": req_id, "protocol": RELAY_V2, "system_prompt": sp, "messages": rest, "max_tokens": int(max_tokens),
+           "msg_sha256": msg_sha, "stop_token_convention": STOP_TOKEN_CONVENTION}
+    meta_side = {"req_id": req_id, "protocol": RELAY_V2, "state_id": ctx.get("state_id"), "unit_id": ctx.get("unit_id"),
+                 "arm": ctx.get("arm"), "replicate": ctx.get("replicate"), "branch_tag": tag, "user_turn_index": n_prev,
+                 "model_label": model[len(RELAY_PREFIX):], "msg_sha256": msg_sha,
+                 "created_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "host": socket.gethostname(), "pid": os.getpid()}
+    timeout = float(os.environ.get("CLOQ_SIMRELAY_TIMEOUT_S", RELAY_TIMEOUT_S_DEFAULT))
+    pend, done = d["pending"] / f"{req_id}.json", d["done"] / f"{req_id}.json"
+    atomic_write_json(d["meta"] / f"{req_id}.json", meta_side)  # sidecar first: never read by responders
+    t0 = time.time()
+    atomic_write_json(pend, req)
+    _relog(f"v2 request {req_id} written ({len(rest)} messages, tag {tag}); waiting up to {timeout / 60:.0f} min")
+    next_log = t0 + 300
+    while True:
+        if done.exists():
+            try:
+                ans = json.loads(done.read_text())
+            except (OSError, ValueError) as e:
+                time.sleep(RELAY_POLL_S)
+                ans = json.loads(done.read_text()) if done.exists() else {"error": repr(e)}
+            bad = {k: (ans.get(k), want) for k, want in (("req_id", req_id), ("protocol", RELAY_V2), ("msg_sha256", msg_sha))
+                   if ans.get(k) != want}
+            if bad or not isinstance(ans.get("content"), str) or not ans["content"].strip():
+                _relog(f"INTEGRITY FAILURE {req_id}: {bad or 'no content'}")
+                raise RelayIntegrityError(f"simrelay-v2 infra: answer {done} fails integrity: "
+                                          f"{ {k: v[0] for k, v in bad.items()} if bad else 'empty or non-string content'}")
+            wall = time.time() - t0
+            _relog(f"v2 answer {req_id} from {ans.get('responder')} after {wall:.0f} s (integrity ok)")
+            return ans["content"], {"req_id": req_id, "protocol": RELAY_V2, "responder": ans.get("responder"), "wall_s": wall,
+                                    "answered_utc": ans.get("answered_utc"), "claimed_utc": ans.get("claimed_utc"),
+                                    "model": ans.get("model"), "cost_usd": ans.get("cost_usd"), "duration_s": ans.get("duration_s"),
+                                    "template_sha256": ans.get("template_sha256"), "n_attempts": ans.get("n_attempts"),
+                                    "msg_sha256": msg_sha, "integrity_ok": True, "request_path": str(pend), "done_path": str(done),
+                                    "meta_path": str(d["meta"] / f"{req_id}.json")}
+        now = time.time()
+        if now - t0 > timeout:
+            moved = None
+            for src in [pend, *d["claimed"].glob(f"*/{req_id}.json")]:
+                try:
+                    os.rename(src, d["expired"] / f"{req_id}.json")
+                    moved = str(src)
+                    break
+                except OSError:
+                    pass
+            atomic_write_json(d["expired"] / f"{req_id}.reason.json", {"req_id": req_id, "timeout_s": timeout, "moved_from": moved,
+                                                                         "expired_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
+            _relog(f"TIMEOUT v2 {req_id} after {timeout:.0f} s (moved {moved} to expired/); branch fails as infra")
+            raise RelayTimeout(f"simrelay-v2 infra: no answer for {req_id} within {timeout:.0f} s")
+        if now >= next_log:
+            _relog(f"still waiting for v2 {req_id} ({(now - t0) / 60:.0f} min)")
+            next_log = now + 300
+        time.sleep(RELAY_POLL_S)
+
+
 def relay_call(model: str, msgs: list, max_tokens: int, tag: Optional[str], n_prev: int) -> tuple[str, dict]:
-    """One user turn through the file relay: write pending/<req_id>.json, poll done/<req_id>.json. Returns (content, meta)."""
-    d = relay_dirs()
+    """One user turn through the file relay: write pending/<req_id>.json, poll done/<req_id>.json. Returns (content, meta).
+    With context protocol "simrelay-v2" (W97) the v2 path is used instead (see _relay_call_v2)."""
     ctx = getattr(_TL, "ctx", None) or {}
+    if ctx.get("protocol") == RELAY_V2:
+        return _relay_call_v2(model, msgs, max_tokens, tag, n_prev, ctx)
+    d = relay_dirs()
     base = "-".join(str(x) for x in (ctx.get("unit_id") or tag or "x", ctx.get("arm"), f"r{ctx['replicate']}" if "replicate" in ctx else None)
                     if x is not None)
     req_id = re.sub(r"[^A-Za-z0-9_.-]", "_", f"{base}-t{n_prev:02d}-{uuid.uuid4().hex[:8]}")
@@ -276,7 +378,7 @@ def install() -> None:
                                      usage=litellm.Usage(prompt_tokens=0, completion_tokens=0, total_tokens=0))
         rec.update({"latency_s": time.perf_counter() - t0, "litellm_response_id": meta["req_id"], "request_id": meta["req_id"],
                     "relay": meta, "response_model": model, "finish_reason": "stop",
-                    "usage": {"prompt_tokens": 0, "completion_tokens": 0, "note": "relay: no token counts"}, "cost_usd": None,
+                    "usage": {"prompt_tokens": 0, "completion_tokens": 0, "note": "relay: no token counts"}, "cost_usd": meta.get("cost_usd"),
                     "content": text, "tool_calls": []})
         with _LOCK:
             _RECS[rec["tag"]].append(rec)

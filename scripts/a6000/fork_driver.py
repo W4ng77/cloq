@@ -12,6 +12,8 @@ modes (task["fork"]["mode"]):
   branches   BB/BQ/QB (+ optional QQ no-op sample) on saved states.
   simctrl    W90 simulator control: Bank U BQ/QQ on manifests/fork/simctrl_v1.json units with the user simulator replaced
              by a user_llm override (Sonnet 5.5 via cloq/user_llm.py).
+  simctrl_p  W97 Bank P simulator control: BB/BQ/QB/QQ x R on manifests/fork/simctrl_p_v1.json units with the user
+             simulator replaced by the simrelay-v2 relay (scripts/a6000/simrelay_cli.py); unexposed branches kept.
 usage:
   python scripts/a6000/fork_driver.py --task <task.json> --b-base URL --q-base URL --user-base URL --servers <json>
   python scripts/a6000/fork_driver.py --cpucheck --block RUN:DOMAIN [--block ...] --out analysis/fork/gate/cpucheck_x.json
@@ -923,6 +925,168 @@ def simctrl(spec, bases, user_base, servers, out):
     return res
 
 
+def _user_protocol_p(st: dict, br: dict, template_sha: str | None = None) -> dict:
+    """W97 (simctrl_p) variant of _user_protocol; _user_protocol itself is unchanged. A branch that legitimately ends
+    before any user-simulator call (n_user_calls == 0) is UNEXPOSED: its Y is kept, it is not missing, and the relay
+    checks are not required (they apply only when n_user_calls > 0). Exposed branches get every _user_protocol check
+    plus the simrelay-v2 checks (every call v2, integrity verified, the frozen CLI template, the named model)."""
+    from cloq import user_llm as UL
+
+    calls = br.get("user_llm_calls") or []
+    term = br.get("termination_reason")
+    if br.get("infra_cause") == "context_overflow":  # W10/W70: agent-side overflow is a valid failure outcome (Y = 0)
+        chk = {"no_call_errors": not any("error" in c for c in calls), "env_hash_init_ok": bool(br.get("env_hash_init_ok"))}
+        return {"ok": all(chk.values()), "checks": chk, "termination_reason": term, "n_user_calls": len(calls),
+                "exposed": len(calls) > 0, "context_overflow": True}
+    if not calls:
+        umsgs = [m for m in (br.get("suffix") or []) if m["role"] == "user"]
+        chk = {"no_user_msgs_in_suffix": len(umsgs) == 0, "not_user_stop": term != "user_stop",
+               "env_hash_init_ok": bool(br.get("env_hash_init_ok")), "prefix_ok": bool(br.get("prefix_ok"))}
+        return {"ok": all(chk.values()), "checks": chk, "termination_reason": term, "n_user_calls": 0, "exposed": False}
+    p = _user_protocol(st, br)
+    relays = [c.get("relay") or {} for c in calls]
+    p["checks"].update({
+        "v2_all_calls": all(r.get("protocol") == UL.RELAY_V2 for r in relays),
+        "v2_integrity_ok": all(r.get("integrity_ok") is True for r in relays),
+        "v2_answer_model": all(r.get("model") in ("claude-sonnet-5-5", "mock") for r in relays),
+        "v2_template": template_sha is None or all(r.get("template_sha256") == template_sha for r in relays),
+    })
+    p["ok"] = all(p["checks"].values())
+    p["exposed"] = True
+    return p
+
+
+def simctrl_p(spec, bases, user_base, servers, out):
+    """W97 Bank P simulator control (manifests/fork/simctrl_p_v1.json; GPT-6.1 review 7). For each manifest unit (a frozen
+    first tool-structure divergence state of the dev forks of this model x cell): load the frozen state file (sha
+    checked), rebuild the state from the trajectory and check it (state id, history sha, prompt-id sha, a_B / a_Q shas;
+    on GPU B regenerates a_B and Q regenerates a_Q from the identical prompt ids), then run all four arms BB/BQ/QB/QQ with
+    the recorded a_B / a_Q forced and the named controller continuing, spec["replicates"] independent runs per arm (keyed
+    "<arm>#<r>"), with ONLY the user simulator replaced by the simrelay-v2 relay (one clean headless Sonnet 5.5 call per
+    user turn, scripts/a6000/simrelay_cli.py). Unexposed branches (no user-simulator call) keep their Y (exposed: false).
+    spec["dry"]: CPU dry run (mock servers; local prompt-id render instead of regeneration; first spec["branch_limit"]
+    units branch). The existing simctrl mode is untouched."""
+    import hashlib as _h
+    from cloq import user_llm as UL
+
+    man_path = ROOT / spec["manifest"]
+    man_sha = _h.sha256(man_path.read_bytes()).hexdigest()
+    if spec.get("manifest_sha256") and spec["manifest_sha256"] != man_sha:
+        raise SystemExit(f"simctrl_p: manifest sha {man_sha} != frozen {spec['manifest_sha256']}")
+    man = json.loads(man_path.read_text())
+    ul = dict(spec["user_llm"])
+    if ul != man["user_llm"]:
+        raise SystemExit(f"simctrl_p: task user_llm {ul} != manifest {man['user_llm']}")
+    if ul.get("provider") != "relay" or ul.get("protocol") != UL.RELAY_V2:
+        raise SystemExit("simctrl_p: user_llm must be the simrelay-v2 relay")
+    R = int(spec.get("replicates", 1))
+    if R != int(man["replicates"]):
+        raise SystemExit(f"simctrl_p: task replicates {R} != manifest {man['replicates']}")
+    arms = list(spec.get("arms", man["arms"]))
+    if arms != list(man["arms"]):
+        raise SystemExit(f"simctrl_p: task arms {arms} != manifest {man['arms']}")
+    tmpl = (man.get("responder") or {}).get("template_sha256")
+    rd = UL.relay_v2_dirs()
+    log(f"simctrl_p relay v2: requests in {rd['pending']}, answers in {rd['done']}, template {str(tmpl)[:16]}")
+    UL.install()
+    want = list(spec["unit_ids"])
+    units = [u for u in man["units"] if u["unit_id"] in set(want)]
+    if len(units) != len(want) or any((u["model"], u["cell"]) != (spec["model"], spec["cell"]) for u in units):
+        raise SystemExit("simctrl_p: unit ids missing from the manifest or from another model x cell")
+    units.sort(key=lambda u: want.index(u["unit_id"]))
+    blocks = {}
+    blk_lock = threading.Lock()
+    canon_sha = lambda m: _h.sha256(json.dumps(F.canon_msg(m), sort_keys=True).encode()).hexdigest()  # noqa: E731
+    lim = spec.get("branch_limit") if spec.get("dry") else None
+
+    def one(i_u):
+        i, u = i_u
+        rec = {k: u.get(k) for k in ("unit_id", "model", "cell", "block", "domain", "task_id", "t", "state_id", "batch", "stratum",
+                                     "run_id", "divergence_type")}
+        sp = ROOT / u["state_file"]
+        stf_bytes = sp.read_bytes()
+        stf = json.loads(stf_bytes)
+        a_b, a_q = stf["a_B"]["message"], stf["a_Q"]["message"]
+        k = (u["run_id"], u["domain"])
+        with blk_lock:
+            if k not in blocks:
+                blocks[k] = F.Block(ROOT, *k)
+        st = F.make_state(blocks[k], u["task_id"], u["t"])
+        chk = {"state_file_sha": _h.sha256(stf_bytes).hexdigest() == u["state_file_sha256"],
+               "state_id": st["state_id"] == u["state_id"] == stf["state_id"],
+               "history_sha": st["history_sha"] == u["history_sha"] == stf["history_sha"],
+               "prompt_ids_sha": st["q_decision"]["prompt_ids_sha"] == u["prompt_ids_sha"] == stf["q_decision"]["prompt_ids_sha"],
+               "a_B_sha": canon_sha(a_b) == u["a_B_sha"], "a_Q_sha": canon_sha(a_q) == u["a_Q_sha"],
+               "a_Q_is_trajectory_action": F.canon_msg(st["a_Q"]["message"]) == F.canon_msg(a_q)}
+        tag = f"scp-{u['unit_id']}"
+        if spec.get("dry"):  # diagnostic only (W88: local render can differ from server ids on text+toolcall whitespace)
+            rec["dry_local_prompt_ids"] = {"match": F.ids_sha(F.local_prompt_ids(st)) == u["prompt_ids_sha"]}
+        else:
+            gb, rb = F.shadow(st, bases["B"], tag + "-sB")
+            gq, rq = F.shadow(st, bases["Q"], tag + "-sQ")
+            chk.update({"B_prompt_ids": F.ids_sha(rb.get("prompt_token_ids")) == u["prompt_ids_sha"],
+                        "Q_prompt_ids": F.ids_sha(rq.get("prompt_token_ids")) == u["prompt_ids_sha"],
+                        "B_regenerates_a_B": F.canon_msg(gb) == F.canon_msg(a_b), "Q_regenerates_a_Q": F.canon_msg(gq) == F.canon_msg(a_q)})
+        rec["state_checks"] = chk
+        if not all(chk.values()):
+            return {**rec, "missing_reason": f"state check failed {chk}"}
+        if lim is not None and i >= lim:
+            return {**rec, "skipped": "dry run: state checks only"}
+        st["a_B"], st["a_Q"] = {"message": a_b}, {"message": a_q}
+        jobs = [(a0, r_) for a0 in arms for r_ in range(R)]
+
+        def run1(job):
+            arm0, rep = job
+            UL.set_context({"protocol": UL.RELAY_V2, "state_id": st["state_id"], "unit_id": u["unit_id"], "arm": arm0, "replicate": rep})
+            try:
+                return F.run_branch(st, arm0[0], arm0[1], bases, user_base, f"{tag}-{arm0}-r{rep}", user_llm=ul)
+            finally:
+                UL.set_context(None)
+
+        with ThreadPoolExecutor(len(jobs)) as ex2:  # every branch of a unit waits on the relay: run them concurrently
+            brs = list(ex2.map(run1, jobs))
+        res, Y, proto, exposed = {}, {}, {}, {}
+        for (arm0, rep), br in zip(jobs, brs):
+            arm = f"{arm0}#{rep}"
+            res[arm] = br
+            Y[arm] = None if "error" in br else _y(u["domain"], br)
+            proto[arm] = _user_protocol_p(st, br, tmpl) if "error" not in br else {"ok": False, "error": br["error"][:300]}
+            exposed[arm] = None if "error" in br else bool(proto[arm].get("exposed"))
+        dump(out / "branches" / f"{u['unit_id']}.json", {"state_id": st["state_id"], "history_sha": st["history_sha"], "arms": res})
+        return {**rec, "Y": Y, "exposed": exposed, "n_user_calls": {a: len(b.get("user_llm_calls") or []) for a, b in res.items()},
+                "protocol": proto, "termination": {a: b.get("termination_reason") for a, b in res.items()},
+                "context_overflow_arms": [a for a, b in res.items() if b.get("infra_cause") == "context_overflow"],
+                "budget_ok": {a: budget_check(st, b)["ok"] for a, b in res.items() if "error" not in b and b.get("suffix") is not None},
+                "user_llm_usage": {a: b.get("user_llm_usage") for a, b in res.items()},
+                "request_ids": {a: [c.get("request_id") for c in b.get("user_llm_calls") or []] for a, b in res.items()},
+                "durations": {a: b.get("duration") for a, b in res.items()}}
+
+    t0 = time.time()
+    with ThreadPoolExecutor(spec.get("concurrency", 5)) as ex:
+        recs = list(ex.map(lambda x: _safe(one, x), list(enumerate(units))))
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "simctrl_p_rows.jsonl").write_text("".join(json.dumps(x, ensure_ascii=False, default=str) + "\n" for x in recs))
+    ran = [x for x in recs if "Y" in x]
+    tot = lambda f: sum((v or {}).get(f, 0) or 0 for x in ran for v in x["user_llm_usage"].values())  # noqa: E731
+    res = {"protocol": "simctrl_p_v1 (W97)", "manifest_sha256": man_sha, "spec": dict(spec), "servers": servers,
+           "n_units": len(units), "n_ran": len(ran), "n_state_ok": sum(1 for x in recs if "state_checks" in x and all(x["state_checks"].values())),
+           "n_missing": sum(1 for x in recs if "missing_reason" in x), "n_errors": sum(1 for x in recs if "error" in x),
+           "n_skipped_dry": sum(1 for x in recs if "skipped" in x),
+           "n_branches": sum(len(x["Y"]) for x in ran), "n_arm_errors": sum(1 for x in ran for v in x["Y"].values() if v is None),
+           "n_unexposed": sum(1 for x in ran for v in x["exposed"].values() if v is False),
+           "unexposed_by_arm": dict(collections.Counter(a.split("#")[0] for x in ran for a, v in x["exposed"].items() if v is False)),
+           "protocol_ok": all(p["ok"] for x in ran for p in x["protocol"].values()) and len(ran) > 0,
+           "protocol_failures": [{"unit_id": x["unit_id"], "arm": a, **p} for x in ran for a, p in x["protocol"].items() if not p["ok"]],
+           "termination": dict(collections.Counter(t for x in ran for t in x["termination"].values())),
+           "user_llm_usage": {"n_calls": tot("n_calls"), "n_errors": tot("n_errors"), "cost_usd": tot("cost_usd")},
+           "seconds": time.time() - t0, "dry": bool(spec.get("dry"))}
+    res["pass"] = res["n_errors"] == 0 and res["n_missing"] == 0 and res["n_arm_errors"] == 0 and res["protocol_ok"]
+    dump(out / "simctrl_p_summary.json", res)
+    log(f"simctrl_p {spec['model']}:{spec['cell']}: ran {res['n_ran']}/{res['n_units']}, state ok {res['n_state_ok']}, branches "
+        f"{res['n_branches']} (unexposed {res['n_unexposed']}), protocol_ok {res['protocol_ok']}, usage {res['user_llm_usage']}, pass {res['pass']}")
+    return res
+
+
 def bank_u_q0(spec, bases, user_base, servers, out):
     """Bank U Q0 controller (FORK_PROTOCOL §15 amendment 1, W70): on the frozen Q0 subsample of U2 rows (manifest q0 = true),
     both current actions recorded by the native bank_u run of `cell` (a_B, a_Q) are followed by the common continuation
@@ -1209,7 +1373,8 @@ def main():
     bases = {"B": a.b_base, "Q": a.q_base}
     out = ROOT / spec["out"]
     out.mkdir(parents=True, exist_ok=True)
-    fn = {"gate": gate, "gate_same": gate_same, "search": search_mode, "branches": branches_mode, "dev": dev_mode, "pivot_arms": pivot_arms, "bank_u": bank_u, "bank_u_q0": bank_u_q0, "repair": repair_mode, "simctrl": simctrl}[spec["mode"]]
+    fn = {"gate": gate, "gate_same": gate_same, "search": search_mode, "branches": branches_mode, "dev": dev_mode, "pivot_arms": pivot_arms, "bank_u": bank_u, "bank_u_q0": bank_u_q0, "repair": repair_mode, "simctrl": simctrl,
+          "simctrl_p": simctrl_p}[spec["mode"]]
     r = fn(spec, bases, a.user_base, servers, out)
     v = r.get("verdict")
     print(json.dumps({"verdict": v}, default=str))
