@@ -3,6 +3,8 @@
   --gate        replay gate: q4 GPTQ-W4 d1, q4 KV8 (hooked serving), q8 AWQ-W4; 10 states per sub-bank (U1, U2B, U2Q) on f01,
                 no-op run on every state (U1: Q->Q, U2B: B->B, U2Q with this cell = source: Q->Q)
   --blocks f01  bank tasks: one per model x cell x block (U1 + U2B + U2Q of that block), 10% no-op sample
+  --q0          with --blocks: Q0 controller tasks (fork_driver mode bank_u_q0) for AWQ-W4 and KV8, each depending on its
+                native bank_u task; B = BF16, Q = Q0 = <model> GPTQ-W4 d1 (for the GPTQ-W4 d1 cell the native arms are Q0)
 B = BF16, Q = the cell's exact serving config (kvq_int8: KV INT8 hook). q4 on 1 GPU (B+Q, GPU_UTIL 0.44); q8 on 2 GPUs pinned
 to node004/005/007. Priority -17.
 usage: python scripts/a6000/make_tasks_bank_u.py (--gate | --blocks f01 [f02 ...]) [--write]
@@ -31,6 +33,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--gate", action="store_true")
     ap.add_argument("--blocks", nargs="*", default=[])
+    ap.add_argument("--q0", action="store_true")
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args()
     sha = hashlib.sha256((ROOT / MAN).read_bytes()).hexdigest()
@@ -50,6 +53,19 @@ def main():
                       "B": {"ckpt": {"kind": "bf16"}}, "Q": qrole(m, c), "fork": spec,
                       "note": "W70 Bank U (make_tasks_bank_u.py; FORK_PROTOCOL §15 amendment 1)"})
             i += 1
+    if a.q0:
+        T, i = [], 0
+        for blk in a.blocks:
+            for m in ("q4", "q8"):
+                for c in ("awq_w4", "kvq_int8"):
+                    spec = {"mode": "bank_u_q0", "manifest": MAN, "manifest_sha256": sha, "model": m, "cell": c, "blocks": [blk],
+                            "native_out": f"analysis/fork/bank_u/{m}_{c}/{blk}", "concurrency": 8,
+                            "out": f"analysis/fork/bank_u/q0/{m}_{c}/{blk}"}
+                    T.append({"id": f"bank_u_q0_{m}_{c}_{blk}", "kind": "fork", "model": m, "gpus": 1 if m == "q4" else 2,
+                              **({"gpu_util": 0.44} if m == "q4" else {"node": NODES[i % 3]}), "priority": -17,
+                              "deps": [f"bank_u_{m}_{c}_{blk}"], "B": {"ckpt": {"kind": "bf16"}}, "Q": qrole(m, "gptq_w4_d1"),
+                              "fork": spec, "note": "W70 Bank U Q0 controller (make_tasks_bank_u.py --q0; FORK_PROTOCOL §15 amendment 1)"})
+                    i += 1
     for t in T:
         print(t["id"], t["gpus"], t.get("node", ""), t["fork"]["blocks"])
     if a.write:

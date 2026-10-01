@@ -733,6 +733,72 @@ def bank_u(spec, bases, user_base, servers, out):
     return res
 
 
+def bank_u_q0(spec, bases, user_base, servers, out):
+    """Bank U Q0 controller (FORK_PROTOCOL §15 amendment 1, W70): on the frozen Q0 subsample of U2 rows (manifest q0 = true),
+    both current actions recorded by the native bank_u run of `cell` (a_B, a_Q) are followed by the common continuation
+    controller Q0 = <model> GPTQ-W4 d1. Servers: B = BF16 (prompt-id check only), Q = Q0. Arms: "B.Q0", "c.Q0". For
+    cell = gptq_w4_d1 the native BQ / QQ are already the Q0 arms (no task needed). Reported separately from native."""
+    import hashlib as _h
+    man_sha = _h.sha256((ROOT / spec["manifest"]).read_bytes()).hexdigest()
+    if spec.get("manifest_sha256") and spec["manifest_sha256"] != man_sha:
+        raise SystemExit(f"bank_u_q0: manifest sha {man_sha} != frozen {spec['manifest_sha256']}")
+    nat_dir = ROOT / spec["native_out"]
+    nat_sum = json.loads((nat_dir / "bank_summary.json").read_text())
+    if nat_sum.get("manifest_sha256") != man_sha:
+        raise SystemExit("bank_u_q0: native run used a different manifest")
+    nat = [json.loads(l) for l in (nat_dir / "bank_rows.jsonl").read_text().splitlines() if l.strip()]
+    rows = [r for r in nat if r.get("q0") and r["sub"] in ("U2B", "U2Q")]
+    blocks = {}
+
+    def one(r):
+        rec = {k: r.get(k) for k in ("state_key", "sub", "model", "block", "domain", "task_id", "t", "n_decisions", "selection_probability", "source_run", "cell")}
+        rec["controller"] = f"{r['model']}:gptq_w4_d1"
+        if "Y" not in r:
+            return {**rec, "missing_reason": "native row missing: " + str(r.get("missing_reason") or r.get("error"))[:200]}
+        k = (r["source_run"], r["domain"])
+        if k not in blocks:
+            blocks[k] = F.Block(ROOT, *k)
+        st = F.make_state(blocks[k], r["task_id"], r["t"])
+        if st["state_id"] != r["state_id"]:
+            return {**rec, "missing_reason": "state id differs from native row"}
+        _, rb = F.shadow(st, bases["B"], f"bq0-{r['state_key']}-sB")
+        if F.ids_sha(rb.get("prompt_token_ids")) != st["q_decision"]["prompt_ids_sha"]:
+            return {**rec, "missing_reason": "prompt id mismatch (B shadow)"}
+        st["a_B"], st["a_Q"] = {"message": r["a_B"]}, {"message": r["a_Q"]}
+        res, Y, src = {}, {}, {}
+        res["B.Q0"] = F.run_branch(st, "B", "Q", bases, user_base, f"bq0-{r['cell']}-{r['state_key']}-B")
+        if r["exact_agreement"]:
+            Y["c.Q0"], src["c.Q0"] = None, "reuse=B.Q0"
+        else:
+            res["c.Q0"] = F.run_branch(st, "Q", "Q", bases, user_base, f"bq0-{r['cell']}-{r['state_key']}-c")
+        for arm, br in res.items():
+            Y[arm] = None if "error" in br else _y(r["domain"], br)
+            src[arm] = "run" if "error" not in br else f"error: {br['error'][:120]}"
+        if src.get("c.Q0") == "reuse=B.Q0":
+            Y["c.Q0"] = Y["B.Q0"]
+        rec.update({"state_id": st["state_id"], "exact_agreement": r["exact_agreement"], "Y": Y, "arm_source": src,
+                    "Y_native": r["Y"], "budget_ok": {a: budget_check(st, b)["ok"] for a, b in res.items() if "error" not in b},
+                    "context_overflow_arms": [a for a, b in res.items() if b.get("infra_cause") == "context_overflow"],
+                    "durations": {a: b.get("duration") for a, b in res.items()}})
+        dump(out / "branches" / f"{r['state_key']}.json", res)
+        return rec
+
+    t0 = time.time()
+    with ThreadPoolExecutor(spec.get("concurrency", 8)) as ex:
+        recs = list(ex.map(lambda r: _safe(one, r), rows))
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "q0_rows.jsonl").write_text("".join(json.dumps(x, ensure_ascii=False, default=str) + "\n" for x in recs))
+    ok = [x for x in recs if "Y" in x]
+    res = {"protocol": "bank_u_v1 Q0 controller (FORK_PROTOCOL §15 amendment 1)", "manifest_sha256": man_sha, "spec": spec,
+           "servers": servers, "native_summary_sha256": _h.sha256((nat_dir / "bank_summary.json").read_bytes()).hexdigest(),
+           "n_rows": len(rows), "n_ok": len(ok), "n_missing": sum(1 for x in recs if "missing_reason" in x),
+           "n_errors": sum(1 for x in recs if "error" in x), "budget_ok": all(all(x["budget_ok"].values()) for x in ok),
+           "n_branches_run": sum(sum(1 for v in x["arm_source"].values() if v == "run") for x in ok),
+           "branch_seconds": [d for x in ok for d in x["durations"].values() if d], "seconds": time.time() - t0}
+    dump(out / "q0_summary.json", res)
+    log(f"bank_u_q0 {spec['model']}:{spec['cell']}: ok {res['n_ok']}/{res['n_rows']}, branches {res['n_branches_run']}, {res['seconds']:.0f} s")
+    return res
+
 def rerun_episode(block: F.Block, task_id: str, bases: dict, user_base: str, tag: str) -> dict:
     """W70: deterministically re-execute Q's original episode from the start (same task dump, simulation seed, nonce, tau2
     config, Q server) when its saved trajectory was lost (tau2 stores no messages for an episode that raised). An
@@ -953,7 +1019,7 @@ def main():
     bases = {"B": a.b_base, "Q": a.q_base}
     out = ROOT / spec["out"]
     out.mkdir(parents=True, exist_ok=True)
-    fn = {"gate": gate, "gate_same": gate_same, "search": search_mode, "branches": branches_mode, "dev": dev_mode, "pivot_arms": pivot_arms, "bank_u": bank_u, "repair": repair_mode}[spec["mode"]]
+    fn = {"gate": gate, "gate_same": gate_same, "search": search_mode, "branches": branches_mode, "dev": dev_mode, "pivot_arms": pivot_arms, "bank_u": bank_u, "bank_u_q0": bank_u_q0, "repair": repair_mode}[spec["mode"]]
     r = fn(spec, bases, a.user_base, servers, out)
     v = r.get("verdict")
     print(json.dumps({"verdict": v}, default=str))
