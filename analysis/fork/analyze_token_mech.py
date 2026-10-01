@@ -118,9 +118,11 @@ def features(r: dict) -> dict:
     u["lpQ_mean"] = float(np.mean([x["lp_Q"] for x in tq]))
     u["lpB_of_aQ_mean"] = float(np.mean([x["lp_B"] for x in tq]))  # needs B: diagnostic
     u["len_Q"], u["len_B"] = len(aQ["ids"]), len(aB["ids"])
-    u["S_H0"] = u["Htk_Q_0"]
-    u["S_mm"] = -u["mQ_min"] if u["mQ_min"] is not None else 0.0
-    u["S_lp"] = -u["lpQ_mean"]
+    # deterministic tie-break (exact bf16 ties make min margin = 0 for many states): + 1e-9 x hash(state_key) in [0, 1)
+    jit = 1e-9 * int(hashlib.sha256(f"token-trigger-v1|{r['state_key']}".encode()).hexdigest()[:8], 16) / 16 ** 8
+    u["S_H0"] = u["Htk_Q_0"] + jit
+    u["S_mm"] = (-u["mQ_min"] if u["mQ_min"] is not None else 0.0) + jit
+    u["S_lp"] = -u["lpQ_mean"] + jit
     u["own_rank1_Q"] = all(x["lp_Q"] >= s["top_lps"][0] - 1e-4 for x, s in zip(tq, aQ["Q"]))  # tie-aware argmax
     # per-token Q-defined profile over a_Q (relative position bins), for the position-controlled whole-action analysis
     n = len(tq)
@@ -354,6 +356,7 @@ def freeze_rule(dev: list[dict]) -> dict:
             "development_blocks": list(DEV), "validation_blocks": "every scored block != f01 (f02, f03)",
             "candidates": {"S_H0": "entropy (top-20 + tail bucket) of Q's next-token distribution at the action start",
                            "S_mm": "-(min over a_Q tokens of Q's margin lp(chosen) - max lp(other top-20))",
+                           "tie_break": "every score + 1e-9 * int(sha256('token-trigger-v1|' + state_key)[:8], 16) / 16**8",
                            "S_lp": "-(mean over a_Q tokens of Q's logprob)"},
             "selection_criterion": "max mean over rates {5,10,20}% of (in-sample f01 U1 net gain - random expectation); "
                                    "tie: turnover captured - random expectation",

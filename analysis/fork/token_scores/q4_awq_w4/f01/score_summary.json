@@ -1,0 +1,208 @@
+{
+ "protocol": "score_states v2 (W88; GPT-6.1 review 5: teacher-forced from generated token ids)",
+ "spec": {
+  "driver": "score",
+  "mode": "score_states",
+  "model": "q4",
+  "cell": "awq_w4",
+  "blocks": [
+   "f01"
+  ],
+  "bank_out": "analysis/fork/bank_u/q4_awq_w4/f01",
+  "out": "analysis/fork/token_scores/q4_awq_w4/f01",
+  "concurrency": 4
+ },
+ "servers": {
+  "B": {
+   "gpu": "2",
+   "port": 8103,
+   "pid": 3339722,
+   "ckpt": {
+    "kind": "bf16"
+   },
+   "path": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "2",
+    "8103",
+    "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.44",
+   "hook_coverage": null,
+   "canary": "c7343b60da095480",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+     "chat_template_kwargs": {}
+    },
+    "weights": "Qwen/Qwen3-4B-Instruct-2507@cdbee75f17c01a7cc42f958dc650907174af0554",
+    "ckpt": {
+     "kind": "bf16"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 16,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "efce043e33600dcc",
+   "canary_ref_ok": true
+  },
+  "Q": {
+   "gpu": "2",
+   "port": 8203,
+   "pid": 3340309,
+   "ckpt": {
+    "kind": "awq",
+    "wbits": 4,
+    "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+   },
+   "path": "/tmp/cloq_49727/ckpt_score_q4_awq_w4_f01_Q",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "2",
+    "8203",
+    "/tmp/cloq_49727/ckpt_score_q4_awq_w4_f01_Q",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.44",
+   "hook_coverage": null,
+   "canary": "b12f07db77bedb00",
+   "ckpt_sha256": "0cfdf65cdc3fcc02e7aaa36bd1619ea0086d8c6be5a8f804364fd5812d2cba66",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-4B-Instruct-2507",
+     "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+     "chat_template_kwargs": {}
+    },
+    "weights": "sha256:0cfdf65cdc3fcc02e7aaa36bd1619ea0086d8c6be5a8f804364fd5812d2cba66",
+    "ckpt": {
+     "kind": "awq",
+     "wbits": 4,
+     "calib": "manifests/a6k2/q4/calib_fp_traj_c1.json"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 4,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "b978c3b81626e5d6"
+  },
+  "same_effective_config": false,
+  "q_quantization": {
+   "method": "AWQ-style",
+   "wbits": 4,
+   "group_size": 128,
+   "sym": false,
+   "percdamp": 0.01,
+   "blocksize": 128,
+   "act_order": true,
+   "true_sequential": true,
+   "source_model": "Qwen/Qwen3-4B-Instruct-2507",
+   "source_revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+   "storage": "fake-quant bf16",
+   "calibration_manifest": "/data/ziyangs/cloq/manifests/a6k2/q4/calib_fp_traj_c1.json",
+   "moe_experts": null,
+   "calibration": {
+    "protocol": "v1",
+    "arm": "fp_traj",
+    "draw": "c1",
+    "draw_seed": 20260729,
+    "budget_rows": 64000,
+    "total_rows": 64000,
+    "rows_within_budget": true,
+    "n_states": 57,
+    "n_tasks": 57,
+    "rows_per_state_min": 1122,
+    "rows_per_state_max": 1123,
+    "median_context_tokens": 6041.0,
+    "total_context_tokens": 372294,
+    "states_by_source": {
+     "fp": 57
+    },
+    "states_by_depth_quartile": {
+     "0": 16,
+     "1": 13,
+     "2": 14,
+     "3": 14
+    },
+    "states_by_domain": {
+     "retail": 39,
+     "airline": 18
+    },
+    "fp_run": "a6k2_q4_bf16_cal",
+    "q_run": null,
+    "novelty": null,
+    "notes": [],
+    "split_file_sha256": "7d1671154c37375990fd01999df2257e1bef916ee8201158b850846876315a79",
+    "manifest_sha256": "780875fe8a38bd31c9687ffafb512b09061db1c3b8786ecacbbbb9547cd5a20a"
+   },
+   "seconds_quantize": 426.3192148208618,
+   "n_expert_tensors_rtn": 0
+  },
+  "user_base": "http://node004:8000/v1",
+  "host": "node001",
+  "job": "49727"
+ },
+ "bank_rows_sha256": "81bf8f8380906f04b47f314f0daea59e3b07684a8f20f0d687c727dcb12c6b41",
+ "n_rows": 190,
+ "n_ok": 190,
+ "n_missing": 0,
+ "missing": [],
+ "n_prompt_sha_ok": 190,
+ "n_render_ok": 190,
+ "template_eq_generated": {
+  "a_B": "182/190",
+  "a_Q": "183/190"
+ },
+ "regen_eq_recorded": {
+  "a_B": "85/85",
+  "a_Q": "85/85"
+ },
+ "ids_source": {
+  "a_B:regenerated": 105,
+  "a_Q:recorded": 85,
+  "a_B:recorded": 85,
+  "a_Q:regenerated": 105
+ },
+ "n_start_same": 190,
+ "n_own_rank1_B_on_aB": 190,
+ "n_own_rank1_Q_on_aQ": 190,
+ "recorded_max_abs_lp_diff_vs_decode": 5e-05,
+ "n_score_requests": 584,
+ "n_regen_requests": 380,
+ "n_action_tokens": 30142,
+ "gpu_phase_seconds": 1150.9820642471313,
+ "seconds": 1211.7007586956024
+}
