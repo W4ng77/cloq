@@ -4,6 +4,16 @@ Updated 2026-09-30 America/Toronto (2026-10-01 UTC). Scope and scheduling author
 
 This is a proposed work inventory. Unchecked items are not queued/completed claims. Owners first reconcile existing queues, results and code to avoid duplication. This document does not restart workers or unlock the protected holdout.
 
+## Priority tiers (agreed 2026-10-01 with the author and GPT-6.1)
+
+| tier | packages |
+|---|---|
+| **Must** | WP0 audit; WP1 four-arm consequences; WP5 annotation (events, blinded LLM rubric, ~80 human states); WP8 telecom confirmation; core coverage (BF16/W4/W3 × RTN/GPTQ/AWQ, A8/SmoothQuant/QuaRot, KV8/rotated KV4, matched W×A×KV cube with the registered q8 W×KV test); **small** Bank U (U1 + BF16-sourced U2 + a few Q-sourced shared states; native four-arm plus a common-continuation Q0 subsample); **small** real recovery intervention (§5.5) |
+| **Best effort** | q14 / larger-model panel; label transport (WP7 first application); W2 stress expansion beyond the first ~24-task round; second model family |
+| **Deferred** | latent capture and activation patching (WP6); full DMR training / complete routing comparison; WebShop; consequence-preserving calibration |
+
+When the budget is short, cut best-effort expansion first, then reduce repetitions uniformly within a tier. Never drop a must-tier axis to make room for an attractive cell.
+
 ## WP0 — Evidence and population audit
 
 - [ ] Create OLD_RESULT_REUSE.csv: path/hash, script/commit, checkpoint, hardware/backend, task/block identities, endpoint, integrity status, allowed use and required reanalysis.
