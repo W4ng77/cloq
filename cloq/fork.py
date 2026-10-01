@@ -383,12 +383,18 @@ def setup_tau2() -> None:
     install_writer()
 
 
-def run_config(rc: dict, agent_base: str, user_base: str):
+def run_config(rc: dict, agent_base: str, user_base: str, user_llm: Optional[dict] = None):
+    """Run config with the agent and user servers bound. `user_llm` (W90) replaces the user simulator's model and
+    args (cloq/user_llm.py); the agent side is untouched."""
     from tau2.data_model.simulation import TextRunConfig
 
     d = copy.deepcopy(rc)
     d["llm_args_agent"]["api_base"] = agent_base
     d["llm_args_user"]["api_base"] = user_base
+    if user_llm:
+        from cloq import user_llm as UL
+
+        d = UL.apply(d, user_llm)
     return TextRunConfig.model_validate(d)
 
 
@@ -531,8 +537,10 @@ def local_prompt_ids(st: dict) -> list[int]:
 
 
 def run_branch(st: dict, first: str, controller: str, bases: dict[str, str], user_base: str, tag: str,
-               replay_hash: bool = True) -> dict:
-    """Branch <first><controller>: force a_<first> at h_t, continue with the controller server to the end."""
+               replay_hash: bool = True, user_llm: Optional[dict] = None) -> dict:
+    """Branch <first><controller>: force a_<first> at h_t, continue with the controller server to the end.
+    With `user_llm` (W90) the branch's user turns go to that model (cloq/user_llm.py) and every user call is
+    returned under "user_llm_calls"; without it nothing changes."""
     from tau2.data_model.tasks import InitialState, Task
     from tau2.evaluator.evaluator import EvaluationType, evaluate_simulation
     from tau2.orchestrator.modes import CommunicationMode
@@ -547,8 +555,13 @@ def run_branch(st: dict, first: str, controller: str, bases: dict[str, str], use
     ftask.initial_state = InitialState(initialization_data=ist.initialization_data if ist else None,
                                        initialization_actions=ist.initialization_actions if ist else None,
                                        message_history=hist)
-    cfg = run_config(st["run_config"], bases[controller], user_base)
+    cfg = run_config(st["run_config"], bases[controller], user_base, user_llm)
     orch = build_text_orchestrator(cfg, ftask, seed=st["simulator"]["sim_seed"])
+    if user_llm:
+        from cloq import user_llm as UL
+
+        UL.install()
+        UL.set_tag(tag)
     forced = msg_from_dict(st["a_" + first]["message"])
     A = fork_agent_cls()
     orch.agent = A(tools=orch.environment.get_tools(), domain_policy=orch.environment.get_policy(), llm=cfg.llm_agent,
@@ -571,6 +584,7 @@ def run_branch(st: dict, first: str, controller: str, bases: dict[str, str], use
         sim = orch.run()
     except Exception as e:
         recs = _W.pop(tag)
+        ucalls = _pop_user_calls(tag, user_llm)
         if "ContextWindowExceeded" in repr(e):
             # W10 / W70: a conversation that outgrows the simulator or agent window is the agent's own failure (it loops or
             # rambles), not an outage. It is a valid failure outcome of the frozen policy: Y = 0 under every evaluator.
@@ -581,11 +595,11 @@ def run_branch(st: dict, first: str, controller: str, bases: dict[str, str], use
                     "prefix_ok": None, "env_hash_init": probe.get("env_hash_init"), "env_hash_init_ok": probe.get("env_hash_init") == st["env_hash"],
                     "counters_tau2_default": probe.get("counters_tau2"), "to_role_at_init": probe.get("to_role"), "env_hash_final": None,
                     "suffix": None, "suffix_sha": None, "n_messages": None, "duration": time.time() - t0, "sim_seed": st["simulator"]["sim_seed"],
-                    "n_user_msgs": None, "error_text": repr(e)[:300],
+                    "n_user_msgs": None, "error_text": repr(e)[:300], **ucalls,
                     "decisions": [{"decision_idx": r["decision_idx"], "forced": bool(r.get("forced")),
                                    "prompt_ids_sha": ids_sha(r.get("prompt_token_ids")), "n_prompt_tokens": r.get("n_prompt_tokens"),
                                    "completion_ids_sha": ids_sha(r.get("completion_token_ids"))} for r in recs]}
-        return {"tag": tag, "branch": first + controller, "error": repr(e), "n_decisions": len(recs), "probe": probe}
+        return {"tag": tag, "branch": first + controller, "error": repr(e), "n_decisions": len(recs), "probe": probe, **ucalls}
     dur = time.time() - t0
     rinfo = evaluate_simulation(simulation=sim, task=task, evaluation_type=EvaluationType.ALL_IGNORE_BASIS,
                                 solo_mode=False, domain=st["domain"], mode=CommunicationMode.HALF_DUPLEX)
@@ -594,6 +608,7 @@ def run_branch(st: dict, first: str, controller: str, bases: dict[str, str], use
     msgs = [msg_to_dict(m) for m in sim.messages]
     n_h = st["n_history"]
     recs = _W.pop(tag)
+    ucalls = _pop_user_calls(tag, user_llm)
     out = {
         "tag": tag, "state_id": st["state_id"], "branch": first + controller, "first": first, "controller": controller,
         "controller_base": bases[controller], "termination_reason": getattr(sim.termination_reason, "value", str(sim.termination_reason)),
@@ -617,11 +632,26 @@ def run_branch(st: dict, first: str, controller: str, bases: dict[str, str], use
                       for r in recs],
         "duration": dur, "sim_seed": sim.seed,
         "n_user_msgs": sum(1 for m in msgs[n_h:] if m["role"] == "user"),
+        **ucalls,
     }
     if replay_hash:
         env2 = restore_env(st["domain"], task, [msg_from_dict(m) for m in msgs])
         out["env_hash_replay"] = env_hashes(env2)
     return out
+
+
+def _pop_user_calls(tag: str, user_llm: Optional[dict]) -> dict:
+    if not user_llm:
+        return {}
+    from cloq import user_llm as UL
+
+    UL.set_tag(None)
+    calls = UL.pop(tag)
+    return {"user_llm": {k: v for k, v in user_llm.items() if k != "api_key"}, "user_llm_calls": calls,
+            "user_llm_usage": {"n_calls": len(calls), "n_errors": sum(1 for c in calls if "error" in c),
+                               "prompt_tokens": sum((c.get("usage") or {}).get("prompt_tokens", 0) for c in calls),
+                               "completion_tokens": sum((c.get("usage") or {}).get("completion_tokens", 0) for c in calls),
+                               "cost_usd": sum(c.get("cost_usd") or 0 for c in calls)}}
 
 
 def branch_signature(r: dict) -> dict:

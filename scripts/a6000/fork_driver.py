@@ -10,6 +10,8 @@ modes (task["fork"]["mode"]):
   gate_same  (b) B and Q handles on two servers of the SAME checkpoint: all four branches must agree.
   search     divergence search only (states + search log), for development forks.
   branches   BB/BQ/QB (+ optional QQ no-op sample) on saved states.
+  simctrl    W90 simulator control: Bank U BQ/QQ on manifests/fork/simctrl_v1.json units with the user simulator replaced
+             by a user_llm override (Sonnet 5.5 via cloq/user_llm.py).
 usage:
   python scripts/a6000/fork_driver.py --task <task.json> --b-base URL --q-base URL --user-base URL --servers <json>
   python scripts/a6000/fork_driver.py --cpucheck --block RUN:DOMAIN [--block ...] --out analysis/fork/gate/cpucheck_x.json
@@ -18,6 +20,7 @@ usage:
 from __future__ import annotations
 
 import argparse
+import collections
 import json
 import os
 import random
@@ -736,6 +739,161 @@ def bank_u(spec, bases, user_base, servers, out):
     return res
 
 
+def _user_protocol(st: dict, br: dict) -> dict:
+    """W90 acceptance checks on one branch run with a user_llm override (cloq/user_llm.py records every user call)."""
+    from tau2.runner.build import build_environment, build_user
+    from tau2.data_model.tasks import Task
+    from tau2.user.user_simulator import OUT_OF_SCOPE, STOP, TRANSFER
+    from tau2.user.user_simulator_base import is_valid_user_history_message
+    from tau2.utils.llm_utils import to_litellm_messages
+
+    calls = br.get("user_llm_calls") or []
+    want_model = "anthropic/" + br["user_llm"]["model"]
+    task = Task.model_validate(st["task"])
+    env = build_environment(st["domain"])
+    u = build_user(st["run_config"].get("user", "user_simulator"), env, task, llm="expected", llm_args={})
+    hist = [F.msg_from_dict(m) for m in st["history"]]
+    us = u.get_init_state(message_history=[m for m in hist if is_valid_user_history_message(m)])
+    exp = to_litellm_messages(us.system_messages + us.flip_roles())
+    rc = lambda m: (m.get("role"), m.get("content"))  # noqa: E731
+    exp_sys, exp_prefix = exp[0]["content"], [rc(m) for m in exp[1:]]
+    c0 = calls[0] if calls else None
+    req = (c0 or {}).get("request_messages") or []
+    toks = (STOP, TRANSFER, OUT_OF_SCOPE)
+    umsgs = [m for m in (br.get("suffix") or []) if m["role"] == "user"]
+    has_tok = [any(t in (m.get("content") or "") for t in toks) for m in umsgs]
+    term = br.get("termination_reason")
+    chk = {
+        "n_calls_eq_user_msgs": len(calls) == len(umsgs),
+        "all_calls_model": all(c.get("model") == want_model for c in calls),
+        "all_calls_request_id": all(c.get("request_id") for c in calls) and len(calls) > 0,
+        "no_call_errors": not any("error" in c for c in calls),
+        "seed_dropped_only": all(set(c.get("dropped_params") or {}) <= {"seed"} for c in calls),
+        "system_prompt_identical": bool(c0) and bool(req) and req[0].get("role") == "system" and req[0].get("content") == exp_sys,
+        "instructions_in_system": str(task.user_scenario) in exp_sys and bool(c0) and str(task.user_scenario) in (req[0].get("content") or ""),
+        "history_prefix_identical": bool(c0) and [rc(m) for m in req[1:1 + len(exp_prefix)]] == exp_prefix,
+        "user_tools_none": u.tools is None and all(not c.get("tools") for c in calls),
+        "env_hash_init_ok": bool(br.get("env_hash_init_ok")), "prefix_ok": bool(br.get("prefix_ok")),
+        "stop_token_only_last": not any(has_tok[:-1]),
+        "user_stop_has_token": term != "user_stop" or (bool(has_tok) and has_tok[-1]),
+    }
+    return {"ok": all(chk.values()), "checks": chk, "termination_reason": term, "n_user_calls": len(calls),
+            "expected_system_sha256": F.sha(exp_sys), "n_expected_prefix": len(exp_prefix)}
+
+
+def simctrl(spec, bases, user_base, servers, out):
+    """W90 simulator robustness control (manifests/fork/simctrl_v1.json; GPT-6.1 review 5 option A). For each manifest
+    unit (Bank U f01 class (ii) flips + matched non-flip controls) of this model x cell: rebuild the fork state, check it
+    against the Bank U row (history and prompt-id sha; B regenerates a_B and Q regenerates a_Q exactly), then run the
+    original native arms BQ and QQ with the recorded a_B / a_Q forced and the cell's Q continuing, with ONLY the user
+    simulator replaced by spec["user_llm"] (Sonnet 5.5). spec["gate"]: write gate.json and fail unless every check
+    passes. spec["dry"]: CPU dry run (mock servers): the regeneration check is replaced by the local prompt-id render,
+    and only the first spec["branch_limit"] units run branches."""
+    import hashlib as _h
+    from cloq import user_llm as UL
+
+    man_path = ROOT / spec["manifest"]
+    man_sha = _h.sha256(man_path.read_bytes()).hexdigest()
+    if spec.get("manifest_sha256") and spec["manifest_sha256"] != man_sha:
+        raise SystemExit(f"simctrl: manifest sha {man_sha} != frozen {spec['manifest_sha256']}")
+    man = json.loads(man_path.read_text())
+    ul = dict(spec["user_llm"])
+    if ul != man["user_llm"] and not spec.get("dry"):
+        raise SystemExit(f"simctrl: task user_llm {ul} != manifest {man['user_llm']}")
+    if not ul.get("api_base"):
+        UL.load_key()  # raises without the key file; never printed
+    elif not os.environ.get("ANTHROPIC_API_KEY"):
+        os.environ["ANTHROPIC_API_KEY"] = "mock-not-a-key"
+    UL.install()
+    want = list(spec["unit_ids"])
+    units = [u for u in man["units"] if u["unit_id"] in set(want)]
+    if len(units) != len(want) or any((u["model"], u["cell"]) != (spec["model"], spec["cell"]) for u in units):
+        raise SystemExit("simctrl: unit ids missing from the manifest or from another model x cell")
+    units.sort(key=lambda u: want.index(u["unit_id"]))
+    rows = {}
+    for b in sorted({u["block"] for u in units}):
+        p = ROOT / "analysis/fork/bank_u" / f"{spec['model']}_{spec['cell']}" / b / "bank_rows.jsonl"
+        if _h.sha256(p.read_bytes()).hexdigest() != man["source"]["bank_rows_sha256"][str(p.relative_to(ROOT))]:
+            raise SystemExit(f"simctrl: {p} changed since the freeze")
+        for line in p.read_text().splitlines():
+            if line.strip():
+                r = json.loads(line)
+                rows[(r["block"], r["sub"], r["state_key"])] = r
+    blocks = {}
+    canon_sha = lambda m: _h.sha256(json.dumps(F.canon_msg(m), sort_keys=True).encode()).hexdigest()  # noqa: E731
+    lim = spec.get("branch_limit") if spec.get("dry") else None
+
+    def one(i_u):
+        i, u = i_u
+        rec = {k: u[k] for k in ("unit_id", "role", "pair_id", "model", "cell", "block", "sub", "sub_cls", "state_key", "domain",
+                                 "task_id", "t", "Y_orig", "direction_orig")}
+        r = rows[(u["block"], u["sub"], u["state_key"])]
+        a_b, a_q = r["a_B"], r["a_Q"]
+        k = (u["source_run"], u["domain"])
+        if k not in blocks:
+            blocks[k] = F.Block(ROOT, *k)
+        st = F.make_state(blocks[k], u["task_id"], u["t"])
+        chk = {"a_B_sha": canon_sha(a_b) == u["a_B_sha"], "a_Q_sha": canon_sha(a_q) == u["a_Q_sha"],
+               "history_sha": st["history_sha"] == u["history_sha"] == r["history_sha"],
+               "prompt_ids_sha": st["q_decision"]["prompt_ids_sha"] == u["prompt_ids_sha"]}
+        tag = f"sc-{u['unit_id']}"
+        if spec.get("dry"):  # diagnostic only: the local chat-template render differs from the server's prompt ids when a
+            # history message has text + tool call with trailing whitespace (W88); the GPU run checks the servers' ids
+            ws = any(m["role"] == "assistant" and m.get("tool_calls") and (m.get("content") or "") != (m.get("content") or "").rstrip()
+                     for m in st["history"])
+            rec["dry_local_prompt_ids"] = {"match": F.ids_sha(F.local_prompt_ids(st)) == u["prompt_ids_sha"], "history_has_text_toolcall_ws": ws}
+        else:
+            gb, rb = F.shadow(st, bases["B"], tag + "-sB")
+            gq, rq = F.shadow(st, bases["Q"], tag + "-sQ")
+            chk.update({"B_prompt_ids": F.ids_sha(rb.get("prompt_token_ids")) == u["prompt_ids_sha"],
+                        "Q_prompt_ids": F.ids_sha(rq.get("prompt_token_ids")) == u["prompt_ids_sha"],
+                        "B_regenerates_a_B": F.canon_msg(gb) == F.canon_msg(a_b), "Q_regenerates_a_Q": F.canon_msg(gq) == F.canon_msg(a_q)})
+        rec["state_checks"] = chk
+        if not all(chk.values()):
+            return {**rec, "missing_reason": f"state check failed {chk}"}
+        if lim is not None and i >= lim:
+            return {**rec, "skipped": "dry run: state checks only"}
+        st["a_B"], st["a_Q"] = {"message": a_b}, {"message": a_q}
+        res, Y, proto = {}, {}, {}
+        for arm in spec.get("arms", ["BQ", "QQ"]):
+            br = F.run_branch(st, arm[0], arm[1], bases, user_base, f"{tag}-{arm}", user_llm=ul)
+            res[arm] = br
+            Y[arm] = None if "error" in br else _y(u["domain"], br)
+            proto[arm] = _user_protocol(st, br) if "error" not in br else {"ok": False, "error": br["error"][:300]}
+        dump(out / "branches" / f"{u['unit_id']}.json", {"state_id": st["state_id"], "history_sha": st["history_sha"], "arms": res})
+        usage = {a: b.get("user_llm_usage") for a, b in res.items()}
+        return {**rec, "Y_sonnet": Y, "protocol": proto, "termination": {a: b.get("termination_reason") for a, b in res.items()},
+                "user_llm_usage": usage, "request_ids": {a: [c.get("request_id") for c in b.get("user_llm_calls") or []] for a, b in res.items()},
+                "durations": {a: b.get("duration") for a, b in res.items()}}
+
+    t0 = time.time()
+    with ThreadPoolExecutor(spec.get("concurrency", 6)) as ex:
+        recs = list(ex.map(lambda x: _safe(one, x), list(enumerate(units))))
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "simctrl_rows.jsonl").write_text("".join(json.dumps(x, ensure_ascii=False, default=str) + "\n" for x in recs))
+    ran = [x for x in recs if "Y_sonnet" in x]
+    tot = lambda f: sum((v or {}).get(f, 0) for x in ran for v in x["user_llm_usage"].values())  # noqa: E731
+    res = {"protocol": "simctrl_v1 (W90)", "manifest_sha256": man_sha, "spec": {k: v for k, v in spec.items()}, "servers": servers,
+           "n_units": len(units), "n_ran": len(ran), "n_state_ok": sum(1 for x in recs if "state_checks" in x and all(x["state_checks"].values())),
+           "n_missing": sum(1 for x in recs if "missing_reason" in x), "n_errors": sum(1 for x in recs if "error" in x),
+           "n_arm_errors": sum(1 for x in ran for v in x["Y_sonnet"].values() if v is None),
+           "protocol_ok": all(p["ok"] for x in ran for p in x["protocol"].values()) and len(ran) > 0,
+           "protocol_failures": [{"unit_id": x["unit_id"], "arm": a, **p} for x in ran for a, p in x["protocol"].items() if not p["ok"]],
+           "termination": dict(collections.Counter(t for x in ran for t in x["termination"].values())),
+           "user_llm_usage": {"n_calls": tot("n_calls"), "prompt_tokens": tot("prompt_tokens"), "completion_tokens": tot("completion_tokens"),
+                              "cost_usd": tot("cost_usd")},
+           "seconds": time.time() - t0, "dry": bool(spec.get("dry"))}
+    res["pass"] = res["n_errors"] == 0 and res["n_missing"] == 0 and res["n_arm_errors"] == 0 and res["protocol_ok"]
+    dump(out / "simctrl_summary.json", res)
+    if spec.get("gate"):
+        dump(out / "gate.json", {"verdict": "PASS" if res["pass"] else "FAIL", **res})
+    log(f"simctrl {spec['model']}:{spec['cell']}: ran {res['n_ran']}/{res['n_units']}, state ok {res['n_state_ok']}, protocol_ok {res['protocol_ok']}, "
+        f"usage {res['user_llm_usage']}, pass {res['pass']}")
+    if spec.get("gate") and not res["pass"]:
+        raise RuntimeError(f"simctrl gate failed: see {out / 'gate.json'}")
+    return res
+
+
 def bank_u_q0(spec, bases, user_base, servers, out):
     """Bank U Q0 controller (FORK_PROTOCOL §15 amendment 1, W70): on the frozen Q0 subsample of U2 rows (manifest q0 = true),
     both current actions recorded by the native bank_u run of `cell` (a_B, a_Q) are followed by the common continuation
@@ -1022,7 +1180,7 @@ def main():
     bases = {"B": a.b_base, "Q": a.q_base}
     out = ROOT / spec["out"]
     out.mkdir(parents=True, exist_ok=True)
-    fn = {"gate": gate, "gate_same": gate_same, "search": search_mode, "branches": branches_mode, "dev": dev_mode, "pivot_arms": pivot_arms, "bank_u": bank_u, "bank_u_q0": bank_u_q0, "repair": repair_mode}[spec["mode"]]
+    fn = {"gate": gate, "gate_same": gate_same, "search": search_mode, "branches": branches_mode, "dev": dev_mode, "pivot_arms": pivot_arms, "bank_u": bank_u, "bank_u_q0": bank_u_q0, "repair": repair_mode, "simctrl": simctrl}[spec["mode"]]
     r = fn(spec, bases, a.user_base, servers, out)
     v = r.get("verdict")
     print(json.dumps({"verdict": v}, default=str))

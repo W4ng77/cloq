@@ -1,0 +1,2054 @@
+{
+ "generated_utc": "20261001T194252Z",
+ "script": "analysis/fork/analyze_simctrl.py",
+ "scope": "Robustness of continuations on FIXED histories generated with the old simulator (Qwen3-4B-Instruct-2507). Only the user simulator after the fork state is replaced. It does NOT replace a full benchmark re-run with a new simulator, and makes no claim about Bank U rates under Sonnet.",
+ "blocks": [
+  "f01"
+ ],
+ "user_llm": {
+  "provider": "anthropic",
+  "model": "claude-sonnet-5-5",
+  "max_tokens": 512,
+  "thinking": {
+   "type": "between_tools"
+  },
+  "timeout": 600
+ },
+ "inputs": {
+  "manifests/fork/simctrl_v1.json": "15b9b2284303a7f9f0baa27411cc4edc63f935b01b88f56b134fb041ff3d87a4",
+  "analysis/fork/simctrl/dry/q4_awq_w4/simctrl_rows.jsonl": "42a7306e93b5c97f2626b565e86f73b266fde994a862323e9386130d1850889a",
+  "analysis/fork/simctrl/dry/q4_gptq_w4_d1/simctrl_rows.jsonl": "aa6ab22b2f0d5bf4e2d749c68efcfbc8c07744da17f7325b11208a8fd64bb797",
+  "analysis/fork/simctrl/dry/q4_kvq_int8/simctrl_rows.jsonl": "b78bf0ede1bdafa16ca868659d0b89e69588228651098a0a72064abfef78d380",
+  "analysis/fork/simctrl/dry/q8_awq_w4/simctrl_rows.jsonl": "c8e6a4b65e81b4ccee1d50f8dbaa09a4e7b93806bd59e7f12a2c79c05fb3f037",
+  "analysis/fork/simctrl/dry/q8_gptq_w4_d1/simctrl_rows.jsonl": "5ff0bba4205568ef8252659824adcbbca8440e889c2f2d22940467564eab640d",
+  "analysis/fork/simctrl/dry/q8_kvq_int8/simctrl_rows.jsonl": "9a9d9cbf4aad0e8b088cc51053e04c98157338400bd42a32c6ade557526a0bc1"
+ },
+ "dry": true,
+ "n_units_manifest": 78,
+ "n_units_with_results": 3,
+ "flips": {
+  "all": {
+   "n": 39,
+   "n_missing": 38,
+   "n_ok": 1,
+   "retained": 0,
+   "retained_ci95": [
+    0.0,
+    0.975
+   ],
+   "reversed": 0,
+   "reversed_ci95": [
+    0.0,
+    0.975
+   ],
+   "vanished": 1,
+   "vanished_ci95": [
+    0.025,
+    1.0
+   ],
+   "vanished_both_succeed": 0,
+   "vanished_both_fail": 1
+  },
+  "model=q4": {
+   "n": 31,
+   "n_missing": 30,
+   "n_ok": 1,
+   "retained": 0,
+   "retained_ci95": [
+    0.0,
+    0.975
+   ],
+   "reversed": 0,
+   "reversed_ci95": [
+    0.0,
+    0.975
+   ],
+   "vanished": 1,
+   "vanished_ci95": [
+    0.025,
+    1.0
+   ],
+   "vanished_both_succeed": 0,
+   "vanished_both_fail": 1
+  },
+  "model=q8": {
+   "n": 8,
+   "n_missing": 8,
+   "n_ok": 0,
+   "retained": 0,
+   "retained_ci95": [
+    null,
+    null
+   ],
+   "reversed": 0,
+   "reversed_ci95": [
+    null,
+    null
+   ],
+   "vanished": 0,
+   "vanished_ci95": [
+    null,
+    null
+   ],
+   "vanished_both_succeed": 0,
+   "vanished_both_fail": 0
+  },
+  "sub=U1": {
+   "n": 21,
+   "n_missing": 20,
+   "n_ok": 1,
+   "retained": 0,
+   "retained_ci95": [
+    0.0,
+    0.975
+   ],
+   "reversed": 0,
+   "reversed_ci95": [
+    0.0,
+    0.975
+   ],
+   "vanished": 1,
+   "vanished_ci95": [
+    0.025,
+    1.0
+   ],
+   "vanished_both_succeed": 0,
+   "vanished_both_fail": 1
+  },
+  "sub=U2B": {
+   "n": 17,
+   "n_missing": 17,
+   "n_ok": 0,
+   "retained": 0,
+   "retained_ci95": [
+    null,
+    null
+   ],
+   "reversed": 0,
+   "reversed_ci95": [
+    null,
+    null
+   ],
+   "vanished": 0,
+   "vanished_ci95": [
+    null,
+    null
+   ],
+   "vanished_both_succeed": 0,
+   "vanished_both_fail": 0
+  },
+  "sub=U2Q": {
+   "n": 1,
+   "n_missing": 1,
+   "n_ok": 0,
+   "retained": 0,
+   "retained_ci95": [
+    null,
+    null
+   ],
+   "reversed": 0,
+   "reversed_ci95": [
+    null,
+    null
+   ],
+   "vanished": 0,
+   "vanished_ci95": [
+    null,
+    null
+   ],
+   "vanished_both_succeed": 0,
+   "vanished_both_fail": 0
+  },
+  "sub_cls=ii_talk": {
+   "n": 37,
+   "n_missing": 36,
+   "n_ok": 1,
+   "retained": 0,
+   "retained_ci95": [
+    0.0,
+    0.975
+   ],
+   "reversed": 0,
+   "reversed_ci95": [
+    0.0,
+    0.975
+   ],
+   "vanished": 1,
+   "vanished_ci95": [
+    0.025,
+    1.0
+   ],
+   "vanished_both_succeed": 0,
+   "vanished_both_fail": 1
+  },
+  "sub_cls=ii_act": {
+   "n": 2,
+   "n_missing": 2,
+   "n_ok": 0,
+   "retained": 0,
+   "retained_ci95": [
+    null,
+    null
+   ],
+   "reversed": 0,
+   "reversed_ci95": [
+    null,
+    null
+   ],
+   "vanished": 0,
+   "vanished_ci95": [
+    null,
+    null
+   ],
+   "vanished_both_succeed": 0,
+   "vanished_both_fail": 0
+  },
+  "direction_orig=rescue": {
+   "n": 17,
+   "n_missing": 16,
+   "n_ok": 1,
+   "retained": 0,
+   "retained_ci95": [
+    0.0,
+    0.975
+   ],
+   "reversed": 0,
+   "reversed_ci95": [
+    0.0,
+    0.975
+   ],
+   "vanished": 1,
+   "vanished_ci95": [
+    0.025,
+    1.0
+   ],
+   "vanished_both_succeed": 0,
+   "vanished_both_fail": 1
+  },
+  "direction_orig=damage": {
+   "n": 22,
+   "n_missing": 22,
+   "n_ok": 0,
+   "retained": 0,
+   "retained_ci95": [
+    null,
+    null
+   ],
+   "reversed": 0,
+   "reversed_ci95": [
+    null,
+    null
+   ],
+   "vanished": 0,
+   "vanished_ci95": [
+    null,
+    null
+   ],
+   "vanished_both_succeed": 0,
+   "vanished_both_fail": 0
+  }
+ },
+ "controls": {
+  "all": {
+   "n": 39,
+   "n_missing": 37,
+   "n_ok": 2,
+   "new_flips": 0,
+   "new_flips_ci95": [
+    0.0,
+    0.842
+   ],
+   "new_rescue": 0,
+   "new_damage": 0
+  },
+  "model=q4": {
+   "n": 31,
+   "n_missing": 29,
+   "n_ok": 2,
+   "new_flips": 0,
+   "new_flips_ci95": [
+    0.0,
+    0.842
+   ],
+   "new_rescue": 0,
+   "new_damage": 0
+  },
+  "model=q8": {
+   "n": 8,
+   "n_missing": 8,
+   "n_ok": 0,
+   "new_flips": 0,
+   "new_flips_ci95": [
+    null,
+    null
+   ],
+   "new_rescue": 0,
+   "new_damage": 0
+  },
+  "sub=U1": {
+   "n": 21,
+   "n_missing": 21,
+   "n_ok": 0,
+   "new_flips": 0,
+   "new_flips_ci95": [
+    null,
+    null
+   ],
+   "new_rescue": 0,
+   "new_damage": 0
+  },
+  "sub=U2B": {
+   "n": 17,
+   "n_missing": 15,
+   "n_ok": 2,
+   "new_flips": 0,
+   "new_flips_ci95": [
+    0.0,
+    0.842
+   ],
+   "new_rescue": 0,
+   "new_damage": 0
+  },
+  "sub=U2Q": {
+   "n": 1,
+   "n_missing": 1,
+   "n_ok": 0,
+   "new_flips": 0,
+   "new_flips_ci95": [
+    null,
+    null
+   ],
+   "new_rescue": 0,
+   "new_damage": 0
+  },
+  "sub_cls=ii_talk": {
+   "n": 38,
+   "n_missing": 36,
+   "n_ok": 2,
+   "new_flips": 0,
+   "new_flips_ci95": [
+    0.0,
+    0.842
+   ],
+   "new_rescue": 0,
+   "new_damage": 0
+  },
+  "sub_cls=ii_act": {
+   "n": 1,
+   "n_missing": 1,
+   "n_ok": 0,
+   "new_flips": 0,
+   "new_flips_ci95": [
+    null,
+    null
+   ],
+   "new_rescue": 0,
+   "new_damage": 0
+  }
+ },
+ "paired": {
+  "incomplete_pair": 39
+ },
+ "arm_agreement_with_original": {
+  "flip:BQ": {
+   "agree": 0,
+   "n": 1,
+   "ci95": [
+    0.0,
+    0.975
+   ]
+  },
+  "flip:QQ": {
+   "agree": 1,
+   "n": 1,
+   "ci95": [
+    0.025,
+    1.0
+   ]
+  },
+  "control:BQ": {
+   "agree": 2,
+   "n": 2,
+   "ci95": [
+    0.158,
+    1.0
+   ]
+  },
+  "control:QQ": {
+   "agree": 2,
+   "n": 2,
+   "ci95": [
+    0.158,
+    1.0
+   ]
+  }
+ },
+ "termination": {
+  "user_stop": 6
+ },
+ "user_llm_usage": {
+  "n_calls": 18,
+  "prompt_tokens": 19500,
+  "completion_tokens": 216,
+  "cost_usd": 0.0412,
+  "n_request_ids": 18
+ },
+ "units": [
+  {
+   "unit_id": "b150f768f3f1d5b8",
+   "role": "flip",
+   "pair_id": "fe9c830b9161",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "9e4052ccf4f7c871",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 1,
+    "QQ": 1,
+    "BB": 0
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "8d507e66543fba73",
+   "role": "control",
+   "pair_id": "fe9c830b9161",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "384bb9b3f3690958",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "dbda3612364ae6d9",
+   "role": "flip",
+   "pair_id": "625fa380b01c",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "124a6c29ce4e6ac1",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "a7f1fed4cb511528",
+   "role": "control",
+   "pair_id": "625fa380b01c",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "66ff99cd314c9046",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "0ffc0de82a241fcc",
+   "role": "flip",
+   "pair_id": "21991b9f0323",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "384bb9b3f3690958",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "c728aa01787ca6f2",
+   "role": "control",
+   "pair_id": "21991b9f0323",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "c9fdae7618108b6d",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "89bc930ee2da3d7d",
+   "role": "flip",
+   "pair_id": "5ebc32303d61",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "7a28bf6ec2861b72",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 1,
+    "QQ": 1,
+    "BB": 0
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "5de2b89d04775302",
+   "role": "control",
+   "pair_id": "5ebc32303d61",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "5c8c0800532c5dac",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "947abc753eb4ff97",
+   "role": "flip",
+   "pair_id": "551354c84cf9",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_act",
+   "state_key": "c9f6129a9d3fb140",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1,
+    "BB": 0
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "92bda179c4860177",
+   "role": "control",
+   "pair_id": "551354c84cf9",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_act",
+   "state_key": "92460cbc72a9c3f1",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "554f82184ea7f656",
+   "role": "flip",
+   "pair_id": "f9c31da7de77",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "c9d317f7377a15f6",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 0,
+    "BB": 1
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "054a2b9e3a4472e4",
+   "role": "control",
+   "pair_id": "f9c31da7de77",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "3cebbe0526f0b09a",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "52df93f2b15c4a23",
+   "role": "flip",
+   "pair_id": "f01d48e4622e",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U2Q",
+   "sub_cls": "ii_talk",
+   "state_key": "a0ac13854e86607a",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "a9761d42c49d8b73",
+   "role": "control",
+   "pair_id": "f01d48e4622e",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U2Q",
+   "sub_cls": "ii_talk",
+   "state_key": "f2911a6ec18f1f1e",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "b79d735a1c2a1e9f",
+   "role": "flip",
+   "pair_id": "e13db9ebf925",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "e5f642fda84d408d",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "c251314fd8d2cc1a",
+   "role": "control",
+   "pair_id": "e13db9ebf925",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "1cb9ccd126171577",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "13ae57ad8cf30caf",
+   "role": "flip",
+   "pair_id": "81217c7db2d7",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "c8aa472075f621ca",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "7c5bb648a8f83648",
+   "role": "control",
+   "pair_id": "81217c7db2d7",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "5aeff461ca7436cf",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "08044ab8687ad804",
+   "role": "flip",
+   "pair_id": "91a432869c8b",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_act",
+   "state_key": "a372a9704ce920bc",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "1fdf3e6552a80d55",
+   "role": "control",
+   "pair_id": "91a432869c8b",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "484e4a56ef86b38b",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "492082a2e4cbed55",
+   "role": "flip",
+   "pair_id": "9edba1850be1",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "384bb9b3f3690958",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "aea8d796f0a53901",
+   "role": "control",
+   "pair_id": "9edba1850be1",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "c9fdae7618108b6d",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ": 0,
+    "QQ": 0
+   },
+   "termination": {
+    "BQ": "user_stop",
+    "QQ": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok"
+  },
+  {
+   "unit_id": "1247a8545a377f4f",
+   "role": "flip",
+   "pair_id": "daa9dde1afc5",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "aaf8d095e97d6383",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 1,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "b7ab11acef28b747",
+   "role": "control",
+   "pair_id": "daa9dde1afc5",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "35eb42b16d0c9323",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "0b82643f54e22b76",
+   "role": "flip",
+   "pair_id": "cf331d4f9533",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "7bff34505b91f647",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 0,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "64a4a695c801935c",
+   "role": "control",
+   "pair_id": "cf331d4f9533",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "1a946b99154816ff",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "7bdc152e957682e3",
+   "role": "flip",
+   "pair_id": "50a689eae342",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "d44170ea3158b140",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "ecd2f579e24a9c3a",
+   "role": "control",
+   "pair_id": "50a689eae342",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "b0d69d54f03d12d5",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "bd233959543f1ed2",
+   "role": "flip",
+   "pair_id": "d823f6d0482a",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "443429f83d5b93c2",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "d911531a93821ecf",
+   "role": "control",
+   "pair_id": "d823f6d0482a",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "66d33786db6f5658",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "03aad5df2197b7d8",
+   "role": "flip",
+   "pair_id": "a1d99f2d36d6",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "c8aa472075f621ca",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "5599904e25a36fc4",
+   "role": "control",
+   "pair_id": "a1d99f2d36d6",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "7b739f96669646c8",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "c76cd43b7e08a0fe",
+   "role": "flip",
+   "pair_id": "2ecbd1154ab6",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "778f1ab7bb4c916a",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "f23dee810b6ccfd0",
+   "role": "control",
+   "pair_id": "2ecbd1154ab6",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "b6783b2d98705df5",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "371c75f11c99e41f",
+   "role": "flip",
+   "pair_id": "ce0d2aa71425",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "9e4052ccf4f7c871",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1,
+    "BB": 0
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "0b136819a405538c",
+   "role": "control",
+   "pair_id": "ce0d2aa71425",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "af78328416d54c90",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "67f80a3020658fd0",
+   "role": "flip",
+   "pair_id": "618bc69f051f",
+   "model": "q8",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "33c21870189fac08",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 1,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "f7a2d3a12fc86f32",
+   "role": "control",
+   "pair_id": "618bc69f051f",
+   "model": "q8",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "f72574b02329be06",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "86a94c766b62e19a",
+   "role": "flip",
+   "pair_id": "64017bd9038d",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "35bad8e87e90f3f6",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 1,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": {
+    "BQ": 0,
+    "QQ": 0
+   },
+   "termination": {
+    "BQ": "user_stop",
+    "QQ": "user_stop"
+   },
+   "fate": "vanished",
+   "status": "ok"
+  },
+  {
+   "unit_id": "b454b579a4c6589e",
+   "role": "control",
+   "pair_id": "64017bd9038d",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "5a7b52f1c9313894",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "27a15f2fd0bcf7d4",
+   "role": "flip",
+   "pair_id": "cf91b423e99e",
+   "model": "q8",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "5505429f9d581c4e",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "41755134469d0267",
+   "role": "control",
+   "pair_id": "cf91b423e99e",
+   "model": "q8",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "2716c737106376ea",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "e5dd4066d1ab8300",
+   "role": "flip",
+   "pair_id": "75f12db72b77",
+   "model": "q8",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "b71cab00c60057d2",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 1,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "9fa7ea103f6a9ed2",
+   "role": "control",
+   "pair_id": "75f12db72b77",
+   "model": "q8",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "613a7b79935d632b",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "28ca58dbb6c95616",
+   "role": "flip",
+   "pair_id": "789179dac625",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "80bae34a671fcfab",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "1520c755a8d97c38",
+   "role": "control",
+   "pair_id": "789179dac625",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "a2beba57fad4537e",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "4588489ed2896e7a",
+   "role": "flip",
+   "pair_id": "226f6f20dacd",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "0e653de55174f7c7",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 1
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "02b2c8422c5f3983",
+   "role": "control",
+   "pair_id": "226f6f20dacd",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "6b24cc5834de8464",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1,
+    "BB": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "b98cec6b9ea442fa",
+   "role": "flip",
+   "pair_id": "c9d2e6b07437",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "65f979ce4fb51158",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 0,
+    "BB": 1
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "b9297d3b4d7246d7",
+   "role": "control",
+   "pair_id": "c9d2e6b07437",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "51facb01cb51f01a",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 1,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": {
+    "BQ": 0,
+    "QQ": 0
+   },
+   "termination": {
+    "BQ": "user_stop",
+    "QQ": "user_stop"
+   },
+   "fate": "stays_non_flip",
+   "status": "ok"
+  },
+  {
+   "unit_id": "ae29643149780d56",
+   "role": "flip",
+   "pair_id": "2b2f390b0b54",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "7a28bf6ec2861b72",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "604db23f5bbeca68",
+   "role": "control",
+   "pair_id": "2b2f390b0b54",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "672a05a4361a43b1",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "881d528dcbde4554",
+   "role": "flip",
+   "pair_id": "f53b6f545185",
+   "model": "q8",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "ea53f5c48d35ad60",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "4a94a05c3a690e3e",
+   "role": "control",
+   "pair_id": "f53b6f545185",
+   "model": "q8",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "df611066ff46964c",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "d1efe1b7077d0628",
+   "role": "flip",
+   "pair_id": "34031ea61a0a",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "b23cae2fb24e11a3",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 1,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "e0deff246eecb06a",
+   "role": "control",
+   "pair_id": "34031ea61a0a",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "682bf9e017477b9e",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "6ce8089a1f852ba8",
+   "role": "flip",
+   "pair_id": "81caeb76ba1e",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "c06ff483747421c8",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "a6983510d0fb79a3",
+   "role": "control",
+   "pair_id": "81caeb76ba1e",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "e90e0904371f58fc",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "6686ae64f26d8179",
+   "role": "flip",
+   "pair_id": "525852e4ed98",
+   "model": "q8",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "461c131bc651cf32",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 1,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "d698fb17c256f36a",
+   "role": "control",
+   "pair_id": "525852e4ed98",
+   "model": "q8",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "b3938b3622f07bd3",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "b112ca9760d02e69",
+   "role": "flip",
+   "pair_id": "57ceab99b06c",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "3b340693ad39ee4b",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 1,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "6deb8f6f7c64d8de",
+   "role": "control",
+   "pair_id": "57ceab99b06c",
+   "model": "q4",
+   "cell": "gptq_w4_d1",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "fd41063558f86fd4",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "acb194053544e135",
+   "role": "flip",
+   "pair_id": "db524b49f43b",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "1c0f492eb804250d",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 1,
+    "QQ": 1,
+    "BB": 0
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "a345783a4f37c9bc",
+   "role": "control",
+   "pair_id": "db524b49f43b",
+   "model": "q4",
+   "cell": "kvq_int8",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "14768abd3ff7395a",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1,
+    "BB": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "5f344aae6705b8f2",
+   "role": "flip",
+   "pair_id": "e6cb2f8c544a",
+   "model": "q8",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "5efd42cebe0780b9",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 0,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "b821118440d94032",
+   "role": "control",
+   "pair_id": "e6cb2f8c544a",
+   "model": "q8",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "6f98fafe934c9eab",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "24de226fad498d95",
+   "role": "flip",
+   "pair_id": "9554568e049d",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "4fb22e95d705a024",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 1,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "8b1b6d8c14abfe63",
+   "role": "control",
+   "pair_id": "9554568e049d",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "9e15640f8f74721a",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "222d3433b6ffa197",
+   "role": "flip",
+   "pair_id": "24037ecc83c7",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "77d3dfce4b1fcef3",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 1,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "rescue",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "6340ded83bee7c69",
+   "role": "control",
+   "pair_id": "24037ecc83c7",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "ca7b6fb84841724b",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "e2629a11bab442f3",
+   "role": "flip",
+   "pair_id": "2209bbba38db",
+   "model": "q8",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "7c68e507e803e37d",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1,
+    "BB": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "d282692f2b86e53f",
+   "role": "control",
+   "pair_id": "2209bbba38db",
+   "model": "q8",
+   "cell": "gptq_w4_d1",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "7869e90a4c2c1d89",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1,
+    "BB": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "efa2eac35b28eb3f",
+   "role": "flip",
+   "pair_id": "3f6870899174",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "9e4052ccf4f7c871",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1,
+    "BB": 0
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "0c03657b95f2c6d7",
+   "role": "control",
+   "pair_id": "3f6870899174",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "65f979ce4fb51158",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0,
+    "BB": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "28d98e7918ee6771",
+   "role": "flip",
+   "pair_id": "c9016c16d776",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "1c0f492eb804250d",
+   "Y_orig": {
+    "BQ": 0,
+    "QB": 1,
+    "QQ": 1,
+    "BB": 0
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "75e3184135b8a91c",
+   "role": "control",
+   "pair_id": "c9016c16d776",
+   "model": "q4",
+   "cell": "awq_w4",
+   "sub": "U2B",
+   "sub_cls": "ii_talk",
+   "state_key": "14768abd3ff7395a",
+   "Y_orig": {
+    "BQ": 1,
+    "QB": 1,
+    "QQ": 1,
+    "BB": 1
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "f87d78b6f15f5aa1",
+   "role": "flip",
+   "pair_id": "79b224a29f9e",
+   "model": "q8",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "237b1d6dfba5bd09",
+   "Y_orig": {
+    "BB": 1,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 1
+   },
+   "direction_orig": "damage",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  },
+  {
+   "unit_id": "7325631d7aa1292b",
+   "role": "control",
+   "pair_id": "79b224a29f9e",
+   "model": "q8",
+   "cell": "kvq_int8",
+   "sub": "U1",
+   "sub_cls": "ii_talk",
+   "state_key": "acb9223d610a23f7",
+   "Y_orig": {
+    "BB": 0,
+    "BQ": 0,
+    "QB": 0,
+    "QQ": 0
+   },
+   "direction_orig": "none",
+   "Y_sonnet": null,
+   "termination": null,
+   "fate": null,
+   "status": "missing"
+  }
+ ]
+}
