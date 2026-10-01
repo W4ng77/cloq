@@ -1,7 +1,8 @@
-% Same-State Counterfactual Forks for Quantized Closed-Loop Agents -- ARR October 2026 (NAACL long), review version.
-% Rewritten 2026-10-01 (RESEARCH_LOG W89) to docs/STORYLINE_v7.md, with the binding corrections of
-% docs/REPORT_GPT61_20261001_0915.md (top) and outputs/storyline-v7-review.md.
-% The W33 draft is kept in sections/old/w33/. Provenance: every number carries a "% src: <path>" comment;
+% Interventional evaluation of quantized agents -- ARR October 2026 (NAACL long), review version.
+% Restructured 2026-10-01 (RESEARCH_LOG W94) after GPT-6.1 review 6: the 2x2 crossed intervention (W93,
+% analysis/fork/out/ghf_20261001T211519Z.md) is the centre; results are R1 (replace the current action),
+% R2 (where to replace: G/H/F, 3x3), R3 (sampling and environment), R4 (finding beneficial replacements).
+% The W89 draft is kept in sections/old/w89/, the W33 draft in sections/old/w33/. Provenance: every number carries a "% src: <path>" comment;
 % the self-check script is paper/latex/check_numbers.py. Pending results are \todo{...} macros; no number is invented.
 % PRIVATE REPOSITORY. Do not make public.
 \documentclass[11pt]{article}
@@ -27,16 +28,18 @@
 
 % ---------------------------------------------------------------------------
 % Placeholders for results that do not exist yet. Usage: \todo{KEY: what fills it}.
-% Keys: HOLDOUT, BANKU-F023, Q0, RECOVERY-Q8, TOKEN, SIMCTRL, Q14 (plus EXT-REFRESH, RESTORE).
+% Keys: HOLDOUT, TOKEN-VALIDATION, BANKU-F023 (main text); RECOVERY-Q8, RESTORE (appendix). SIMCTRL was filled in W94.
 \newcommand{\todo}[1]{\textcolor{red}{[TODO #1]}}
 % Notation
 \newcommand{\tautwo}{$\tau^2$-bench}
 \newcommand{\pp}{\,pp}
 \newcommand{\YY}[1]{Y_{\mathrm{#1}}}
 \newcommand{\Gall}{G_{\mathrm{all}}}
+\newcommand{\DQ}{\Delta_{\mathrm{Q}}}
+\newcommand{\DB}{\Delta_{\mathrm{B}}}
 % ---------------------------------------------------------------------------
 
-\title{Same-State Counterfactual Forks: How Quantization-Induced Action Changes Become Task Consequences in Closed-Loop Agents}
+\title{This Step or From Here On? Crossed Same-State Interventions for Evaluating Quantized Agents}
 
 \author{Anonymous ARR submission}
 
@@ -47,9 +50,10 @@
 \input{sections/introduction}
 \input{sections/related_work}
 \input{sections/method}
-\input{sections/atlas}
-\input{sections/bank_u}
-\input{sections/intervention}
+\input{sections/results_r1}
+\input{sections/results_r2}
+\input{sections/results_r3}
+\input{sections/results_r4}
 \input{sections/discussion}
 \input{sections/limitations}
 \input{sections/ethics}

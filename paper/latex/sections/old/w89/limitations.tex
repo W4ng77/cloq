@@ -1,0 +1,14 @@
+\section*{Limitations}
+
+\paragraph{One model family, two sizes.} All agents are Qwen3 models (4B and 8B). Effects may differ at other scales and in other families. \todo{Q14: replace or extend with Qwen3-14B paired forks if they finish; a second family is best effort and is not claimed}
+
+\paragraph{One user simulator.} All \tautwo{} episodes use a single greedy simulator model, and continuation effects include its replies. Most consequential differences at ordinary states are text, so they may partly reflect this simulator rather than the task (\todo{SIMCTRL: second-simulator persistence result}).
+
+\paragraph{LLM annotation.} Process labels come from LLM annotators (Sonnet 5.5, two independent instances plus an adjudicator) and rule-based checks. No human annotation has been done. Agreement among instances of the same model family shows reproducibility, not correctness.
+
+\paragraph{Simulated quantization.} Quantized checkpoints are dequantized and served with BF16 compute on a deterministic path. Deployed low-bit kernels change the numerics and add serving variation that we deliberately remove. We make no claims about speed, memory or deployed kernels.
+
+\paragraph{Small and partial confirmation.} The pre-registered holdout covers 34 telecom tasks and three cells. Few events there would mean limited evidence, not absence. Even a positive confirmation would not generalise beyond telecom or beyond these cells. The fragility results in \S\ref{sec:atlas} remain a retrospective association on development data until then. % src: docs/insights/PREREG_FORK_CONFIRM.md §1
+
+\paragraph{Scope of the design.} The atlas intervenes only at the first non-text divergence per task and block. Bank U samples one state per task and so far one block. The defect-injection study uses one model and 30 states. % src: analysis/recovery/inject_q4/summary_v2.md
+ Prompt nonces are a researcher-chosen perturbation that defines replicate blocks; they are not a natural deployment distribution.

@@ -1,53 +1,46 @@
-**TL;DR** W89 (2026-10-01): the paper is rewritten to `docs/STORYLINE_v7.md` as *Same-State Counterfactual Forks: How Quantization-Induced Action Changes Become Task Consequences in Closed-Loop Agents*.
-- **Build:** clean, with 0 overfull boxes and 0 undefined references or citations. The PDF has 12 pages: main text pp. 1–8, Limitations from p. 9.
-- **Provenance:** every number has a `% src: <path>` comment.
-- **Pending results** are `\todo{KEY: ...}` (red); no number was invented.
-- **Archive:** the W33 draft is in `sections/old/w33/`.
+**TL;DR** W94 (2026-10-01): the paper is restructured after GPT-6.1 review 6 as *This Step or From Here On? Crossed Same-State Interventions for Evaluating Quantized Agents*: an interventional evaluation methodology plus a systematic study, with the W93 2×2 (G/H/F, (Δ_Q, Δ_B) 3×3) at the centre and the W91 simulator control (SIMCTRL) filled in.
+- **Build:** tectonic, 14 pp; main text pp. 1–8 (Limitations starts p. 9); 0 overfull boxes, 0 undefined references.
+- **Provenance:** `python3 paper/latex/check_numbers.py` → PASS (1773 number occurrences, 0 unverified, 0 missing source paths, all required sources cited; exit code 0).
+- **Pending results** are `\todo{KEY: ...}` (red): HOLDOUT, TOKEN-VALIDATION, BANKU-F023 (main); RECOVERY-Q8, RESTORE (appendix). No number was invented.
+- **Archive:** W89 draft in `sections/old/w89/`, W33 draft in `sections/old/w33/`.
 
-# Rewrite notes (W89, storyline v7)
+# Rewrite notes (W94, review 6 structure)
 
-Build: `cd paper/latex && /data/ziyangs/cloq_work/tools/tectonic main.tex` (no latexmk/pdflatex on the cluster).
-Self-check: `python3 paper/latex/check_numbers.py`, which lists every number not found in its `% src:` file.
+Build: `cd paper/latex && /data/ziyangs/cloq_work/tools/tectonic main.tex`. Self-check: `python3 paper/latex/check_numbers.py` (exit 1 on any failure; `--report` to always exit 0).
+Appendix tables `gen_ghf_crossed.tex` and `gen_patterns.tex` are generated verbatim from the W93 report by `tools/gen_w93_tables.py`; do not edit them by hand.
 
-## Structure (page estimate from the compiled PDF)
+## Section and page map (compiled PDF)
 
-| § | File | Content | Pages |
+| § | File | Content | Page |
 |---|---|---|---|
-| Abstract, 1 Intro | `abstract.tex`, `introduction.tex` | RQ; end-to-end comparison inconclusive (W64); 2×2 fork; three layers; Fig. 1 (TikZ) | ~1.6 |
-| 2 Related work | `related_work.tex` | Flat Score, Replay Gap (no noise-floor claim), DMR, action-swap papers, 2407.09141, 2606.00206, simulators | ~0.7 |
-| 3 Method | `method.tex` | setting; fork states; r/d/M/G and A/C/I; replay gate; block inference | ~1.2 |
-| 4 L1 atlas | `atlas.tex` | Table 1 (r/d/M/G, A/C/I per cell); concentration (retrospective, 6 configs × 2 directions); holdout design + TODO | ~1.6 |
-| 5 L2 Bank U | `bank_u.tex` | Table 2 (M per sub-bank), Table 3 (taxonomy with denominators); 39/56; co-flips = 5 states; Q0; pending controls | ~1.4 |
-| 6 L3 bounding | `intervention.tex` | Table 4 (recovery per-state turnover); manipulation checks; process audit (LLM-annotated) | ~1.0 |
-| 7 Discussion | `discussion.tex` | reading, implications, not claimed | ~0.5 |
-| Limitations, Ethics | `limitations.tex`, `ethics.tex` | required items | p. 9 |
-| App. A–F | `appendix.tex` | setup, composition, A/C/I CIs, end-to-end table (W64), Table 4 v2, prereg, withdrawn | pp. 10–12 |
+| Abstract, 1 Intro | `abstract.tex`, `introduction.tex` | practical question (escalate? this step or from here on?); W93 Case 5 (q4 AWQ airline:31, 1/0/0/0); Fig. 1 crossed design | 1–2 |
+| 2 Related work | `related_work.tex` | by identified quantity: Flat Score (process damage, 33/26 split, error budget, 55% recovery, repair prompt), Replay Gap (switch action + continuation together = our F; 0/359; no noise claim), DMR (router; we measure gains and proxy validity), 2407.09141, 2606.00206 | 2 |
+| 3 Method | `method.tex` | setting; frozen state; Y_XY notation; G/H/F; paired differences; Δ_Q, Δ_B, 3×3, strict reversal; r/d/M; replay acceptance; Bank P (first tool-structure divergence, text-only skipped) and Bank U; three denominators; identified vs descriptive; fixed-pool vs new-task intervals | 3–4 |
+| 4 R1 | `results_r1.tex` | Table 1: full-pool r/d/M/G_all (W4 M 15.5–20.9%, G_all −1.9…+2.9); "not end-to-end"; concentration (1 sentence → App. F) | 4–5 |
+| 5 R2 (centre) | `results_r2.tex` | Table 2: G/H/F, G−H, F−G, F−H, off-diag, reversal, mean I per cell + pools; Fig. 2 TikZ 3×3 (W4 pool, KV8 pool); within-cell contrasts (q8 GPTQ/AWQ, q4 GPTQ, q8 RTN-W3, q4 KV8 H<0); action–controller fit = hypothesis; mean-I explanation | 5–6 |
+| 6 R3 | `results_r3.tex` | Table 3: Bank U taxonomy with per-row and unique-row totals and flip rates; 39/56 composition share; **SIMCTRL** (text flips simulator-dependent); telecom holdout (TODO); BFCL/ALFWorld (ext_20261001T135106Z) | 6–7 |
+| 7 R4 | `results_r4.tex` | token analysis: locates divergence, not consequence; frozen S_mm trigger; TOKEN-VALIDATION TODO | 7–8 |
+| 8 Discussion | `discussion.tex` | when to escalate, which part, escalation can hurt (Case 6), not claimed | 8 |
+| Limitations, Ethics | `limitations.tex`, `ethics.tex` | one family 4B/8B; simulated quantization (no latency/memory); relay simulator; LLM annotation; 34 holdout tasks; partial banks | 9 |
+| App. A–I | `appendix.tex` | A setup; B end-to-end (TOST fails); C 16 patterns + new-task intervals; D coverage matrix (W93 §5, completed only); E Bank U per sub-bank, co-flip lead, Q0; F concentration; G injection + Table 4 v2; H prereg; I withdrawn (W×KV, restoration, equivalence, "absorbed", superseded A/C names) | 10–14 |
 
-## Placeholders (`\todo{}`)
+## W93 numbers in the main text
 
-| Key | Where | Fills from |
-|---|---|---|
-| HOLDOUT | abstract, §1, §4, App. D | `analysis/fork/analyze_holdout_confirm.py` under prereg sha 902892dd… |
-| BANKU-F023 | §5 | `analysis/fork/analyze_bank_u.py` on f01–f03 |
-| Q0 | §5 | Bank U Q0 at f01–f03 |
-| RECOVERY-Q8 | §6 | `analysis/recovery/analyze_inject.py` on `inject_q8` |
-| TOKEN | §5 | token-level diagnosis (REPORT_GPT61_20261001_0915 §3.4) |
-| SIMCTRL | §5, Limitations | second user-simulator re-branch of class-(ii) flips |
-| Q14 | §4, Limitations | q14 paired forks |
-| EXT-REFRESH | Table 1 caption | newer external output `ext_20261001T135106Z` is untracked; the committed `ext_20260930T221613Z` lacks BFCL q4 GPTQ-W4 |
-| RESTORE | App. F | the 70%/27% restoration numbers are only in the untracked `restore_eval_20261001T164337Z`; not printed |
+G/H/F and paired differences for all 11 cells and the W4/KV8 pools (Table 2); off-diagonal 26.9% [25.7, 28.1] (W4 pool), 15.3% [13.2, 17.3] (KV8 pool), 22.9–30.5% per W4 cell; strict reversal 3.2% (W4 pool), 1.2–4.2% per W4/KV8 cell, 8–14% of off-diagonal mass; P(I>0) 13.6% vs P(I<0) 13.4%, mean I +0.0 [−1.9, +2.0]; 3×3 pooled counts (Fig. 2); Case 5 (intro) and Case 6 (discussion).
 
-## Numbers checked by hand (the script flags them because of rounding or structure)
+## Checker changes (W94)
 
-- Recovery CIs are rounded from 3 decimals in `summary_v2.md`; all were checked.
-- The crossed width of 4.1 pp rounds 4.09 in `holdout_k_planning_20261001T144122Z.md`.
-- "0–54%" rounds .538.
-- The remaining flags are section numbers, TikZ coordinates, {0,1}, "Sonnet 5.5" and "Instruct-2507".
+- `% nocheck` skips a line (TikZ coordinates, notation such as {−1,0,+1}, list labels).
+- `% derived: X=expr; …` verifies X arithmetically; operands must be found in the line's sources. Used for the Bank U unique-row totals (310/46/60) and per-class rates (12.6/10.9/20.0%).
+- Rounding: a source number with 1–2 more decimals that rounds to the printed one is accepted (e.g. 0.133 → 0.13, 0.449 → 0.45).
+- Every `% src:` path must exist; `REQUIRED_SOURCES` (incl. the W93 `ghf_20261001T211519Z.md`, the SIMCTRL `simctrl_20261001T212742Z.md`, `ext_20261001T135106Z.md`) must exist and be cited.
 
 ## Deliberate wording decisions
 
-- **G:** `G = Y_BQ − Y_QQ` is never called an end-to-end difference. Every "flat/similar" statement points to App. B (`success_ni_ALIGNED`). There, TOST at ±3 pp fails in every cell, so the paper claims neither a difference nor equivalence.
-- **Interval exclusions:** two W4 cells have fixed-pool G intervals excluding 0 (q4 GPTQ −1.9 [−3.7, −0.1]; q8 GPTQ +2.9 [+1.4, +4.4]). The text says so; it never says "every G covers 0".
-- **Replay Gap:** it is cited as an arXiv preprint. Its venue is disputed (COLM per the arXiv comment, workshop per `RELATED_WORK_POSITIONING.md`), so the bib entry was changed from `inproceedings`. No "zero vs 90% noise" claim is made.
-- **2606.00206:** not in `storyline-v7-lit.md`. It was named by REPORT_GPT61_20261001_0915 §3.4, and its title and authors were checked on arxiv.org/abs on 2026-10-01.
-- **External W4 M:** the range is 5.2–24.6% (committed file), not the storyline's "7–25%".
+- G_all (full pool) and G (divergent states) are different denominators; the text says G_all is G diluted by non-divergent units.
+- Within-cell contrasts are "identified"; every cross-cell comparison is "descriptive" (each cell selects its own first divergences).
+- The q4 GPTQ negative G and "action–controller fit" are a hypothesis (post-hoc divergence kinds; Δ_B also negative).
+- SIMCTRL: worded as the coordinator required (text-only consequences at ordinary states are largely simulator-dependent, not a stable property of the action); scope = fixed histories, relay (Claude Code subagent) Sonnet 5.5, stochastic, f01 only; does not test Bank P.
+- Token analysis: "does not reliably identify consequences among divergent states"; explicitly not "uncertainty is useless".
+- External rows now use the committed `ext_20261001T135106Z` (BFCL q4 AWQ-W4 now 788 items: G −3.8 [−6.5, −1.3]); EXT-REFRESH resolved.
+- User simulator = Qwen3-30B-A3B-Instruct-2507 (served model in `cloq_work/sims/*.json`, `docs/FINAL_EXPERIMENTS.md`). The `user_model_id` field in fork state files and the simctrl report's "Qwen3-4B-Instruct-2507" are a stale default label (`cloq/config.py` USER_MODEL_ID = agent hf_id), not the served simulator.

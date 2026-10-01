@@ -1,0 +1,78 @@
+\section{R2: Where to Replace}
+\label{sec:r2}
+
+\begin{table*}[t]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+% src: analysis/fork/out/ghf_20261001T211519Z.md (§1 per-cell table and pools; §2 3x3 table columns)
+\resizebox{\textwidth}{!}{\begin{tabular}{@{}lrllllllrrl@{}}
+\toprule
+Cell & states & $G$ (this step) & $H$ (next step on) & $F$ (from here on) & $G-H$ & $F-G$ & $F-H$ ($=\DB$) & off-diag.\ \% & rev.\ \% & mean $I$ \\
+\midrule
+q4 GPTQ-W4 & 1102 & $-2.9$ [$-5.7$, $-0.2$] & $+0.7$ [$-1.6$, $+3.0$] & $-2.5$ [$-5.3$, $+0.2$] & $-3.6$ [$-6.6$, $-0.6$] & $+0.5$ [$-1.2$, $+2.2$] & $-3.2$ [$-6.4$, $+0.2$] & 25.0 & 2.6 & $+0.3$ \\
+q4 AWQ-W4  & 1439 & $-0.3$ [$-2.6$, $+1.9$] & $+0.9$ [$-1.1$, $+2.9$] & $-0.8$ [$-3.3$, $+1.6$] & $-1.3$ [$-3.0$, $+0.6$] & $-0.4$ [$-2.4$, $+1.5$] & $-1.7$ [$-3.6$, $+0.4$] & 29.3 & 3.1 & $+1.3$ \\
+q8 GPTQ-W4 & 1473 & $+3.3$ [$+1.6$, $+5.0$] & $+0.4$ [$-1.2$, $+1.9$] & $+5.4$ [$+3.5$, $+7.2$] & $+2.9$ [$+1.3$, $+4.7$] & $+2.1$ [$+0.2$, $+4.0$] & $+5.0$ [$+3.2$, $+6.8$] & 22.9 & 2.7 & $-1.7$ \\
+q8 AWQ-W4  & 1562 & $+2.1$ [$-0.6$, $+4.7$] & $-1.3$ [$-3.5$, $+0.9$] & $+0.6$ [$-1.5$, $+2.7$] & $+3.4$ [$+1.5$, $+5.2$] & $-1.5$ [$-4.2$, $+0.8$] & $+1.9$ [$-0.1$, $+3.8$] & 30.5 & 4.2 & $+0.3$ \\
+W4 pool    & 5576 & $+0.5$ [$-0.7$, $+1.7$] & $+0.2$ [$-1.3$, $+1.6$] & $+0.7$ [$-0.6$, $+2.1$] & $+0.4$ [$-0.8$, $+1.7$] & $+0.2$ [$-1.0$, $+1.2$] & $+0.5$ [$-1.0$, $+2.1$] & 26.9 & 3.2 & $+0.0$ \\
+\midrule
+q4 KV8 & 593 & $-1.0$ [$-5.3$, $+3.2$] & $-2.5$ [$-4.5$, $-0.5$] & $-1.2$ [$-4.7$, $+2.3$] & $+1.5$ [$-3.1$, $+6.0$] & $-0.2$ [$-3.5$, $+3.7$] & $+1.3$ [$-2.5$, $+4.9$] & 15.7 & 1.2 & $-2.4$ \\
+q8 KV8 & 855 & $+1.3$ [$-0.9$, $+3.4$] & $-0.4$ [$-2.1$, $+1.5$] & $+2.5$ [$+0.0$, $+5.1$] & $+1.6$ [$-0.6$, $+3.9$] & $+1.2$ [$-0.5$, $+3.2$] & $+2.8$ [$+0.3$, $+5.5$] & 14.9 & 1.2 & $-1.5$ \\
+\midrule
+q4 GPTQ-W3$^s$ & 232 & $-1.3$ [$-7.7$, $+5.0$] & $+4.3$ [$-10.7$, $+19.4$] & $+1.3$ [$-1.9$, $+4.4$] & $-5.6$ [$-15.0$, $+3.7$] & $+2.6$ [$-0.6$, $+5.8$] & $-3.0$ [$-15.1$, $+9.1$] & 31.5 & 3.9 & $+1.7$ \\
+q4 KV4-rot$^s$ & 233 & $+5.2$ [$-4.5$, $+14.9$] & $+9.4$ [$+5.1$, $+13.7$] & $+12.4$ [$+11.0$, $+13.9$] & $-4.3$ [$-18.3$, $+9.8$] & $+7.3$ [$-2.0$, $+16.5$] & $+3.0$ [$-1.9$, $+8.0$] & 33.0 & 1.7 & $+2.1$ \\
+q8 GPTQ-W3$^s$ & 242 & $+2.1$ [$-13.3$, $+17.2$] & $+0.4$ [$-7.4$, $+8.2$] & $+2.1$ [$-7.4$, $+11.4$] & $+1.7$ [$-9.1$, $+12.3$] & $+0.0$ [$-11.0$, $+11.1$] & $+1.7$ [$-0.1$, $+3.4$] & 23.1 & 4.5 & $+0.4$ \\
+q8 KV4-rot$^s$ & 239 & $+3.3$ [$-15.4$, $+21.9$] & $-0.8$ [$-18.2$, $+16.3$] & $+4.6$ [$-16.0$, $+25.0$] & $+4.2$ [$+2.5$, $+5.8$] & $+1.3$ [$-1.8$, $+4.3$] & $+5.4$ [$+0.8$, $+10.0$] & 31.0 & 4.6 & $-2.1$ \\
+q8 RTN-W3$^s$ & 255 & $-0.4$ [$-3.8$, $+3.0$] & $+15.3$ [$+0.7$, $+29.9$] & $+18.4$ [$+16.7$, $+20.1$] & $-15.7$ [$-27.5$, $-3.9$] & $+18.8$ [$+13.8$, $+23.9$] & $+3.1$ [$-13.0$, $+19.2$] & 29.0 & 0.4 & $-3.5$ \\
+\bottomrule
+\end{tabular}}
+\caption{Three replacement gains and their paired differences on each cell's Bank P states (pp; same denominator in every column). $G=\YY{BQ}-\YY{QQ}$, $H=\YY{QB}-\YY{QQ}$, $F=\YY{BB}-\YY{QQ}$. Off-diag.: share of states with $\DQ\neq\DB$; rev.: strict reversals. Fixed-pool 95\% intervals (block bootstrap over 20--22 complete blocks; $t$ over 3 blocks for $^s$stress cells, which cannot be pooled). New-task intervals are in Table~\ref{tab:ghf-crossed}. Within a row, contrasts are paired and identified; between rows, descriptive. Source: \nolinkurl{analysis/fork/out/ghf_20261001T211519Z.md}.}
+\label{tab:ghf}
+\end{table*}
+
+The three escalation options of the introduction are $G$ (this step), $H$ (from the next step) and $F$ (from here on). Table~\ref{tab:ghf} reports them on the same states of each cell, with the paired differences that compare them directly.
+
+\paragraph{On average over W4 cells, no option has a detectable gain.} Pooled over the four W4 cells, $G=+0.5$, $H=+0.2$ and $F=+0.7$\pp{}, and every interval covers zero, as do the differences between them. % src: analysis/fork/out/ghf_20261001T211519Z.md (pools)
+The pool hides cell-level structure, which we now read within cells, where it is identified.
+
+\paragraph{Within cells, which part to replace depends on the quantizer.} In q8 GPTQ-W4, replacing the current action helps ($G=+3.3$ [$+1.6$, $+5.0$]\pp{}), replacing only the continuation does not ($H=+0.4$), and the action is the better part to replace ($G-H=+2.9$ [$+1.3$, $+4.7$]). Handing over the rest of the episode as well adds to that: $F=+5.4$ [$+3.5$, $+7.2$] and $F-G=+2.1$ [$+0.2$, $+4.0$]. In q8 AWQ-W4 the current action is again the better part to replace ($G-H=+3.4$ [$+1.5$, $+5.2$]), but B's continuation adds nothing ($F-G=-1.5$ [$-4.2$, $+0.8$]). In q4 GPTQ-W4, replacing only the current action \emph{hurts} on average ($G=-2.9$ [$-5.7$, $-0.2$]) and does worse than replacing only the continuation ($G-H=-3.6$ [$-6.6$, $-0.6$]). In the severe stress cell q8 RTN-W3, the action does not matter ($G=-0.4$) and the continuation does: $H=+15.3$ [$+0.7$, $+29.9$], $F=+18.4$ [$+16.7$, $+20.1$] and $G-H=-15.7$ [$-27.5$, $-3.9$], from three blocks. Handing over can also hurt: in q4 KV8, B continuing after Q's action lowers success ($H=-2.5$ [$-4.5$, $-0.5$]). % src: analysis/fork/out/ghf_20261001T211519Z.md (§1)
+Each of these statements compares contrasts within one cell. That the best option differs between cells is descriptive, because each cell selects its own states.
+
+\paragraph{An action-controller fit hypothesis.} Why would B's action hurt under Q's continuation in q4 GPTQ-W4? The negative $G$ is concentrated in states where Q calls a tool and B replies in text: there $G=-14.6$ [$-20.2$, $-9.3$]\pp{} over 350 states. In q8 GPTQ-W4 the same kind of divergence gives $+38.6$ [$+23.3$, $+57.1$] over 44 states. % src: analysis/fork/out/dev_all_20261001T070326Z.md (type breakdown: act->talk, G|type)
+One reading is \emph{action-controller fit}: a replacement action helps only if the controller that continues can use it. This is a hypothesis only: the divergence kinds are post-hoc strata, the cross-cell comparison is descriptive, and in q4 GPTQ-W4 B's action is not clearly better even when B continues ($\DB=-3.2$ [$-6.4$, $+0.2$]). % src: analysis/fork/out/ghf_20261001T211519Z.md (§1, F - H)
+
+\begin{figure}[t]
+\centering
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[x=0.8cm,y=0.8cm,font=\scriptsize] % nocheck: TikZ scale
+\newcommand{\heat}[5]{% #1 x-offset, #2 total n, #3 counts (row-major, rows DQ=-1,0,+1; cols DB=-1,0,+1), #4 title, #5 subtitle
+  \foreach \v [count=\k from 0] in {#3} {% nocheck: TikZ
+    \pgfmathtruncatemacro{\rr}{\k/3}\pgfmathtruncatemacro{\cc}{mod(\k,3)}% nocheck: TikZ
+    \pgfmathsetmacro{\s}{min(88,6+92*(\v/#2)^0.45)}% nocheck: TikZ colour scale (power 0.45, as in the W93 figure)
+    \fill[blue!\s!white] (#1+\cc,-\rr) rectangle ++(1,-1);% nocheck: TikZ
+    \pgfmathparse{\s>60?"white":"black"}\edef\tc{\pgfmathresult}% nocheck: TikZ text colour threshold
+    \node[text=\tc] at (#1+\cc+0.5,-\rr-0.5) {\v};% nocheck: TikZ
+  }
+  \foreach \i in {0,1,2} {\draw[thick] (#1+\i,-\i) rectangle ++(1,-1);}% nocheck: TikZ diagonal boxes
+  \node[font=\tiny] at (#1+2.82,-0.15) {R}; \node[font=\tiny] at (#1+0.82,-2.15) {R};% nocheck: TikZ reversal marks
+  \foreach \l [count=\i from 0] in {$-1$,$0$,$+1$} {\node at (#1+\i+0.5,-3.25) {\l};}% nocheck: TikZ
+  \node[align=center] at (#1+1.5,0.55) {#4\\[-1pt]#5};% nocheck: TikZ
+}
+\foreach \l [count=\i from 0] in {$-1$,$0$,$+1$} {\node at (-0.3,-\i-0.5) {\l};}% nocheck: TikZ
+\node[rotate=90] at (-0.85,-1.5) {$\DQ=\YY{BQ}-\YY{QQ}$};% nocheck: TikZ
+% src: analysis/fork/out/ghf_20261001T211519Z.md (§2, rows "pool W4:all" and "pool KV8:all")
+\heat{0}{5576}{208,306,95,327,3637,349,85,349,220}{W4 pool, 5576 states}{off-diag.\ 26.9\% [25.7, 28.1]}
+\def\xoff{3.55}% nocheck: TikZ panel offset
+\heat{\xoff}{1448}{76,48,10,46,1065,64,7,45,87}{KV8 pool, 1448 states}{off-diag.\ 15.3\% [13.2, 17.3]}
+\node at (3.3,-3.75) {$\DB=\YY{BB}-\YY{QB}$ (columns)};% nocheck: TikZ
+\end{tikzpicture}}
+\caption{Does the action swap have the same effect under both controllers? Counts of $(\DQ,\DB)$ over Bank P states, summed over the W4 cells (left) and KV8 cells (right). Boxed: diagonal. R: strict reversals. Shading: share of states (power scale). Off-diagonal shares: equal-weight cell averages, fixed-pool 95\% intervals. Source: \nolinkurl{analysis/fork/out/ghf_20261001T211519Z.md} (\S2).}
+\label{fig:3x3}
+\end{figure}
+
+\paragraph{The action's consequence often depends on who continues.} Figure~\ref{fig:3x3} shows the $(\DQ,\DB)$ table. In 26.9\% [25.7, 28.1] of pooled W4 states, the action swap has a different effect under B's continuation than under Q's; per W4 cell the share is 22.9--30.5\%. In the KV8 pool it is 15.3\% [13.2, 17.3]; the W4-KV8 difference is descriptive. % src: analysis/fork/out/ghf_20261001T211519Z.md (§2)
+Strict sign reversals are rare: 3.2\% of pooled W4 states, and 1.2--4.2\% of states in each W4 and KV8 cell. They make up 8--14\% of the off-diagonal mass. The rest is an effect under one controller and none under the other. % src: analysis/fork/out/ghf_20261001T211519Z.md (TL;DR; §2)
+
+\paragraph{Why the mean interaction is near zero.} $I=\DQ-\DB$ takes values in $\{-2,\dots,+2\}$, so % nocheck: notation
+$E[I]=\sum_{k=-2}^{2}k\,P(I{=}k)$, % nocheck: notation
+
+whereas the off-diagonal share is $P(I\neq0)$. A mean near zero only says that states where the swap helps more under Q ($I>0$) and states where it helps more under B ($I<0$) are about equally frequent. In the W4 pool they are 13.6\% and 13.4\% of states, so the mean is $+0.0$ [$-1.9$, $+2.0$]\pp{} although 26.9\% of states depend on the controller. % src: analysis/fork/out/ghf_20261001T211519Z.md (§2, pool W4:all; "Why a near-zero mean I")
+The mean is the estimand for the average value of a fixed escalation policy; the off-diagonal share asks whether an action's consequence belongs to the action alone, and for about one in four W4 states it does not. All 16 outcome patterns per cell are in Appendix~\ref{app:patterns}.

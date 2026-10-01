@@ -9,50 +9,10 @@ The external benchmarks use BFCL multi-turn (base, miss\_func, miss\_param and l
 
 \paragraph{Fork mechanics.} The forced action is returned by a fork agent for the one step that follows $h_t$. A tool call is executed by the real environment, and text is answered by the real simulator, which never reuses observations from the original trajectory. tau2 resets step and error counters when it starts from a history. The fork restores them to the values used at $t$, so the remaining budget equals the original. Every max\_steps and too\_many\_errors episode on the checked blocks is reproduced by the recount. % src: docs/insights/FORK_PROTOCOL.md §2-§4
 
-\paragraph{Composition of divergent states.} Table~\ref{tab:composition} gives the four-way outcome composition behind Table~\ref{tab:atlas}.
-
-\begin{table}[h]
-\centering\scriptsize\setlength{\tabcolsep}{3pt}
-% src: analysis/fork/out/dev_all_20261001T070326Z.md (Consequence composition and type breakdown; coverage table)
-\begin{tabular}{@{}lrrrrrr@{}}
-\toprule
-Cell & units & div.\ states & rescue & damage & both succ. & both fail \\
-\midrule
-q4 GPTQ-W4 & 1700 & 1102 & 116 & 148 & 267 & 571 \\
-q4 AWQ-W4  & 1700 & 1439 & 167 & 172 & 340 & 760 \\
-q8 GPTQ-W4 & 1700 & 1473 & 177 & 128 & 276 & 892 \\
-q8 AWQ-W4  & 1700 & 1562 & 194 & 161 & 318 & 889 \\
-q4 KV8     & 1870 & 593 & 58 & 64 & 154 & 317 \\
-q8 KV8     & 1870 & 855 & 81 & 70 & 161 & 543 \\
-\bottomrule
-\end{tabular}
-\caption{Divergent-state composition of $(\YY{BQ},\YY{QQ})$ on the \tautwo{} panel (85 tasks; 20 blocks for W4, 22 for KV8). Units without a divergence count as zero in $r$, $d$, $M$ and $\Gall$. Source: \nolinkurl{analysis/fork/out/dev_all_20261001T070326Z.md}.}
-\label{tab:composition}
-\end{table}
-
-\begin{table}[h]
-\centering\scriptsize\setlength{\tabcolsep}{2pt}
-% src: analysis/fork/out/dev_all_20261001T070326Z.md (Four-branch decomposition on observed divergent states)
-\resizebox{\columnwidth}{!}{\begin{tabular}{@{}lllll@{}}
-\toprule
-Cell & $A$ & $C$ & $I$ & strict rev.\ (\%) \\
-\midrule
-q4 GPTQ-W4 & $-3.2$ [$-6.4$, $+0.2$] & $+0.5$ [$-1.2$, $+2.2$] & $+0.3$ [$-3.1$, $+3.4$] & 2.6 \\
-q4 AWQ-W4  & $-1.7$ [$-3.6$, $+0.4$] & $-0.4$ [$-2.4$, $+1.5$] & $+1.3$ [$-1.6$, $+4.0$] & 3.1 \\
-q8 GPTQ-W4 & $+5.0$ [$+3.2$, $+6.8$] & $+2.1$ [$+0.2$, $+4.0$] & $-1.7$ [$-4.1$, $+0.7$] & 2.7 \\
-q8 AWQ-W4  & $+1.9$ [$-0.1$, $+3.8$] & $-1.5$ [$-4.2$, $+0.8$] & $+0.3$ [$-3.5$, $+4.1$] & 4.2 \\
-q4 KV8     & $+1.3$ [$-2.5$, $+4.9$] & $-0.2$ [$-3.5$, $+3.7$] & $-2.4$ [$-6.2$, $+1.2$] & 1.2 \\
-q8 KV8     & $+2.8$ [$+0.3$, $+5.5$] & $+1.2$ [$-0.5$, $+3.2$] & $-1.5$ [$-4.3$, $+0.9$] & 1.2 \\
-\bottomrule
-\end{tabular}}
-\caption{Four-branch decomposition on divergent states (pp; block-bootstrap 95\% intervals). $A=\YY{BB}-\YY{QB}$, $C=\YY{BB}-\YY{BQ}$, $I=\YY{BQ}+\YY{QB}-\YY{BB}-\YY{QQ}$. Strict reversal: $A\cdot G<0$. Source: \nolinkurl{analysis/fork/out/dev_all_20261001T070326Z.md}.}
-\label{tab:aci}
-\end{table}
-
 \section{End-to-End Success Comparison}
 \label{app:e2e}
 
-The forked-state gain $\Gall$ is not an end-to-end comparison. Table~\ref{tab:e2e} gives the end-to-end comparison, computed separately on the same checkpoints, the same tasks and the same 20 nonce blocks as the forks. % src: analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md
+The replacement gains $\Gall$, $G$, $H$ and $F$ are not end-to-end comparisons. Table~\ref{tab:e2e} gives the end-to-end comparison, computed separately on the same checkpoints, the same tasks and the same 20 nonce blocks as the forks. % src: analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md
 
 \begin{table}[h]
 \centering\scriptsize\setlength{\tabcolsep}{3pt}
@@ -73,7 +33,126 @@ pool, all four & & $+1.5$ [$-2.7$, $+5.6$] & pass & fail \\
 \label{tab:e2e}
 \end{table}
 
-\section{Process Audit (Table 4 v2)}
+\section{All 16 Outcome Patterns and New-Task Intervals} % nocheck: heading
+\label{app:patterns}
+
+Table~\ref{tab:patterns} lists every four-branch pattern per cell; \texttt{0000} (39--58\%) and \texttt{1111} (6--20\%) dominate. % src: docs/RESEARCH_LOG.md W93
+Table~\ref{tab:ghf-crossed} gives the new-task intervals for Table~\ref{tab:ghf}.
+
+\input{sections/gen_patterns}
+\input{sections/gen_ghf_crossed}
+
+\section{Coverage Matrix}
+\label{app:coverage}
+
+Table~\ref{tab:coverage} lists the completed crossed-intervention coverage behind every result, from the W93 audit. It counts tasks, states and complete blocks after the strict admission rule; queued or running work is not counted.
+
+\begin{table*}[t]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+% src: analysis/fork/out/ghf_20261001T211519Z.md (§5 Coverage matrix, quantization configs)
+\resizebox{\textwidth}{!}{\begin{tabular}{@{}llllll@{}}
+\toprule
+Cell & \tautwo{} retail (Bank P) & \tautwo{} airline (Bank P) & telecom dev (Bank P) & Bank U (retail / airline) & BFCL / ALFWorld \\
+\midrule
+q4 GPTQ-W4 & 58 t $\cdot$ 727 st $\cdot$ 20/20 b & 27 t $\cdot$ 375 st $\cdot$ 20/20 b & holdout dirs exist (unread) & 3 b $\cdot$ 393 / 177 rows & 788 items $\cdot$ 573 st / -- \\
+q4 AWQ-W4  & 58 t $\cdot$ 986 st $\cdot$ 20/20 b & 27 t $\cdot$ 453 st $\cdot$ 20/20 b & -- & 3 b $\cdot$ 393 / 177 rows & 788 items $\cdot$ 642 st / -- \\
+q4 KV8     & 58 t $\cdot$ 412 st $\cdot$ 22/22 b & 27 t $\cdot$ 181 st $\cdot$ 22/22 b & -- & 3 b $\cdot$ 393 / 177 rows & -- / -- \\
+q8 GPTQ-W4 & 58 t $\cdot$ 1017 st $\cdot$ 20/20 b & 27 t $\cdot$ 456 st $\cdot$ 20/20 b & 80 t $\cdot$ 477 st $\cdot$ 6/6 b; holdout dirs & 3 b $\cdot$ 393 / 177 rows & 788 $\cdot$ 533 st / 134 $\cdot$ 115 st \\
+q8 AWQ-W4  & 58 t $\cdot$ 1087 st $\cdot$ 20/20 b & 27 t $\cdot$ 475 st $\cdot$ 20/20 b & 80 t $\cdot$ 480 st $\cdot$ 6/6 b; holdout dirs & 3 b $\cdot$ 393 / 177 rows & 788 $\cdot$ 548 st / 134 $\cdot$ 119 st \\
+q8 KV8     & 58 t $\cdot$ 585 st $\cdot$ 22/22 b & 27 t $\cdot$ 270 st $\cdot$ 22/22 b & -- & 2 b $\cdot$ 262 / 118 rows & -- / -- \\
+\midrule
+q4 GPTQ-W3 & 58 t $\cdot$ 162 st $\cdot$ 3/3 b & 27 t $\cdot$ 70 st $\cdot$ 3/3 b & -- & -- & 788 $\cdot$ 720 st / -- \\
+q4 KV4-rot & 58 t $\cdot$ 164 st $\cdot$ 3/3 b & 27 t $\cdot$ 69 st $\cdot$ 3/3 b & -- & -- & -- / -- \\
+q4 RTN-W3  & 0 t $\cdot$ 0 st $\cdot$ 0/3 b & 0 t $\cdot$ 0 st $\cdot$ 0/3 b & -- & -- & -- / -- \\
+q8 GPTQ-W3 & 58 t $\cdot$ 166 st $\cdot$ 3/3 b & 27 t $\cdot$ 76 st $\cdot$ 3/3 b & -- & -- & 788 $\cdot$ 696 st / 134 $\cdot$ 130 st \\
+q8 KV4-rot & 58 t $\cdot$ 165 st $\cdot$ 3/3 b & 27 t $\cdot$ 74 st $\cdot$ 3/3 b & -- & -- & -- / -- \\
+q8 RTN-W3  & 58 t $\cdot$ 174 st $\cdot$ 3/3 b & 27 t $\cdot$ 81 st $\cdot$ 3/3 b & -- & -- & -- / -- \\
+q4 / q8 KV4 (unrotated) & -- & -- & -- & -- & 788 $\cdot$ 787 / 788 $\cdot$ 788 st; q8 ALFWorld 134 $\cdot$ 134 st \\
+\bottomrule
+\end{tabular}}
+\caption{Completed crossed-intervention coverage (t = tasks, st = states, b = complete/found blocks; BFCL and ALFWorld: items $\cdot$ states, one run). Bank U: blocks completed and state rows per domain; only block f01 is analysed in this paper. ``holdout dirs'': telecom holdout fork directories exist and were not opened. The q14, q32 and l8 checkpoints of the source matrix have end-to-end runs only, and q4 RTN-W3 has no complete Bank P block. The telecom development analysis of \S\ref{sec:r3} uses the planning fit over these 6 blocks. Source: \nolinkurl{analysis/fork/out/ghf_20261001T211519Z.md} (\S5).}
+\label{tab:coverage}
+\end{table*}
+
+\section{Bank U per Sub-Bank}
+\label{app:banku}
+
+Table~\ref{tab:banku} gives the per-state turnover behind \S\ref{sec:r3}. Exact action agreement is 0.44--0.85 per cell and sub-bank. % src: analysis/fork/out/bank_u_f01_20261001T134456Z.md (column "exact")
+
+\begin{table}[h]
+\centering\scriptsize\setlength{\tabcolsep}{3.5pt}
+% src: analysis/fork/out/bank_u_f01_20261001T134456Z.md (§2 Native estimates, task-equal; r and d counts)
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Cell & U1 ($n{=}85$) & U2B ($n{=}85$) & U2Q ($n{=}20$) \\
+\midrule
+q4 GPTQ-W4 & .118 (5/5) & .094 (5/3) & .100 (1/1)$^\ast$ \\
+q4 AWQ-W4  & .106 (3/6) & .082 (3/4) & .100 (1/1) \\
+q4 KV8     & .024 (0/2) & .047 (1/3) & 0 (0/0) \\
+q8 GPTQ-W4 & .012 (0/1) & .024 (0/2) & 0 (0/0)$^\ast$ \\
+q8 AWQ-W4  & .047 (2/2) & .024 (1/1) & 0 (0/0) \\
+q8 KV8     & .047 (1/3) & .012 (1/0) & 0 (0/0) \\
+\bottomrule
+\end{tabular}
+\caption{Bank U, block f01: per-state turnover $M$ (rescues/damages), task-equal, one state per task. $G$ lies within $\pm0.035$ in every cell, and every interval includes 0. $^\ast$GPTQ-W4's U2Q states are its own U1 states, with concordant outcomes on 20/20 duplicates; they are counted once in cross-sub-bank totals. One block, so the intervals reflect task resampling only. Source: \nolinkurl{analysis/fork/out/bank_u_f01_20261001T134456Z.md}.}
+\label{tab:banku}
+\end{table}
+
+\paragraph{Shared fragility across quantizers (a lead).} On the 85 shared q4 U2B states, cell pairs co-flip 7 times, against about 1.4 expected under independence, and 6 of the 7 co-flips go in the same direction. None of the joint flips has an identical quantized action across cells. These 7 co-flips come from only \textbf{5 distinct states} in one block. % src: analysis/fork/out/bank_u_f01_20261001T134456Z.md (§6, q4:U2B); docs/REPORT_GPT61_20261001_0915.md (correction 2)
+On q8 U2B, the 5 flipping states each flip under a single cell. We therefore read this as a lead toward \emph{state-level} fragility, where different actions at the same state flip the outcome, and not yet as a finding.
+
+\paragraph{A common controller (Q0).} On the U2 subsample continued by the common controller Q0, B's action leads to the identical outcome in every cell on all 46 shared states, which checks determinism. Turnover under Q0 is at least the native turnover on the same rows (for q4 AWQ-W4 U2B, 3/21 vs.\ 1/21). With 6--21 states per cell and sub-bank, this is too small to say whether the controller changes which actions matter. % src: analysis/fork/out/bank_u_f01_20261001T134456Z.md (§5)
+
+\section{Concentration of Turnover in Tasks}
+\label{app:concentration}
+
+This appendix completes the exploratory concentration result of \S\ref{sec:r1} (development data, 85 tasks $\times$ 20 blocks). The per-task dispersion of $M$ is 4.0--8.7 times its binomial null in the W4 and KV8 cells, and the top 20\% of tasks hold 57--71\% of all flips. % src: analysis/fork/out/consequence_v2_20261001T070850Z.json (concentration.dispersion_index, share_of_consequences_in_top20pct_tasks)
+We split the 20 blocks into two disjoint halves of 10 nonces. Task-level $M$ correlates across halves (Spearman 0.52--0.86). Tasks that were net-rescue in one half have a mean net gain in the other half that is 14--51\pp{} higher than that of net-damage tasks, in all 12 cell-directions. % src: analysis/fork/out/w67_audit_v2_20261001T0600Z_20261001T070500Z.md (Concentration and Direction, panel85)
+A Freedman--Lane test conditions on measured baselines: QQ success propensity and BF16 success, plus trajectory length in a post-hoc variant. With them, one half's task rate still predicts the other's in all 6 configurations $\times$ 2 directions for both $M$ and $G$ (Holm-adjusted). This is a \emph{retrospective conditional association} on viewed development data. It is carried by retail. Airline alone gives 8 of 12 for $M$ (5 after Holm), and 3 of 12 under a heteroscedasticity-robust wild bootstrap. % src: analysis/fork/out/w67_audit_v2_20261001T0600Z_20261001T070500Z.md (panel85, airline27 counts)
+Direction persistence beyond flip opportunity holds more often for rescues than for damages, in 11 versus 6 of the 12 cell-directions. Different quantizers flip the same tasks: the task-identity null is rejected in 7 of 8 quantizer pairs. When both flip, however, they agree in direction only 42--81\% of the time. % src: analysis/fork/out/w67_audit_v2_20261001T0600Z_20261001T070500Z.md (Cross-quantizer co-susceptibility)
+This overlaps with the stable failure set of \citet{jang2026flat}. What is new here is the signed, two-sided view: shared fragility, but with near-random relative direction across quantizers.
+
+\section{Controlled Injection and Process Audit}
+\label{app:injection}
+
+A natural explanation of R1 is a local-defect story: the quantized agent makes a local error, and the task fails unless the continuation recovers. Two analyses constrain this explanation. They limit what it can explain; they do not identify a mechanism.
+
+\paragraph{Controlled defect injection.} We froze 30 ordinary states from q4 GPTQ-W4 trajectories, all from one development block. At each state we forced one of three actions as the next step: an \textsc{inv}alid action, a matched \textsc{val}id action, or a process-perturbation control (\textsc{pp}) that repeats the last successful read. Either B or Q then continued. The defect categories were wrong\_id, wrong\_tool and premature\_write, with 10 states each. % src: analysis/recovery/inject_q4/summary_v2.md; docs/RESEARCH_LOG.md W71
+Every state passed a replay audit of 22 recorded fields (VAL$\times$Q against the original episode). Three fields were not recorded: the counters right after the restore, the rendered-prompt hash sequence and the tool-schema hash sequence. % src: analysis/recovery/inject_q4/summary_v2.md (Replay audit)
+
+\begin{table}[t]
+\centering\scriptsize\setlength{\tabcolsep}{2.8pt}
+% src: analysis/recovery/inject_q4/summary_v2.md (Outcome turnover, population "all"; Controller dependence D)
+\begin{tabular}{@{}llccl@{}}
+\toprule
+Ctrl & Contrast & resc./dam. & turnover & net [95\% CI] \\
+\midrule
+B & \textsc{inv} vs \textsc{val} & 4/3 & 7/30 & $+0.03$ [$-0.13$, $+0.20$] \\
+B & \textsc{pp} vs \textsc{val} & 3/2 & 5/30 & $+0.03$ [$-0.10$, $+0.20$] \\
+B & \textsc{inv} vs \textsc{pp} & 2/2 & 4/30 & $\phantom{+}0.00$ [$-0.13$, $+0.13$] \\
+Q & \textsc{inv} vs \textsc{val} & 2/2 & 4/30 & $\phantom{+}0.00$ [$-0.13$, $+0.13$] \\
+Q & \textsc{pp} vs \textsc{val} & 3/2 & 5/30 & $+0.03$ [$-0.10$, $+0.17$] \\
+Q & \textsc{inv} vs \textsc{pp} & 2/3 & 5/30 & $-0.03$ [$-0.20$, $+0.10$] \\
+\midrule
+\multicolumn{4}{@{}l}{Controller dependence $D$ ($\neq0$ in 8/30 states)} & $+0.03$ [$-0.17$, $+0.27$] \\
+\bottomrule
+\end{tabular}
+\caption{Defect injection on 30 frozen q4 states (development, one block): per-state rescue/damage of one arm against another, under the BF16 (B) or quantized (Q) continuation controller. $D=[Y(\textsc{inv},B)-Y(\textsc{val},B)]-[Y(\textsc{inv},Q)-Y(\textsc{val},Q)]$. Task-clustered bootstrap intervals; all exact McNemar $p\ge0.25$. Source: \nolinkurl{analysis/recovery/inject_q4/summary_v2.md}.}
+\label{tab:recovery}
+\end{table}
+
+\paragraph{Result: two-sided turnover, no error-specific effect.} Injected defects change the outcome in 7/30 states under B (4 rescues, 3 damages) and 4/30 under Q (2 and 2). The process-perturbation control changes 5/30 under both controllers (Table~\ref{tab:recovery}). The error-specific effect, \textsc{inv} minus \textsc{pp}, is $0.00$ [$-0.13$, $+0.13$] under B and $-0.03$ [$-0.20$, $+0.10$] under Q. The controller dependence $D$ is nonzero in 8 of 30 states, but its mean is $+0.03$ [$-0.17$, $+0.27$]. % src: analysis/recovery/inject_q4/summary_v2.md
+So injected defects cause heterogeneous two-sided turnover of the size a generic perturbation causes. We detect no error-specific effect beyond that perturbation and no mean controller difference, at $n=30$ states. An earlier reading of the same data, that injected defects ``seldom change outcomes'', was wrong and has been retracted (Appendix~\ref{app:withdrawn}).
+
+\paragraph{Manipulation checks limit the categories.} Two of 30 states failed a manipulation check: an injected write was rejected, and a valid reference itself returned ``not found''. Restricting to the 28 passing states leaves the reading unchanged. The wrong\_tool category mostly produced argument errors: 8 of 10 injected calls failed with an unexpected-keyword error. We therefore call it a \emph{tool-call/schema error perturbation}, not a wrong-tool test. premature\_write is mostly failure$\rightarrow$failure: the valid arm under Q already fails in 7/10 of these states, and turnover is 0/10 under both controllers. % src: analysis/recovery/inject_q4/summary_v2.md (Manipulation checks; Outcome turnover by category); docs/RESEARCH_LOG.md W83
+The event chain error $\rightarrow$ correction $\rightarrow$ related requirement satisfied completes in only 6 (B) and 7 (Q) of 29 injected errors, although 17 are corrected under each controller. Injections add tool errors ($+0.43$ under B, $+0.57$ under Q per branch). % src: analysis/recovery/inject_q4/summary_v2.md (Event chains; Paired differences)
+\todo{RECOVERY-Q8: the same table for q8 GPTQ-W4 (30 states, block q3), from \nolinkurl{analysis/recovery/analyze_inject.py} on \nolinkurl{analysis/recovery/inject_q8}}
+
+\paragraph{Process audit (LLM-annotated).} We sampled 80 development fork states, 20 per outcome sign. % src: manifests/annotation/wp5_sample_v1.json; analysis/annotation/wp5/table4_v2.md
+ Two independent Sonnet 5.5 instances annotated them blind, a third instance adjudicated, and rule-based programmatic labels were added. These annotations are a \emph{process description} conditional on outcome-defined groups. They are not causal evidence, not prevalences and not human labels. Three patterns stand out (Table~\ref{tab:table4}). First, local defects and final failure do not correspond one-to-one. In damage states, where Q's action led to success and B's to failure, Q's first-action defect is corrected later in 10 of 20 QQ branches. Second, whether a write executes does not separate the failing from the succeeding continuation of the same state (rescue 17 vs.\ 17; damage 15 vs.\ 14). Third, the failing continuation more often carries the rubric label \texttt{unintended\_or\_unconsented\_change} (rescue: QQ 9 vs.\ BQ 2, paired difference $+0.35$ [$+0.08$, $+0.57$]; damage: 1 vs.\ 9, $-0.40$ [$-0.62$, $-0.11$]). In damage states, 7 of these 20 BQ branches carry the label on writes \emph{with} recorded consent. That is the semantic ``wrong change'' part of the label, and it overlaps with the database-defined outcome by construction. Loops and budget exhaustion also mark failing branches (rescue: QQ 5 vs.\ BQ 0). % src: analysis/annotation/wp5/table4_v2.md
+We make no claim about consent. The programmatic consent field agrees poorly with the annotators, so we use it only as a mechanical row. Re-labelling 30 states with fresh instances of the same model family reproduces the key pattern. That shows reproducibility, not correctness. % src: docs/RESEARCH_LOG.md W82 (analysis/annotation/wp5/human_check_v1/proxy_compare_v1.json)
+
+\subsection{Process audit (Table 4 v2)} % nocheck: heading (Table 4 v2)
 \label{app:table4}
 
 \begin{table*}[t]
@@ -124,8 +203,10 @@ With a matched rotated reference, the q4 interaction is $-9.0$ [$-30.6$, $+12.5$
 The pre-registered q8 replication gives $+2.1$ [$-5.8$, $+10.1$] over 6 blocks, crossed [$-8.2$, $+12.4$]. The replication is not supported, and we make no W$\times$KV claim. % src: analysis/ahook/out/wakv_20261001T094405Z.md
 
 \paragraph{Static precision restoration (appendix only).} We tested whether restoring selected modules to higher precision recovers a damaged RTN-W3 model. We report this line as a mechanism stress test, not a method. In RTN-W3 the gains largely tracked the number of restored bits. A random MLP arm also recovered much of the gap, and no arm beat whole-model GPTQ-W4 at matched storage. % src: docs/RESEARCH_LOG.md W67, W64
-\todo{RESTORE: the q8 RTN-W3 attention vs.\ byte-matched random-attention result (one seed) is cited only after its restoration output is committed; it is not used for any claim}
+\todo{RESTORE: the q8 RTN-W3 attention vs.\ byte-matched random-attention result (one seed) is cited only after its restoration output is checked; it is not used for any claim}
 
 \paragraph{Success equivalence.} Not established (Table~\ref{tab:e2e}).
 
-\paragraph{``Errors are absorbed''.} An interim reading of the injection study said that injected defects seldom change outcomes. The per-state analysis shows two-sided turnover (\S\ref{sec:intervention}), so this reading is retracted.
+\paragraph{``Errors are absorbed''.} An interim reading of the injection study said that injected defects seldom change outcomes. The per-state analysis shows two-sided turnover (Appendix~\ref{app:injection}), so this reading is retracted.
+
+\paragraph{Superseded estimand names.} The W89 draft reported $A=\YY{BB}-\YY{QB}$, $C=\YY{BB}-\YY{BQ}$ and $I$. In the present notation $A=\DB=F-H$ and $C=F-G$; the values are unchanged (Table~\ref{tab:ghf}).

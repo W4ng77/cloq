@@ -1,0 +1,46 @@
+\section{R3: Do Sampling and Environment Change the Answer?}
+\label{sec:r3}
+
+Bank P skips text-only differences. We ask whether the picture changes at ordinary states, under another user simulator, at unseen tasks, and without a user simulator.
+
+\begin{table}[t]
+\centering\scriptsize\setlength{\tabcolsep}{2.6pt}
+% src: analysis/fork/out/bank_u_f01_20261001T134456Z.md (§3 class composition and consequence per sub-bank; comparator block, unique states)
+% src: docs/REPORT_GPT61_20261001_0915.md (correction 1: 39/56 after deduplication)
+\begin{tabular}{@{}lllll@{}}
+\toprule
+& (i) identical & (ii) same tool & (iii) different & (iv) act vs.\ \\
+Model:sub & & structure, text & tool or args & talk \\
+\midrule
+q4:U1  & 141: 0 & 93: 14 (.151) & 8: 0 & 13: 7 (.538) \\
+q8:U1  & 173: 0 & 59: 7 (.119) & 13: 2 (.154) & 10: 0 \\
+q4:U2B & 141: 0 & 91: 16 (.176) & 11: 2 (.182) & 12: 1 (.083) \\
+q8:U2B & 172: 0 & 51: 1 (.020) & 11: 1 (.091) & 21: 3 (.143) \\
+q4:U2Q & 34: 0 & 21: 3 (.143)$^\ast$ & 2: 0 & 3: 1 (.333) \\
+q8:U2Q & 50: 0 & 5: 0 & 2: 0 & 3: 0 \\
+\midrule
+unique rows & 684: 0 & 310: 39 (.126) & 46: 5 (.109) & 60: 12 (.200) \\ % derived: 310=296+13+1; 46=1+19+26; 60=14+46; .126=39/(296+13+1); .109=5/(1+19+26); .200=12/(14+46)
+\bottomrule
+\end{tabular}
+\caption{Which kind of action difference changes the outcome at ordinary states (Bank U, block f01). Entries: ``state rows: outcome-changing rows (flip rate)'', pooled over the three cells of a model within a sub-bank. The last row counts each (cell, state) once: q4/q8 GPTQ-W4's U2Q states repeat their U1 states ($^\ast$ includes the two repeated class-(ii) flips), so 58 flipping rows become 56. Source: \nolinkurl{analysis/fork/out/bank_u_f01_20261001T134456Z.md}.}
+\label{tab:taxonomy}
+\end{table}
+
+\paragraph{Ordinary states turn over less, mostly through text under our simulator.} At ordinary states, replacing Q's action changes the outcome less often than at first divergences. Per sub-bank, $M$ is .082--.118 for q4 W4 cells in U1 and U2B, and at most .047 for q8 and KV8 cells. The net gain lies within $\pm$.035 in every cell and sub-bank, and every interval covers zero (Appendix~\ref{app:banku}, which also reports the common-controller subsample). % src: analysis/fork/out/bank_u_f01_20261001T134456Z.md (§2)
+Table~\ref{tab:taxonomy} classifies the action pairs. Identical actions never change the outcome, as determinism implies. After deduplication, 39 of the 56 outcome-changing differences ($\approx$69.6\%) are class (ii): the two actions have the same tool structure and differ in text, nearly always two different natural-language replies. Only 5 involve a different tool name, call count or argument. % src: analysis/fork/out/bank_u_f01_20261001T134456Z.md; docs/REPORT_GPT61_20261001_0915.md (correction 1)
+This is a \emph{composition share}. Per instance, a text difference flips the outcome in 12.6\% of rows, a tool or argument difference in 10.9\% and an act/talk difference in 20.0\%. Text differences dominate the flips mainly because they are common: 310 of the 416 differing rows. % derived: 12.6=100*39/(296+13+1); 10.9=100*5/(1+19+26); 20.0=100*12/(14+46); 310=296+13+1; 416=296+13+1+1+19+26+14+46
+Rates vary by sub-bank, from .020 (q8 U2B) to .176 (q4 U2B) for text, and on small denominators up to .538 for act/talk. Simple content features (a question, a confirmation request, a new entity on one side only) do not separate flipping from non-flipping text pairs. % src: analysis/fork/out/bank_u_f01_20261001T134456Z.md (§3 M rate column; §4)
+Bank P cannot see these differences by design. These flip labels come from one simulator, and the control below shows that most of them do not persist under another. \todo{BANKU-F023: per-sub-bank $M$ and taxonomy rates at blocks f01--f03 with block intervals; f02/f03 have run but are not analysed}
+
+\paragraph{Another user simulator: text consequences do not survive.} Most consequential differences at ordinary states are text, so the user simulator is a plausible mediator; changing it moves $\tau$-bench outcomes by 9--15 points \citep{seshadri2026lost,jain2026userproxybench}. % src: outputs/.drafts/storyline-v7-lit.md (rows 23-24)
+We froze a control before running it: the 39 deduplicated class-(ii) flips of block f01 and 39 matched non-flipping states. Their BQ and QQ branches were each re-run three times with a different user simulator, Sonnet 5.5 answering through a file relay from Claude Code subagents. % src: docs/RESEARCH_LOG.md W90, W91 (manifests/fork/simctrl_v3.json)
+Judged by the sign of the replicate mean, only 7 of the 39 flips keep their direction (95\% CI 0.075--0.335). Six reverse, and 26 vanish (15 both succeed, 2 both fail, 9 ties). Among the matched non-flip states, 11 of 39 become flips (0.15--0.45). Replicates of the same arm disagree in 41\% of flip arms and in 21--26\% of control arms. % src: analysis/fork/out/simctrl_20261001T212742Z.md
+Flips in either direction at the original flip states (13 of 39) are thus about as frequent as new flips at matched non-flip states (11 of 39). % derived: 13=7+6
+Under a different user simulator, the text-difference flips of Bank U cannot be distinguished from flips that arise at matched non-flip states. \textbf{The consequences of text-only action differences at ordinary states are therefore largely simulator-dependent, and not a stable property of the action.} The scope of this control is narrow. It re-runs continuations on fixed histories produced with the original simulator; its simulator is a stochastic relay, not API Sonnet and not real users; and it covers block f01 only, with three replicates. It does not test the Bank P tool-structure forks behind R1 and R2.
+
+\paragraph{Unseen tasks: telecom holdout.} On telecom development data (q8, 80 tasks $\times$ 6 blocks), current-action turnover is .123--.148 with net gains of $-0.6$ and $+2.7$\pp{}. % src: analysis/fork/out/holdout_k_planning_20261001T144122Z.md (Dev fit)
+Before any holdout unit was run, we froze a confirmatory protocol (sha256 \texttt{902892dd\ldots}). It covers 34 unseen telecom tasks $\times$ 12 fresh nonce blocks $\times$ 3 cells (q4 GPTQ-W4, q8 GPTQ-W4, q8 AWQ-W4, weighted 1/2, 1/4, 1/4). The primary endpoint is $\Gall$ on a crossed 90\% interval against $\pm$3\pp{}; secondaries are two-sidedness and repeatability of task fragility (Appendix~\ref{app:prereg}). % src: docs/insights/PREREG_FORK_CONFIRM.md §0; manifests/fork/splits_v1.json (holdout.prereg_sha256)
+\todo{HOLDOUT: $\Gall$, crossed 90\% CI and pre-registered reading; S1 $r$/$d$ bounds; S2 $\rho$, $p$; exclusions}. Development results are not retroactively confirmed.
+
+\paragraph{No user simulator: BFCL and ALFWorld.} BFCL multi-turn and ALFWorld have no simulated user, and each item runs once. Replacing a W4 agent's first divergent action changes the outcome in 5.2--24.6\% of items, in both directions. The net gain covers zero except for BFCL q4 AWQ-W4, where it is $-3.8$ [$-6.5$, $-1.3$]\pp{}. % src: analysis/fork/out/ext_20261001T135106Z.md
+Two-sided turnover is therefore not specific to a user simulator. Intervals here are item-level only.

@@ -1,0 +1,131 @@
+\section{Setup Details}
+\label{app:setup}
+
+\paragraph{Splits.} The development split has 58 retail, 27 airline and 80 telecom tasks. The holdout has 34 telecom tasks, and its pre-registration hash is recorded in the split file. % src: manifests/fork/splits_v1.json
+The telecom split was fixed from \tautwo{}'s 114-task base split by a stratified, salted hash before any run. % src: manifests/telecom/dev_v1.json
+The external benchmarks use BFCL multi-turn (base, miss\_func, miss\_param and long\_context, 197 items each) and ALFWorld (134 out-of-distribution games). Items were selected by hash in manifests committed before any model run. % src: docs/RESEARCH_LOG.md W36-ext (manifests/bfcl/bfcl_mt_v1.json, manifests/alfworld/alfworld_text_v1.json)
+
+\paragraph{Success endpoints.} For retail and airline we use the final-database match with normal termination. This is not \tautwo{}'s official reward, which additionally scores natural-language or communicate checks. Telecom uses the official deterministic task-basis success. Context overflow and unparseable output count as failures. Infrastructure outages are missing, never failures, and a block with a missing unit leaves the primary analysis.
+
+\paragraph{Fork mechanics.} The forced action is returned by a fork agent for the one step that follows $h_t$. A tool call is executed by the real environment, and text is answered by the real simulator, which never reuses observations from the original trajectory. tau2 resets step and error counters when it starts from a history. The fork restores them to the values used at $t$, so the remaining budget equals the original. Every max\_steps and too\_many\_errors episode on the checked blocks is reproduced by the recount. % src: docs/insights/FORK_PROTOCOL.md §2-§4
+
+\paragraph{Composition of divergent states.} Table~\ref{tab:composition} gives the four-way outcome composition behind Table~\ref{tab:atlas}.
+
+\begin{table}[h]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+% src: analysis/fork/out/dev_all_20261001T070326Z.md (Consequence composition and type breakdown; coverage table)
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+Cell & units & div.\ states & rescue & damage & both succ. & both fail \\
+\midrule
+q4 GPTQ-W4 & 1700 & 1102 & 116 & 148 & 267 & 571 \\
+q4 AWQ-W4  & 1700 & 1439 & 167 & 172 & 340 & 760 \\
+q8 GPTQ-W4 & 1700 & 1473 & 177 & 128 & 276 & 892 \\
+q8 AWQ-W4  & 1700 & 1562 & 194 & 161 & 318 & 889 \\
+q4 KV8     & 1870 & 593 & 58 & 64 & 154 & 317 \\
+q8 KV8     & 1870 & 855 & 81 & 70 & 161 & 543 \\
+\bottomrule
+\end{tabular}
+\caption{Divergent-state composition of $(\YY{BQ},\YY{QQ})$ on the \tautwo{} panel (85 tasks; 20 blocks for W4, 22 for KV8). Units without a divergence count as zero in $r$, $d$, $M$ and $\Gall$. Source: \nolinkurl{analysis/fork/out/dev_all_20261001T070326Z.md}.}
+\label{tab:composition}
+\end{table}
+
+\begin{table}[h]
+\centering\scriptsize\setlength{\tabcolsep}{2pt}
+% src: analysis/fork/out/dev_all_20261001T070326Z.md (Four-branch decomposition on observed divergent states)
+\resizebox{\columnwidth}{!}{\begin{tabular}{@{}lllll@{}}
+\toprule
+Cell & $A$ & $C$ & $I$ & strict rev.\ (\%) \\
+\midrule
+q4 GPTQ-W4 & $-3.2$ [$-6.4$, $+0.2$] & $+0.5$ [$-1.2$, $+2.2$] & $+0.3$ [$-3.1$, $+3.4$] & 2.6 \\
+q4 AWQ-W4  & $-1.7$ [$-3.6$, $+0.4$] & $-0.4$ [$-2.4$, $+1.5$] & $+1.3$ [$-1.6$, $+4.0$] & 3.1 \\
+q8 GPTQ-W4 & $+5.0$ [$+3.2$, $+6.8$] & $+2.1$ [$+0.2$, $+4.0$] & $-1.7$ [$-4.1$, $+0.7$] & 2.7 \\
+q8 AWQ-W4  & $+1.9$ [$-0.1$, $+3.8$] & $-1.5$ [$-4.2$, $+0.8$] & $+0.3$ [$-3.5$, $+4.1$] & 4.2 \\
+q4 KV8     & $+1.3$ [$-2.5$, $+4.9$] & $-0.2$ [$-3.5$, $+3.7$] & $-2.4$ [$-6.2$, $+1.2$] & 1.2 \\
+q8 KV8     & $+2.8$ [$+0.3$, $+5.5$] & $+1.2$ [$-0.5$, $+3.2$] & $-1.5$ [$-4.3$, $+0.9$] & 1.2 \\
+\bottomrule
+\end{tabular}}
+\caption{Four-branch decomposition on divergent states (pp; block-bootstrap 95\% intervals). $A=\YY{BB}-\YY{QB}$, $C=\YY{BB}-\YY{BQ}$, $I=\YY{BQ}+\YY{QB}-\YY{BB}-\YY{QQ}$. Strict reversal: $A\cdot G<0$. Source: \nolinkurl{analysis/fork/out/dev_all_20261001T070326Z.md}.}
+\label{tab:aci}
+\end{table}
+
+\section{End-to-End Success Comparison}
+\label{app:e2e}
+
+The forked-state gain $\Gall$ is not an end-to-end comparison. Table~\ref{tab:e2e} gives the end-to-end comparison, computed separately on the same checkpoints, the same tasks and the same 20 nonce blocks as the forks. % src: analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md
+
+\begin{table}[h]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+% src: analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{@{}lrrcc@{}}
+\toprule
+Cell & Q / BF16 (\%) & Q$-$BF16 [95\% CI] & NI 3\pp{} & TOST $\pm$3\pp{} \\
+\midrule
+q4 GPTQ-W4 & 40.0 / 35.8 & $+4.2$ [$-2.4$, $+10.5$] & pass & fail \\
+q4 AWQ-W4  & 36.8 / 35.8 & $+0.9$ [$-5.8$, $+7.5$] & fail & fail \\
+q8 GPTQ-W4 & 30.1 / 30.4 & $-0.2$ [$-7.7$, $+6.8$] & fail & fail \\
+q8 AWQ-W4  & 31.5 / 30.4 & $+1.2$ [$-5.3$, $+7.6$] & fail & fail \\
+pool, all four & & $+1.5$ [$-2.7$, $+5.6$] & pass & fail \\
+\bottomrule
+\end{tabular}
+\caption{End-to-end closed-loop success, quantized minus BF16 (pp). Units are paired on nonce, and the crossed task$\times$block bootstrap is drawn jointly across cells. Non-inferiority (NI) at a 3\pp{} margin passes for q4 GPTQ-W4 and the all-four pool. Equivalence (TOST at $\pm$3\pp{}) passes nowhere. These comparisons therefore support neither a difference nor equivalence. Source: \nolinkurl{analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md}.}
+\label{tab:e2e}
+\end{table}
+
+\section{Process Audit (Table 4 v2)}
+\label{app:table4}
+
+\begin{table*}[t]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+% src: analysis/annotation/wp5/table4_v2.md (core rows and single-branch rows)
+% src: manifests/annotation/wp5_sample_v1.json (n = 80)
+\resizebox{\textwidth}{!}{\begin{tabular}{@{}llllll@{}}
+\toprule
+Label (source) & Comparison & rescue & damage & both succeed & both fail \\
+\midrule
+\texttt{unintended\_or\_unconsented\_change} (LLM) & QQ vs BQ & 9 vs 2, $+0.35$ [$+0.08$, $+0.57$] & 1 vs 9, $-0.40$ [$-0.62$, $-0.11$] & 1 vs 1 & 5 vs 7, $-0.10$ [$-0.35$, $+0.17$] \\
+write executed (programmatic) & QQ vs BQ & 17 vs 17, $0.00$ [$-0.25$, $+0.25$] & 15 vs 14, $+0.05$ [$-0.26$, $+0.35$] & 10 vs 9 & 11 vs 13 \\
+executed write w/o recorded consent (prog.) & QQ vs BQ & 9 vs 5, $+0.20$ [$-0.06$, $+0.43$] & 3 vs 3, $0.00$ [$-0.21$, $+0.21$] & 3 vs 2 & 4 vs 3 \\
+loop or budget exhaustion (LLM) & QQ vs BQ & 5 vs 0, $+0.25$ [$+0.04$, $+0.47$] & 0 vs 2, $-0.10$ [$-0.30$, $+0.08$] & 1 vs 2 & 7 vs 4 \\
+action judged indefensible (LLM) & Q vs B action & 7 vs 8, $-0.05$ [$-0.37$, $+0.28$] & 12 vs 5, $+0.35$ [$-0.05$, $+0.65$] & 10 vs 6 & 12 vs 9 \\
+local defect, core (LLM) & Q vs B action & 4 vs 6, $-0.10$ [$-0.33$, $+0.14$] & 12 vs 7, $+0.25$ [$-0.09$, $+0.53$] & 6 vs 3 & 11 vs 7 \\
+QQ first-action defect corrected later (LLM) & single branch & 4/20 [0.08, 0.42] & 10/20 [0.30, 0.70] & 4/20 & 7/20 \\
+\bottomrule
+\end{tabular}}
+\caption{Process audit of 80 development fork states, 20 per outcome sign (rescue: $\YY{BQ}=1,\YY{QQ}=0$; damage: $\YY{BQ}=0,\YY{QQ}=1$). \textbf{LLM-annotated} by Sonnet 5.5 (two independent blind instances and an adjudicating instance), plus rule-based programmatic labels; no human labels. Counts are first vs.\ second of $n=20$ states. Intervals are within-state paired differences with Newcombe 95\% CIs; single-branch rows use Wilson 95\% intervals. This is a process description conditional on outcome-defined groups: not causal, not prevalence. The label name is the rubric category; we make no claim about consent. Source: \nolinkurl{analysis/annotation/wp5/table4_v2.md}.}
+\label{tab:table4}
+\end{table*}
+
+The core ``local defect'' combines groundedness, argument validity and permission/consent judgements. The tool-validity field (inter-annotator $\kappa=0.29$) is excluded from it. Mechanical fields agree with the programmatic verifier (write executed vs.\ the rubric's irreversible-change field, $\kappa=0.99$). The consent fields agree only moderately ($\kappa=0.44$ on writes both see). % src: analysis/annotation/wp5/table4_v2.md; docs/RESEARCH_LOG.md W79 (analysis/annotation/wp5/programmatic_agreement_v1.json)
+
+\section{Holdout Pre-Registration}
+\label{app:prereg}
+
+The protocol \nolinkurl{docs/insights/PREREG_FORK_CONFIRM.md} was frozen before any holdout unit was run. Its sha256 is \nolinkurl{902892dd63e99e16ab9beefee9d39319d835eacdada3d4d92c4a1022d13fd622}. % src: manifests/fork/splits_v1.json; docs/RESEARCH_LOG.md W87
+It fixes the following design:
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+\item tasks, cells, weights and nonce blocks;
+\item halves $H_A=\{h01,h04,h05,h09,h11,h12\}$ and $H_B$, the rest of $h01$--$h12$;
+\item an outcome-blind repair rule, with reserve blocks used only for infrastructure repair;
+\item the decisional crossed interval (two-way ANOVA moments, normal 90\%);
+\item the readings: positive if $L>0$, above 3\pp{} if $L>3$, small if the interval lies inside $\pm$3\pp{}, otherwise inconclusive;
+\item the secondary families S1 (both $r>0$ and $d>0$) and S2 (persona-stratified permutation, 10{,}000 draws, no outcome screen);
+\item six stratum families, with Holm correction within each.
+\end{itemize}
+% src: docs/insights/PREREG_FORK_CONFIRM.md §0, §3, §6-§9
+The analysis script refuses holdout data unless the hash matches. \todo{HOLDOUT: full confirmatory table (per cell and pooled: units, exclusions, $r$, $d$, $M$, $\Gall$ with crossed and block-$t$ intervals; S2 $\rho_c$; strata)}
+
+\section{Withdrawn and Negative Results}
+\label{app:withdrawn}
+
+\paragraph{W$\times$KV interaction (not supported).} An earlier q4 analysis reported a W4$\times$KV4 interaction of $-14.9$ [$-23.8$, $-6.0$]\pp{} ($k=3$). Its KV16 reference lacked the Q/K rotation used for KV4, so rotation and quantization were confounded. % src: analysis/ahook/out/wakv_20261001T054021Z.md (legacy kv16 row); docs/RESEARCH_LOG.md W65
+With a matched rotated reference, the q4 interaction is $-9.0$ [$-30.6$, $+12.5$]. % src: docs/RESEARCH_LOG.md W74 (analysis/ahook/out/wakv_20261001T054021Z.md)
+The pre-registered q8 replication gives $+2.1$ [$-5.8$, $+10.1$] over 6 blocks, crossed [$-8.2$, $+12.4$]. The replication is not supported, and we make no W$\times$KV claim. % src: analysis/ahook/out/wakv_20261001T094405Z.md
+
+\paragraph{Static precision restoration (appendix only).} We tested whether restoring selected modules to higher precision recovers a damaged RTN-W3 model. We report this line as a mechanism stress test, not a method. In RTN-W3 the gains largely tracked the number of restored bits. A random MLP arm also recovered much of the gap, and no arm beat whole-model GPTQ-W4 at matched storage. % src: docs/RESEARCH_LOG.md W67, W64
+\todo{RESTORE: the q8 RTN-W3 attention vs.\ byte-matched random-attention result (one seed) is cited only after its restoration output is committed; it is not used for any claim}
+
+\paragraph{Success equivalence.} Not established (Table~\ref{tab:e2e}).
+
+\paragraph{``Errors are absorbed''.} An interim reading of the injection study said that injected defects seldom change outcomes. The per-state analysis shows two-sided turnover (\S\ref{sec:intervention}), so this reading is retracted.

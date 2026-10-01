@@ -1,0 +1,47 @@
+\section{Introduction}
+\label{sec:intro}
+
+Quantized models are a standard way to deploy LLM agents, and quantized agents are usually evaluated as quantized classifiers are: compare the end-task score with that of the full-precision reference. In a closed-loop benchmark such as \tautwo{} \citep{barres2025tau2}, however, the agent talks to a simulated user and calls tools until the episode ends. Once one action differs, the user's reply, the tool results and every later decision can differ too. This paper asks \textbf{how quantization-induced changes in full actions become task consequences through the interaction and the subsequent execution.}
+
+\paragraph{Why end-to-end comparisons cannot answer this.} An end-to-end comparison runs the two agents independently and compares success. Such comparisons can hide large changes behind a flat average \citep{dutta2024accuracy,jang2026flat}. They also cannot attribute a change. A success difference between two independent trajectories mixes the effect of the first changed action with everything both agents do afterwards. Our own end-to-end comparisons are also inconclusive. On the checkpoints, tasks and nonce blocks we fork, quantized-minus-BF16 success ranges from $-0.2$ to $+4.2$\pp{} across four W4 cells. Yet task-resampled 95\% intervals are about $\pm$6--7\pp{} wide, and an equivalence test at $\pm$3\pp{} fails in every cell (Appendix~\ref{app:e2e}). % src: analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md
+We therefore do not claim that quantized and BF16 agents succeed equally.
+
+\paragraph{What we do.} We intervene at a single state. Along the quantized agent's own trajectory, we find the first decision at which BF16 (B) and the quantized agent (Q) produce different full actions from the identical saved history. We then replay that state four times, executing either agent's action and continuing with either agent to the end (Figure~\ref{fig:fork}). Crossing \{current action\} $\times$ \{continuation controller\} separates three questions. Does the current action matter? Does the controller that continues matter? Do the two interact? The pair $(\YY{BQ},\YY{QQ})$ gives rescues ($r$), damages ($d$), turnover $M=r+d$ and the gain $G=r-d$. $G$ is the gain from replacing the action at the forked state and continuing with Q. It is not the end-to-end BF16-versus-quantized success difference.
+
+\paragraph{What we find.} The evidence comes in three layers, with decreasing strength.
+\begin{enumerate}[leftmargin=*,itemsep=1pt,topsep=2pt]
+\item \textbf{A two-sided consequence atlas} (\S\ref{sec:atlas}). On the \tautwo{} retail/airline panel, replacing a W4 agent's first divergent action flips the task outcome in 15.5--20.9\% of task-block units, in both directions. The fixed-pool $G$ lies between $-1.9$ and $+2.9$\pp{}. % src: analysis/fork/out/dev_all_20261001T070326Z.md
+On average over divergent states, the action, continuation and interaction terms are mostly indistinguishable from zero. Turnover concentrates in fragile tasks whose direction repeats across independent nonce blocks. The concentration is a retrospective conditional association on development data, in 6 configurations $\times$ 2 directions; its pre-registered holdout test has not been run (\todo{HOLDOUT: confirmatory reading}). % src: analysis/fork/out/w67_audit_v2_20261001T0600Z_20261001T070500Z.md
+\item \textbf{Shared-state consequence structure} (\S\ref{sec:banku}). On ordinary states sampled independently of outcome, 39 of the 56 outcome-changing differences ($\approx$69.6\%) are same-structure text differences, such as talk versus talk. Only 5 of the 56 involve a different tool or different arguments. Different quantizers co-flip the same shared states with different actions, a single-block lead from 5 distinct states. % src: analysis/fork/out/bank_u_f01_20261001T134456Z.md, docs/REPORT_GPT61_20261001_0915.md
+\item \textbf{Bounding results} (\S\ref{sec:intervention}). Injected local defects produce heterogeneous two-sided turnover of the same size as a process-perturbation control, with no error-specific effect detected. An LLM-annotated process audit shows that local defects and final failure do not correspond one-to-one.
+\end{enumerate}
+
+\paragraph{Contributions.} (1)~A same-state four-branch counterfactual protocol for closed-loop agents, with signed estimands, bit-exact replay acceptance and block-level inference. (2)~A multi-axis atlas covering weight, KV-cache and stress quantization, three benchmarks and two model sizes. It shows large two-sided turnover at the forked state and its concentration in fragile tasks; that concentration is pre-registered for confirmation on a protected holdout. (3)~Shared-state evidence that most consequential differences are full-language differences. We also report a controlled intervention and a process audit that bound the ``local defect $\rightarrow$ failure'' story. We report withdrawn claims, including a W$\times$KV interaction that did not replicate, in Appendix~\ref{app:withdrawn}.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  font=\footnotesize,
+  box/.style={draw, rounded corners=2pt, align=center, inner sep=2.5pt},
+  act/.style={draw, rounded corners=2pt, align=center, inner sep=2pt, fill=gray!12},
+  br/.style={draw, align=center, inner sep=1.5pt, minimum width=1.3cm},
+  arr/.style={-{Stealth[length=4pt]}, thin}]
+\node[box, text width=7.0cm] (h) at (0,0) {identical saved state $s_t$ (history, environment and device DBs, user-simulator view, used step/error budget) at the first divergence of B and Q along Q's trajectory};
+\node[act] (aB) at (-1.9,-1.1) {current action $a_{\mathrm{B}}$};
+\node[act] (aQ) at (1.9,-1.1) {current action $a_{\mathrm{Q}}$};
+\draw[arr] (h.south -| aB) -- (aB); \draw[arr] (h.south -| aQ) -- (aQ);
+\node[br] (bb) at (-2.85,-2.15) {BB\\[-1pt]{\scriptsize cont.\ B}};
+\node[br] (bq) at (-0.95,-2.15) {BQ\\[-1pt]{\scriptsize cont.\ Q}};
+\node[br] (qb) at (0.95,-2.15) {QB\\[-1pt]{\scriptsize cont.\ B}};
+\node[br] (qq) at (2.85,-2.15) {QQ\\[-1pt]{\scriptsize cont.\ Q}};
+\draw[arr] (aB) -- (bb); \draw[arr] (aB) -- (bq);
+\draw[arr] (aQ) -- (qb); \draw[arr] (aQ) -- (qq);
+\foreach \n/\l in {bb/BB,bq/BQ,qb/QB,qq/QQ} {\node[below=0.08cm of \n, font=\scriptsize] (y\n) {$Y_{\mathrm{\l}}\in\{0,1\}$};}
+\node[box, text width=7.0cm, fill=orange!8, anchor=north] (cat) at (0,-3.1)
+  {$(\YY{BQ},\YY{QQ})$: rescue $(1,0)$, damage $(0,1)$, both succeed, both fail\\[1pt]
+   $r,d$;\; $M=r+d$;\; $G=E[\YY{BQ}-\YY{QQ}]=r-d$\\[1pt]
+   $A=\YY{BB}-\YY{QB}$,\; $C=\YY{BB}-\YY{BQ}$,\; $I=\YY{BQ}+\YY{QB}-\YY{BB}-\YY{QQ}$};
+\end{tikzpicture}
+\caption{The same-state four-branch fork (schematic, not data). B = BF16 agent; Q = quantized agent. Branch XY executes the current action $a_{\mathrm{X}}$ as the agent's next step, and controller Y then continues to the end with the original remaining budget. QQ re-executes Q's original episode, and its bit-exact reproduction is the no-op check. $G=A+I$ is the action effect under Q's continuation; it is not the end-to-end success difference. Estimands are defined in \S\ref{sec:estimands}.}
+\label{fig:fork}
+\end{figure}

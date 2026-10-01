@@ -1,0 +1,39 @@
+\section{R1: What Replacing the Current Action Rescues and Damages}
+\label{sec:r1}
+
+\begin{table}[t]
+\centering\scriptsize\setlength{\tabcolsep}{2.4pt}
+% src: analysis/fork/out/dev_all_20261001T070326Z.md (two-sided table; W4:all pooled row)
+\resizebox{\columnwidth}{!}{\begin{tabular}{@{}lrrrrrll@{}}
+\toprule
+Cell & units & div. & $r$ & $d$ & $M$ & $\Gall$ [fixed pool] & [new tasks] \\
+\midrule
+q4 GPTQ-W4 & 85$\times$20 & 1102 & 6.8 & 8.7 & 15.5 & $-1.9$ [$-3.7$, $-0.1$] & [$-6.8$, $+2.7$] \\
+q4 AWQ-W4  & 85$\times$20 & 1439 & 9.8 & 10.1 & 19.9 & $-0.3$ [$-2.2$, $+1.6$] & [$-5.4$, $+5.2$] \\
+q8 GPTQ-W4 & 85$\times$20 & 1473 & 10.4 & 7.5 & 17.9 & $+2.9$ [$+1.4$, $+4.4$] & [$-2.9$, $+9.2$] \\
+q8 AWQ-W4  & 85$\times$20 & 1562 & 11.4 & 9.5 & 20.9 & $+1.9$ [$-0.6$, $+4.3$] & [$-3.9$, $+8.1$] \\
+W4 pool    & 85$\times$20 & & 9.6 & 9.0 & 18.6 & $+0.7$ [$-0.3$, $+1.6$] & \\
+\midrule
+q4 KV8 & 85$\times$22 & 593 & 3.1 & 3.4 & 6.5 & $-0.3$ [$-1.7$, $+1.0$] & [$-3.0$, $+2.3$] \\
+q8 KV8 & 85$\times$22 & 855 & 4.3 & 3.7 & 8.1 & $+0.6$ [$-0.4$, $+1.6$] & [$-1.9$, $+3.0$] \\
+\midrule
+q4 GPTQ-W3$^s$ & 85$\times$3 & 232 & 9.0 & 10.2 & 19.2 & $-1.2$ [$-7.0$, $+4.7$] & [$-8.6$, $+5.9$] \\
+q4 KV4-rot$^s$ & 85$\times$3 & 233 & 11.8 & 7.1 & 18.8 & $+4.7$ [$-4.1$, $+13.5$] & [$-3.1$, $+12.9$] \\
+q8 GPTQ-W3$^s$ & 85$\times$3 & 242 & 10.2 & 8.2 & 18.4 & $+2.0$ [$-12.5$, $+16.4$] & [$-6.3$, $+11.8$] \\
+q8 KV4-rot$^s$ & 85$\times$3 & 239 & 11.8 & 8.6 & 20.4 & $+3.1$ [$-14.5$, $+20.8$] & [$-5.9$, $+12.9$] \\
+q8 RTN-W3$^s$ & 85$\times$3 & 255 & 3.1 & 3.5 & 6.7 & $-0.4$ [$-3.8$, $+3.0$] & [$-4.7$, $+3.9$] \\
+\bottomrule
+\end{tabular}}
+\caption{Replacing Q's first divergent action while Q continues, \tautwo{} retail/airline panel (pp). Denominator: the full pool of tasks $\times$ complete blocks; units without a Bank P state count as zero. div.\ = Bank P states. $\Gall=r-d$ is a local replacement effect, \emph{not} the end-to-end success difference (Appendix~\ref{app:e2e}). Fixed pool: block bootstrap ($\ge$10 blocks) or $t$ over block means; new tasks: crossed task$\times$block bootstrap. $^s$stress cell, 3 blocks. Source: \nolinkurl{analysis/fork/out/dev_all_20261001T070326Z.md}.}
+\label{tab:r1}
+\end{table}
+
+\paragraph{Two-sided turnover, small net gain.} Table~\ref{tab:r1} reports the current-action swap with its denominators. On the \tautwo{} panel (85 tasks $\times$ 20 complete blocks), replacing a W4 agent's first divergent action changes the task outcome in $M=15.5$--$20.9$\% of units. % src: analysis/fork/out/dev_all_20261001T070326Z.md
+Rescues and damages are of similar size, $r=6.8$--$11.4$ and $d=7.5$--$10.1$\pp{}, so the net gain $\Gall$ lies between $-1.9$ and $+2.9$\pp{}. Two fixed-pool intervals exclude zero, negative for q4 GPTQ-W4 and positive for q8 GPTQ-W4; none of the new-task intervals does. Pooled over the four W4 cells, $\Gall$ is $+0.7$ [$-0.3$, $+1.6$]\pp{} with $M=18.6$\%. % src: analysis/fork/out/dev_all_20261001T070326Z.md
+KV8 turns over fewer outcomes ($M=6.5$--$8.1$\%), and the stress cells reach W4-like turnover with only three blocks. % src: analysis/fork/out/dev_all_20261001T070326Z.md
+A small net gain therefore coexists with substantial turnover in both directions.
+
+\paragraph{What this is not.} $\Gall$ is the effect of replacing one action at a selected state while Q continues. It says nothing about whether the quantized and BF16 agents are equally successful end to end. That comparison runs two independent trajectories, and on the same checkpoints, tasks and blocks it is inconclusive: an equivalence test at $\pm$3\pp{} fails in every W4 cell (Appendix~\ref{app:e2e}). % src: analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md
+
+\paragraph{Turnover concentrates in tasks (exploratory).} The top 20\% of tasks hold 57--71\% of all flips in the W4 and KV8 cells, and task-level turnover and its direction repeat across disjoint halves of the nonce blocks. % src: analysis/fork/out/consequence_v2_20261001T070850Z.json (share_of_consequences_in_top20pct_tasks)
+This is a retrospective association on viewed development data (Appendix~\ref{app:concentration}); its pre-registered test on unseen tasks is pending (\S\ref{sec:r3}).
