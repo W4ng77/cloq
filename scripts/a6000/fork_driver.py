@@ -731,6 +731,8 @@ def bank_u(spec, bases, user_base, servers, out):
     dump(out / "bank_summary.json", res)
     log(f"bank_u {m}:{cell} {spec['blocks']}: ok {res['n_ok']}/{res['n_rows']}, exact {res['n_exact_agreement']}, noop {res['noop']}, "
         f"branches {res['n_branches_run']}, {res['seconds']:.0f} s, gate_pass {res['gate_pass']}")
+    if spec.get("limit_per_sub") and not res["gate_pass"]:  # gate task: fail loudly so queue deps on it never release (W76)
+        raise RuntimeError(f"bank_u gate failed for {m}:{cell}: see {out / 'bank_summary.json'}")
     return res
 
 

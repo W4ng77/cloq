@@ -69,3 +69,16 @@ Simulator demand is about 360 × 4–10 turns, roughly 2–4k turns, which is ne
 - `inject_q8_gptq_w4_d1_q3`: 2 GPUs.
 
 Each task runs B = BF16 and Q = GPTQ-W4 d1 c1, with output in `analysis/recovery/inject_<model>/`.
+
+## Amendment 1 (GPT-6.1 review 3; committed 2026-10-01 before any inject outcome was read)
+
+**TL;DR** Acceptance is per state. NC is renamed. D is reported as controller dependence of the injection effect, not as "BF16 recovers better".
+
+- **Per-state replay acceptance, which replaces the 90% rule.** VALID×Q is the original episode, a deterministic no-op. A state enters analysis only if VALID×Q passes the full replay check: reward equality, and every recorded prompt and action reproducing.
+  - Failing states are quarantined, investigated (infrastructure vs nondeterminism) and re-run.
+  - They are reported by count and reason, and never dropped silently.
+  - The q8 task stays parked until q4 meets this rule, with any exceptions explained and re-run.
+- **NC → "process-perturbation control".** It replaces the original action, spends budget and changes the dialogue, so it is not presumed harmless. Its contrast with VALID is reported as a measured effect.
+- **Primary contrast.** D = [Y(INV,B) − Y(VAL,B)] − [Y(INV,Q) − Y(VAL,Q)], paired by state, with intervals clustered by task.
+  - Reading: whether the injection's effect depends on the continuation controller. It is not equivalent to "BF16 recovers better". For example, B failing under both VALID and INVALID can also give D > 0.
+  - Always reported with it: the four success rates, the literal correction events (defect → correction → requirement satisfied), and process cost (turns, tool errors, tokens).
