@@ -1,0 +1,119 @@
+{
+ "schema": "holdout-cutpoints-v1",
+ "purpose": "Strata cut points for docs/insights/PREREG_FORK_CONFIRM.md \u00a79, fixed on telecom DEV data only (W86).",
+ "script": "analysis/fork/make_holdout_cutpoints.py",
+ "script_sha256": "43f5538b3001ed1ae97ec48f877240b3f8d9116a15236448e7b359cf515e53d4",
+ "snapshot": {
+  "id": "20261001T1411Z",
+  "path": "analysis/insights/iter_3/out/snapshot_auto_20261001T1411Z.json",
+  "sha256": "c39cf41037cc9f7e57f970b75977fb2008a6b4034360dd4ba3d84dbbb1ec8ce4"
+ },
+ "split_guard": {
+  "split": "dev",
+  "manifest": "manifests/fork/splits_v1.json",
+  "manifest_sha256": "d28d422cfce596dc65452a54d967eb7b644e946e76513b63f490203fccd12c36",
+  "n_units_not_in_split": 0
+ },
+ "holdout_read": false,
+ "tertile_rule": "labels T1: v <= c1; T2: c1 < v <= c2; T3: v > c2; (c1, c2) = the pair of observed distinct dev values minimising sum_k (share_k - 1/3)^2 over the three bins, ties to the smaller pair (balanced_tertile_cuts)",
+ "families": {
+  "step_budget": {
+   "variable": "remaining step budget at t* (state budget.steps_left = max_steps - steps used before t*); unit-level, divergent units only",
+   "source": "telecom dev fork units, q8 gptq_w4_d1 + q8 awq_w4, blocks f01-f06, divergent units pooled",
+   "n_values": 957,
+   "cuts": [
+    191.0,
+    197.0
+   ],
+   "levels": [
+    "T1",
+    "T2",
+    "T3"
+   ],
+   "dev_counts": {
+    "T1": 285,
+    "T2": 306,
+    "T3": 366
+   }
+  },
+  "persona": {
+   "variable": "PERSONA:<x> parsed from the task id",
+   "levels": [
+    "Hard",
+    "None",
+    "Easy"
+   ],
+   "cuts": null
+  },
+  "bf16_difficulty": {
+   "variable": "task BF16 success rate (official_reward == 1), pooled over the q4 and q8 BF16 pair episodes of the analysis blocks",
+   "source": "a6k2_{q4,q8}_tel_bfpair_f01..f06 (dev), 12 episodes per task",
+   "rule": "'0': rate == 0; 'low': 0 < rate <= c; 'high': rate > c; c = median of the positive dev task rates",
+   "c": 0.3333333333333333,
+   "levels": [
+    "0",
+    "low",
+    "high"
+   ],
+   "dev_counts": {
+    "0": 46,
+    "low": 23,
+    "high": 11
+   }
+  },
+  "task_length": {
+   "variable": "task mean number of agent decisions over the q4 and q8 BF16 pair episodes of the analysis blocks",
+   "source": "a6k2_{q4,q8}_tel_bfpair_f01..f06 (dev), 12 episodes per task",
+   "cuts": [
+    15.666666666666666,
+    20.333333333333332
+   ],
+   "levels": [
+    "T1",
+    "T2",
+    "T3"
+   ],
+   "dev_counts": {
+    "T1": 26,
+    "T2": 27,
+    "T3": 27
+   }
+  },
+  "issue_type": {
+   "variable": "issue type parsed from the task id prefix [<issue>]",
+   "levels": [
+    "mms_issue",
+    "mobile_data_issue",
+    "service_issue"
+   ],
+   "cuts": null
+  },
+  "n_faults": {
+   "variable": "number of injected faults = '|'-separated items between ']' and '[PERSONA' in the task id",
+   "source": "the 80 telecom dev task ids",
+   "cuts": [
+    3.0,
+    5.0
+   ],
+   "levels": [
+    "T1",
+    "T2",
+    "T3"
+   ],
+   "dev_counts": {
+    "T1": 32,
+    "T2": 24,
+    "T3": 24
+   }
+  }
+ },
+ "n_dev_tasks": 80,
+ "dev_blocks": [
+  "f01",
+  "f02",
+  "f03",
+  "f04",
+  "f05",
+  "f06"
+ ]
+}

@@ -1,0 +1,1017 @@
+{
+ "schema": "holdout-k-planning-v1",
+ "created_utc": "20261001T144122Z",
+ "script": "analysis/fork/holdout_k_planning.py",
+ "split": "dev (telecom only; analyze_dev.split_guard enforced; no holdout task id read)",
+ "snapshot": "analysis/insights/iter_3/out/snapshot_auto_20261001T1344Z.json",
+ "provenance": {
+  "guard": {
+   "split": "dev",
+   "manifest": "manifests/fork/splits_v1.json",
+   "manifest_sha256": "d28d422cfce596dc65452a54d967eb7b644e946e76513b63f490203fccd12c36",
+   "n_units_not_in_split": 0
+  },
+  "deduplicated": 0,
+  "incomplete_blocks": {}
+ },
+ "seed": 20261001,
+ "reps": 1000,
+ "perms_in_sim": 2000,
+ "assumptions": {
+  "holdout_tasks": 34,
+  "holdout_persona_mix": "11 Easy / 11 Hard / 12 None (dev mix 27/25/28 scaled; holdout ids not read)",
+  "cells": [
+   "q4 gptq_w4_d1",
+   "q8 gptq_w4_d1",
+   "q8 awq_w4"
+  ],
+  "cell_weights": [
+   0.5,
+   0.25,
+   0.25
+  ],
+  "q4_gptq_w4_d1": "no telecom dev forks exist for q4; parameters borrowed from q8 GPTQ-W4 d1 (flag)",
+  "cross_cell_task_corr_rho_u": 0.804,
+  "cross_cell_block_corr_rho_v": 0.119,
+  "rho_v_raw": 0.119,
+  "halves": "first K/2 vs last K/2 blocks (exchangeable, equivalent to the sha order)",
+  "repeatability_test": "Spearman per cell, equal-weight mean over estimable cells, one-sided, persona-stratified permutation of m_B task labels identical across cells; constant vector -> cell not estimable",
+  "G_intervals": "t over K block means of the cell-averaged task mean (df K-1); crossed = two-way ANOVA moments, normal"
+ },
+ "dev_fit": {
+  "gptq_w4_d1": {
+   "n_tasks": 80,
+   "blocks": [
+    "f01",
+    "f02",
+    "f03",
+    "f04",
+    "f05",
+    "f06"
+   ],
+   "units": 480,
+   "M_rate": 0.1479,
+   "M_rate_by_block": [
+    0.125,
+    0.1375,
+    0.0875,
+    0.1,
+    0.2125,
+    0.225
+   ],
+   "G_all": 0.0271,
+   "G_by_block": [
+    0.0,
+    0.0625,
+    0.0375,
+    0.025,
+    -0.0875,
+    0.125
+   ],
+   "M_rate_by_persona": {
+    "Easy": 0.1667,
+    "Hard": 0.1333,
+    "None": 0.1429
+   },
+   "tasks_with_any_M": 30,
+   "tasks_M_ge_half": 12,
+   "s_u_fit": 2.224,
+   "s_u_profile95": {
+    "lo": 1.732,
+    "hi": 2.855
+   },
+   "block_effects_logit": [
+    -0.213,
+    -0.057,
+    -0.756,
+    -0.559,
+    0.734,
+    0.85
+   ],
+   "s_v_moment": 0.573,
+   "var_block_effects": 0.439,
+   "mean_sampling_var": 0.1103,
+   "direction_beta": {
+    "a": 140.56533334278583,
+    "b": 97.32895569665926,
+    "mean_rescue_share": 0.5908730886746036,
+    "n_tasks_with_M": 30,
+    "rescues": 42,
+    "consequential": 71
+   },
+   "mu_logit_by_persona": {
+    "Easy": -2.85,
+    "Hard": -3.077,
+    "None": -3.225
+   },
+   "dev_split_half_spearman_descriptive": 0.626
+  },
+  "awq_w4": {
+   "n_tasks": 80,
+   "blocks": [
+    "f01",
+    "f02",
+    "f03",
+    "f04",
+    "f05",
+    "f06"
+   ],
+   "units": 480,
+   "M_rate": 0.1229,
+   "M_rate_by_block": [
+    0.1375,
+    0.1375,
+    0.075,
+    0.1375,
+    0.175,
+    0.075
+   ],
+   "G_all": -0.0063,
+   "G_by_block": [
+    -0.0375,
+    -0.0375,
+    0.05,
+    0.0125,
+    0.025,
+    -0.05
+   ],
+   "M_rate_by_persona": {
+    "Easy": 0.1914,
+    "Hard": 0.1,
+    "None": 0.0774
+   },
+   "tasks_with_any_M": 31,
+   "tasks_M_ge_half": 8,
+   "s_u_fit": 1.624,
+   "s_u_profile95": {
+    "lo": 1.265,
+    "hi": 2.086
+   },
+   "block_effects_logit": [
+    0.215,
+    0.215,
+    -0.617,
+    0.215,
+    0.59,
+    -0.617
+   ],
+   "s_v_moment": 0.35,
+   "var_block_effects": 0.2495,
+   "mean_sampling_var": 0.1272,
+   "direction_beta": {
+    "a": 134.12371521105626,
+    "b": 148.4131591025766,
+    "mean_rescue_share": 0.47471224963779735,
+    "n_tasks_with_M": 31,
+    "rescues": 28,
+    "consequential": 59
+   },
+   "mu_logit_by_persona": {
+    "Easy": -2.116,
+    "Hard": -3.043,
+    "None": -3.538
+   },
+   "dev_split_half_spearman_descriptive": 0.514
+  }
+ },
+ "fit_ok": true,
+ "simulation": {
+  "fitted": [
+   {
+    "K": 12,
+    "reps": 1000,
+    "n_perm": 2000,
+    "su_scale": 1.0,
+    "null": false,
+    "G_true_equal_weight": 0.0183,
+    "G_hat_mean": 0.0183,
+    "G_hat_sd_across_reps": 0.0122,
+    "ci90_width_t_blocks_pp": 3.88,
+    "ci95_width_t_blocks_pp": 4.76,
+    "ci90_width_crossed_pp": 4.09,
+    "ci95_width_crossed_pp": 4.87,
+    "P_t_LB_gt_0": 0.458,
+    "P_t_ci90_inside_pm3pp": 0.284,
+    "P_crossed_ci90_inside_pm3pp": 0.265,
+    "repeatability_power_alpha05": 0.999,
+    "P_not_estimable_endpoint": 0.0,
+    "mean_cells_estimable": 3.0,
+    "median_rho": 0.622,
+    "mean_distinct_rate_levels_per_half": 5.31
+   }
+  ],
+  "s_u_halved": [
+   {
+    "K": 12,
+    "reps": 1000,
+    "n_perm": 2000,
+    "su_scale": 0.5,
+    "null": false,
+    "G_true_equal_weight": 0.0098,
+    "G_hat_mean": 0.0096,
+    "G_hat_sd_across_reps": 0.0084,
+    "ci90_width_t_blocks_pp": 2.95,
+    "ci95_width_t_blocks_pp": 3.61,
+    "ci90_width_crossed_pp": 2.98,
+    "ci95_width_crossed_pp": 3.55,
+    "P_t_LB_gt_0": 0.254,
+    "P_t_ci90_inside_pm3pp": 0.708,
+    "P_crossed_ci90_inside_pm3pp": 0.707,
+    "repeatability_power_alpha05": 0.726,
+    "P_not_estimable_endpoint": 0.0,
+    "mean_cells_estimable": 3.0,
+    "median_rho": 0.295,
+    "mean_distinct_rate_levels_per_half": 3.65
+   }
+  ],
+  "null_s_u_0": [
+   {
+    "K": 12,
+    "reps": 500,
+    "n_perm": 2000,
+    "su_scale": 1.0,
+    "null": true,
+    "G_true_equal_weight": null,
+    "G_hat_mean": 0.0063,
+    "G_hat_sd_across_reps": 0.0068,
+    "ci90_width_t_blocks_pp": 2.37,
+    "ci95_width_t_blocks_pp": 2.9,
+    "ci90_width_crossed_pp": 2.42,
+    "ci95_width_crossed_pp": 2.88,
+    "P_t_LB_gt_0": 0.196,
+    "P_t_ci90_inside_pm3pp": 0.93,
+    "P_crossed_ci90_inside_pm3pp": 0.936,
+    "repeatability_power_alpha05": 0.046,
+    "P_not_estimable_endpoint": 0.0,
+    "mean_cells_estimable": 3.0,
+    "median_rho": 0.031,
+    "mean_distinct_rate_levels_per_half": 2.85
+   }
+  ],
+  "G_3pp": [
+   {
+    "K": 12,
+    "reps": 1000,
+    "n_perm": 2000,
+    "su_scale": 1.0,
+    "null": false,
+    "G_true_equal_weight": 0.03,
+    "G_hat_mean": 0.0303,
+    "G_hat_sd_across_reps": 0.0127,
+    "ci90_width_t_blocks_pp": 3.91,
+    "ci95_width_t_blocks_pp": 4.79,
+    "ci90_width_crossed_pp": 4.3,
+    "ci95_width_crossed_pp": 5.12,
+    "P_t_LB_gt_0": 0.791,
+    "P_t_ci90_inside_pm3pp": 0.066,
+    "P_crossed_ci90_inside_pm3pp": 0.063,
+    "repeatability_power_alpha05": 1.0,
+    "P_not_estimable_endpoint": 0.0,
+    "mean_cells_estimable": 3.0,
+    "median_rho": 0.62,
+    "mean_distinct_rate_levels_per_half": 5.29
+   }
+  ]
+ },
+ "cost": {
+  "measured": {
+   "source": "/data/ziyangs/cloq_work/logs/node_*.out (claimed/exited pairs; GPU-h = wall x GPUs held)",
+   "groups": {
+    "closed|q4|awq_w4|fdev1": {
+     "gpu_h_ok": 0.78,
+     "gpu_h_all": 1.75,
+     "attempts": 2,
+     "failed": 1
+    },
+    "closed|q4|bfpair|fdev1": {
+     "gpu_h_ok": 1.8,
+     "gpu_h_all": 1.8,
+     "attempts": 1,
+     "failed": 0
+    },
+    "closed|q4|bfpair|fdev2": {
+     "gpu_h_ok": 2.13,
+     "gpu_h_all": 2.13,
+     "attempts": 1,
+     "failed": 0
+    },
+    "closed|q4|gptq_w4_d1|fdev1": {
+     "gpu_h_ok": 5.14,
+     "gpu_h_all": 5.14,
+     "attempts": 1,
+     "failed": 0
+    },
+    "closed|q4|gptq_w4_d1|fdev2": {
+     "gpu_h_ok": 4.75,
+     "gpu_h_all": 4.75,
+     "attempts": 1,
+     "failed": 0
+    },
+    "closed|q8|awq_w4|fdev1": {
+     "gpu_h_ok": 3.68,
+     "gpu_h_all": 3.68,
+     "attempts": 1,
+     "failed": 0
+    },
+    "closed|q8|awq_w4|fdev2": {
+     "gpu_h_ok": 1.79,
+     "gpu_h_all": 1.79,
+     "attempts": 1,
+     "failed": 0
+    },
+    "closed|q8|bfpair|fdev1": {
+     "gpu_h_ok": 2.08,
+     "gpu_h_all": 2.08,
+     "attempts": 1,
+     "failed": 0
+    },
+    "closed|q8|bfpair|fdev2": {
+     "gpu_h_ok": 2.23,
+     "gpu_h_all": 2.23,
+     "attempts": 1,
+     "failed": 0
+    },
+    "closed|q8|gptq_w4_d1|fdev1": {
+     "gpu_h_ok": 2.33,
+     "gpu_h_all": 2.33,
+     "attempts": 1,
+     "failed": 0
+    },
+    "closed|q8|gptq_w4_d1|fdev2": {
+     "gpu_h_ok": 2.85,
+     "gpu_h_all": 2.85,
+     "attempts": 1,
+     "failed": 0
+    },
+    "forkRA|q4|awq_w4|g1": {
+     "gpu_h_ok": 5.6,
+     "gpu_h_all": 5.6,
+     "attempts": 1,
+     "failed": 0
+    },
+    "forkRA|q4|awq_w4|g2": {
+     "gpu_h_ok": 5.79,
+     "gpu_h_all": 5.79,
+     "attempts": 1,
+     "failed": 0
+    },
+    "forkRA|q4|awq_w4|g3": {
+     "gpu_h_ok": 6.12,
+     "gpu_h_all": 6.12,
+     "attempts": 1,
+     "failed": 0
+    },
+    "forkRA|q4|awq_w4|g4": {
+     "gpu_h_ok": 6.66,
+     "gpu_h_all": 6.66,
+     "attempts": 1,
+     "failed": 0
+    },
+    "forkRA|q4|gptq_w4_d1|g1": {
+     "gpu_h_ok": 4.37,
+     "gpu_h_all": 4.37,
+     "attempts": 1,
+     "failed": 0
+    },
+    "forkRA|q4|gptq_w4_d1|g2": {
+     "gpu_h_ok": 4.27,
+     "gpu_h_all": 4.27,
+     "attempts": 1,
+     "failed": 0
+    },
+    "forkRA|q4|gptq_w4_d1|g3": {
+     "gpu_h_ok": 4.79,
+     "gpu_h_all": 4.79,
+     "attempts": 1,
+     "failed": 0
+    },
+    "forkRA|q4|gptq_w4_d1|g4": {
+     "gpu_h_ok": 4.08,
+     "gpu_h_all": 4.08,
+     "attempts": 1,
+     "failed": 0
+    },
+    "forkRA|q8|awq_w4|g1": {
+     "gpu_h_ok": 11.67,
+     "gpu_h_all": 11.67,
+     "attempts": 1,
+     "failed": 0
+    },
+    "forkRA|q8|awq_w4|g2": {
+     "gpu_h_ok": 11.47,
+     "gpu_h_all": 11.47,
+     "attempts": 1,
+     "failed": 0
+    },
+    "forkRA|q8|awq_w4|g3": {
+     "gpu_h_ok": 11.91,
+     "gpu_h_all": 11.91,
+     "attempts": 1,
+     "failed": 0
+    },
+    "forkRA|q8|awq_w4|g4": {
+     "gpu_h_ok": 10.55,
+     "gpu_h_all": 10.55,
+     "attempts": 1,
+     "failed": 0
+    },
+    "forkRA|q8|gptq_w4_d1|g1": {
+     "gpu_h_ok": 13.79,
+     "gpu_h_all": 13.79,
+     "attempts": 1,
+     "failed": 0
+    },
+    "forkRA|q8|gptq_w4_d1|g2": {
+     "gpu_h_ok": 12.34,
+     "gpu_h_all": 12.34,
+     "attempts": 1,
+     "failed": 0
+    },
+    "forkRA|q8|gptq_w4_d1|g3": {
+     "gpu_h_ok": 10.39,
+     "gpu_h_all": 10.39,
+     "attempts": 1,
+     "failed": 0
+    },
+    "forkRA|q8|gptq_w4_d1|g4": {
+     "gpu_h_ok": 11.57,
+     "gpu_h_all": 11.57,
+     "attempts": 1,
+     "failed": 0
+    },
+    "fork|q8|awq_w4|g1": {
+     "gpu_h_ok": 12.68,
+     "gpu_h_all": 12.68,
+     "attempts": 1,
+     "failed": 0
+    },
+    "fork|q8|awq_w4|g2": {
+     "gpu_h_ok": 10.96,
+     "gpu_h_all": 10.96,
+     "attempts": 1,
+     "failed": 0
+    },
+    "fork|q8|awq_w4|g3": {
+     "gpu_h_ok": 7.04,
+     "gpu_h_all": 20.31,
+     "attempts": 6,
+     "failed": 4
+    },
+    "fork|q8|gptq_w4_d1|g1": {
+     "gpu_h_ok": 9.07,
+     "gpu_h_all": 11.49,
+     "attempts": 6,
+     "failed": 3
+    },
+    "fork|q8|gptq_w4_d1|g2": {
+     "gpu_h_ok": 8.56,
+     "gpu_h_all": 8.56,
+     "attempts": 1,
+     "failed": 0
+    },
+    "fork|q8|gptq_w4_d1|g3": {
+     "gpu_h_ok": 21.82,
+     "gpu_h_all": 33.4,
+     "attempts": 5,
+     "failed": 2
+    }
+   },
+   "per_block": {
+    "closed|q4|awq_w4": {
+     "per_80task_block_gpu_h": [
+      0.26
+     ],
+     "median": 0.26,
+     "mean": 0.26
+    },
+    "closed|q4|bfpair": {
+     "per_80task_block_gpu_h": [
+      0.6,
+      0.71
+     ],
+     "median": 0.66,
+     "mean": 0.66
+    },
+    "closed|q4|gptq_w4_d1": {
+     "per_80task_block_gpu_h": [
+      1.71,
+      1.58
+     ],
+     "median": 1.65,
+     "mean": 1.65
+    },
+    "closed|q8|awq_w4": {
+     "per_80task_block_gpu_h": [
+      1.23,
+      0.6
+     ],
+     "median": 0.91,
+     "mean": 0.91
+    },
+    "closed|q8|bfpair": {
+     "per_80task_block_gpu_h": [
+      0.69,
+      0.74
+     ],
+     "median": 0.72,
+     "mean": 0.72
+    },
+    "closed|q8|gptq_w4_d1": {
+     "per_80task_block_gpu_h": [
+      0.78,
+      0.95
+     ],
+     "median": 0.86,
+     "mean": 0.86
+    },
+    "forkRA_group|q4|awq_w4": {
+     "per_80task_block_gpu_h": [
+      5.6,
+      5.79,
+      6.12,
+      6.66
+     ],
+     "median": 5.96,
+     "mean": 6.04
+    },
+    "forkRA_group|q4|gptq_w4_d1": {
+     "per_80task_block_gpu_h": [
+      4.37,
+      4.27,
+      4.79,
+      4.08
+     ],
+     "median": 4.32,
+     "mean": 4.38
+    },
+    "forkRA_group|q8|awq_w4": {
+     "per_80task_block_gpu_h": [
+      11.67,
+      11.47,
+      11.91,
+      10.55
+     ],
+     "median": 11.57,
+     "mean": 11.4
+    },
+    "forkRA_group|q8|gptq_w4_d1": {
+     "per_80task_block_gpu_h": [
+      13.79,
+      12.34,
+      10.39,
+      11.57
+     ],
+     "median": 11.96,
+     "mean": 12.02
+    },
+    "fork|q8|awq_w4": {
+     "per_80task_block_gpu_h": [
+      6.34,
+      5.48,
+      3.52
+     ],
+     "median": 5.48,
+     "mean": 5.11,
+     "mean_all_attempts": 7.33
+    },
+    "fork|q8|gptq_w4_d1": {
+     "per_80task_block_gpu_h": [
+      4.54,
+      4.28,
+      10.91
+     ],
+     "median": 4.54,
+     "mean": 6.58,
+     "mean_all_attempts": 8.91
+    }
+   }
+  },
+  "attempts": [
+   {
+    "task": "x3_telecom_smoke_q4",
+    "node": "node005",
+    "hours": 0.7844444444444445,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "a6k2_tel_det_q8_a",
+    "node": "node005",
+    "hours": 4.532777777777778,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "a6k2_tel_det_q8_b",
+    "node": "node004",
+    "hours": 6.255277777777778,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "a6k2_q8_tel_awq_w4",
+    "node": "node001",
+    "hours": 1.8591666666666666,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "a6k2_q8_tel_bf16",
+    "node": "node003",
+    "hours": 2.826111111111111,
+    "gpus": 1,
+    "rc": 1
+   },
+   {
+    "task": "fork_gate_q8_telecom_iso",
+    "node": "node006",
+    "hours": 0.19166666666666668,
+    "gpus": 1,
+    "rc": 1
+   },
+   {
+    "task": "a6k2_q4_tel_awq_w4_fdev1",
+    "node": "node003",
+    "hours": 0.9752777777777778,
+    "gpus": 1,
+    "rc": 1
+   },
+   {
+    "task": "fork_gate_q8_telecom_iso",
+    "node": "node005",
+    "hours": 1.4047222222222222,
+    "gpus": 2,
+    "rc": 0
+   },
+   {
+    "task": "a6k2_q4_tel_bfpair_fdev1",
+    "node": "node007",
+    "hours": 1.7969444444444445,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "a6k2_q8_tel_awq_w4_fdev2",
+    "node": "node005",
+    "hours": 1.7925,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "a6k2_q8_tel_bfpair_fdev1",
+    "node": "node003",
+    "hours": 2.08,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "a6k2_q4_tel_bfpair_fdev2",
+    "node": "node007",
+    "hours": 2.1344444444444446,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "a6k2_q8_tel_bfpair_fdev2",
+    "node": "node003",
+    "hours": 2.230277777777778,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "a6k2_q8_tel_gptq_w4_d1_fdev1",
+    "node": "node007",
+    "hours": 2.3305555555555557,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "a6k2_q8_tel_gptq_w4_d1_fdev2",
+    "node": "node007",
+    "hours": 2.8513888888888888,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "a6k2_q8_tel_awq_w4_fdev1",
+    "node": "node006",
+    "hours": 3.676111111111111,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "a6k2_q4_tel_gptq_w4_d1_fdev2",
+    "node": "node004",
+    "hours": 4.747777777777777,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "a6k2_q4_tel_gptq_w4_d1_fdev1",
+    "node": "node004",
+    "hours": 5.143611111111111,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "fork_dev_q4_gptq_w4_d1_g4",
+    "node": "node003",
+    "hours": 4.076666666666667,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "fork_dev_q4_gptq_w4_d1_g2",
+    "node": "node004",
+    "hours": 4.2683333333333335,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "fork_dev_q4_gptq_w4_d1_g1",
+    "node": "node001",
+    "hours": 4.373055555555555,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "fork_dev_q4_gptq_w4_d1_g3",
+    "node": "node003",
+    "hours": 4.785555555555556,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "fork_dev_q4_awq_w4_g1",
+    "node": "node003",
+    "hours": 5.598333333333334,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "fork_dev_q8_awq_w4_g2",
+    "node": "node005",
+    "hours": 5.735555555555556,
+    "gpus": 2,
+    "rc": 0
+   },
+   {
+    "task": "fork_dev_q4_awq_w4_g2",
+    "node": "node004",
+    "hours": 5.793888888888889,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "fork_dev_q4_awq_w4_g3",
+    "node": "node001",
+    "hours": 6.1161111111111115,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "fork_dev_q8_awq_w4_g3",
+    "node": "node007",
+    "hours": 5.953055555555555,
+    "gpus": 2,
+    "rc": 0
+   },
+   {
+    "task": "fork_dev_q8_gptq_w4_d1_g3",
+    "node": "node005",
+    "hours": 5.193888888888889,
+    "gpus": 2,
+    "rc": 0
+   },
+   {
+    "task": "fork_dev_q4_awq_w4_g4",
+    "node": "node005",
+    "hours": 6.661944444444444,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "pert_q8_tel_awq_w4_restore_attn_f123",
+    "node": "node005",
+    "hours": 2.117777777777778,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "fork_dev_q8_gptq_w4_d1_g1",
+    "node": "node007",
+    "hours": 6.895277777777777,
+    "gpus": 2,
+    "rc": 0
+   },
+   {
+    "task": "pert_q8_tel_awq_w4_resid_a0.5_f456",
+    "node": "node007",
+    "hours": 2.531388888888889,
+    "gpus": 1,
+    "rc": 0
+   },
+   {
+    "task": "fork_dev_q8_awq_w4_g1",
+    "node": "node004",
+    "hours": 5.833055555555555,
+    "gpus": 2,
+    "rc": 0
+   },
+   {
+    "task": "fork_dev_q8_awq_w4_g4",
+    "node": "node004",
+    "hours": 5.276944444444444,
+    "gpus": 2,
+    "rc": 0
+   },
+   {
+    "task": "fork_dev_q8_gptq_w4_d1_g4",
+    "node": "node007",
+    "hours": 5.786388888888889,
+    "gpus": 2,
+    "rc": 0
+   },
+   {
+    "task": "fork_dev_q8_gptq_w4_d1_g2",
+    "node": "node004",
+    "hours": 6.171111111111111,
+    "gpus": 2,
+    "rc": 0
+   },
+   {
+    "task": "fork_tel_q8_awq_w4_g2",
+    "node": "node005",
+    "hours": 5.478888888888889,
+    "gpus": 2,
+    "rc": 0
+   },
+   {
+    "task": "fork_tel_q8_gptq_w4_d1_g2",
+    "node": "node005",
+    "hours": 4.2811111111111115,
+    "gpus": 2,
+    "rc": 0
+   },
+   {
+    "task": "fork_tel_q8_awq_w4_g3",
+    "node": "node007",
+    "hours": 6.620833333333334,
+    "gpus": 2,
+    "rc": -15
+   },
+   {
+    "task": "fork_tel_q8_gptq_w4_d1_g3",
+    "node": "node007",
+    "hours": 5.784166666666667,
+    "gpus": 2,
+    "rc": -15
+   },
+   {
+    "task": "fork_tel_q8_gptq_w4_d1_g1",
+    "node": "node004",
+    "hours": 1.205,
+    "gpus": 2,
+    "rc": -15
+   },
+   {
+    "task": "fork_tel_q8_awq_w4_g3_s0of2",
+    "node": "node007",
+    "hours": 0.004166666666666667,
+    "gpus": 2,
+    "rc": 1
+   },
+   {
+    "task": "fork_tel_q8_awq_w4_g3_s1of2",
+    "node": "node007",
+    "hours": 0.004166666666666667,
+    "gpus": 2,
+    "rc": 1
+   },
+   {
+    "task": "fork_tel_q8_gptq_w4_d1_g1_s0of3",
+    "node": "node007",
+    "hours": 0.004166666666666667,
+    "gpus": 2,
+    "rc": 1
+   },
+   {
+    "task": "fork_tel_q8_gptq_w4_d1_g1_s1of3",
+    "node": "node007",
+    "hours": 0.004166666666666667,
+    "gpus": 2,
+    "rc": 1
+   },
+   {
+    "task": "fork_tel_q8_gptq_w4_d1_g3_s2of3",
+    "node": "node007",
+    "hours": 0.004166666666666667,
+    "gpus": 2,
+    "rc": 1
+   },
+   {
+    "task": "fork_tel_q8_gptq_w4_d1_g1_s2of3",
+    "node": "node007",
+    "hours": 1.5302777777777778,
+    "gpus": 2,
+    "rc": 0
+   },
+   {
+    "task": "fork_tel_q8_awq_w4_g3_s1of2",
+    "node": "node001",
+    "hours": 0.004166666666666667,
+    "gpus": 2,
+    "rc": 1
+   },
+   {
+    "task": "fork_tel_q8_awq_w4_g1",
+    "node": "node004",
+    "hours": 6.341388888888889,
+    "gpus": 2,
+    "rc": 0
+   },
+   {
+    "task": "fork_tel_q8_gptq_w4_d1_g3_s1of3",
+    "node": "node004",
+    "hours": 3.74,
+    "gpus": 2,
+    "rc": 0
+   },
+   {
+    "task": "fork_tel_q8_gptq_w4_d1_g1_s1of3",
+    "node": "node006",
+    "hours": 1.4302777777777778,
+    "gpus": 2,
+    "rc": 0
+   },
+   {
+    "task": "fork_tel_q8_awq_w4_g3_s0of2",
+    "node": "node006",
+    "hours": 1.7097222222222221,
+    "gpus": 2,
+    "rc": 0
+   },
+   {
+    "task": "fork_tel_q8_gptq_w4_d1_g1_s0of3",
+    "node": "node002",
+    "hours": 1.5722222222222222,
+    "gpus": 2,
+    "rc": 0
+   },
+   {
+    "task": "fork_tel_q8_awq_w4_g3_s1of2",
+    "node": "node004",
+    "hours": 1.8097222222222222,
+    "gpus": 2,
+    "rc": 0
+   },
+   {
+    "task": "fork_tel_q8_gptq_w4_d1_g3_s0of3",
+    "node": "node005",
+    "hours": 4.511388888888889,
+    "gpus": 2,
+    "rc": 0
+   },
+   {
+    "task": "fork_tel_q8_gptq_w4_d1_g3_s2of3",
+    "node": "node001",
+    "hours": 2.660277777777778,
+    "gpus": 2,
+    "rc": 0
+   },
+   {
+    "task": "a6k2_q4_tel_awq_w4_fdev1",
+    "node": "node006",
+    "hours": 0.7758333333333334,
+    "gpus": 1,
+    "rc": 0
+   }
+  ],
+  "holdout_K12_3cells": {
+   "K": 12,
+   "tasks_scale": "34/80",
+   "per_80task_block_components_gpu_h": {
+    "closed_q8_bfpair": 0.72,
+    "closed_q8_gptq": 0.86,
+    "closed_q8_awq": 0.91,
+    "closed_q4_bfpair": 0.66,
+    "closed_q4_gptq": 1.65,
+    "fork_q8_gptq": 6.58,
+    "fork_q8_awq": 5.11,
+    "fork_q4_gptq_scaled": 2.4
+   },
+   "q4_over_q8_fork_ratio_retail_airline_dev": 0.364,
+   "q4_over_q8_closed_loop_ratio_telecom": 1.919,
+   "total_gpu_h_conservative": 194.5,
+   "conservative_rule": "fork costs include failed/killed attempts and q4 fork uses the larger of the two q4/q8 ratios",
+   "per_holdout_block_gpu_h": 8.0,
+   "total_gpu_h": 96.3,
+   "range_x0.7_x1.5": [
+    67.0,
+    144.0
+   ],
+   "note": "means over measured dev groups; linear in tasks (holdout tasks are a stratified draw of the same base split, so per-task cost is assumed equal); q4 telecom forks were never run, so their cost is scaled; failed attempts excluded from the central figure"
+  }
+ },
+ "runtime_s": 22.9
+}

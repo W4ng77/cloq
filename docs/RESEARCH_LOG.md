@@ -10,6 +10,37 @@ Newest first.
 
 ---
 
+## W86 — PREREG_FORK_CONFIRM.md completed to READY TO FREEZE; dev cut points, confirmatory analysis script (dry run on dev), holdout task generator (2026-10-01 PDT)
+**TL;DR** The holdout prereg now encodes the author's six decisions, with no open items. The main session can record its sha256 `902892dd63e99e16ab9beefee9d39319d835eacdada3d4d92c4a1022d13fd622` in `splits_v1.json` (nothing was frozen here).
+- **Prereg** (`docs/insights/PREREG_FORK_CONFIRM.md`):
+  - Cells q4 GPTQ-W4 d1 / q8 GPTQ-W4 d1 / q8 AWQ-W4, with weights **1/2, 1/4, 1/4**.
+  - The **crossed task × block** interval decides (ANOVA moments, normal 90%); the block t is reported alongside. ±3 pp readings; ±5 pp sensitivity.
+  - Structural exclusions are kept and flagged when > 3. A QQ no-op mismatch is unit-level, not whole-directory quarantine.
+  - K = 12 (h01–h12). Reserves h13 (0354e294) and h14 (555fd7b8) are used only for infrastructure repair. Nonces were re-checked against 31 used nonces, with no collision.
+  - Halves: H_A = {h01, h04, h05, h09, h11, h12}.
+  - S2 has no outcome screen. Its permutation is keyed and persona-stratified, identical across cells, and its claim is worded honestly.
+  - Strata: six families of 3 levels each, Holm within each family.
+- **Cut points (dev only):** `manifests/fork/holdout_cutpoints_v1.json` (sha256 ab46abe9…), produced by `analysis/fork/make_holdout_cutpoints.py`.
+  - Step budget: T1 ≤ 191 < T2 ≤ 197 < T3 (tie-aware tertiles; 38% of dev values are 199).
+  - BF16 difficulty: 0 / (0, 1/3] / > 1/3.
+  - Task length: 15.67 / 20.33.
+  - Number of faults: 3 / 5.
+- **Analysis script:** `analysis/fork/analyze_holdout_confirm.py` (sha256 2af1b689…). It refuses `--split holdout` unless `analyze_dev.split_guard` passes, and it refuses if the cut-point sha has changed.
+- **DRY RUN ON DEV** (`analysis/fork/out/holdout_confirm_DRYRUN_DEV_20261001T144457Z.{json,md}`; telecom dev f01–f06 as a pseudo-holdout, q8 cells only, K = 6; exploratory):
+  - G_all **+1.04 pp**, crossed 90% CI [−0.97, +3.06]; block t [−1.43, +3.51]. The readings are not estimable (K' < 8).
+  - r 7.29 and d 6.25 pp, both with LB > 0.
+  - S2 ρ = 0.57 (GPTQ 0.63, AWQ 0.51), p = 0.0001.
+  - Per-cell G matches W85: +2.71 for GPTQ and −0.62 for AWQ.
+- **Planning re-run with the approved weights** (`analysis/fork/out/holdout_k_planning_20261001T144122Z.{json,md}`; `holdout_k_planning.py` gained `--weights` and `--ks`). At K = 12:
+  - Crossed width 4.1 pp and t width 3.9 pp.
+  - S2 power 1.00, or 0.73 with s_u halved; size 0.05.
+  - P(LB > 0 | G = 3 pp) = 0.79.
+- **Generator:** `scripts/a6000/make_tasks_holdout.py` runs dry by default. `--write` is refused before the freeze and was **not used**.
+  - The dry run prints **38 tasks**: 20 eval tasks (60 closed-loop runs) and 18 fork tasks, ≈ **96 GPU-h** (67–145); the reserves would add ≈ 16 GPU-h.
+  - q8 forks run on 2 GPUs. The closed loop stays on 1 GPU, as on dev, so that the fork can regenerate the Q actions. No node pins.
+  - The task file `manifests/telecom/holdout_v1.json` is written by `--write` from splits_v1.
+- No holdout task, trajectory or outcome was read. `splits_v1.json` was not edited. No sbatch was run and nothing was queued.
+
 ## W85 — Holdout K planning simulation (telecom dev only) and draft PREREG_FORK_CONFIRM.md (NOT frozen) (2026-10-01 PDT)
 **TL;DR** K = 12 is adequate, as confirmed on telecom dev data only; it was not selected from this simulation.
 - **Planning results** (34 simulated tasks, 3 equal-weight cells, fitted dev heterogeneity), K = 6 / 8 / 12 / 16:

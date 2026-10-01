@@ -46,6 +46,7 @@ import analyze_dev as AD  # noqa: E402
 OUT = ROOT / "analysis" / "fork" / "out"
 SEED = 20261001
 KS = (6, 8, 12, 16)
+W = np.array([1 / 3, 1 / 3, 1 / 3])  # cell weights of G_all and rho (HOLD_CELLS order); --weights overrides (W86)
 J_HOLD = 34
 CELLS_DEV = ("gptq_w4_d1", "awq_w4")
 HOLD_CELLS = (("q4", "gptq_w4_d1", "gptq_w4_d1"), ("q8", "gptq_w4_d1", "gptq_w4_d1"), ("q8", "awq_w4", "awq_w4"))
@@ -228,7 +229,7 @@ def simulate(params, K, reps, n_perm, rng, su_scale=1.0, null=False):
         resc = Mx & (rng.random(eta.shape) < q[:, None, :])
         G = resc.astype(float) - (Mx & ~resc).astype(float)               # J x K x C
         # ---- primary: G_all = equal-weight mean over cells; block means over tasks
-        Gjb = G.mean(axis=2)                                               # J x K (cell-averaged per task-block)
+        Gjb = G @ W                                                        # J x K (cell-weighted per task-block)
         gb = Gjb.mean(axis=0)
         m, sd = gb.mean(), gb.std(ddof=1)
         se_t = sd / np.sqrt(K)
@@ -260,9 +261,10 @@ def simulate(params, K, reps, n_perm, rng, su_scale=1.0, null=False):
         rA = spearman_ranks(mA[est]); rB = spearman_ranks(mB[est])
         rA = rA - rA.mean(axis=1, keepdims=True); rB = rB - rB.mean(axis=1, keepdims=True)
         nA, nB = np.linalg.norm(rA, axis=1), np.linalg.norm(rB, axis=1)
-        rho_obs = np.mean(np.sum(rA * rB, axis=1) / (nA * nB))
+        we = W[est] / W[est].sum()
+        rho_obs = float(we @ (np.sum(rA * rB, axis=1) / (nA * nB)))
         rBp = rB[:, P]                                                     # Ce x n_perm x J
-        rho_perm = np.mean(np.einsum("cj,cpj->cp", rA, rBp) / (nA * nB)[:, None], axis=0)
+        rho_perm = we @ (np.einsum("cj,cpj->cp", rA, rBp) / (nA * nB)[:, None])
         pval = (1 + np.sum(rho_perm >= rho_obs - 1e-12)) / (1 + n_perm)
         res["p"].append(pval); res["rho"].append(rho_obs)
     a = {k: np.asarray(v, float) for k, v in res.items()}
@@ -389,7 +391,14 @@ def main():
     ap.add_argument("--snapshot", default=None)
     ap.add_argument("--reps", type=int, default=1000)
     ap.add_argument("--perms", type=int, default=2000)
+    ap.add_argument("--weights", default=None, help="cell weights q4_gptq,q8_gptq,q8_awq (default equal); W86: 0.5,0.25,0.25")
+    ap.add_argument("--ks", default=None, help="comma list of K (default 6,8,12,16)")
     a = ap.parse_args()
+    global W, KS
+    if a.weights:
+        W = np.array([float(x) for x in a.weights.split(",")]); W = W / W.sum()
+    if a.ks:
+        KS = tuple(int(x) for x in a.ks.split(","))
     t0 = time.time()
     snap = Path(a.snapshot) if a.snapshot else Path(sorted(glob.glob(str(ROOT / "analysis/insights/iter_3/out/snapshot_auto_*.json")))[-1])
     units, prov = load_dev_units(snap)
@@ -453,7 +462,7 @@ def main():
     gfit = g_true(params)
     gt = [g for _, g in gfit]
     for name, sc in (("fitted", 1.0), ("s_u_halved", 0.5)):
-        val = round(float(np.mean([g for _, g in g_true(params, sc)])), 4)
+        val = round(float(W @ np.array([g for _, g in g_true(params, sc)])), 4)
         for r in sims[name]:
             r["G_true_equal_weight"] = val
     # EXTERNAL_REVIEW §F plans power at true G = 3 pp: shift each cell's rescue share so its G is +3 pp (a + b kept)
@@ -476,7 +485,7 @@ def main():
         "snapshot": str(snap.relative_to(ROOT)), "provenance": prov, "seed": SEED, "reps": a.reps, "perms_in_sim": a.perms,
         "assumptions": {
             "holdout_tasks": J_HOLD, "holdout_persona_mix": "11 Easy / 11 Hard / 12 None (dev mix 27/25/28 scaled; holdout ids not read)",
-            "cells": [f"{m} {c}" for m, c, _ in HOLD_CELLS], "cell_weights": "equal (1/3)",
+            "cells": [f"{m} {c}" for m, c, _ in HOLD_CELLS], "cell_weights": [round(float(x), 4) for x in W],
             "q4_gptq_w4_d1": "no telecom dev forks exist for q4; parameters borrowed from q8 GPTQ-W4 d1 (flag)",
             "cross_cell_task_corr_rho_u": round(fit["rho_u"], 3), "cross_cell_block_corr_rho_v": round(params["rho_v"], 3),
             "rho_v_raw": round(rv, 3), "halves": "first K/2 vs last K/2 blocks (exchangeable, equivalent to the sha order)",
@@ -521,7 +530,7 @@ def markdown(r: dict, jp: Path) -> str:
                      f"{s['P_t_ci90_inside_pm3pp']} | {s['P_crossed_ci90_inside_pm3pp']} | {s['repeatability_power_alpha05']} | "
                      f"{s['P_not_estimable_endpoint']} | {s['mean_distinct_rate_levels_per_half']} |")
         if name != "null_s_u_0":
-            L.append(f"\nTrue G_all under the model (equal weight): {r['simulation'][name][0]['G_true_equal_weight']:+.4f}.")
+            L.append(f"\nTrue G_all under the model (cell weights {r["assumptions"]["cell_weights"]}): {r['simulation'][name][0]['G_true_equal_weight']:+.4f}.")
         else:
             L.append("\nUnder this null the repeatability column is the test's size; the G columns use the dev G direction.")
         L.append("")
