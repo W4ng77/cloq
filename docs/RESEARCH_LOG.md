@@ -10,6 +10,19 @@ Newest first.
 
 ---
 
+## W67 — Consequential divergences come from fragile tasks with consistent direction; restoration line paused (2026-09-30 18:30 PDT)
+**TL;DR** New exploratory analysis `analysis/fork/analyze_consequence.py` on the dev forks (the same admitted complete-block units as analyze_dev).
+1. **Fragile tasks.** Outcome-changing pivots (M) concentrate in a minority of tasks. The per-task dispersion index is 4.1–6.5 against a binomial null of ≈1 (p < 0.001 in every main cell). The top 20% of tasks hold 57–88% of all flips.
+2. **Consistent direction.** Fragile tasks flip the same way across 20 independent nonces: fewer mixed-direction tasks than the null (p < 0.001 for W4, ≈0.02 for KV8). 68–86% of rescues sit in net-rescue tasks and 72–84% of damages in net-damage tasks. So the near-zero average G cancels systematic, opposite-sign task-level effects.
+3. **Shared across quantizers.** GPTQ, AWQ and KV8, and for AWQ even q4 and q8, flip the same task × block units (lift 1.5–2.1, φ 0.07–0.19 against a null 95% of about 0.04). Given that both flip, the direction is about a coin toss.
+4. **Position.** Pivot consequence peaks at t* = 1–2 (29% of divergent units) and falls to 11% for t* ≥ 7.
+
+**Restoration line paused** at the user's request: 56 pert_* and 22 pivot_* tasks moved to priority −4. In RTN-W3 the gains just track bits (a random MLP arm recovers 76%), and no arm beats GPTQ-W4 at matched storage.
+
+The status doc `docs/STATUS_20260930_night.md` supersedes the evening one.
+
+Evidence: `analysis/fork/out/consequence_20261001T011124Z.json`, `analysis/fork/analyze_consequence.py`.
+
 ## W66 — q8 W×K replication queued after pre-declaring the target (2026-09-30 16:45 PDT)
 **TL;DR** The q8 target contrast was committed before any q8 W×A×KV run existed:
 - **Commit:** `docs/insights/WAKV_PREREG.md`, **27a3802**; `analysis/ahook/analyze_wakv.py` sha256 7a60cfc455156832… at that commit.

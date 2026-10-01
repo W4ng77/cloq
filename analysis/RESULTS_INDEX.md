@@ -8,6 +8,7 @@
 | restoration / residual dose | `analysis/fork/out/restore_eval_*` | `analysis/fork/analyze_restore_eval.py` |
 | pivot detection (exploratory) | `analysis/fork/out/pivot_*` | `analysis/fork/analyze_pivot.py` |
 | pivot-arm screening | `analysis/fork/out/pivot_arms_*` | `analysis/fork/analyze_pivot_arms.py` |
+| fragile tasks / direction / cross-quantizer agreement (exploratory, W67) | `analysis/fork/out/consequence_*.json` | `analysis/fork/analyze_consequence.py` |
 | difficulty moderators (exploratory) | `analysis/fork/out/difficulty_*` | `analysis/fork/analyze_difficulty.py` |
 | W×A×KV matrix | `analysis/ahook/out/wakv_*` | `analysis/ahook/analyze_wakv.py` |
 | success NI/TOST | `analysis/insights/iter_4/out/success_ni_REAL_*.json` | `analysis/insights/iter_4/success_ni.py` |

@@ -100,6 +100,22 @@
    }
   },
   {
+   "id": "consequence",
+   "title": "Where consequential divergences come from: fragile tasks, direction consistency, cross-quantizer agreement (W67, exploratory)",
+   "role": "main",
+   "patterns": [
+    "^fork_(dev|kv)_"
+   ],
+   "fit": "Explains the near-zero average: systematic opposite-sign task-level effects; fragility is state-level and shared across quantizers.",
+   "analysis": {
+    "name": "fragility / direction / agreement",
+    "run": "cpu",
+    "script": "analysis/fork/analyze_consequence.py",
+    "cmd": "python analysis/fork/analyze_consequence.py --snapshot {snapshot}",
+    "trigger": "script_exists_and_new_done"
+   }
+  },
+  {
    "id": "difficulty",
    "title": "Difficulty / horizon moderators of fork effects (exploratory; M1-M5 draft prereg for telecom holdout)",
    "role": "main",
@@ -134,11 +150,11 @@
   {
    "id": "pivot_arms",
    "title": "Which module set flips the pivot action (restore arms at frozen fork states; step-3 selection rule FORK_PROTOCOL \u00a713)",
-   "role": "main",
+   "role": "paused",
    "patterns": [
     "^pivot_"
    ],
-   "fit": "Pivot-time localisation for the rescue story: reversion-to-B rate of structured vs byte-matched random arms (plain and recal), W4 and W3.",
+   "fit": "PAUSED (W67): restoration gains just track bits; no arm competitive at matched storage. Pivot-time localisation for the rescue story: reversion-to-B rate of structured vs byte-matched random arms (plain and recal), W4 and W3.",
    "analysis": {
     "name": "pivot-arm reversion + step-3 selection",
     "run": "cpu",
@@ -185,13 +201,13 @@
   {
    "id": "restoration",
    "title": "Layer/module BF16 restoration (byte-matched random controls) and alpha residual dose",
-   "role": "main",
+   "role": "paused",
    "patterns": [
     "^pert_",
     "_restore_",
     "_resid_"
    ],
-   "fit": "Local computation intervention and the deployment (precision allocation) test. Checkpoints verified (W39-pert). Closed-loop arms on dev blocks f01-f03 queued (W40): 17 arms x q4 GPTQ-W4 / q8 AWQ-W4, paired with the Q and BF16 runs on the same nonces. Fork versions of these arms wait for the fork gate.",
+   "fit": "PAUSED (W67): restoration gains just track bits; no arm competitive at matched storage. Local computation intervention and the deployment (precision allocation) test. Checkpoints verified (W39-pert). Closed-loop arms on dev blocks f01-f03 queued (W40): 17 arms x q4 GPTQ-W4 / q8 AWQ-W4, paired with the Q and BF16 runs on the same nonces. Fork versions of these arms wait for the fork gate.",
    "analysis": {
     "name": "restoration / residual-dose arms vs Q vs BF16 (success, gap closed, turnover)",
     "run": "cpu",
