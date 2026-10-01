@@ -10,6 +10,37 @@ Newest first.
 
 ---
 
+## W93 — 2×2 fork re-centred (GPT-6.1 review 6): G/H/F with paired differences, (Δ_Q, Δ_B) 3×3 table, 16 patterns, frozen-rule cases, coverage matrix (2026-10-01 PDT)
+**TL;DR** On each cell's own divergent states (same admitted units as `dev_all_20261001T070326Z`, units digest 11/11 equal): replacing only the current action (G), only the continuation (H) or both (F) moves success by a few pp at most in the W4/KV8 cells. Examples: q8 GPTQ-W4 G +3.3 [+1.6, +5.0], H +0.4, F +5.4 [+3.5, +7.2], G − H +2.9 [+1.3, +4.7]; q4 GPTQ-W4 G −2.9 [−5.7, −0.2], G − H −3.6 [−6.6, −0.6]. Stress RTN-W3 (q8) is dominated by the continuation: H +15.3, F +18.4, G − H −15.7 [−27.5, −3.9]. The action effect depends on which controller continues (Δ_Q ≠ Δ_B, off-diagonal) in 23–30% of W4 states (pool 26.9% [25.7, 28.1]) and about 15% of KV8 states (pool 15.3% [13.2, 17.3]). Yet the mean interaction is about 0 (W4 pool +0.0, KV8 −1.9 pp) because I > 0 and I < 0 are equally frequent. Strict sign reversals are only 1–4% of states (8–14% of the off-diagonal mass). The rest is "an effect under one controller, none under the other".
+- **Estimands** (first index = action at the first divergence, second = controller afterwards; all four arms come from the same frozen state).
+  - G = Y_BQ − Y_QQ, H = Y_QB − Y_QQ, F = Y_BB − Y_QQ.
+  - Δ_Q = Y_BQ − Y_QQ (= G), Δ_B = Y_BB − Y_QB, I = Δ_Q − Δ_B.
+  - Paired differences: G − H = Y_BQ − Y_QB; F − G = Y_BB − Y_BQ (= C); F − H = Y_BB − Y_QB (= Δ_B).
+  - Denominator: the cell's divergent states (ratio of block sums).
+  - Intervals: fixed task pool (block bootstrap with ≥ 10 complete blocks, else t over per-block ratios) and new-task generalisation (crossed task × block). They are reported in separate columns, B = 2000.
+- **Identified vs descriptive.**
+  - Identified (paired, same frozen states): everything within a cell. This covers G/H/F, their differences, the 3×3 table, the off-diagonal share and the 16 patterns.
+  - Descriptive, confounded by state selection: every cross-cell comparison (q4 vs q8, AWQ vs GPTQ, W4 vs KV8 (e.g. off-diagonal 27% vs 15%), main vs stress). Each cell selects its own first-divergence states.
+  - Pools are equal-weight averages of within-cell estimates on common complete blocks (W4 20 blocks, KV8 22). The stress pools are not poolable (1 common complete block), so stress cells are reported per cell only, with t intervals over 3 blocks.
+- **Mean I ≈ 0 with a large off-diagonal share.**
+  - E[I] = P(I=+1) + 2P(I=+2) − P(I=−1) − 2P(I=−2), while off-diagonal = P(I ≠ 0).
+  - Example, q8 GPTQ-W4: P(I > 0) = 10.9%, P(I < 0) = 12.0%, off-diagonal 22.9%, E[I] = −1.7 pp.
+  - The mean is the policy-value estimand. The off-diagonal share answers whether an action's consequence belongs to the action alone. It does not, for roughly 1 in 4 (W4) to 1 in 7 (KV8) divergent states.
+- **16 patterns** per cell (counts and shares) are in §3 of the md. 0000 (39–58%) and 1111 (6–20%) dominate.
+- **Cases** (frozen rule: re-checked units only, i.e. the QQ no-op replay passed, the Q pivot replay passed, and every branch is prefix_ok/env_ok; order = sha256('ghf-case-v1:' + state_id); 717 eligible states):
+  - rescue q4 KV8 retail:84 f11 (1100; wrong order id at the pivot → the wrong item returned under either controller);
+  - rescue q4 AWQ airline:3 q4 (1110; Q answers baggage from policy without lookup and later writes the wrong baggage update);
+  - damage q4 AWQ airline:11 f04 (0011; B looks up a non-existent user id and later fails a passenger update);
+  - damage q8 AWQ retail:40 f13 (1011);
+  - controller-dependent q4 AWQ airline:31 f13 (1000);
+  - controller-dependent q4 AWQ retail:61 q3 (1101).
+  - Each case gives the verbatim pivot actions and the per-branch tool, error, write and transfer chains.
+- **Coverage matrix** (§5): model × config × {retail, airline, telecom, alfworld, bfcl}, giving end-to-end blocks × tasks, 4-branch forks (tasks · divergent states · complete/found blocks), Bank U (blocks · rows · tasks) and holdout.
+  - 4-branch tau2 forks exist only for q4/q8 × {GPTQ-W4, AWQ-W4, KV8} (20–22 blocks) and the stress cells (3 blocks). q4 RTN-W3 has 0 complete blocks.
+  - Telecom dev forks: q8 AWQ-W4 and q8 GPTQ-W4 only (6 blocks). Telecom holdout fork dirs exist for q4 GPTQ-W4 and q8 AWQ/GPTQ-W4; they were listed by name only and not opened.
+  - q14/q32/l8 are end-to-end only.
+- **Evidence:** `analysis/fork/analyze_ghf.py`; `analysis/fork/out/ghf_20261001T211519Z.{json,md}`; `analysis/fork/out/fig_ghf_{q4_awq_w4,q4_gptq_w4_d1,q4_kvq_int8,q8_awq_w4,q8_gptq_w4_d1,q8_kvq_int8,pooled}_20261001T211519Z.png`. Inputs: snapshot `analysis/insights/iter_3/out/snapshot_auto_20261001T0600Z.json`; reference `analysis/fork/out/dev_all_20261001T070326Z.json`. CPU only; no telecom holdout data read.
+
 ## W91 — Simulator control via a Claude Code subagent relay (no API key): relay user simulator, manifest simctrl_v3, mock dry-run PASS, relay gate queued (2026-10-01 PDT)
 **TL;DR** There is no Anthropic API key. The user simulator of the W90 control is now served by Claude Code Sonnet 5.5 subagents through a file relay on NFS. This is a **different simulator** from API Sonnet (v2), so it gets its own frozen manifest, `simctrl_v3.json`. A CPU dry run with a mock responder passed (1 gate state, 18 branches, 18 relayed user turns, all protocol checks). Only the 3-state gate task is queued; the main session starts the responders.
 - **Relay protocol (simrelay-v1, `cloq/user_llm.py` provider `"relay"`).**
