@@ -1,127 +1,131 @@
-\section{P0 Audit: Statistics and Measurement Fixes}
-\label{app:audit}
+\section{Setup Details}
+\label{app:setup}
 
-An external review of an earlier version of this project identified statistics and measurement problems; all were confirmed in the code and fixed before the fork study. Everything below that touches the 28 pre-registered confirmatory runs (Appendix~\ref{app:prereg}) is a \emph{corrected, post-hoc} re-analysis; the pre-registered outputs are kept unchanged as history. The re-analysis reproduces the pre-registered numbers exactly before applying fixes (H3 $F=0.2602$, $p=0.0008$; H1 $p=0.74385$).
+\paragraph{Splits.} The development split has 58 retail, 27 airline and 80 telecom tasks. The holdout has 34 telecom tasks, and its pre-registration hash is recorded in the split file. % src: manifests/fork/splits_v1.json
+The telecom split was fixed from \tautwo{}'s 114-task base split by a stratified, salted hash before any run. % src: manifests/telecom/dev_v1.json
+The external benchmarks use BFCL multi-turn (base, miss\_func, miss\_param and long\_context, 197 items each) and ALFWorld (134 out-of-distribution games). Items were selected by hash in manifests committed before any model run. % src: docs/RESEARCH_LOG.md W36-ext (manifests/bfcl/bfcl_mt_v1.json, manifests/alfworld/alfworld_text_v1.json)
 
-\paragraph{H3 correction (split-task fingerprint).} The pre-registered test scaled each behaviour feature by the differences of the \emph{true} checkpoint pairs and then permuted checkpoint labels of a cosine matrix computed with that scale held fixed. The scale depends on the observed pairing, so permuted statistics are not exchangeable with the observed one. The corrected (main) test uses a pairing-invariant, unpaired pooled scale per split and feature, which makes the column permutation a valid permutation test; a sensitivity test recomputes the original preprocessing inside every permutation. Features, the 100 split halves and relabelling streams are fixed across variants.
+\paragraph{Success endpoints.} For retail and airline we use the final-database match with normal termination. This is not \tautwo{}'s official reward, which additionally scores natural-language or communicate checks. Telecom uses the official deterministic task-basis success. Context overflow and unparseable output count as failures. Infrastructure outages are missing, never failures, and a block with a missing unit leaves the primary analysis.
 
-\begin{table}[h]
-\centering\scriptsize\setlength{\tabcolsep}{2.5pt}
-\resizebox{\columnwidth}{!}{\begin{tabular}{@{}lcccc@{}}
-\toprule
-Family ($F$ / one-sided $p$) & relabel. & original (invalid) & main (corrected) & sensitivity \\
-\midrule
-Pooled, 4 blocks (= H3) & 5000 MC & 0.260 / 0.0008 & 0.136 / 0.0134 & 0.260 / 0.0028 \\
-RECAL only & 576 & 0.118 / 0.0052 & 0.025 / 0.304 & 0.118 / 0.130 \\
-RAND only & 36 & 0.450 / 0.028 & 0.283 / 0.028 & 0.450 / 0.028 \\
-q4 & 144 & 0.193 / 0.021 & 0.088 / 0.125 & 0.193 / 0.069 \\
-q8 & 144 & 0.328 / 0.0069 & 0.184 / 0.049 & 0.328 / 0.021 \\
-within model$\times$method, 6 blocks & 576 & 0.260 / 0.0017 & 0.158 / 0.0052 & 0.260 / 0.0035 \\
-within, GPTQ/AWQ blocks only & 16 & 0.117 / 0.0625 & 0.064 / 0.1875 & 0.117 / 0.25 \\
-\bottomrule
-\end{tabular}}
-\caption{H3 before and after correction. RECAL = W4 quantizer recalibrations (GPTQ/AWQ d3, d4); RAND = fixed Gaussian checkpoints ($k=1$, seeds s2, s4, s5). Exact enumeration where relabellings $\le 5000$; RAND's $p=0.028$ is the minimum attainable ($1/36$). RAND carries 74\% of the original pooled $F$ and 90\% of the corrected one. Source: \nolinkurl{analysis/insights/iter_4/out/h3_corrected_20260930T0044Z.json}; \nolinkurl{docs/insights/METHODOLOGY_REVISION.md} B1.}
-\label{tab:h3}
-\end{table}
+\paragraph{Fork mechanics.} The forced action is returned by a fork agent for the one step that follows $h_t$. A tool call is executed by the real environment, and text is answered by the real simulator, which never reuses observations from the original trajectory. tau2 resets step and error counters when it starts from a history. The fork restores them to the values used at $t$, so the remaining budget equals the original. Every max\_steps and too\_many\_errors episode on the checked blocks is reproduced by the recount. % src: docs/insights/FORK_PROTOCOL.md §2-§4
 
-\paragraph{Calibration by simulation.} Synthetic datasets resample the real per-task shift rows within block, so draws are exchangeable. At $\alpha=0.05$ the original test rejects 0.364 $\pm$ 0.011 (20 splits, $B=199$, 2000 datasets), 0.331 $\pm$ 0.006 (independent seeds, $B=99$, 6000 datasets) and 0.417 $\pm$ 0.011 (100 splits, $B=499$) of null datasets; the corrected test rejects 0.053 $\pm$ 0.005, 0.044 $\pm$ 0.003 and 0.061 $\pm$ 0.005 against nominal levels of at most 0.045, 0.040 and 0.048. The 100-split rows share datasets and sit 1.9--2.4 SE above nominal; we read them as a possible excess of at most 0.01. On i.i.d.\ synthetic shifts, the corrected test rejects 0.0405 $\pm$ 0.0025 (nominal $\le$ 0.040), the original 0.81. Power of the corrected test at planted signals $\delta=0.01/0.02/0.03/0.05$: 0.07/0.12/0.24/0.75. The pre-registered ``H3 supported'' label is removed; the corrected pooled result is post-hoc and is carried by the random checkpoints (Appendix~\ref{app:fingerprint}).
-
-\paragraph{Crossed variance components.} The pre-registered overdispersion estimator subtracted a nonce term that included the shared nonce main effect, biasing $\phi$ low. Replacing it by a crossed model $m_{jn}=\mu+a_j+b_n+e_{jn}$ leaves the H1 permutation $p$ unchanged (the removed term is invariant under checkpoint relabelling): pooled RECAL $\phi$ is 0.396 (pre-registered), 0.469 (main effect removed; $p=0.744$, identical) and 0.327 (fully crossed; $p=0.721$). The H1 verdict is unchanged. Crossed components over GPTQ/AWQ-W4 d1--d4 (Henderson method III; signed SD in pp, $\mathrm{sign}(v)\sqrt{|v|}$):
+\paragraph{Composition of divergent states.} Table~\ref{tab:composition} gives the four-way outcome composition behind Table~\ref{tab:atlas}.
 
 \begin{table}[h]
 \centering\scriptsize\setlength{\tabcolsep}{3pt}
-\resizebox{\columnwidth}{!}{\begin{tabular}{@{}lcccc@{}}
+% src: analysis/fork/out/dev_all_20261001T070326Z.md (Consequence composition and type breakdown; coverage table)
+\begin{tabular}{@{}lrrrrrr@{}}
 \toprule
-Model & residual (nonce$\times$ckpt + run) & checkpoint & nonce main & method \\
+Cell & units & div.\ states & rescue & damage & both succ. & both fail \\
 \midrule
-q4 GPTQ+AWQ & 2.62 & 3.69 & $-0.86$ & $-2.07$ \\
-q8 GPTQ+AWQ & 2.61 & 1.24 & 1.26 & 0.30 \\
+q4 GPTQ-W4 & 1700 & 1102 & 116 & 148 & 267 & 571 \\
+q4 AWQ-W4  & 1700 & 1439 & 167 & 172 & 340 & 760 \\
+q8 GPTQ-W4 & 1700 & 1473 & 177 & 128 & 276 & 892 \\
+q8 AWQ-W4  & 1700 & 1562 & 194 & 161 & 318 & 889 \\
+q4 KV8     & 1870 & 593 & 58 & 64 & 154 & 317 \\
+q8 KV8     & 1870 & 855 & 81 & 70 & 161 & 543 \\
 \bottomrule
-\end{tabular}}
-\caption{Crossed variance components of run-level success. Method has 1 df and is not estimable; a negative value is a moment estimate, not evidence that a component is zero. q4's checkpoint component is driven by d1/d2; d3/d4 are homogeneous. Source: \nolinkurl{analysis/insights/iter_4/out/p1_crossed_20260930T0044Z.json}.}
-\label{tab:varcomp}
+\end{tabular}
+\caption{Divergent-state composition of $(\YY{BQ},\YY{QQ})$ on the \tautwo{} panel (85 tasks; 20 blocks for W4, 22 for KV8). Units without a divergence count as zero in $r$, $d$, $M$ and $\Gall$. Source: \nolinkurl{analysis/fork/out/dev_all_20261001T070326Z.md}.}
+\label{tab:composition}
 \end{table}
 
-\paragraph{Measurement fixes.}
-\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
-\item \emph{Open-loop act probability.} A tool-start token outside the stored top-20 was counted as probability 0. Now reported with lower/upper bounds and a missing flag; means move by less than 0.001, although the flag is frequent (17--34\% of q4 positions for W4 and Gaussian cells).
-\item \emph{Top-$k$ KL.} Renamed to an approximation; an exact coarse-grained KL over tokens known on both sides plus one residual category (a lower bound) is added. Rankings are unchanged.
-\item \emph{Tool-name mass.} The prefix-tree estimate is demoted to a proxy with measured error terms; the main tool metric is the fully generated and parsed name and arguments, as in the forks.
-\item \emph{Confirmation feature.} A regex on the agent's own text was named as if it measured authorisation; it is renamed a confirmation-request proxy. Real authorisation needs user replies, tool rules and state, as in \S\ref{sec:annotation}.
-\item \emph{Write classification.} Replaced by the verified tool-type table (Table~\ref{tab:tooltypes}); 1.6\% of q4/q8 episodes contain an invalid tool call.
-\item \emph{Divergence analysis.} The earlier first-divergence analysis compared two independent trajectories, which stop sharing a history after the first difference; it cannot serve as a same-state fork. The fork design replaces it.
-\item \emph{Success naming.} ``Success'' for retail/airline was the DB end-state match; it is now named DB success, with official rewards reported separately (\S\ref{sec:conditions}).
-\end{itemize}
+\begin{table}[h]
+\centering\scriptsize\setlength{\tabcolsep}{2pt}
+% src: analysis/fork/out/dev_all_20261001T070326Z.md (Four-branch decomposition on observed divergent states)
+\resizebox{\columnwidth}{!}{\begin{tabular}{@{}lllll@{}}
+\toprule
+Cell & $A$ & $C$ & $I$ & strict rev.\ (\%) \\
+\midrule
+q4 GPTQ-W4 & $-3.2$ [$-6.4$, $+0.2$] & $+0.5$ [$-1.2$, $+2.2$] & $+0.3$ [$-3.1$, $+3.4$] & 2.6 \\
+q4 AWQ-W4  & $-1.7$ [$-3.6$, $+0.4$] & $-0.4$ [$-2.4$, $+1.5$] & $+1.3$ [$-1.6$, $+4.0$] & 3.1 \\
+q8 GPTQ-W4 & $+5.0$ [$+3.2$, $+6.8$] & $+2.1$ [$+0.2$, $+4.0$] & $-1.7$ [$-4.1$, $+0.7$] & 2.7 \\
+q8 AWQ-W4  & $+1.9$ [$-0.1$, $+3.8$] & $-1.5$ [$-4.2$, $+0.8$] & $+0.3$ [$-3.5$, $+4.1$] & 4.2 \\
+q4 KV8     & $+1.3$ [$-2.5$, $+4.9$] & $-0.2$ [$-3.5$, $+3.7$] & $-2.4$ [$-6.2$, $+1.2$] & 1.2 \\
+q8 KV8     & $+2.8$ [$+0.3$, $+5.5$] & $+1.2$ [$-0.5$, $+3.2$] & $-1.5$ [$-4.3$, $+0.9$] & 1.2 \\
+\bottomrule
+\end{tabular}}
+\caption{Four-branch decomposition on divergent states (pp; block-bootstrap 95\% intervals). $A=\YY{BB}-\YY{QB}$, $C=\YY{BB}-\YY{BQ}$, $I=\YY{BQ}+\YY{QB}-\YY{BB}-\YY{QQ}$. Strict reversal: $A\cdot G<0$. Source: \nolinkurl{analysis/fork/out/dev_all_20261001T070326Z.md}.}
+\label{tab:aci}
+\end{table}
 
-\paragraph{Act/talk selection effect.} Conditioning the quantized model's act probability on the reference's own choice selects positions where the reference's probability is near 0 or 1, so any perturbation, even a sign-symmetric one, pulls both conditional means toward the middle. For q4 RTN-W4, $P(\text{act}\mid\text{BF16 talked})$ rises from 0.014 to 0.088, while a sign-symmetric perturbation of the cell's own logit shifts predicts 0.080. The remaining directional part is a small net shift toward talking (unconditional $\Delta P(\text{act})$ between $-0.10$ and $+0.005$ on q4/q8 W4 cells), and size-matched random perturbations move it as much or more. Source: \nolinkurl{analysis/insights/iter_4/out/act_talk_selection_20260930T0044Z.json}.
+\section{End-to-End Success Comparison}
+\label{app:e2e}
 
-\section{Iteration-4 Pre-Registration Record}
+The forked-state gain $\Gall$ is not an end-to-end comparison. Table~\ref{tab:e2e} gives the end-to-end comparison, computed separately on the same checkpoints, the same tasks and the same 20 nonce blocks as the forks. % src: analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md
+
+\begin{table}[h]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+% src: analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{@{}lrrcc@{}}
+\toprule
+Cell & Q / BF16 (\%) & Q$-$BF16 [95\% CI] & NI 3\pp{} & TOST $\pm$3\pp{} \\
+\midrule
+q4 GPTQ-W4 & 40.0 / 35.8 & $+4.2$ [$-2.4$, $+10.5$] & pass & fail \\
+q4 AWQ-W4  & 36.8 / 35.8 & $+0.9$ [$-5.8$, $+7.5$] & fail & fail \\
+q8 GPTQ-W4 & 30.1 / 30.4 & $-0.2$ [$-7.7$, $+6.8$] & fail & fail \\
+q8 AWQ-W4  & 31.5 / 30.4 & $+1.2$ [$-5.3$, $+7.6$] & fail & fail \\
+pool, all four & & $+1.5$ [$-2.7$, $+5.6$] & pass & fail \\
+\bottomrule
+\end{tabular}
+\caption{End-to-end closed-loop success, quantized minus BF16 (pp). Units are paired on nonce, and the crossed task$\times$block bootstrap is drawn jointly across cells. Non-inferiority (NI) at a 3\pp{} margin passes for q4 GPTQ-W4 and the all-four pool. Equivalence (TOST at $\pm$3\pp{}) passes nowhere. These comparisons therefore support neither a difference nor equivalence. Source: \nolinkurl{analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md}.}
+\label{tab:e2e}
+\end{table}
+
+\section{Process Audit (Table 4 v2)}
+\label{app:table4}
+
+\begin{table*}[t]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+% src: analysis/annotation/wp5/table4_v2.md (core rows and single-branch rows)
+% src: manifests/annotation/wp5_sample_v1.json (n = 80)
+\resizebox{\textwidth}{!}{\begin{tabular}{@{}llllll@{}}
+\toprule
+Label (source) & Comparison & rescue & damage & both succeed & both fail \\
+\midrule
+\texttt{unintended\_or\_unconsented\_change} (LLM) & QQ vs BQ & 9 vs 2, $+0.35$ [$+0.08$, $+0.57$] & 1 vs 9, $-0.40$ [$-0.62$, $-0.11$] & 1 vs 1 & 5 vs 7, $-0.10$ [$-0.35$, $+0.17$] \\
+write executed (programmatic) & QQ vs BQ & 17 vs 17, $0.00$ [$-0.25$, $+0.25$] & 15 vs 14, $+0.05$ [$-0.26$, $+0.35$] & 10 vs 9 & 11 vs 13 \\
+executed write w/o recorded consent (prog.) & QQ vs BQ & 9 vs 5, $+0.20$ [$-0.06$, $+0.43$] & 3 vs 3, $0.00$ [$-0.21$, $+0.21$] & 3 vs 2 & 4 vs 3 \\
+loop or budget exhaustion (LLM) & QQ vs BQ & 5 vs 0, $+0.25$ [$+0.04$, $+0.47$] & 0 vs 2, $-0.10$ [$-0.30$, $+0.08$] & 1 vs 2 & 7 vs 4 \\
+action judged indefensible (LLM) & Q vs B action & 7 vs 8, $-0.05$ [$-0.37$, $+0.28$] & 12 vs 5, $+0.35$ [$-0.05$, $+0.65$] & 10 vs 6 & 12 vs 9 \\
+local defect, core (LLM) & Q vs B action & 4 vs 6, $-0.10$ [$-0.33$, $+0.14$] & 12 vs 7, $+0.25$ [$-0.09$, $+0.53$] & 6 vs 3 & 11 vs 7 \\
+QQ first-action defect corrected later (LLM) & single branch & 4/20 [0.08, 0.42] & 10/20 [0.30, 0.70] & 4/20 & 7/20 \\
+\bottomrule
+\end{tabular}}
+\caption{Process audit of 80 development fork states, 20 per outcome sign (rescue: $\YY{BQ}=1,\YY{QQ}=0$; damage: $\YY{BQ}=0,\YY{QQ}=1$). \textbf{LLM-annotated} by Sonnet 5.5 (two independent blind instances and an adjudicating instance), plus rule-based programmatic labels; no human labels. Counts are first vs.\ second of $n=20$ states. Intervals are within-state paired differences with Newcombe 95\% CIs; single-branch rows use Wilson 95\% intervals. This is a process description conditional on outcome-defined groups: not causal, not prevalence. The label name is the rubric category; we make no claim about consent. Source: \nolinkurl{analysis/annotation/wp5/table4_v2.md}.}
+\label{tab:table4}
+\end{table*}
+
+The core ``local defect'' combines groundedness, argument validity and permission/consent judgements. The tool-validity field (inter-annotator $\kappa=0.29$) is excluded from it. Mechanical fields agree with the programmatic verifier (write executed vs.\ the rubric's irreversible-change field, $\kappa=0.99$). The consent fields agree only moderately ($\kappa=0.44$ on writes both see). % src: analysis/annotation/wp5/table4_v2.md; docs/RESEARCH_LOG.md W79 (analysis/annotation/wp5/programmatic_agreement_v1.json)
+
+\section{Holdout Pre-Registration}
 \label{app:prereg}
 
-Hypotheses H1--H4 were registered before any confirmatory outcome was analysed, with 14 new checkpoints (RECAL: GPTQ/AWQ-W4 on new calibration draws d3, d4; RAND: Gaussian $k=1$ seeds s2, s4, s5) $\times$ 2 fresh nonces on q4 and q8 (28 runs; an amendment before unblinding corrected a miscount of 40), 85 development tasks (q4: 84), Holm over H1--H3. The analysis ran once.
+The protocol \nolinkurl{docs/insights/PREREG_FORK_CONFIRM.md} was frozen before any holdout unit was run. Its sha256 is \nolinkurl{902892dd63e99e16ab9beefee9d39319d835eacdada3d4d92c4a1022d13fd622}. % src: manifests/fork/splits_v1.json; docs/RESEARCH_LOG.md W87
+It fixes the following design:
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+\item tasks, cells, weights and nonce blocks;
+\item halves $H_A=\{h01,h04,h05,h09,h11,h12\}$ and $H_B$, the rest of $h01$--$h12$;
+\item an outcome-blind repair rule, with reserve blocks used only for infrastructure repair;
+\item the decisional crossed interval (two-way ANOVA moments, normal 90\%);
+\item the readings: positive if $L>0$, above 3\pp{} if $L>3$, small if the interval lies inside $\pm$3\pp{}, otherwise inconclusive;
+\item the secondary families S1 (both $r>0$ and $d>0$) and S2 (persona-stratified permutation, 10{,}000 draws, no outcome screen);
+\item six stratum families, with Holm correction within each.
+\end{itemize}
+% src: docs/insights/PREREG_FORK_CONFIRM.md §0, §3, §6-§9
+The analysis script refuses holdout data unless the hash matches. \todo{HOLDOUT: full confirmatory table (per cell and pooled: units, exclusions, $r$, $d$, $M$, $\Gall$ with crossed and block-$t$ intervals; S2 $\rho_c$; strata)}
 
-\begin{table}[h]
-\centering\scriptsize\setlength{\tabcolsep}{3pt}
-\resizebox{\columnwidth}{!}{\begin{tabular}{@{}p{3.1cm}ccp{1.9cm}@{}}
-\toprule
-Hypothesis & estimate & $p$ (Holm) & registered verdict \\
-\midrule
-H1 recalibration lottery, $\phi_{\text{RECAL}}>1$ & 0.40 (q4 $-0.30$, q8 0.94) & 0.74 & not supported \\
-H2 net effect replicates across nonces, $r>0$ & 0.42 (q4 $-0.52$, q8 0.94) & 0.42 & not supported \\
-H3 fingerprint on disjoint task halves & $F$ 0.26 & 0.0024 & supported; \emph{label removed after audit (App.~\ref{app:audit})} \\
-H4 $\phi_{\text{RECAL}}-\phi_{\text{RAND}}\neq 0$ (secondary) & $-0.83$ [$-7.07$, 4.22] & 0.70 (raw) & not detected (underpowered) \\
-\bottomrule
-\end{tabular}}
-\caption{Pre-registered confirmatory results. Source: \nolinkurl{analysis/insights/iter_4/out/prereg_h1_h4_CONF_20260930T0044Z.json}; registration \nolinkurl{docs/insights/PREREG_iter4.md} (sha256 prefix \texttt{a991e2e5ca2d6098}).}
-\label{tab:prereg}
-\end{table}
+\section{Withdrawn and Negative Results}
+\label{app:withdrawn}
 
-The exploratory checkpoint-lottery results that motivated H1/H2 (a q4 GPTQ-W4 d1 versus d2 gap of $+9.6$\pp{} [1.8, 17.4]) did not replicate in the pre-registered confirmation. This is not evidence that checkpoint effects are absent, and not evidence of BF16/W4 success equivalence. The new q4 recalibrations landed at net $+1.5$ to $+3.9$\pp{} against the nonce reference; this range applies to q4 only. On q8, AWQ-W4 d3 was $+5.3$\pp{} on average ($+8.2$\pp{} under one nonce). Results are reported stratified by model and method; pooled averages support only their own weighted estimand.
+\paragraph{W$\times$KV interaction (not supported).} An earlier q4 analysis reported a W4$\times$KV4 interaction of $-14.9$ [$-23.8$, $-6.0$]\pp{} ($k=3$). Its KV16 reference lacked the Q/K rotation used for KV4, so rotation and quantization were confounded. % src: analysis/ahook/out/wakv_20261001T054021Z.md (legacy kv16 row); docs/RESEARCH_LOG.md W65
+With a matched rotated reference, the q4 interaction is $-9.0$ [$-30.6$, $+12.5$]. % src: docs/RESEARCH_LOG.md W74 (analysis/ahook/out/wakv_20261001T054021Z.md)
+The pre-registered q8 replication gives $+2.1$ [$-5.8$, $+10.1$] over 6 blocks, crossed [$-8.2$, $+12.4$]. The replication is not supported, and we make no W$\times$KV claim. % src: analysis/ahook/out/wakv_20261001T094405Z.md
 
-\section{Random-Perturbation Fingerprint (Exploratory, Post-Hoc)}
-\label{app:fingerprint}
+\paragraph{Static precision restoration (appendix only).} We tested whether restoring selected modules to higher precision recovers a damaged RTN-W3 model. We report this line as a mechanism stress test, not a method. In RTN-W3 the gains largely tracked the number of restored bits. A random MLP arm also recovered much of the gap, and no arm beat whole-model GPTQ-W4 at matched storage. % src: docs/RESEARCH_LOG.md W67, W64
+\todo{RESTORE: the q8 RTN-W3 attention vs.\ byte-matched random-attention result (one seed) is cited only after its restoration output is committed; it is not used for any claim}
 
-The corrected exploratory analysis detected cross-run behavioural consistency in random-perturbation checkpoints ($F=0.283$, $p=0.028$ for RAND only); no corresponding evidence was detected for W4 quantized checkpoints (RECAL only $F=0.025$, $p=0.30$; sensitivity $p=0.13$; within-method $p=0.19$). The RAND $p$ is post-hoc, is the minimum attainable with 36 relabellings, and must be read with multiplicity. The pooled corrected result ($p=0.013$) is 90\% carried by RAND and supports no claim about quantization. With two recalibrations per method and model, a within-method test cannot reach $p<0.5$.
+\paragraph{Success equivalence.} Not established (Table~\ref{tab:e2e}).
 
-\section{Turnover Above a Numerics Floor}
-\label{app:turnover}
-
-Turnover $\lambda$ is the intensity of a shrink-to-attractor model, $p_i'=(1-\lambda)p_i+\lambda c$, fitted per cell against the model's nonce reference with misclassification correction; we keep it as an auxiliary model. The floor is the equal-weight mean of the available numerics-floor families (rotated BF16, canonical BF16 reruns, Gaussian $k\in\{0.001,0.003\}$). Inference uses a hierarchical paired bootstrap over tasks, reference draws, checkpoints and draws, and Holm over a declared family of 14 pooled tests. Snapshot 20260929T1937Z, retail + airline.
-
-\begin{table}[h]
-\centering\scriptsize\setlength{\tabcolsep}{2.5pt}
-\resizebox{\columnwidth}{!}{\begin{tabular}{@{}lccccccc@{}}
-\toprule
-Method & q4 & q8 & q14$^\dagger$ & q30a3$^\dagger$ & q32$^\dagger$ & pooled [95\% CI] & $p_{\text{Holm}}$ \\
-\midrule
-RTN-W4  & $+0.17$ & $+0.17$ & $+0.18$ & $+0.17$ & $+0.29$ & $+0.19$ [0.10, 0.30] & 0.007 \\
-GPTQ-W4 & $+0.22$ & $+0.28$ & $+0.08$ & $+0.04$ & $+0.13$ & $+0.15$ [0.07, 0.24] & 0.007 \\
-AWQ-W4  & $+0.20$ & $+0.31$ & $-0.02$ & $+0.13$ & $+0.20$ & $+0.16$ [0.07, 0.25] & 0.036 \\
-\bottomrule
-\end{tabular}}
-\caption{Excess turnover $\lambda-$floor, one-sided. $^\dagger$Floor from canonical BF16 reruns only (one or two runs): a weak, single-family floor, flagged. Per model, RTN's interval excludes 0 only on q4 and q32. Source: \nolinkurl{analysis/insights/iter_3/out/r10_turnover_stats_live_20260929T1937Z.json}; \nolinkurl{docs/insights/iter_3_stats_R3.md}.}
-\label{tab:turnover}
-\end{table}
-
-\section{Determinism and Serving Details}
-\label{app:serving}
-
-\paragraph{The incident.} In an earlier pass, a BF16 q4 determinism pair served on two nodes disagreed on 20/20 tasks and 113/113 identical-prompt decisions. The kernels were identical across nodes; torch Inductor chose the reduction configuration of the fused residual+RMSNorm kernel by timing it at compile time (a block size of 2048 on one node versus 4096 elsewhere), which changed the summation order and shifted every token. vLLM's batch invariance does not cover this. Setting \texttt{TORCHINDUCTOR\_DETERMINISTIC=1} and checking a numerics canary (outputs compared by hash with a stored reference) for agent and simulator at every server start removed it: the re-run pairs were byte-identical in prompts and completions (257/257 decisions for q4, 303/303 for Qwen3-30B-A3B as agent). The whole matrix was re-run under the fix.
-
-\paragraph{Configuration.} vLLM 0.29 with \texttt{VLLM\_BATCH\_INVARIANT=1} and pinned compile flags; greedy decoding for agent and simulator; 32k-token prompt budget; two-GPU tensor parallelism only on NVLink-connected pairs. In the fork study, B and Q are served by separate server processes, so no KV or prefix cache is shared across weights. \pending{fork serving record: checkpoint hashes, canaries and prefix-cache counters per server --- \nolinkurl{logs/tasks/<fork task>.servers.json}}
-
-\section{Tool-Type Table}
-\label{app:tooltable}
-
-\small
-\begin{description}[leftmargin=0.3cm,itemsep=1pt,topsep=2pt,font=\normalfont\itshape]
-\item[Retail] read: find\_user\_id\_by\_email, find\_user\_id\_by\_name\_zip, get\_item\_details, get\_order\_details, get\_product\_details, get\_user\_details, list\_all\_product\_types. write: cancel\_pending\_order, exchange\_delivered\_order\_items, modify\_pending\_order\_address, modify\_pending\_order\_items, modify\_pending\_order\_payment, modify\_user\_address, return\_delivered\_order\_items. handoff: transfer\_to\_human\_agents. other: calculate.
-\item[Airline] read: get\_flight\_status, get\_reservation\_details, get\_user\_details, list\_all\_airports, search\_direct\_flight, search\_onestop\_flight. write: book\_reservation, cancel\_reservation, send\_certificate, update\_reservation\_baggages, update\_reservation\_flights, update\_reservation\_passengers. handoff: transfer\_to\_human\_agents. other: calculate.
-\item[Telecom] read: get\_bills\_for\_customer, get\_customer\_by\_id, get\_customer\_by\_name, get\_customer\_by\_phone, get\_data\_usage, get\_details\_by\_id. write: disable\_roaming, enable\_roaming, refuel\_data, resume\_line, send\_payment\_request, suspend\_line (the earlier regex caught only send\_payment\_request). handoff: transfer\_to\_human\_agents.
-\end{description}
-\normalsize
-
-\section{Per-Domain Development Results}
-\label{app:perdomain}
-
-\pending{Table~\ref{tab:dev} split by domain (retail, airline, telecom development) and by divergence category (class, tool name, call count/order, arguments), with remaining budget --- same \nolinkurl{analysis/fork/} script; stratified confusion matrices for the human review (\S\ref{sec:annotation})}
+\paragraph{``Errors are absorbed''.} An interim reading of the injection study said that injected defects seldom change outcomes. The per-state analysis shows two-sided turnover (\S\ref{sec:intervention}), so this reading is retracted.

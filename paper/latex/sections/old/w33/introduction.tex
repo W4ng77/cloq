@@ -1,0 +1,44 @@
+\section{Introduction}
+\label{sec:intro}
+
+Weight quantization is how LLM agents are deployed, and its evaluation practice comes from single-turn benchmarks: compare the aggregate score of a quantized model with that of its full-precision reference. In a closed-loop agent benchmark such as \tautwo{} \citep{barres2025tau2}, the agent talks to a simulated user and calls tools until the episode ends, and the score checks the final state. There, the question a deployer needs answered is not only whether the average moves, but which task consequences quantization causes: when the quantized agent does something different, does that difference break the task, fix it, or wash out?
+
+\paragraph{Why aggregate success is not enough.} Equal accuracy can hide many changed predictions \citep{dutta2024accuracy}, and quantized \tautwo{} agents can keep a flat score while specific failure modes rise \citep{jang2026flat}. In our own runs, W4 checkpoints change which tasks succeed by more than a numerics-only floor (Appendix~\ref{app:turnover}). A turnover count, however, does not say what caused each change. In a closed loop, once one action differs, the user's replies, the tool results and every later decision differ too, so a success difference between two independent trajectories mixes the effect of the first changed action with everything the agent does afterwards, and with run-to-run variation.
+
+\paragraph{Why open-loop probes are not enough.} Teacher-forcing the quantized model on reference contexts measures how its next-action distribution shifts, but not whether a shifted action matters once the loop continues. It can also mislead on its own terms: in our audit, an apparent ``blurring'' of act-versus-talk propensities conditional on the reference's choice was largely a selection effect that a sign-symmetric perturbation of the same size reproduces (Appendix~\ref{app:audit}). Open-loop shifts, behavioural fingerprints and aggregate success are therefore background measurements in this paper, not answers.
+
+\paragraph{What we build and run.} We intervene on one decision at a time. Along the quantized agent's own trajectory, both the BF16 agent (B) and the quantized agent (Q) read the \emph{identical} saved history; at the first position where their full actions differ semantically, we execute either action and continue with either agent to the end of the episode (Figure~\ref{fig:fork}). The four branches separate three questions: does the current action matter (replace only it), does the subsequent execution matter (replace only the continuation controller), and do they interact? Our contributions are the evaluation we build and execute:
+\begin{enumerate}[leftmargin=*,itemsep=1pt,topsep=2pt]
+\item \textbf{Run conditions and measurement definitions} for quantized closed-loop agents: byte-deterministic serving with a numerics canary, named success endpoints per domain, a tool-type table verified against the benchmark source, and reference controls kept separate from the quantization comparison (\S\ref{sec:conditions}).
+\item \textbf{A same-state four-branch design} with explicit estimands: the one-replacement gain $G$ as rescues minus new damage, the decomposition of the total change into current-action, continuation and interaction terms, a full-pool primary endpoint in which tasks without a divergence contribute zero, replay acceptance criteria, and paired-block inference over independent nonce blocks (\S\ref{sec:fork}).
+\item \textbf{A consequence and mechanism annotation protocol} that judges defects from tool preconditions, task requirements, authorisation and state changes rather than from disagreement with BF16, with blinded human review and reported confusion matrices (\S\ref{sec:annotation}).
+\item \textbf{An independent confirmation} on a telecom split held out from all development, with a frozen protocol and pre-declared thresholds (\S\ref{sec:confirm}), and a transparent record of retired lines, including a pre-registered non-replication and a corrected statistical test (Appendices~\ref{app:audit}--\ref{app:fingerprint}).
+\end{enumerate}
+We run the design on Qwen3-4B and Qwen3-8B with GPTQ-W4 and AWQ-W4 in the \tautwo{} retail, airline and telecom domains. \pending{one-paragraph summary of what the development forks and the holdout confirmation show; from \S\ref{sec:fork-results} and \S\ref{sec:confirm} only}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  font=\footnotesize,
+  box/.style={draw, rounded corners=2pt, align=center, inner sep=2.5pt},
+  act/.style={draw, rounded corners=2pt, align=center, inner sep=2pt, fill=gray!12},
+  br/.style={draw, align=center, inner sep=1.5pt, minimum width=1.3cm},
+  arr/.style={-{Stealth[length=4pt]}, thin}]
+\node[box, text width=7.0cm] (h) at (0,0) {identical saved state $s$ (history, environment, user simulator, remaining budget) at the first semantic divergence of B and Q};
+\node[act] (aB) at (-1.9,-1.05) {current action $a_{\mathrm{B}}$};
+\node[act] (aQ) at (1.9,-1.05) {current action $a_{\mathrm{Q}}$};
+\draw[arr] (h.south -| aB) -- (aB); \draw[arr] (h.south -| aQ) -- (aQ);
+\node[br] (bb) at (-2.85,-2.1) {BB\\[-1pt]{\scriptsize cont.\ B}};
+\node[br] (bq) at (-0.95,-2.1) {BQ\\[-1pt]{\scriptsize cont.\ Q}};
+\node[br] (qb) at (0.95,-2.1) {QB\\[-1pt]{\scriptsize cont.\ B}};
+\node[br] (qq) at (2.85,-2.1) {QQ\\[-1pt]{\scriptsize cont.\ Q}};
+\draw[arr] (aB) -- (bb); \draw[arr] (aB) -- (bq);
+\draw[arr] (aQ) -- (qb); \draw[arr] (aQ) -- (qq);
+\foreach \n/\l in {bb/BB,bq/BQ,qb/QB,qq/QQ} {\node[below=0.08cm of \n, font=\scriptsize] (y\n) {$Y_{\mathrm{\l}}\in\{0,1\}$};}
+\node[box, text width=7.0cm, fill=orange!8, anchor=north] (cat) at (0,-3.05)
+  {pair $(\YY{BQ},\YY{QQ})$: rescue $(1,0)$, new damage $(0,1)$,\\ both succeed $(1,1)$, both fail $(0,0)$\\[1pt]
+   $G=E[\YY{BQ}-\YY{QQ}]=h-b$ \qquad $\LL{QQ}-\LL{BB}=A+C+I$};
+\end{tikzpicture}
+\caption{Schematic of one fork state (not data). B = BF16 agent, Q = W4 agent. A branch XY executes the current action $a_{\mathrm{X}}$ and then continues with controller Y to the end of the episode. The outcome categories and estimands are defined in \S\ref{sec:fork}; no numbers are shown because none are drawn from runs.}
+\label{fig:fork}
+\end{figure}

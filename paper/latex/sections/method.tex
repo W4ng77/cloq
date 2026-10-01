@@ -1,0 +1,45 @@
+\section{Same-State Four-Branch Forks}
+\label{sec:method}
+
+\subsection{Setting}
+\label{sec:setting}
+
+\paragraph{Tasks and agents.} We use \tautwo{} in text mode. The development panel has 58 retail and 27 airline tasks plus 80 telecom development tasks. A further 34 telecom tasks form a holdout that no agent ran before its protocol was frozen. % src: manifests/fork/splits_v1.json
+The agents are Qwen3-4B-Instruct-2507 (q4) and Qwen3-8B with thinking disabled (q8). The user simulator is a single greedy Qwen3-30B-A3B model shared by all agents. Retail and airline success is the final-database match. Telecom uses the official task-basis success. Without a user simulator, we also run BFCL multi-turn (four categories) and ALFWorld (out-of-distribution split) with one run per item (Appendix~\ref{app:setup}).
+
+\paragraph{Quantization.} Q is a simulated (fake-quantized) checkpoint served with BF16 compute on the same path as B. Weight cells are GPTQ \citep{frantar2023gptq} and AWQ \citep{lin2024awq} at W4. The KV-cache cell is KV8. Stress cells are GPTQ-W3, RTN-W3 and a Q/K-rotated KV4 cache. Because quantization is simulated, we make no speed or memory claim.
+
+\paragraph{Deterministic serving and blocks.} B and Q run on vLLM with batch-invariant kernels and deterministic compilation, in separate server processes, so no KV or prefix cache is shared across weights. A numerics canary is checked at every server start. A \emph{block} is one closed-loop run of Q over the task pool under one prompt nonce, a random session-identifier line in the system prompt. Independent nonces give independent blocks, and blocks are the replicate unit.
+
+\subsection{Fork states and branches}
+\label{sec:estimands}
+
+For each task, block and quantized cell, we walk along Q's closed-loop trajectory. Before Q's decision $t$ we restore the saved state $s_t$. It comprises the full message history; the environment and user-device databases, rebuilt by strict replay of every recorded tool call; the user simulator's visible conversation; and the used step and error budget. B generates its full action from the same request, and the prompt token ids B's server receives must equal those Q received. The fork state is the first $t$ at which the two actions differ in class (tool call, text, stop), tool name, call count or order, or normalised arguments. Differences in text only are recorded but are not fork states in this layer; \S\ref{sec:banku} covers them. A task without such a divergence stays in the denominator with zero effect. The state is frozen to disk before any branch runs.
+
+From $s_t$, branch XY executes $a_{\mathrm{X}}$ as the agent's next step; the real environment executes it or the real simulator answers it, and it consumes one step. Controller Y then continues to the end with the original remaining budget. Outcomes $\YY{XY}\in\{0,1\}$. QQ reproduces Q's original episode.
+
+\paragraph{Estimands.} On the full task $\times$ block pool, with non-divergent units contributing zero,
+\begin{align*}
+r&=P(\YY{BQ}{=}1,\YY{QQ}{=}0),\\
+d&=P(\YY{BQ}{=}0,\YY{QQ}{=}1),
+\end{align*}
+$M=r+d$ (outcome turnover) and $\Gall=r-d=E[\YY{BQ}-\YY{QQ}]$. $\Gall$ is the gain from replacing Q's action at the fork state while Q continues. It is \emph{not} the end-to-end BF16-versus-Q success difference, which compares two independent trajectories (Appendix~\ref{app:e2e}). On divergent states, the $2\times2$ decomposition is
+\begin{align}
+A &= \YY{BB}-\YY{QB} \quad\text{(action, B continues)},\nonumber\\
+C &= \YY{BB}-\YY{BQ} \quad\text{(controller, B acts)},\nonumber\\
+I &= \YY{BQ}+\YY{QB}-\YY{BB}-\YY{QQ},\nonumber
+\end{align}
+the interaction, so $G=A+I$, $H=\YY{QB}-\YY{QQ}=C+I$ and $\YY{BB}-\YY{QQ}=A+C+I$. A \emph{strict reversal} ($A\cdot G<0$) is a state where the better action under one controller is the worse action under the other. Appendix~\ref{app:setup} gives the full four-way composition of $(\YY{BQ},\YY{QQ})$ per cell. $A$, $C$ and $I$ describe where an outcome change at the fork comes from. They do not judge whether an action is wrong; B is a reference that can rescue or damage.
+
+\subsection{Replay acceptance}
+\label{sec:replay}
+
+Causal reading of the branches requires replay to be exact. Before any development outcome was analysed, an engineering gate on real divergence states in retail, airline and telecom passed every check. Q$\rightarrow$Q no-ops matched in 20/20 states and B$\rightarrow$B no-ops in 10/10, identical in every prompt-token hash, message, live and replayed database hash, termination, reward and budget counter. A same-checkpoint fork (B and Q handles on two servers of one checkpoint) gave four identical branches in 6/6 states. Branches run in reverse order and concurrently gave identical signatures in 10/10 states, plus 3/3 in dual-control telecom. Live budget counters equalled the recount in all 80 gate branches. % src: docs/insights/FORK_PROTOCOL.md §8 (analysis/fork/gate/)
+In production, a sampled QQ no-op passed 924/924 units of the development analysis, and the outcome-independent bank of \S\ref{sec:banku} passed 135/135 no-ops. % src: analysis/fork/out/dev_all_20261001T070326Z.md; analysis/fork/bank_u/gate/*/f01/bank_summary.json
+The replay noise floor of the fork is therefore exactly zero. This is a property of our serving, which closes the prefix-cache channel \citep{patodiya2026same}; we do not claim it as an advantage over prior forks.
+
+\subsection{Inference}
+\label{sec:inference}
+
+All tasks of a block share its nonce, and B and Q share each state, so we compute each statistic per complete shared block. Primary intervals resample whole blocks: a block bootstrap with at least 10 blocks, otherwise a $t$ interval over block means. % src: analysis/fork/out/dev_all_20261001T070326Z.md (header)
+ These treat the task pool as fixed. A crossed task $\times$ block bootstrap is the secondary interval for new tasks. More nonce blocks narrow only the first, so we never let it stand in for the second. A block with any missing unit leaves the analysis.

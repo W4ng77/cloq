@@ -10,6 +10,30 @@ Newest first.
 
 ---
 
+## W89 — Paper LaTeX rewritten to storyline v7 (ARR October → NAACL long) (2026-10-01 PDT)
+**TL;DR** `paper/latex/` now follows `docs/STORYLINE_v7.md`. It leads with the same-state 2×2 fork and has three layers: L1 atlas, L2 Bank U and L3 bounding results. The build is clean with tectonic (12 pp; main text 8 pp; 0 overfull boxes, 0 undefined references). Every number carries a `% src:` comment, and pending results are `\todo{}` placeholders.
+- **Sections:** abstract, intro, related work, method, atlas, bank_u, intervention, discussion, limitations, ethics, appendix.
+- **Archive:** the W33 files are in `paper/latex/sections/old/w33/`.
+- **Binding rules applied** (GPT-6.1 reviews and the corrections in REPORT_GPT61_20261001_0915):
+  - G = Y_BQ − Y_QQ is never called end-to-end. End-to-end claims cite `success_ni_ALIGNED_20260930T213009Z` (TOST ±3 pp fails everywhere).
+  - 39/56 is a composition share, given with per-class denominators.
+  - The co-flips are 5 distinct states and are presented as a lead.
+  - The Replay Gap noise comparison is not made.
+  - The W78 wording is "6 configurations × 2 directions, retrospective conditional association".
+  - wrong_tool is called a "tool-call/schema error perturbation".
+  - Table 4 v2 is LLM-annotated and makes no consent claims.
+  - W×KV, restoration, equivalence and "absorbed" appear in the appendix only.
+- **Placeholders:**
+  - HOLDOUT (prereg sha 902892dd…), BANKU-F023, Q0, RECOVERY-Q8, TOKEN, SIMCTRL, Q14;
+  - EXT-REFRESH: `ext_20261001T135106Z` is untracked; the paper uses the committed `ext_20260930T221613Z`;
+  - RESTORE: the 70%/27% result is only in an untracked restore_eval output, so it is not printed.
+- **Self-check:** `paper/latex/check_numbers.py` checked 909 number occurrences. The remaining flags are rounding (recovery CIs at 3 decimals, 4.09 → 4.1, .538 → 54%) or structural (section numbers, TikZ, model names). All were checked by hand.
+- **Corrections vs the storyline text:**
+  - External W4 M is 5.2–24.6%, not 7–25%.
+  - Two W4 fixed-pool G intervals exclude 0 (q4 GPTQ −1.9 [−3.7, −0.1]; q8 GPTQ +2.9 [+1.4, +4.4]).
+- **Bibliography:** refs.bib gains 7 entries (CSO, CRR, CAR, AgenTracer, Lost in Simulation, UserProxyBench, 2606.00206), with metadata from arxiv.org/abs. Replay Gap becomes an arXiv preprint because its venue is disputed.
+- **Evidence:** `paper/latex/{main.tex,sections/*.tex,refs.bib,REWRITE_NOTES.md,check_numbers.py,main.pdf}`.
+
 ## W87 — PREREG_FORK_CONFIRM frozen (2026-10-01 08:00 PDT, author approval "按建议冻结")
 **TL;DR** `docs/insights/PREREG_FORK_CONFIRM.md` is frozen: sha256 `902892dd63e99e16ab9beefee9d39319d835eacdada3d4d92c4a1022d13fd622`, recorded in `manifests/fork/splits_v1.json` `splits.holdout.prereg_sha256`. No holdout unit had been run or read before the freeze.
 - **Author decisions:**
