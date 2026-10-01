@@ -10,6 +10,38 @@ Newest first.
 
 ---
 
+## W73 — Loop guard revised to lg-v2 (window 32, ≥ 8 repeats) and pinned; W2 panel queued with an original-cap sample (2026-10-01)
+**TL;DR** Per plan §8.4.3, the guard is tightened instead of disabled.
+- **Revision:** lg-v2 changes only two thresholds, window 16 → 32 and repeats 4 → 8. It is recorded in `manifests/stress/loop_guard_v2.json`; v1 is marked superseded and was never used for a run.
+- **Threshold provenance:** the new thresholds were chosen on already-viewed development stress traces (the W69 scan and a threshold sweep on it), before any W2 outcome existed.
+- **New pass rule:**
+  - 0 FP and 0 FN on the frozen 50-trace sample;
+  - 0 premature stops on BF16;
+  - stress premature stops reported as a measured rate.
+- **Result:** the sample gives 0 FP, 0 FN and sensitivity 1.0. BF16 has 0 premature stops of 2,206 successes (64 firings, all max_steps or too_many_errors). Stress has **8 premature stops of 5,874 later-successful episodes (0.14 %; 0.9 % of 848 firings)**. It passes.
+- **Pin:** sha `8f593c55…` in commit `7bd5138`, recorded in the manifest.
+
+**W2 panel queued** (priority −10), 4 tasks:
+- 3 W2 tasks: `a6k2_w2p_{q4_rtn_w2,q8_rtn_w2,q8_gptq_w2}_q3`. Each needs its gate `w2gate_*` (still queued), and GPTQ also needs calibration c1. Each task serves one checkpoint and runs two runs:
+  - the guarded panel run: 24 tasks, `CLOQ_LOOP_GUARD=lg-v2` with the pinned sha;
+  - the original-cap sensitivity run `…_cap_q3`: the declared sample of the first 4 retail + first 2 airline panel tasks, no guard (`manifests/stress/w2_panel_v1_capsample.json`).
+- 1 BF16 check: `a6k2_w2p_q4_bf16_q3`, guarded q4 BF16 on the 24 tasks, comparing the live guard with the offline guard on the existing `bfpair_q3`.
+- If a gate fails, its W2 task stays unclaimed in `todo`, and the gate JSON is the support result.
+- **Estimated ~3–4 GPU-h** plus the gates.
+
+**Reporting contract:** every W2 / stress result reports three things.
+- Guarded success, under the loop-guarded endpoint.
+- Loop incidence.
+- Original-cap sensitivity:
+  - reused unguarded references: offline guarded vs unguarded success on the same episodes;
+  - new W2 cells: the cap-sample runs.
+
+**Evidence**
+- `cloq/loop_guard.py`, `tests/test_loop_guard.py` (ALL PASS).
+- `analysis/loop_guard/out/{validation,scan}_20261001T031501Z.*`.
+- `manifests/stress/{loop_guard_v1.json, loop_guard_v2.json, w2_panel_v1_capsample.json}`, `scripts/a6000/make_w2_panel.py`.
+- Queue: `/data/ziyangs/cloq_work/queue/todo/a6k2_w2p_*.json`.
+
 ## W72 — Long-tail fork tasks split into resumable shards (2026-09-30 20:40 PDT)
 **TL;DR** The user asked to keep every card busy and split the slow tasks. Five fork tasks dominated the remaining wall-clock:
 - q4 RTN-W3 stress, 45/232 states branched after 6 h, est. >20 h remaining;
