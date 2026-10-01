@@ -111,3 +111,25 @@ LLM labeller:
 - the URL and served snapshot are recorded per line.
 
 The labeller model is also the τ² user simulator. Its labels are therefore not independent of the simulator's own judgements, and this is reported as a limitation.
+
+## Amendment 1 — reviewers are independent Sonnet 5.5 instances (2026-10-01, before any reviewer label)
+
+**TL;DR** The author decided that the two reviewers R1 and R2 are independent `claude-sonnet-5-5` instances, not humans. Their labels are reported as **independent strong-LLM annotation**. The paper makes no human-annotation claim for WP5.
+
+- **Reviewers.**
+  - R1 and R2 are separate Sonnet 5.5 agent contexts that share no conversation.
+  - Each reviewer's assigned states are split into 4 chunks. Each chunk is a fresh instance that gets only:
+    - this protocol;
+    - the frozen rubric (`WP5_RUBRIC_v1.md`, sha unchanged);
+    - copies of its assigned packet HTML files, in an isolated directory.
+  - Each chunk starts with the same 2 calibration states, so calibration drift across chunks is measurable.
+- **Blinding.**
+  - The instances are told not to open the repository, the key, `events.jsonl`, `llm_labels.jsonl` or `packets_meta.json`, and to read only their chunk directory.
+  - The packets themselves carry no model, precision, quantizer or outcome information (W71 leak check).
+- **Distinction from the existing LLM labels.** The existing `llm_labels.jsonl` (Qwen3-30B-A3B, which is also the τ² simulator) stays a separate, weaker labeller. The Sonnet labels address the "labeller = simulator" limitation, but they are not human.
+- **Adjudication (§5).** "Joint discussion of the two reviewers" is replaced by a third independent Sonnet 5.5 instance (R3). R3 sees only the two labels plus their evidence spans and the packet, and picks one value or "unresolved". Pre-adjudication labels are kept, and all of §5 otherwise applies.
+- **Wording.**
+  - Wherever §5 says "human labels", read "R1/R2 adjudicated labels".
+  - A recovery claim still needs defect → correction → requirement, all in those labels.
+  - Every table and sentence that uses them says "LLM-annotated (Sonnet 5.5, two independent instances)".
+- **Unblinding (§6).** Unchanged: the key is opened only after both reviewers submit, adjudication is complete, and the labels' sha is committed.
