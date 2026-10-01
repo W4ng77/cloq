@@ -27,13 +27,27 @@ import copy
 import hashlib
 import json
 import os
+import re
+import socket
+import sys
 import threading
+import uuid
 import time
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Optional
 
 DEFAULT_KEY_FILE = "~/.config/anthropic/api_key"
+RELAY_PREFIX = "relay/"
+RELAY_DIR_DEFAULT = "/data/ziyangs/cloq_work/simrelay"
+RELAY_TIMEOUT_S_DEFAULT = 2700.0  # 45 min per user turn; then the branch errors out as infra
+RELAY_POLL_S = 3.0
+STOP_TOKEN_CONVENTION = (
+    "tau2 UserSimulator rules (tau2/user/user_simulator_base.py, simulation_guidelines.md): the reply is the customer's next "
+    "message as plain text. When the task goal is satisfied, end the conversation by generating '###STOP###' (alone or at the "
+    "end of the final message). If you are transferred to another agent, generate '###TRANSFER###'. If the scenario does not "
+    "give enough information to continue, generate '###OUT-OF-SCOPE###'. Any of the three in the reply ends the conversation "
+    "(tau2 UserSimulator.is_stop), so never write them otherwise.")
 PRICES = {"claude-sonnet-5-5": {"input": 2.0e-6, "output": 10.0e-6}}  # USD per token (cached 2026-09-25 price table)
 _TL = threading.local()
 _LOCK = threading.Lock()
@@ -62,6 +76,8 @@ def load_key() -> None:
 
 
 def litellm_model(spec: dict) -> str:
+    if spec.get("provider") == "relay":
+        return RELAY_PREFIX + spec["model"]
     if spec.get("provider") != "anthropic":
         raise ValueError(f"user_llm: unsupported provider {spec.get('provider')!r}")
     return f"anthropic/{spec['model']}"
@@ -69,6 +85,11 @@ def litellm_model(spec: dict) -> str:
 
 def user_args(spec: dict) -> dict:
     """llm_args_user for the override. No api_key (env only), no sampling params (rejected by the model)."""
+    if spec.get("provider") == "relay":  # nothing reaches litellm; the relay reads max_tokens / its own settings
+        for k in ("temperature", "top_p", "top_k", "seed", "api_base", "thinking"):
+            if k in spec:
+                raise ValueError(f"user_llm relay: {k} is not settable (a Claude Code subagent answers)")
+        return {"max_tokens": int(spec.get("max_tokens", 512))}
     a = {"max_tokens": int(spec.get("max_tokens", 512)), "timeout": float(spec.get("timeout", 600))}
     if spec.get("thinking") is not None:
         a["thinking"] = copy.deepcopy(spec["thinking"])
@@ -96,6 +117,101 @@ def set_tag(tag: Optional[str]) -> None:
     _TL.tag = tag
 
 
+def set_context(ctx: Optional[dict]) -> None:
+    """Relay request metadata for the calling thread's branch (state_id, unit_id, arm, replicate)."""
+    _TL.ctx = dict(ctx) if ctx else None
+
+
+def relay_dir() -> Path:
+    return Path(os.environ.get("CLOQ_SIMRELAY_DIR", RELAY_DIR_DEFAULT))
+
+
+def relay_dirs(root: Optional[Path] = None) -> dict:
+    root = root or relay_dir()
+    d = {k: root / k for k in ("pending", "claimed", "done", "expired", "replies")}
+    for p in d.values():
+        p.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def atomic_write_json(path: Path, obj: Any) -> None:
+    """tmp file in the SAME directory (dot-prefixed, ignored by readers), fsync, then rename: atomic on NFS for readers."""
+    tmp = path.parent / f".tmp-{path.name}-{socket.gethostname()}-{os.getpid()}-{threading.get_ident()}"
+    with open(tmp, "w") as f:
+        json.dump(obj, f, indent=1, ensure_ascii=False)
+        f.flush()
+        os.fsync(f.fileno())
+    os.rename(tmp, path)
+
+
+class RelayTimeout(RuntimeError):
+    """No answer in done/ within the timeout: infrastructure failure of the branch (never a user turn)."""
+
+
+def _relog(msg: str) -> None:
+    print(f"[simrelay {time.strftime('%H:%M:%S')}] {msg}", file=sys.stderr, flush=True)
+
+
+def relay_call(model: str, msgs: list, max_tokens: int, tag: Optional[str], n_prev: int) -> tuple[str, dict]:
+    """One user turn through the file relay: write pending/<req_id>.json, poll done/<req_id>.json. Returns (content, meta)."""
+    d = relay_dirs()
+    ctx = getattr(_TL, "ctx", None) or {}
+    base = "-".join(str(x) for x in (ctx.get("unit_id") or tag or "x", ctx.get("arm"), f"r{ctx['replicate']}" if "replicate" in ctx else None)
+                    if x is not None)
+    req_id = re.sub(r"[^A-Za-z0-9_.-]", "_", f"{base}-t{n_prev:02d}-{uuid.uuid4().hex[:8]}")
+    sys_msgs = [m for m in msgs if m.get("role") == "system"]
+    req = {"req_id": req_id, "protocol": "simrelay-v1", "state_id": ctx.get("state_id"), "unit_id": ctx.get("unit_id"),
+           "arm": ctx.get("arm"), "replicate": ctx.get("replicate"), "branch_tag": tag, "user_turn_index": n_prev,
+           "model_label": model[len(RELAY_PREFIX):],
+           "system_prompt": "\n".join(m.get("content") or "" for m in sys_msgs),
+           "messages": [m for m in msgs if m.get("role") != "system"],
+           "messages_role_note": ("Roles are FLIPPED as tau2 sends them to the user LLM: role 'user' = the customer-service agent "
+                                  "speaking to you; role 'assistant' = your own earlier messages as the customer. Your reply is the "
+                                  "next 'assistant' message."),
+           "litellm_messages": msgs, "litellm_messages_sha256": _sha(msgs), "max_tokens": int(max_tokens),
+           "stop_token_convention": STOP_TOKEN_CONVENTION, "reply_format": {"content": "the customer's next message text only"},
+           "created_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "host": socket.gethostname(), "pid": os.getpid()}
+    timeout = float(os.environ.get("CLOQ_SIMRELAY_TIMEOUT_S", RELAY_TIMEOUT_S_DEFAULT))
+    pend, done = d["pending"] / f"{req_id}.json", d["done"] / f"{req_id}.json"
+    t0 = time.time()
+    atomic_write_json(pend, req)
+    _relog(f"request {req_id} written ({len(req['messages'])} messages); waiting up to {timeout / 60:.0f} min for {done}")
+    next_log = t0 + 300
+    while True:
+        if done.exists():
+            try:
+                ans = json.loads(done.read_text())
+            except (OSError, ValueError) as e:  # rename-based writers never expose partial files; retry once on NFS hiccups
+                time.sleep(RELAY_POLL_S)
+                ans = json.loads(done.read_text()) if done.exists() else {"error": repr(e)}
+            if not isinstance(ans.get("content"), str):
+                raise RuntimeError(f"simrelay infra: {done} has no string 'content' ({str(ans)[:200]})")
+            wall = time.time() - t0
+            _relog(f"answer {req_id} from {ans.get('responder')} after {wall:.0f} s")
+            return ans["content"], {"req_id": req_id, "responder": ans.get("responder"), "wall_s": wall,
+                                    "answered_utc": ans.get("answered_utc"), "claimed_utc": ans.get("claimed_utc"),
+                                    "request_path": str(pend), "done_path": str(done)}
+        now = time.time()
+        if now - t0 > timeout:
+            moved = None
+            for src in [pend, *d["claimed"].glob(f"*/{req_id}.json")]:
+                try:
+                    os.rename(src, d["expired"] / f"{req_id}.json")
+                    moved = str(src)
+                    break
+                except OSError:
+                    pass
+            atomic_write_json(d["expired"] / f"{req_id}.reason.json", {"req_id": req_id, "timeout_s": timeout, "moved_from": moved,
+                                                                         "expired_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
+            _relog(f"TIMEOUT {req_id} after {timeout:.0f} s (moved {moved} to expired/); branch fails as infra")
+            raise RelayTimeout(f"simrelay infra: no answer for {req_id} within {timeout:.0f} s")
+        if now >= next_log:
+            where = "pending" if pend.exists() else "claimed" if any(d["claimed"].glob(f"*/{req_id}.json")) else "?"
+            _relog(f"still waiting for {req_id} ({where}, {(now - t0) / 60:.0f} min)")
+            next_log = now + 300
+        time.sleep(RELAY_POLL_S)
+
+
 def pop(tag: str) -> list[dict]:
     with _LOCK:
         return _RECS.pop(tag, [])
@@ -113,7 +229,8 @@ def _cost(model: str, usage: dict) -> Optional[float]:
 
 
 def install() -> None:
-    """Wrap tau2's litellm `completion` for anthropic/* models: drop `seed`, record the call. Idempotent."""
+    """Wrap tau2's litellm `completion` for anthropic/* models (drop `seed`, record the call) and route relay/* models to
+    the file relay (no litellm call). Idempotent."""
     global _INSTALLED
     if _INSTALLED:
         return
@@ -125,9 +242,50 @@ def install() -> None:
                                                       "litellm_provider": "anthropic", "mode": "chat", "max_tokens": 128000,
                                                       "max_input_tokens": 1000000, "max_output_tokens": 128000}})
     orig = LU.completion
+    orig_cost = LU.get_response_cost
+
+    def get_response_cost(response):  # relay responses have no price (litellm would log an unknown-provider error)
+        if str(getattr(response, "model", "")).startswith(RELAY_PREFIX):
+            return 0.0
+        return orig_cost(response)
+
+    def relay_completion(model: str, kw: dict):
+        msgs = kw.get("messages") or []
+        if kw.get("tools"):
+            raise RuntimeError("simrelay: the relay user simulator has no tools (retail/airline only)")
+        tag = getattr(_TL, "tag", None)
+        with _LOCK:
+            n_prev = len(_RECS.get(tag, []))
+        sys_txt = "\n".join(m.get("content") or "" for m in msgs if m.get("role") == "system")
+        rec = {"tag": tag, "model": model, "t_start": time.time(), "dropped_params": {k: kw[k] for k in ("seed",) if k in kw},
+               "params": {k: v for k, v in kw.items() if k not in ("messages", "api_key", "tools")}, "n_messages": len(msgs),
+               "system_sha256": hashlib.sha256(sys_txt.encode()).hexdigest(), "messages_sha256": _sha(msgs), "tools": [],
+               "request_messages": msgs}
+        t0 = time.perf_counter()
+        try:
+            text, meta = relay_call(model, msgs, int(kw.get("max_tokens") or 512), tag, n_prev)
+        except Exception as e:
+            rec.update({"error": repr(e)[:500], "latency_s": time.perf_counter() - t0})
+            with _LOCK:
+                _RECS[rec["tag"]].append(rec)
+            raise
+        import litellm
+
+        resp = litellm.ModelResponse(id=meta["req_id"], model=model,
+                                     choices=[{"index": 0, "finish_reason": "stop", "message": {"role": "assistant", "content": text}}],
+                                     usage=litellm.Usage(prompt_tokens=0, completion_tokens=0, total_tokens=0))
+        rec.update({"latency_s": time.perf_counter() - t0, "litellm_response_id": meta["req_id"], "request_id": meta["req_id"],
+                    "relay": meta, "response_model": model, "finish_reason": "stop",
+                    "usage": {"prompt_tokens": 0, "completion_tokens": 0, "note": "relay: no token counts"}, "cost_usd": None,
+                    "content": text, "tool_calls": []})
+        with _LOCK:
+            _RECS[rec["tag"]].append(rec)
+        return resp
 
     def completion(*args, **kw):
         model = kw.get("model") or (args[0] if args else "")
+        if str(model).startswith(RELAY_PREFIX):
+            return relay_completion(str(model), kw)
         if not str(model).startswith("anthropic/"):
             return orig(*args, **kw)
         dropped = {k: kw.pop(k) for k in ("seed",) if k in kw}
@@ -163,4 +321,5 @@ def install() -> None:
         return resp
 
     LU.completion = completion
+    LU.get_response_cost = get_response_cost
     _INSTALLED = True

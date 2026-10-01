@@ -18,6 +18,7 @@ the user simulator after the fork state changes. Not a benchmark re-run with a n
 Gate: refuses to run unless analysis/fork/simctrl/gate/gate.json has verdict PASS and the same manifest sha.
 
 usage: python analysis/fork/analyze_simctrl.py                      # real run
+       python analysis/fork/analyze_simctrl.py --manifest manifests/fork/simctrl_v3.json --dir analysis/fork/simctrl_relay --tag relay   # W91 relay run
        python analysis/fork/analyze_simctrl.py --dir analysis/fork/simctrl/dry --no-gate --tag dry   # dry run
 """
 from __future__ import annotations
@@ -125,7 +126,11 @@ def main():
     ap.add_argument("--dir", default="analysis/fork/simctrl")
     ap.add_argument("--no-gate", action="store_true", help="dry runs only")
     ap.add_argument("--tag", default="")
+    ap.add_argument("--manifest", default=None, help="W91: manifests/fork/simctrl_v3.json for the relay run (with --dir analysis/fork/simctrl_relay)")
     a = ap.parse_args()
+    global MAN
+    if a.manifest:
+        MAN = ROOT / a.manifest
     man_sha = sha_file(MAN)
     man = json.loads(MAN.read_text())
     NR = int(man.get("replicates", 1))

@@ -10,6 +10,38 @@ Newest first.
 
 ---
 
+## W91 — Simulator control via a Claude Code subagent relay (no API key): relay user simulator, manifest simctrl_v3, mock dry-run PASS, relay gate queued (2026-10-01 PDT)
+**TL;DR** There is no Anthropic API key. The user simulator of the W90 control is now served by Claude Code Sonnet 5.5 subagents through a file relay on NFS. This is a **different simulator** from API Sonnet (v2), so it gets its own frozen manifest, `simctrl_v3.json`. A CPU dry run with a mock responder passed (1 gate state, 18 branches, 18 relayed user turns, all protocol checks). Only the 3-state gate task is queued; the main session starts the responders.
+- **Relay protocol (simrelay-v1, `cloq/user_llm.py` provider `"relay"`).**
+  - tau2's own UserSimulator still builds the system prompt (guidelines + task instructions) and the role-flipped message list. Instead of a litellm call, the wrapped `completion` writes `/data/ziyangs/cloq_work/simrelay/pending/<req_id>.json` atomically (tmp file in the same directory + rename).
+  - The request holds: req_id, state_id, unit_id, arm, replicate, user-turn index, `system_prompt`, `messages` (as tau2 sends them, roles flipped), `litellm_messages` (the exact list, with its sha), max_tokens 512, and the tau2 stop-token convention.
+  - The branch polls `done/<req_id>.json` for `{"content": ...}`. The timeout is 45 min per turn (`$CLOQ_SIMRELAY_TIMEOUT_S`). On timeout the request moves to `expired/` (with a reason file) and the branch fails as infra: arm error → gate FAIL. Nothing is silent.
+  - The reply enters tau2 as a normal user-LLM response (finish_reason stop, no tool calls). Each call records req_id (as the request id), responder, claim/answer times and wall time.
+  - In relay mode the 2R = 6 branches of a unit run concurrently, so up to 18 requests are pending at once for the gate.
+- **Responders.**
+  - Helper: `scripts/a6000/simrelay_claim.py`:
+    - `next --responder <id>` renames one pending request into `claimed/<id>/` and prints its path (`NONE`, exit 3, if empty);
+    - `answer <req_id> <file>` writes done/ atomically; it refuses an unclaimed, expired or already-answered request, or an empty reply;
+    - `status` gives counts.
+  - Instructions: `docs/insights/SIMRELAY_RESPONDER.md`. Act strictly as the customer in the system prompt. Answer only from this request; every request is independent. Output only the next message, using the stop tokens. No tools beyond the helper.
+- **Manifest** `manifests/fork/simctrl_v3.json`, sha256 `3e430d93c8ee92940059fa3862bf31de7c329d69ba767b05a2f4f5ce9597f712`.
+  - It amends v2 (sha `73e37c3c…`, commit 2ff2285) and keeps the same 39 flips + 39 controls, R = 3, the replicate-mean primary, the per-replicate distribution and the within-simulator variability.
+  - `user_llm = {"provider": "relay", "model": "claude-sonnet-5-5 (Claude Code subagent relay)"}`. The gate's model/request-id check becomes: every call relayed, with a req_id and a named responder (`relay_all_answered`).
+  - **Honest scope** (`relay_simulator_note`): this is not API Sonnet and not the standard simulator. The responders' context includes Claude Code's agent system prompt and tool turns. Cross-request carry-over within a responder is possible; it is instructed against but cannot be enforced. Sampling is uncontrolled and max_tokens is advisory.
+  - v3 results are reported as "Sonnet 5.5 (Claude Code relay) user". They are never pooled with or substituted for v2, which stays frozen and unrun.
+- **Code.**
+  - `fork_driver.simctrl`: relay needs no key and sets the per-branch relay context; the protocol check uses `UL.litellm_model`.
+  - `make_tasks_simctrl.py --freeze-v3 | --relay [--gate|--tasks] [--priority N] [--write]`: `--relay` uses v3 and the ids `simctrl_relay_*`, writes to `analysis/fork/simctrl_relay/`, and skips the key check (relay only).
+  - `analyze_simctrl.py --manifest manifests/fork/simctrl_v3.json --dir analysis/fork/simctrl_relay --tag relay`.
+- **Dry run** (CPU; mock agent `tests/mock_anthropic.py`, 2 mock responders `tests/mock_simrelay_responder.py` racing on the claim; relay dir `/data/ziyangs/cloq_work/simrelay_dry`).
+  - 3 gate states rebuilt (state checks 3/3). Unit aea8d796 ran 6 branches; each ended `user_stop` on the relayed `###STOP###`.
+  - Every protocol check passed for all 6 branches: system prompt identical, history prefix identical, no tools, stop token only last, `relay_all_answered`.
+  - No double claims. Negative tests: a 5 s timeout raised RelayTimeout and moved the request to expired/; `answer` refused an expired and an unclaimed request.
+- **Queued:** only `simctrl_relay_gate_q4_gptq_w4_d1` (q4 GPTQ-W4 d1, 3 units, BQ + QQ × R = 3, 1 GPU, priority −20, gate=true). It raises on FAIL, so later `--relay --tasks` deps would never release. The 6 per-cell tasks are NOT queued.
+  - Expected ≈ 85 relayed user turns (range 60–130). The original old-simulator branches of these units had 5–7 user turns per arm on the two retail units and 3–5 on the airline unit; 18 branches.
+  - The GPU sits idle while it waits on responders.
+- **Evidence:** `analysis/fork/simctrl_relay/dry/q4_gptq_w4_d1/{simctrl_rows.jsonl,simctrl_summary.json,branches/}`; `manifests/fork/simctrl_v3.json`; queue file `/data/ziyangs/cloq_work/queue/todo/simctrl_relay_gate_q4_gptq_w4_d1.json`.
+
 ## W90 — Simulator robustness control for Bank U text-structure flips (Sonnet 5.5 user; GPT-6.1 review 5 option A): built, frozen, dry-run; NOT run (no API key yet) (2026-10-01 PDT)
 **TL;DR** Everything is ready. The run waits for the API key file. Nothing was sent to the Anthropic API, and no GPU task was queued.
 - **States:** 39 flips + 39 matched controls. The flips are the 39 deduplicated Bank U class (ii) flips at f01 (37 ii_talk + 2 ii_act; 17 rescues, 22 damages).

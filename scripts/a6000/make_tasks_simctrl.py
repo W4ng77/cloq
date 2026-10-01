@@ -1,5 +1,9 @@
 """Simulator robustness control for Bank U text-structure flips (W90; GPT-6.1 review 5, author-approved option A).
 
+  --freeze-v3  (W91) manifests/fork/simctrl_v3.json = v2 (same 39 + 39 units, R = 3, replicate-mean analysis) with the user
+             simulator = Claude Code Sonnet 5.5 subagents through the file relay (user_llm provider "relay"). A DIFFERENT
+             simulator from API Sonnet (v2); see the manifest's relay_simulator_note.
+  --relay    gate/tasks use v3 (relay) instead of v2 (API); --write then needs no API key (relay only).
   --freeze-v2  (W90 amendment) manifests/fork/simctrl_v2.json = v1 + R = 3 independent replicates per arm; gate/tasks use v2.
   --freeze   build manifests/fork/simctrl_v1.json from the finished Bank U f01 rows: every deduplicated class (ii)
              outcome change (M = 1; same tool structure, different text) plus a 1:1 matched class (ii) NON-flip control
@@ -36,7 +40,9 @@ sys.path.insert(0, str(ROOT / "analysis" / "fork"))
 QUEUE = Path("/data/ziyangs/cloq_work/queue")
 MAN_V1 = "manifests/fork/simctrl_v1.json"
 MAN = "manifests/fork/simctrl_v2.json"  # W90 amendment: v1 units + R = 3 replicates per arm; tasks use v2
+MAN_V3 = "manifests/fork/simctrl_v3.json"  # W91: v2 units/R/analysis + relay user simulator (Claude Code subagents)
 REPLICATES = 3
+USER_LLM_RELAY = {"provider": "relay", "model": "claude-sonnet-5-5 (Claude Code subagent relay)"}
 BANK = "manifests/fork/bank_u_v1.json"
 NODES = ("node004", "node005", "node007")
 SALT = "simctrl-v1"
@@ -228,29 +234,90 @@ def freeze_v2() -> dict:
     return man
 
 
+def freeze_v3() -> dict:
+    """v3 = v2 (units, matching, R = 3, replicate-mean analysis plan, gate checks) with the user simulator served by
+    Claude Code Sonnet 5.5 subagents through the file relay (W91: there is no API key)."""
+    v2p = ROOT / MAN
+    man = json.loads(v2p.read_text())
+    man["version"] = "simctrl_v3"
+    man["frozen_utc"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    man["amends"] = {"manifest": MAN, "sha256": sha_file(v2p), "commit": "2ff2285",
+                     "reason": ("No Anthropic API key exists, so the v2 (API) route cannot run. v3 keeps v2's units (39 flips + 39 "
+                                "controls), matching, R = 3 replicates per arm and the replicate-mean analysis plan, and replaces only "
+                                "the user simulator by Claude Code Sonnet 5.5 subagents answering through a file relay."),
+                     "previous": man.get("amends")}
+    man["user_llm"] = dict(USER_LLM_RELAY)
+    man["user_llm_params_note"] = (
+        "provider 'relay' (cloq/user_llm.py, protocol simrelay-v1): tau2's own UserSimulator builds the system prompt (user-sim "
+        "guidelines + task instructions) and the role-flipped message list exactly as for any user LLM; instead of a litellm call the "
+        "branch writes them atomically (tmp + rename) to /data/ziyangs/cloq_work/simrelay/pending/<req_id>.json with req_id, state_id, "
+        "arm, replicate, max_tokens = 512 and the tau2 stop-token convention, and polls done/<req_id>.json for {'content': ...} "
+        "(timeout 45 min per user turn, $CLOQ_SIMRELAY_TIMEOUT_S; a timeout fails the branch as infra, never silently). The reply "
+        "text (surrounding whitespace stripped by the answer helper) enters tau2 exactly as a user-LLM response "
+        "(finish_reason stop, no tool calls). Responders: Claude Code subagents on Sonnet 5.5 following "
+        "docs/insights/SIMRELAY_RESPONDER.md, claiming with scripts/a6000/simrelay_claim.py (next / answer). Per user call the "
+        "record keeps req_id (as request id), responder id, claim/answer times and wall time. No temperature / seed / max_tokens "
+        "enforcement (max_tokens is advisory to the responder); no token counts.")
+    man["relay_simulator_note"] = (
+        "HONEST SCOPE: the relay simulator is NOT API Sonnet 5.5 and NOT the standard tau2 user simulator. Differences: (1) each "
+        "reply is produced by a Claude Code subagent whose context includes Claude Code's own agent system prompt, the responder "
+        "instructions and tool-use turns (reading the request file, writing the reply), so the user turn is not a bare "
+        "Messages-API completion of tau2's system prompt + messages; (2) possible cross-request carry-over: a responder that answers "
+        "several requests in one subagent context sees earlier requests (other states, arms, replicates), and although it is "
+        "instructed to treat each request independently this cannot be enforced; (3) sampling settings are whatever Claude Code uses "
+        "(not controlled, not recorded); (4) max_tokens is advisory. Results are reported as 'Sonnet 5.5 (Claude Code relay) user', a "
+        "different simulator from v2's API Sonnet and from the original Qwen3-4B simulator; v2 remains frozen and unrun, and v3 "
+        "results must never be pooled with or substituted for v2 results.")
+    man["branches"]["replicates"] = (f"R = {REPLICATES} independent relay runs per arm (BQ and QQ) per unit, flips and controls alike; "
+                                     "replicate r of BQ is paired with replicate r of QQ; results keyed '<arm>#<r>'. Each user turn is a "
+                                     "separate relay request; the 2R branches of a unit run concurrently.")
+    man["acceptance_gate"]["task"] = "simctrl_relay_gate_q4_gptq_w4_d1 (3 manifest units of q4 GPTQ-W4 d1, first 3 by sha256 order; R = 3; relay)"
+    man["acceptance_gate"]["checks"] = [c for c in man["acceptance_gate"]["checks"] if not c.startswith("every user call is anthropic")] + [
+        "every user call went through the relay (model relay/<user_llm.model>), has a req_id and a named responder; no relay timeouts"]
+    man["analysis_plan"]["secondary"] = ("Arm-level agreement Y'_arm == Y_arm per arm and role; termination reasons; relay responders "
+                                         "and wall time per user turn (no token usage / cost under the relay).")
+    return man
+
+
 def gate_units(man: dict) -> list[str]:
     us = sorted([u for u in man["units"] if (u["model"], u["cell"]) == ("q4", "gptq_w4_d1")], key=lambda u: h(f"{SALT}|gate|{u['unit_id']}"))
     return [u["unit_id"] for u in us[:3]]
 
 
-def task(m, c, man_sha, units, tid, out, prio, deps, i):
-    spec = {"mode": "simctrl", "manifest": MAN, "manifest_sha256": man_sha, "model": m, "cell": c, "unit_ids": units,
-            "user_llm": USER_LLM, "arms": ["BQ", "QQ"], "replicates": REPLICATES, "concurrency": 6, "out": out}
+def task(m, c, man_sha, units, tid, out, prio, deps, i, relay=False):
+    spec = {"mode": "simctrl", "manifest": MAN_V3 if relay else MAN, "manifest_sha256": man_sha, "model": m, "cell": c, "unit_ids": units,
+            "user_llm": USER_LLM_RELAY if relay else USER_LLM, "arms": ["BQ", "QQ"], "replicates": REPLICATES, "concurrency": 6, "out": out}
+    if relay:
+        spec["gate"] = tid.startswith("simctrl_relay_gate")
     return {"id": tid, "kind": "fork", "model": m, "gpus": 1 if m == "q4" else 2, **({"gpu_util": 0.44} if m == "q4" else {"node": NODES[i % 3]}),
             "priority": prio, "deps": deps, "B": {"ckpt": {"kind": "bf16"}}, "Q": qrole(m, c), "fork": spec,
-            "note": "W90 simulator control (make_tasks_simctrl.py; Sonnet 5.5 user, Bank U f01 class (ii) flips + matched controls)"}
+            "note": ("W91 simulator control, RELAY user (Claude Code Sonnet 5.5 subagents via /data/ziyangs/cloq_work/simrelay; "
+                     "make_tasks_simctrl.py --relay)") if relay else
+                    "W90 simulator control (make_tasks_simctrl.py; Sonnet 5.5 user, Bank U f01 class (ii) flips + matched controls)"}
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--freeze", action="store_true", help="build v1 (done: commit 769dc36)")
     ap.add_argument("--freeze-v2", action="store_true", help="build v2 = v1 + R = 3 replicates (W90 amendment)")
+    ap.add_argument("--freeze-v3", action="store_true", help="build v3 = v2 with the relay user simulator (W91)")
+    ap.add_argument("--relay", action="store_true", help="gate/tasks on v3 (relay user); --write needs no API key")
+    ap.add_argument("--priority", type=int, default=None)
     ap.add_argument("--blocks", nargs="*", default=["f01"])
     ap.add_argument("--gate", action="store_true")
     ap.add_argument("--tasks", action="store_true")
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args()
     mp = ROOT / MAN
+    if a.freeze_v3:
+        p3 = ROOT / MAN_V3
+        if p3.exists():
+            raise SystemExit(f"{MAN_V3} exists (frozen); never overwritten")
+        p3.write_text(json.dumps(freeze_v3(), indent=1, ensure_ascii=False) + "\n")
+        print("sha256", sha_file(p3))
+        return
+    if a.relay:
+        mp = ROOT / MAN_V3
     if a.freeze_v2:
         if mp.exists():
             raise SystemExit(f"{MAN} exists (frozen); never overwritten")
@@ -269,20 +336,23 @@ def main():
     man = json.loads(mp.read_text())
     man_sha = sha_file(mp)
     T = []
+    pre, sub = ("simctrl_relay", "simctrl_relay") if a.relay else ("simctrl", "simctrl")
+    prio = a.priority if a.priority is not None else -12
     if a.gate:
-        T.append(task("q4", "gptq_w4_d1", man_sha, gate_units(man), "simctrl_gate_q4_gptq_w4_d1", "analysis/fork/simctrl/gate", -12, [], 0))
+        T.append(task("q4", "gptq_w4_d1", man_sha, gate_units(man), f"{pre}_gate_q4_gptq_w4_d1", f"analysis/fork/{sub}/gate", prio, [], 0,
+                      relay=a.relay))
     if a.tasks:
         for i, (m, c) in enumerate(CELLS):
             ids = [u["unit_id"] for u in man["units"] if (u["model"], u["cell"]) == (m, c)]
             if ids:
-                T.append(task(m, c, man_sha, ids, f"simctrl_{m}_{c}_f01", f"analysis/fork/simctrl/{m}_{c}/f01", -12,
-                              ["simctrl_gate_q4_gptq_w4_d1"], i))
+                T.append(task(m, c, man_sha, ids, f"{pre}_{m}_{c}_f01", f"analysis/fork/{sub}/{m}_{c}/f01", prio,
+                              [f"{pre}_gate_q4_gptq_w4_d1"], i, relay=a.relay))
     for t in T:
         print(t["id"], t["gpus"], t.get("node", ""), len(t["fork"]["unit_ids"]), "units", "deps", t["deps"])
     if a.write and T:
         from cloq import user_llm as UL
 
-        if not UL.key_available():
+        if not a.relay and not UL.key_available():  # the relay route needs no key
             raise SystemExit(f"no API key file at {UL.key_file()}: not queueing Sonnet tasks")
         n = 0
         for t in T:
