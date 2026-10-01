@@ -10,6 +10,37 @@ Newest first.
 
 ---
 
+## W75 — WP5 Table 4: Sonnet 5.5 blinded labels, adjudicated and unblinded (2026-10-01 00:00 PDT)
+**TL;DR** In this sample, how the pivot action itself looks does **not** separate rescue from damage. What separates them is what happens later in the failing branch, mainly **unconsented irreversible writes**. This is descriptive and LLM-annotated, not human.
+- **Annotation (Amendment 1, author decision):**
+  - R1 and R2 are independent Sonnet 5.5 instances (8 chunks); R3 (Sonnet 5.5) adjudicated.
+  - Labels and adjudication shas were committed (62ec2a1, bd6164d) before the key was opened. The key's sha matches `packets_meta` (18e40069…).
+- **Agreement on the 20 double states** (`agreement_v1.json`):
+  - κ ≥ 0.8: defensible, argument validity, groundedness, consent, irreversible change, loop, budget exhaustion, defect corrected, retries.
+  - Moderate, κ 0.69: requirements_satisfied and user_clarification. All 7 unresolved adjudications are user_clarification.
+  - Low: tool_validity, κ 0.29.
+- **Table 4** (`analysis/annotation/wp5/table4_v1.json`; 20 states per sign; sample frequencies, not prevalences). Rescue means Y_BQ=1, Y_QQ=0; damage means Y_BQ=0, Y_QQ=1.
+
+  | label | rescue | damage | both succeed | both fail |
+  |---|---|---|---|---|
+  | quantized action Q judged indefensible | 7 | **12** | 10 | 12 |
+  | Q action has a local defect | 9 | **14** | 9 | 16 |
+  | BF16 action B judged indefensible | 8 | 5 | 6 | 9 |
+  | unconsented irreversible write in QQ | **9** | 1 | 1 | 5 |
+  | unconsented irreversible write in BQ | 2 | **9** | 1 | 7 |
+  | QQ: Q's first-action defect corrected later | 4 | **10** | 4 | 7 |
+  | QQ: loop or budget exhaustion | **5** | 0 | 1 | 7 |
+
+- **Reading:**
+  1. **Local action quality does not predict the consequence's sign.** In *damage* states the quantized action looks worse than in rescue states (12 vs 7 indefensible), yet that is where it leads to success. In half of them (10/20) its defect is corrected later.
+  2. **The failing branch is marked by unconsented irreversible writes.** These occur in QQ when QQ fails (rescue: 9/20) and in BQ when BQ fails (damage: 9/20); the sign flips with the outcome. Loops and budget exhaustion also mark failing QQ branches.
+  3. **Implication:** consequence is decided along the trajectory (recovery vs an irreversible write), not at the pivot. This is consistent with "behavioural closeness ≠ task improvement" (§4 of STATUS_night).
+- **Caveats:**
+  - n = 20 per sign, no intervals, a stratified sample, LLM annotators.
+  - The requirements_satisfied label only weakly tracks the true outcome: "yes" has precision 0.80 and covers 52% of Y=1, so transcript-judged success is noisy.
+  - irreversible_change is visible in the transcript, so it can correlate with failure by construction. It describes *how* branches fail, not a cause.
+  - Exploratory; not part of any prereg.
+
 ## W74 — W×KV interaction does not survive matched rotated controls or the pre-registered q8 replication; paused restoration tasks stopped (2026-09-30 22:50 PDT)
 **TL;DR** The secondary claim "W4 × KV4 interaction" (legacy I_WK|A16 = −14.9 [−23.8, −6.0] on q4) does **not** hold.
 - **q4, matched rotated KV16 reference (kv16r):** I_WK|A16 = −9.0 [−30.6, +12.5] (k=3); crossed [−24.7, +4.7]. The interval covers 0.
