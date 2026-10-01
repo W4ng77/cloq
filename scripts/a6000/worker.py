@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import os
 import shutil
 import signal
@@ -269,6 +270,20 @@ def build_ckpt(task, env, gpus, scratch: Path, log) -> tuple[str, dict | None]:
     return str(out), json.load(open(out / "quantization.json"))
 
 
+def log_infra_errors(task_id: str) -> list[tuple[str, str]]:
+    """W67: (tau2 task id, error) for every 'Task <id> failed after N attempts: <error>' in this queue task's log.
+    The error's first line is enough for classify(); ids repeat across runs/domains of one queue task, which only
+    over-labels (every listed id is classified, never dropped)."""
+    out = []
+    lp = WORK / "logs" / "tasks" / f"{task_id}.log"
+    if lp.exists():
+        for ln in open(lp, errors="ignore"):
+            m = re.search(r"Task (.+?) failed after \d+ attempts: (.*)", ln)
+            if m:
+                out.append((m.group(1).strip(), m.group(2)))
+    return out
+
+
 def toolcall_side(rid: str, dom: str, task_id: str) -> str:
     """W41: a tau2 pydantic 'validation error for ToolCall' (e.g. arguments=[] instead of {}) is not an outage. If the
     agent's last recorded decision for the task parsed cleanly, the malformed call came from the user simulator (telecom
@@ -419,15 +434,23 @@ def run_eval(task, args, st: Status):
                         # (it loops or rambles), i.e. a task failure, not an outage. Record causes; fail only on real outages.
                         causes = {}
                         res = ROOT / "runs" / rid / d / "tau2_results.json"
+                        cf = ROOT / "runs" / rid / d / "infra_causes.json"
+
+                        def classify(tid: str, err: str) -> str:
+                            return ("context_overflow" if "ContextWindowExceeded" in err else
+                                    "agent_parse_error" if "only supports single tool-calls" in err else
+                                    toolcall_side(rid, d, tid) if "validation error for ToolCall" in err else "outage")
                         if res.exists():
                             for sim in json.load(open(res)).get("simulations", []):
                                 if str(sim.get("termination_reason")) == "infrastructure_error":
-                                    err = str((sim.get("info") or {}).get("error", ""))
-                                    causes[str(sim["task_id"])] = ("context_overflow" if "ContextWindowExceeded" in err else
-                                                                   "agent_parse_error" if "only supports single tool-calls" in err else
-                                                                   toolcall_side(rid, d, str(sim["task_id"])) if "validation error for ToolCall" in err else
-                                                                   "outage")
-                        (ROOT / "runs" / rid / d / "infra_causes.json").write_text(json.dumps(causes, indent=1))
+                                    causes[str(sim["task_id"])] = classify(str(sim["task_id"]),
+                                                                           str((sim.get("info") or {}).get("error", "")))
+                        else:
+                            # W67: a resumed task re-checks runs whose tau2_results.json was already deleted (storage,
+                            # below). Keep the earlier classification; else recover the errors from the task log.
+                            prev = json.load(open(cf)) if cf.exists() else {}
+                            causes = prev if prev else {tid: classify(tid, err) for tid, err in log_infra_errors(task["id"])}
+                        cf.write_text(json.dumps(causes, indent=1))
                         n_out = sum(v == "outage" for v in causes.values()) if causes else tr["infrastructure_error"]
                         if n_out:
                             raise RuntimeError(f"run {rid}/{d}: {n_out} infrastructure_error episodes (outage)")

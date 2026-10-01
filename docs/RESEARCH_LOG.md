@@ -10,6 +10,16 @@ Newest first.
 
 ---
 
+## W67 — Resumed tasks no longer turn classified episodes into "outages" (2026-09-30 19:10 PDT)
+**TL;DR** `a6k2_q4_quarot_w4a4kv16_fdev` failed with "1 infrastructure_error episodes (outage)" on f03/retail.
+- **What happened in the episode:** in task 61 the agent's last decision was a clean text reply. The error that followed was a ToolCall validation error, `user_sim_error` under W41.
+- **The bug:** when a task is resumed, its completed runs are re-checked, but their `tau2_results.json` has already been deleted for storage. The check then found no errors, overwrote `infra_causes.json` with `{}`, and fell back to counting every infrastructure episode as an outage.
+- **Fix in `worker.py`:**
+  - When `tau2_results.json` is gone, keep the earlier `infra_causes.json`.
+  - If there is none, recover the errors from the task log ("Task <id> failed after N attempts: <error>", `log_infra_errors`) and classify them the same way.
+- **Tested** on this task: task 61 → `user_sim_error`. Requeued (resume).
+Evidence: `runs/a6k2_q4_quarot_w4a4kv16_f03/retail/{metrics.json,decisions.jsonl}`, `logs/tasks/a6k2_q4_quarot_w4a4kv16_fdev.log`.
+
 ## W67 — Consequential divergences come from fragile tasks with consistent direction; restoration line paused (2026-09-30 18:30 PDT)
 **TL;DR** New exploratory analysis `analysis/fork/analyze_consequence.py` on the dev forks (the same admitted complete-block units as analyze_dev).
 1. **Fragile tasks.** Outcome-changing pivots (M) concentrate in a minority of tasks. The per-task dispersion index is 4.1–6.5 against a binomial null of ≈1 (p < 0.001 in every main cell). The top 20% of tasks hold 57–88% of all flips.
