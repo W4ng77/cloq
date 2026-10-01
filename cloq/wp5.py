@@ -405,7 +405,7 @@ def _ask(url: str, system: str, user: str) -> tuple[dict | None, str, dict]:
     body = {"model": "user", "temperature": 0.0, "top_p": 1.0, "seed": 0, "max_tokens": 1500,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
     req = urllib.request.Request(url.rstrip("/") + "/chat/completions", data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=600) as r:
+    with urllib.request.urlopen(req, timeout=1200) as r:
         resp = json.load(r)
     txt = resp["choices"][0]["message"]["content"] or ""
     m = re.search(r"\{.*\}", txt, re.S)
@@ -420,7 +420,7 @@ def cmd_llm(a) -> None:
     man = json.loads(SAMPLE.read_text())
     sys1 = rubric.split("<!-- PASS1 -->")[1].split("<!-- END PASS1 -->")[0].strip()
     sys2 = rubric.split("<!-- PASS2 -->")[1].split("<!-- END PASS2 -->")[0].strip()
-    with urllib.request.urlopen(a.url.rstrip("/") + "/models", timeout=10) as r:
+    with urllib.request.urlopen(a.url.split(",")[0].rstrip("/") + "/models", timeout=10) as r:
         served = json.load(r)["data"][0]
     jobs = []
     for u in man["units"]:
@@ -428,23 +428,47 @@ def cmd_llm(a) -> None:
         jobs.append((u, 1, sys1, json.dumps(v["pass1"], ensure_ascii=False)))
         jobs.append((u, 2, sys2, json.dumps(v["pass2"], ensure_ascii=False)))
 
+    urls = a.url.split(",")
+    outp = OUTD / "llm_labels.jsonl"
+    done = {}
+    if outp.exists():  # resume: keep parsed records made with the same rubric
+        for l in outp.read_text().splitlines():
+            r = json.loads(l)
+            if r.get("parse_ok") and r.get("rubric_sha256") == rh:
+                done[(r["review_id"], r["pass"])] = r
+    lock = __import__("threading").Lock()
+
     def run(j):
         u, p, s, usr = j
+        if (u["review_id"], p) in done:
+            return done[(u["review_id"], p)]
         t0 = time.time()
-        lab, raw, usage = _ask(a.url, s, usr)
-        if lab is None:  # one retry with the parse error stated
-            lab, raw, usage = _ask(a.url, s, usr + "\n\nReturn ONLY the JSON object described in the instructions.")
-        return {"review_id": u["review_id"], "pass": p, "labels": lab, "parse_ok": lab is not None, "raw": raw[:6000], "usage": usage,
-                "seconds": time.time() - t0}
+        lab, raw, usage, err, url = None, "", {}, None, None
+        for k in range(len(urls) * 2):  # an overloaded replica times out: try the next one
+            url = urls[(hash(u["review_id"]) + k) % len(urls)]
+            try:
+                lab, raw, usage = _ask(url, s, usr if k % 2 == 0 else usr + "\n\nReturn ONLY the JSON object described in the instructions.")
+                err = None
+                if lab is not None:
+                    break
+            except Exception as e:
+                err = repr(e)[:300]
+        rec = {**prov, "model_url": url, "review_id": u["review_id"], "pass": p, "labels": lab, "parse_ok": lab is not None, "error": err,
+               "raw": raw[:6000], "usage": usage, "seconds": time.time() - t0}
+        with lock:
+            with open(outp, "a") as f:
+                f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        return rec
 
+    prov = {"labeller": "llm", "rubric": str(RUBRIC.relative_to(ROOT)), "rubric_sha256": rh, "served_model": served.get("root"),
+            "served_name": served.get("id"), "decoding": {"temperature": 0, "top_p": 1, "seed": 0, "max_tokens": 1500},
+            "sample_sha256": sha_file(SAMPLE), "script_sha256": sha_file(__file__)}
+    OUTD.mkdir(parents=True, exist_ok=True)
     with cf.ThreadPoolExecutor(a.conc) as ex:
         out = list(ex.map(run, jobs))
-    prov = {"labeller": "llm", "rubric": str(RUBRIC.relative_to(ROOT)), "rubric_sha256": rh, "model_url": a.url, "served_model": served.get("root"),
-            "served_name": served.get("id"), "decoding": {"temperature": 0, "top_p": 1, "seed": 0, "max_tokens": 1500},
-            "sample_sha256": sha_file(SAMPLE), "script_sha256": sha_file(__file__), "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
-    OUTD.mkdir(parents=True, exist_ok=True)
-    (OUTD / "llm_labels.jsonl").write_text("".join(json.dumps({**prov, **r}, ensure_ascii=False) + "\n" for r in out))
-    print(f"llm labels: {sum(r['parse_ok'] for r in out)}/{len(out)} parsed -> {(OUTD / 'llm_labels.jsonl').relative_to(ROOT)}")
+    final = {(r["review_id"], r["pass"]): r for r in out}  # one line per (state, pass): the latest record
+    outp.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in final.values()))
+    print(f"llm labels: {sum(r['parse_ok'] for r in final.values())}/{len(final)} parsed -> {outp.relative_to(ROOT)}")
 
 
 def main():

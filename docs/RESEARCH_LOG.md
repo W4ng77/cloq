@@ -10,6 +10,48 @@ Newest first.
 
 ---
 
+## W71 — WP5 annotation package (sample, events, blinded packets, frozen rubric, LLM labels) and the recovery-intervention design (2026-10-01)
+**TL;DR** WP5 is ready for human review on 10-02/03.
+- **Sample:** 80 τ² development fork states, 20 of them double-reviewed, plus 2 calibration states. 20 states per consequence sign, stratified by family × domain. The sample manifest and the rubric were frozen before any label.
+- **Labels so far:** automatic events cover all 320 branches. LLM labels under the frozen rubric parsed for 154/160 state × pass; 6 pass-2 records are missing (5 hit the 1500-token output cap, 1 prompt was over length) and are reported as missing. The packets are blinded, and the unblinding key is outside the repository (sha committed).
+- **Recovery intervention:** designed and states frozen, **not queued**, awaiting approval.
+  - Per model (q4, q8 GPTQ-W4 d1, block q3): 30 ordinary Q states.
+  - 3 categories × {INVALID, VALID, negative control} × {B, Q} continuations.
+  - About 6–7 GPU-h at priority −13.
+- **Sample:** `manifests/annotation/wp5_sample_v1.json`.
+  - Frame: 8,288 divergent replay-gated units from `consequence_units_20261001T0224Z.jsonl`.
+  - Composition: W4 58, KV8 12, stress 10; retail 52, airline 24, telecom 4; 2 tasks reused.
+  - Inclusion probabilities are recorded, and sample frequencies are not prevalences.
+  - It was regenerated once before freezing: a one-state-per-task rule left one stratum empty, so tasks may now be reused only when a stratum runs out.
+- **Rubric:** `docs/insights/WP5_RUBRIC_v1.md`, sha256 b97e0104…, frozen in `manifests/annotation/wp5_rubric_freeze.json` before labelling.
+- **Automatic events:** `cloq/wp5.py events` = fork_annotate defect/correction/requirements plus the WP5 events and process costs, for all four branches (QQ = the original suffix, prefix verified 80/80). Counts over 320 branches:
+
+  | Event | Branches |
+  |---|---|
+  | wrong argument / execution error | 60 |
+  | transfer to human | 54 |
+  | correction after pivot | 34 |
+  | wrong id | 22 |
+  | irreversible mutation by the current action | 20 |
+  | budget exhaustion | 16 |
+  | retry loop | 13 |
+  | consent needs review | 10 |
+  | wrong tool | 6 |
+
+- **LLM labels:** `analysis/annotation/wp5/llm_labels.jsonl`.
+  - Labeller: the user-simulator model (Qwen3-30B-A3B-Instruct, pinned), queried on existing replicas node006/node001, greedy, seed 0. No new GPU process was started.
+  - Rubric sha and URL are recorded per line.
+  - Evidence or an explicit unknown/n/a is present on 65% of field labels.
+  - Limitation: the labeller is the same model as the τ² simulator.
+- **Packets:** `analysis/annotation/wp5/packets/index.html`, with pass 1 (actions X/Y in hashed order) and pass 2 (suffixes S1–S4) per state. They show no model, precision, outcome or effect value. Assignment: R1 34, R2 26, both 22. Protocol, adjudication rule and unblinding conditions: `docs/insights/ANNOTATION_PROTOCOL.md`.
+- **Recovery design:** `docs/insights/RECOVERY_INTERVENTION_DESIGN.md`.
+  - Categories: wrong_id, wrong_tool, premature_write (only writes whose arguments are all in the history at t).
+  - States frozen in `manifests/recovery/inject_v1.json`. Eligible counts: q4 247/299/62, q8 317/394/78.
+  - Every state also gets a negative control, a repeat of the last successful read, and VAL×Q is a built-in no-op.
+  - Driver: `scripts/a6000/inject_driver.py`. It reuses `cloq.fork.run_branch` and does not touch fork_driver (Bank U). The worker dispatches it through `fork.driver = "inject"` (a one-line run_fork hunk).
+
+Evidence: `cloq/wp5.py`, `manifests/annotation/`, `analysis/annotation/wp5/`, `docs/insights/{ANNOTATION_PROTOCOL,WP5_RUBRIC_v1,RECOVERY_INTERVENTION_DESIGN}.md`, `manifests/recovery/inject_v1.json`, `scripts/a6000/inject_driver.py`; key `/data/ziyangs/cloq_work/annotation/wp5_KEY_unblinding.jsonl` (cluster only).
+
 ## W70 — Review fixes A1–A3 (strict complete blocks, common panel, stress pools), W67 beyond-baseline test, Bank U driver + replay gate (2026-10-01)
 **TL;DR**
 - **Strict block rule (A1).** A block with any unit missing for infrastructure reasons now leaves the primary analysis. The old rule is kept as a labelled complete-case sensitivity (`--complete-case`, outputs `dev_cc_*`, `*_cc_*`). Only q4 AWQ-W4 moves: 1699 → 1642 units, G −0.3 → −0.9 [−3.1, +1.2] pp. Every other headline is unchanged.
