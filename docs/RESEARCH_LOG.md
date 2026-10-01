@@ -10,6 +10,24 @@ Newest first.
 
 ---
 
+## W80 — GPT-6.1 review 3 decisions applied; holdout repeatability secondary drafted (2026-10-01 00:40 PDT)
+**TL;DR** The second pillar is "how consequences propagate", in three parts:
+- **Recovery intervention** (primary identification): D measures the controller dependence of the injection effect.
+- **Table 4:** process description.
+- **Bank U + Q0:** common-state check.
+
+Changes made:
+- **Recovery:** per-state replay acceptance; NC is renamed the "process-perturbation control"; D framing (W76).
+- **Bank U:** per-config gates for q4 AWQ, q8 GPTQ and q8 KV8, bound as deps. Gate tasks now fail loudly (W76).
+- **Holdout secondary:** cross-nonce repeatability, drafted in FORK_PROTOCOL §12 amendment 1. It is binding at the PREREG freeze, which happens before the first holdout read.
+- **Pending:**
+  - W78: W70/W67 population and inference corrections. The audit was airline-only (27 tasks), the conditional permutation was invalid, and q4 AWQ mixes in an airline-only block.
+  - W79: Table 4 restored to the rubric category, programmatic verification, paired stats, and a human-check packet (≥ 20, preferably 30 states).
+- **Wording:** W×KV is "not yet supported by replication" until the 6th q8 block; a sign flip in the point estimate is not a demonstrated reversal. The 70% vs 27% restoration result goes to an appendix only.
+- **GPU split after protection and reserve:** 50% Bank U f01→f02/f03 + Q0; 30% recovery validity and replication; 20% q14 paired BF16/W4.
+
+Evidence: `docs/insights/RECOVERY_INTERVENTION_DESIGN.md` (Amendment 1), `docs/insights/FORK_PROTOCOL.md` §12 amendment 1, `scripts/a6000/fork_driver.py` (bank_u gate raise), GPT-6.1 review text as relayed by the author.
+
 ## W75 — WP5 Table 4: Sonnet 5.5 blinded labels, adjudicated and unblinded (2026-10-01 00:00 PDT)
 **TL;DR** In this sample, how the pivot action itself looks does **not** separate rescue from damage. What separates them is what happens later in the failing branch, mainly **unconsented irreversible writes**. This is descriptive and LLM-annotated, not human.
 - **Annotation (Amendment 1, author decision):**

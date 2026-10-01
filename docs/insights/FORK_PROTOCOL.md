@@ -432,6 +432,35 @@ Inference is block-level over complete shared blocks (W63): the holdout's nonces
   new-task uncertainty honestly. Few holdout events mean limited evidence, not absence.
 - **Development analysis.** `analysis/fork/analyze_difficulty.py` is exploratory; the moderators were chosen after seeing the data.
 
+### §12 amendment 1 (W80, GPT-6.1 review 3): pre-registered secondary — within-holdout cross-nonce repeatability of task fragility
+
+Drafted 2026-10-01, before any holdout unit was run; no holdout outcome exists yet. It becomes binding when PREREG_FORK_CONFIRM.md
+is frozen, which happens **before the first holdout result is read**, not on the 10-05 freeze date.
+
+- **Claim tested:** repeatability on new tasks. If a new task flips under quantization in some nonce blocks, it also flips in other,
+  independent nonce blocks. This is **not** a transfer test of a dev-defined task score: dev task-ID flip rates cannot be applied to the
+  34 unseen tasks. Cross-task prediction from task features is out of scope this round.
+- **Blocks:**
+  - The holdout uses K ≥ 6 fresh nonce blocks per cell (even K; the block list is frozen in PREREG_FORK_CONFIRM.md).
+  - They are split into halves H_A and H_B by sha256("holdout-split-v1"|block_id) order: the first K/2 go to H_A.
+  - The split is frozen with the block list.
+- **Statistic:**
+  - For each holdout cell c and task j, m_A(c,j) is the share of complete H_A blocks in which the unit is consequential
+    (Y_BQ ≠ Y_QQ; a non-divergent unit counts 0). m_B(c,j) is the same over H_B.
+  - ρ_c = Spearman(m_A, m_B) over the tasks with complete units in both halves.
+  - The endpoint ρ is the equal-weight mean of ρ_c over the holdout cells declared in PREREG_FORK_CONFIRM.md.
+- **Test:**
+  - One-sided H1: ρ > 0, α = 0.05.
+  - The p-value comes from a permutation of task labels of m_B, within persona stratum (Hard/None/Easy), applied identically across cells,
+    with 10,000 draws and seed 20261001.
+  - This tests task-level repeatability only. It makes **no** "beyond difficulty" claim (cf. W78).
+- **Multiplicity:** one pre-registered secondary. G_all remains the sole primary and is unchanged; r/d/M secondaries are unchanged.
+  No Holm adjustment against the primary; Holm applies only within the existing strata family.
+- **Not estimable:** if fewer than 10 tasks have m_A + m_B > 0 in a cell, that cell's ρ_c is "not estimable" and is
+  excluded. If no cell is estimable, the endpoint is reported as not estimable, with no claim either way.
+- **Direction:** the sign consistency of per-task (r − d) across halves is reported **exploratory only**.
+- **Scope:** the dev W67/W70 results stay exploratory. This test does not retroactively confirm them.
+
 ## 13. Pivot-time restoration (W55): arm selection rule, fixed before any pivot-arm outcome
 
 **Step 2: which modules flip the action at the pivot.**
