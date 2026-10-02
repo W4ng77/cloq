@@ -24,4 +24,4 @@ git diff --cached --quiet && { echo "nothing new"; exit 0; }
 git commit -q -m "A6000 progress $(date '+%F %H:%M'): $(ls /data/ziyangs/cloq_work/queue/done | wc -l) tasks done
 
 Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
-git pull -q --rebase origin master && git push -q origin master && git log --oneline -1
+git pull -q --rebase --autostash origin master && git push -q origin master && git log --oneline -1
