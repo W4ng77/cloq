@@ -1,6 +1,12 @@
 # W99p — m24 (Mistral-Small-3.2-24B-Instruct-2506) second-family gate
 
-**Verdict: see the table; the fork checks (3, 4) are filled in by `analyze_gate.py` when the 4-GPU fork gates have run.**
+**Verdict (2026-10-02 04:05 PDT; the window closes 06:08 and the fork gates cannot finish inside it): NOT YET DECIDED — checks 1, 2, 5, 6, 7 PASS; checks 3 and 4
+(BB/QQ no-op bit-exact, same-checkpoint negative control) are BLOCKED ON INFRASTRUCTURE (runner restart pending), not failed.**
+No new backend is needed. The four 4-GPU fork-gate tasks are queued at −26 and stay in todo. Only a runner restarted on the
+W99p noderunner (≥ 44527e1) can claim them. node008 is draining for that (DRAIN.node008 = GPUs 2–7), but its last old task
+(`rot_gate_qr_q8`, a W99r gate suite running since 00:26) was still running at 04:05. Then come 30 min idle, the automatic
+re-submit and the fork gates themselves (≈ 1 h each by the q4 precedent, longer at 24B). The formal panel is therefore **not
+queued**; it follows only after checks 3–4 pass (`make_tasks_m24.py bfpair --write`, then the NEWMETHOD_PANEL_PROTOCOL §10 steps).
 
 Model: `mistralai/Mistral-Small-3.2-24B-Instruct-2506@95a6d26c` (models.json `m24`), served **text-only** from
 `/data/ziyangs/cloq_work/ckpt_cache/m24_textonly_v1` (the `language_model.*` tensors of the pinned HF shards, byte-identical,
@@ -27,12 +33,16 @@ imports the same module. Fix: serve the language model alone (`MistralForCausalL
 | 1b | Tool protocol, τ² (mistral parser + tokenizer) | **PASS** | BF16: 207 decisions, 168 parsed tool calls (35 decisions with several calls), 0 parser errors, 0 infra errors, 20/20 normal stops. **Local prompt ids == server prompt ids on 207/207 decisions** (`cloq/mistral_render.py`). RTN-W4: 223/223, 0 parser errors. |
 | 1c | Tool protocol, BFCL | **PASS** | BF16: 172 decisions, 123 tool calls, 0 parser errors, 0 calls to tools not offered, 0 decode errors on tool calls; 20/20 items completed. RTN-W4 r0: one item ended with HTTP 400 (the agent's own call with an empty function name, which mistral_common refuses to render next turn). It is now scored `agent_parse_error` (W27 rule) and the item rerun (see 1d). |
 | 1d | Deterministic tool-call ids | **PASS (by construction, checked)** | The Mistral template renders `[CALL_ID]`; vLLM draws ids at random, so identical decisions would give different later prompts and no-op replays could never be bit-exact. τ²/BFCL now set id = `d<decision:05d>c<k:02d>` (m24 only). All recorded ids follow the rule. |
-| 2 | BF16 capability vs Qwen | **PASS (not at floor)** | τ²: 4/20 = 20% (Wilson 8–42%). On the 16 gate tasks in the calibration split, m24 25% vs Qwen BF16 q4 19%, q8 25%, q14 38%, q32 44% (same tasks, `a6k2_<q>_bf16_cal`). BFCL: 2/20 = 10% (3–30%) vs Qwen q4 10%, q8 15%, q14 15% on the same 20 items. l8 (W99f) was 0/20 and 4.2%. RTN-W4: τ² 3/20, BFCL see summary. |
-| 3 | BB and QQ no-op replay bit-exact (τ², BFCL) | PENDING | `fork_gate_m24_rtn_w4`, `fork_ext_gate_m24_rtn_w4_bfcl` (4 GPUs). |
-| 4 | Same-checkpoint negative control (τ², BFCL) | PENDING | `fork_gate_same_m24_rtn_w4`, `fork_ext_gate_same_m24_rtn_w4_bfcl`. |
+| 2 | BF16 capability vs Qwen | **PASS (not at floor)** | τ²: 4/20 = 20% (Wilson 8–42%). On the 16 gate tasks in the calibration split, m24 25% vs Qwen BF16 q4 19%, q8 25%, q14 38%, q32 44% (same tasks, `a6k2_<q>_bf16_cal`). BFCL: 2/20 = 10% (3–30%) vs Qwen q4 10%, q8 15%, q14 15% on the same 20 items. l8 (W99f) was 0/20 and 4.2%. RTN-W4: τ² 3/20 = 15%, BFCL 1/20 = 5%. |
+| 3 | BB and QQ no-op replay bit-exact (τ², BFCL) | **BLOCKED (infrastructure)** | `fork_gate_m24_rtn_w4`, `fork_ext_gate_m24_rtn_w4_bfcl` (4 GPUs). |
+| 4 | Same-checkpoint negative control (τ², BFCL) | **BLOCKED (infrastructure)** | `fork_gate_same_m24_rtn_w4`, `fork_ext_gate_same_m24_rtn_w4_bfcl`. |
 | 5 | BFCL leak regression (`tests/test_bfcl_instance_leak.py`) | **PASS** 9/9 | Default env and `CLOQ_TOKENIZER_MODE=mistral`: `test_bfcl_instance_leak{,_mistralmode}.out`. |
 | 6 | Throughput | measured | τ² eval: 20 tasks in 662 s (BF16) / 718 s (RTN-W4, including a ~30 s RTN build and ~3 min server start) on 2 GPUs; median episode 201 s retail, 129 s airline. BFCL: 20 items in 291 s on 2 GPUs (median item 91–144 s). |
 | 7 | Qwen paths unchanged | **PASS** | No m24 env → `template_view` path and random-id path untouched. `tests/test_template_view.py`: q4 257/257 server match. The q8 case gives the same counts (0/400 server match) with the pre-W99p code, so that failure predates this change (`test_template_view_qwen_unchanged.out`). Runner dry run: identical claims on a legacy queue. |
+
+## Invalid tool names (protocol signal, Mistral only)
+
+Mistral sometimes emits a tool call whose function name is invalid: empty, or the text "YOU ARE BEING TRANSFERRED TO A HUMAN AGENT. PLEASE HOLD ON.". vLLM's parser returns it, but mistral_common refuses to render that turn at the next request (HTTP 400). This is the agent's own output, so it is scored `agent_parse_error` (W27 rule, already in AGENT_SIDE) in the worker and the ext adapters. Two tasks that failed on it as "outages" (RTN BFCL gate, BF16 cal) were requeued. Rate: **3 of 1,348 decisions (0.22%), 3 of 137 episodes (2.2%)**. By run: BF16 τ² gate 0/20, RTN τ² gate 0/20, BF16 cal 2/57, BF16 BFCL 0/20, RTN BFCL 1/20 (`gate_summary.json` `invalid_tool_names`).
 
 ## Runner change (engineering condition 1)
 
