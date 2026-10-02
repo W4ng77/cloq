@@ -1,0 +1,349 @@
+{
+ "host": "node001",
+ "gpus": "4",
+ "started": 1790951067.4565063,
+ "toy": {
+  "shapes": {
+   "Hq": 32,
+   "Hkv": 8,
+   "D": 128,
+   "BS": 16,
+   "G": 32,
+   "R": 128
+  },
+  "device": "cuda",
+  "dtype": "torch.bfloat16",
+  "T1_quantizer": {
+   "int2": {
+    "K_kernel_eq_official_bitwise": 189296,
+    "K_n": 262144,
+    "K_official_nan_on_constant_group": 0,
+    "K_kernel_eq_torchref_bitwise_all": false,
+    "V_kernel_eq_official_bitwise": 187388,
+    "V_n": 262144,
+    "K_max_abs_vs_official": 1.9073486328125e-06,
+    "V_max_abs_vs_official": 1.9073486328125e-06
+   },
+   "int4": {
+    "K_kernel_eq_official_bitwise": 127377,
+    "K_n": 262144,
+    "K_official_nan_on_constant_group": 0,
+    "K_kernel_eq_torchref_bitwise_all": false,
+    "V_kernel_eq_official_bitwise": 124816,
+    "V_n": 262144,
+    "K_max_abs_vs_official": 1.9073486328125e-06,
+    "V_max_abs_vs_official": 1.9073486328125e-06
+   }
+  },
+  "T2_semantics": {
+   "k4v4": {
+    "quant_effect_max_abs": 0.13475364446640015,
+    "official_state_split_matches_position_rule": true,
+    "kernel_vs_official_decode_max_abs": 0.0477728396654129,
+    "kernel_vs_view_max_abs": 0.0477728545665741,
+    "view_vs_official_max_abs": 7.748603820800781e-07,
+    "quant_effect_mean_abs": 0.005036801565438509,
+    "kernel_vs_official_mean_abs": 0.0005163629539310932,
+    "official_prefill300_decode_rows_vs_kernel_max_abs": 0.04082857444882393,
+    "official_prefill300_prefill_rows_vs_kernel_max_abs": 0.13758587837219238,
+    "official_prefill300_prefill_rows_vs_exact_max_abs": 1.3113021850585938e-06,
+    "ratio_err_to_effect": 0.10251802601759598
+   },
+   "k2v2": {
+    "quant_effect_max_abs": 0.6355817914009094,
+    "official_state_split_matches_position_rule": true,
+    "kernel_vs_official_decode_max_abs": 0.19166958332061768,
+    "kernel_vs_view_max_abs": 0.1916695535182953,
+    "view_vs_official_max_abs": 1.1920928955078125e-06,
+    "quant_effect_mean_abs": 0.027373850345611572,
+    "kernel_vs_official_mean_abs": 0.0012957442086189985,
+    "official_prefill300_decode_rows_vs_kernel_max_abs": 0.18877172470092773,
+    "official_prefill300_prefill_rows_vs_kernel_max_abs": 0.6295549869537354,
+    "official_prefill300_prefill_rows_vs_exact_max_abs": 1.3113021850585938e-06,
+    "ratio_err_to_effect": 0.04733510968531781
+   },
+   "k16v16": {
+    "quant_effect_max_abs": null,
+    "kernel_null_vs_exact_max_abs": 0.009305953979492188
+   }
+  },
+  "T3_invariance": {
+   "k4v4": {
+    "decode_token_by_token": {
+     "bitwise_equal_seqs": 9,
+     "n_seqs": 9,
+     "any_nan": false,
+     "max_abs": 0.0
+    },
+    "random_chunks_batched": {
+     "bitwise_equal_seqs": 9,
+     "n_seqs": 9,
+     "any_nan": false,
+     "max_abs": 0.0
+    },
+    "prefill_half_then_batched_decode": {
+     "bitwise_equal_seqs": 9,
+     "n_seqs": 9,
+     "any_nan": false,
+     "max_abs": 0.0
+    }
+   },
+   "k2v2": {
+    "decode_token_by_token": {
+     "bitwise_equal_seqs": 9,
+     "n_seqs": 9,
+     "any_nan": false,
+     "max_abs": 0.0
+    },
+    "random_chunks_batched": {
+     "bitwise_equal_seqs": 9,
+     "n_seqs": 9,
+     "any_nan": false,
+     "max_abs": 0.0
+    },
+    "prefill_half_then_batched_decode": {
+     "bitwise_equal_seqs": 9,
+     "n_seqs": 9,
+     "any_nan": false,
+     "max_abs": 0.0
+    }
+   },
+   "k16v16": {
+    "decode_token_by_token": {
+     "bitwise_equal_seqs": 9,
+     "n_seqs": 9,
+     "any_nan": false,
+     "max_abs": 0.0
+    },
+    "random_chunks_batched": {
+     "bitwise_equal_seqs": 9,
+     "n_seqs": 9,
+     "any_nan": false,
+     "max_abs": 0.0
+    },
+    "prefill_half_then_batched_decode": {
+     "bitwise_equal_seqs": 9,
+     "n_seqs": 9,
+     "any_nan": false,
+     "max_abs": 0.0
+    }
+   }
+  },
+  "verdict": {
+   "T1_quantizer": false,
+   "T2_semantics": false,
+   "T3_invariance": true
+  },
+  "seconds": 7.3
+ },
+ "server": {
+  "ref_run": "a6k2_q8_bf16",
+  "n_fid": 200,
+  "n_chains": 8,
+  "turns": 4,
+  "configs": {
+   "bf16": {
+    "env": {},
+    "startup_s": 60,
+    "hook_wrapped_lines": [],
+    "hook_attention_instances": 0,
+    "canary": "e340c7991fa5bc08",
+    "det": {
+     "n": 8,
+     "batch_eq_alone": 8,
+     "prefixhit_eq_alone": 8
+    },
+    "chain": {
+     "n_turns": 32,
+     "cold_reprefill_eq_incremental": 32,
+     "reverse_order_eq_incremental": 32,
+     "prompt_len_min_max": [
+      4873,
+      6163
+     ],
+     "r128_boundaries_crossed_by_decode": 15,
+     "mismatches": []
+    },
+    "throughput": {
+     "long_prompt_tokens": 17091,
+     "cold_prefill_s": 3.595,
+     "single_stream_decode_tok_s": 12.92,
+     "batch16_gen_tokens": 4096,
+     "batch16_wall_s": 35.02,
+     "batch16_tok_s": 116.95,
+     "batch16_mean_prompt": 8759.875
+    },
+    "fidelity_file": "analysis/fork/kivi_gate/fid/q8_bf16.json",
+    "errors_in_log": [
+     "(EngineCore pid=3538864) WARNING 10-02 07:25:15 [import_utils.py:408] Traceback (most recent call last):"
+    ]
+   },
+   "k16v16": {
+    "env": {
+     "CLOQ_PYHOOKS": "1",
+     "CLOQ_KIVI_KBITS": "16",
+     "CLOQ_KIVI_VBITS": "16"
+    },
+    "startup_s": 70,
+    "hook_wrapped_lines": [
+     "(EngineCore pid=3546637) [cloq_kivi] pid=3546637 wrapped vllm.v1.attention.backends.flash_attn.FlashAttentionImpl.forward: kbits=16 vbits=16 group=32 resid=128 tag=kivi_k16v16_g32_r128 cache_root=/tmp/cloq_49866/vllm_cache/kivi_k16v16_g32_r128"
+    ],
+    "hook_attention_instances": 36,
+    "canary": "e5487ba6b887d132",
+    "det": {
+     "n": 8,
+     "batch_eq_alone": 8,
+     "prefixhit_eq_alone": 8
+    },
+    "chain": {
+     "n_turns": 32,
+     "cold_reprefill_eq_incremental": 32,
+     "reverse_order_eq_incremental": 32,
+     "prompt_len_min_max": [
+      4873,
+      6188
+     ],
+     "r128_boundaries_crossed_by_decode": 14,
+     "mismatches": []
+    },
+    "throughput": {
+     "long_prompt_tokens": 17091,
+     "cold_prefill_s": 11.072,
+     "single_stream_decode_tok_s": 4.87,
+     "batch16_gen_tokens": 4096,
+     "batch16_wall_s": 92.69,
+     "batch16_tok_s": 44.19,
+     "batch16_mean_prompt": 8759.875
+    },
+    "fidelity_file": "analysis/fork/kivi_gate/fid/q8_k16v16.json",
+    "errors_in_log": [
+     "(EngineCore pid=3546637) WARNING 10-02 07:36:27 [import_utils.py:408] Traceback (most recent call last):"
+    ]
+   },
+   "k4v4": {
+    "env": {
+     "CLOQ_PYHOOKS": "1",
+     "CLOQ_KIVI_KBITS": "4",
+     "CLOQ_KIVI_VBITS": "4"
+    },
+    "startup_s": 70,
+    "hook_wrapped_lines": [
+     "(EngineCore pid=3550862) [cloq_kivi] pid=3550862 wrapped vllm.v1.attention.backends.flash_attn.FlashAttentionImpl.forward: kbits=4 vbits=4 group=32 resid=128 tag=kivi_k4v4_g32_r128 cache_root=/tmp/cloq_49866/vllm_cache/kivi_k4v4_g32_r128"
+    ],
+    "hook_attention_instances": 36,
+    "canary": "27dfdf096d5093af",
+    "det": {
+     "n": 8,
+     "batch_eq_alone": 8,
+     "prefixhit_eq_alone": 8
+    },
+    "chain": {
+     "n_turns": 32,
+     "cold_reprefill_eq_incremental": 32,
+     "reverse_order_eq_incremental": 32,
+     "prompt_len_min_max": [
+      4873,
+      6188
+     ],
+     "r128_boundaries_crossed_by_decode": 13,
+     "mismatches": []
+    },
+    "throughput": {
+     "long_prompt_tokens": 17091,
+     "cold_prefill_s": 41.12,
+     "single_stream_decode_tok_s": 1.77,
+     "batch16_gen_tokens": 4096,
+     "batch16_wall_s": 315.29,
+     "batch16_tok_s": 12.99,
+     "batch16_mean_prompt": 8759.875
+    },
+    "fidelity_file": "analysis/fork/kivi_gate/fid/q8_k4v4.json",
+    "errors_in_log": [
+     "(EngineCore pid=3550862) WARNING 10-02 07:57:47 [import_utils.py:408] Traceback (most recent call last):"
+    ]
+   },
+   "k2v2": {
+    "env": {
+     "CLOQ_PYHOOKS": "1",
+     "CLOQ_KIVI_KBITS": "2",
+     "CLOQ_KIVI_VBITS": "2"
+    },
+    "startup_s": 65,
+    "hook_wrapped_lines": [
+     "(EngineCore pid=3563450) [cloq_kivi] pid=3563450 wrapped vllm.v1.attention.backends.flash_attn.FlashAttentionImpl.forward: kbits=2 vbits=2 group=32 resid=128 tag=kivi_k2v2_g32_r128 cache_root=/tmp/cloq_49866/vllm_cache/kivi_k2v2_g32_r128"
+    ],
+    "hook_attention_instances": 36,
+    "canary": "60cac990145b1cca",
+    "det": {
+     "n": 8,
+     "batch_eq_alone": 8,
+     "prefixhit_eq_alone": 8
+    },
+    "chain": {
+     "n_turns": 32,
+     "cold_reprefill_eq_incremental": 32,
+     "reverse_order_eq_incremental": 32,
+     "prompt_len_min_max": [
+      4873,
+      6163
+     ],
+     "r128_boundaries_crossed_by_decode": 19,
+     "mismatches": []
+    },
+    "throughput": {
+     "long_prompt_tokens": 17091,
+     "cold_prefill_s": 41.099,
+     "single_stream_decode_tok_s": 1.76,
+     "batch16_gen_tokens": 4096,
+     "batch16_wall_s": 315.28,
+     "batch16_tok_s": 12.99,
+     "batch16_mean_prompt": 8759.875
+    },
+    "fidelity_file": "analysis/fork/kivi_gate/fid/q8_k2v2.json",
+    "errors_in_log": [
+     "(EngineCore pid=3563450) WARNING 10-02 08:53:01 [import_utils.py:408] Traceback (most recent call last):"
+    ]
+   }
+  },
+  "fidelity": {
+   "bf16_server_eq_recorded_closed_loop": 200,
+   "n": 200,
+   "k16v16": {
+    "n": 200,
+    "exact_completion_agree": 0.91,
+    "first_token_agree": 0.995,
+    "action_type_agree": 0.995,
+    "action_agree": 0.91,
+    "tool_call_agree_on_bf16_tool_decisions": 0.96875,
+    "n_bf16_tool": 128,
+    "kl_first_mean": 0.000995451064121967,
+    "kl_first_median": 1.3222346087409596e-06,
+    "kl_first_q90": 0.0019077193887287753
+   },
+   "k4v4": {
+    "n": 200,
+    "exact_completion_agree": 0.735,
+    "first_token_agree": 0.97,
+    "action_type_agree": 0.98,
+    "action_agree": 0.735,
+    "tool_call_agree_on_bf16_tool_decisions": 0.8515625,
+    "n_bf16_tool": 128,
+    "kl_first_mean": 0.014883215892670212,
+    "kl_first_median": 2.7610672225709042e-05,
+    "kl_first_q90": 0.030978211268185306
+   },
+   "k2v2": {
+    "n": 200,
+    "exact_completion_agree": 0.495,
+    "first_token_agree": 0.9,
+    "action_type_agree": 0.92,
+    "action_agree": 0.5,
+    "tool_call_agree_on_bf16_tool_decisions": 0.6484375,
+    "n_bf16_tool": 128,
+    "kl_first_mean": 0.3976680338703399,
+    "kl_first_median": 0.0031118125801813654,
+    "kl_first_q90": 0.8559521773238818
+   }
+  }
+ }
+}

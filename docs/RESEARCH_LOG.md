@@ -10,6 +10,29 @@ Newest first.
 
 ---
 
+## W99t — KIVI (q8 KV cache) feasibility gate: kivi_k2v2 PASS, phase 1 queued; kivi_k4v4 held (original toy T2 at the BF16 floor); amendment a2 fixes a real scale mismatch (2026-10-02 10:00 PDT)
+**TL;DR** KIVI (official jy-yuan/KIVI @ 876b4d2; G = 32, R = 128) is served on vLLM by a stateless position-determined Triton kernel (70addfa).
+- **kivi_k2v2 passes** every gate criterion:
+  - toy T1 bit-exact vs official on GPU;
+  - toy T2 ratio 0.010;
+  - toy T3 9/9 bitwise;
+  - server det 8/8 and 8/8;
+  - chain cold-reprefill and reverse-order 32/32 and 32/32;
+  - gate_same and bank pass.
+- Its phase 1 is queued at −24: τ² f01–f03, scores, BFCL; 11 tasks.
+- **kivi_k4v4 is held.** It passes everything except the original toy T2 mean ratio: 0.0547 > 0.05. Official KIVI itself at BF16 scores 0.0496 vs its fp32 path. The cell passes the amended serving-precision T2 (0.0467). It waits for a decision on the criterion.
+- **Amendment a2 (f585ae3).** The GPU toy failure was a real mismatch, not noise. Official KIVI's `(mx-mn)/(2**b-1)` on CUDA is a multiply by the fp32 reciprocal (PyTorch, CPU-scalar divisor). The kernel used IEEE division. On BF16 data this flipped quantization codes at exact ties. A CPU emulation reproduces the GPU max errors to 4 digits (0.0478, 0.1915).
+- The fixed kernel's error vs the reference equals the null kernel's (0.0093 BF16).
+- **rc=−9 was not OOM.** `worker.stop_server` SIGKILLs every pid on the task's GPUs, and that included the gate process, which held a CUDA context from the toy phase. The server phase now runs CUDA-free (kivi_gate_q8_r2, done).
+- **Fidelity vs BF16 (200 decisions).**
+  - Action agreement: k16v16 0.91, k4v4 0.735, k2v2 0.50.
+  - First-token KL mean: 0.001, 0.015, 0.40.
+  - The kernel path alone (k16v16) moves 9% of completions, so P3 carries a kernel-path component.
+- **Cost.** Decode throughput is about 9× below FA2 (batch-16: 13 vs 117 tok/s).
+- **Disclosed.** The §2.4 gates ran on the pre-fix kernel. The fix is one fp32 constant, so they were not re-run.
+
+Evidence: `analysis/fork/kivi_gate/GATE.md`, `analysis/fork/kivi_gate/{gate_q8_toy3,gate_q8,diag_q8,gate_q8_toy2,toy_cpu_interp_fp16}.json`, `analysis/fork/kivi_gate/fid/`, `analysis/fork/newmethod/gate/q8_kivi_{k2v2,k4v4}/`, `scripts/a6000/pyhooks/{cloq_kivi,cloq_kivi_kernel}.py`, `cloq/kivi_ref.py`, `scripts/a6000/{kivi_gate,kivi_diag,make_tasks_kivi}.py`; commits 70addfa, ef9dc5a, f585ae3; logs `/data/ziyangs/cloq_work/logs/tasks/kivi_gate_q8{,_r2,_toy3}.log`.
+
 ## W100c-b — Paper: §5 direction split filled from W100d (shared action-side core; continuation-side and controller-dependent flips largely substitution-specific); F7 in the appendix (2026-10-02 PDT)
 **TL;DR** The §5 direction-split `\pending{}` slot is filled from `analysis/fork/out/sameprec_split_20261002T145148Z.{md,json}` (INTERIM, K = 6, descriptive). The main points:
 - The action side (G) shares a core above the within-task shuffle: rescue κ 0.60, harm κ 0.54; 56% of flipping units are design-specific, against 72% under the shuffle.
