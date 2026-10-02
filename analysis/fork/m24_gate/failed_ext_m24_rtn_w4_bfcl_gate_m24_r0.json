@@ -1,0 +1,32 @@
+{
+ "id": "ext_m24_rtn_w4_bfcl_gate_m24",
+ "kind": "eval",
+ "env": "bfcl",
+ "model": "m24",
+ "arm": "rtn",
+ "ckpt": {
+  "kind": "rtn",
+  "wbits": 4
+ },
+ "domains": [
+  "bfcl_base",
+  "bfcl_miss_param",
+  "bfcl_miss_func",
+  "bfcl_long_context"
+ ],
+ "gpus": 2,
+ "priority": -26,
+ "deps": [],
+ "runs": [
+  {
+   "run_id": "ext_m24_rtn_w4_bfcl_gate_m24",
+   "task_file": "manifests/bfcl/bfcl_mt_m24_v1.json",
+   "subset": "gate_m24"
+  }
+ ],
+ "note": "W99p m24 (Mistral-Small-3.2-24B, text-only, mistral tokenizer/parser) second-family check",
+ "error": "RuntimeError('run ext_m24_rtn_w4_bfcl_gate_m24/bfcl_long_context failed rc=2')",
+ "trace": "Traceback (most recent call last):\n  File \"/data/ziyangs/cloq/scripts/a6000/worker.py\", line 837, in main\n    res = run_eval(task, args, st) if task[\"kind\"] == \"eval\" else run_calib(task, args, st)\n          ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/data/ziyangs/cloq/scripts/a6000/worker.py\", line 450, in run_eval\n    raise RuntimeError(f\"run {rid}/{d} failed rc={p.returncode}\")\nRuntimeError: run ext_m24_rtn_w4_bfcl_gate_m24/bfcl_long_context failed rc=2\n",
+ "failed_at": 1790930515.3328009,
+ "host": "node001"
+}

@@ -1,0 +1,17 @@
+q4 a6k2_det_q4_a {'n': 257, 'text_same': 257, 'server_match': 257, 'server_n': 257, 'raw_error': 0, 'tool_call_turns': 1051}
+Traceback (most recent call last):
+  File "/data/ziyangs/cloq/tests/test_template_view.py", line 139, in <module>
+    print(code, run, _run_case(code, run, limit), flush=True)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ziyangs/cloq/tests/test_template_view.py", line 70, in _run_case
+    out = subprocess.run([sys.executable, __file__, "--case", code, run, str(limit)], env=env, cwd=ROOT,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ziyangs/cloq_work/envs/cloq/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/data/ziyangs/cloq_work/envs/cloq/bin/python', '/data/ziyangs/cloq/tests/test_template_view.py', '--case', 'q8', 'a6k2_q8_bf16', '200']' returned non-zero exit status 1.
+rc=1
+
+# W99p note: the q8 case (a6k2_q8_bf16, 400 decisions) gives server_match 0/400 with BOTH the pre-W99p code (44527e1^,
+# run from an extracted tree) and the W99p code: {"n": 400, "text_same": 400, "server_match": 0, "server_n": 400,
+# "raw_error": 0, "tool_call_turns": 1903} in both. The failure predates W99p (not caused by the Mistral branch, which is
+# inactive without CLOQ_TOKENIZER_MODE); q4 257/257 unchanged.

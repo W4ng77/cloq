@@ -98,6 +98,10 @@ def chat(base: str, messages: list[dict], tools: list[dict] | None, timeout: flo
             if e.code == 400 and ("context length" in txt or "maximum context" in txt or "max_model_len" in txt
                                   or "too long" in txt or "exceeds" in txt):
                 raise ChatError("context_overflow", txt)
+            if "Function name was" in txt and "must be a-z" in txt:
+                # W99p (m24): the agent's own earlier turn carried a tool call with an empty or invalid function name;
+                # mistral_common refuses to render it at the next request. The agent's failure (W27 rule), not an outage.
+                raise ChatError("agent_parse_error", txt)
             if "only supports single tool-calls" in txt:
                 # W99f: the Llama-3.1 chat template refuses to render an assistant turn with several tool calls (the agent's
                 # own earlier output); an agent failure like W27 in tau2, never an outage. Never raised for Qwen.
