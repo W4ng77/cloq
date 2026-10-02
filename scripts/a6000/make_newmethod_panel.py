@@ -279,7 +279,7 @@ def spec(a) -> None:
     blocks = ["f01", "f02", "f03"] if a.phase == 1 else ["f04", "f05", "f06"]
     src = f"a6k2_{m}_bfpair_f01"
     out = {
-        "gate_same (Q determinism, foreign states)": {"mode": "gate_same", "foreign_states": True, "q_blocks": [f"{src}:retail", f"{src}:airline"],
+        "gate_same (Q determinism, foreign states)": {"mode": "gate_same", "foreign_states": True, "q_blocks": [[src, "retail"], [src, "airline"]],
                                                       "n_per_block": 3, "idcheck_n": 8, "concurrency": 8, "out": f"{OUTDIR}/gate/{m}_{c}/same",
                                                       "_roles": "B = Q = this cell's checkpoint and serving config (two servers)"},
         "bank gate (BB no-op on every state)": {"mode": "bank_u", "manifest": man, "manifest_sha256": msha, "model": m, "cell": c,
