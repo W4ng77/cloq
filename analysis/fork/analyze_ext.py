@@ -25,7 +25,8 @@ Replay-consistency guard (W99o): every divergent state of an admitted directory 
 search replay, prefix observations/messages equal to the recorded episode). A state with "replay" false or missing, or
 an admitted directory without effects.jsonl, makes the analysis FAIL (exit 3, nothing written) unless its directory is
 quarantined. W99g found the process-shared BFCL long-context backend state through this flag; the affected q4
-long-context forks were moved to analysis/fork/ext/quarantine/w99o/ and rerun with the fixed code (W99o).
+long-context forks were moved to analysis/fork/ext/quarantine/w99o/ and rerun with the fixed code (W99o); while any
+of those reruns is incomplete, analyze_ext and ext_r2 write nothing (superseded_pending).
 Models: --models (default q4,q8, the pre-declared ext panel). q14 (W99h scale check) is analysed by ext_q14.py and is never
 pooled here.
 Idempotent: the input fingerprint (script sha + every input file sha) is compared with existing outputs.
@@ -151,6 +152,18 @@ def replay_guard(done: list[dict], who: str = "analyze_ext") -> dict:
     return counts
 
 
+QUAR_W99O = ROOT / "analysis/fork/ext/quarantine/w99o"
+
+
+def superseded_pending(models: list[str], dirs_arg=None) -> list[str]:
+    """W99o: quarantined directories whose fixed-code rerun (same name under DEV) is not complete yet. An analysis run
+    while one is pending would silently drop that cell x category, so callers refuse to write an output."""
+    if not QUAR_W99O.exists():
+        return []
+    return [q.name for q in sorted(QUAR_W99O.glob("*")) if q.is_dir() and parse_dir(q.name)[1] in models
+            and (not dirs_arg or q.name in dirs_arg) and not ((DEV / q.name / "search.json").exists() and (DEV / q.name / "branches.json").exists())]
+
+
 def select_dirs(dev: Path, dirs_arg, models: list[str]) -> list[Path]:
     return sorted(p for p in dev.glob("*") if p.is_dir() and (not dirs_arg or p.name in dirs_arg)
                   and parse_dir(p.name)[1] in models)
@@ -240,6 +253,10 @@ def main():
     a = ap.parse_args()
     t0 = time.time()
     models = a.models.split(",")
+    pend = superseded_pending(models, a.dirs)
+    if pend:
+        print(f"analyze_ext: W99o reruns not complete yet ({', '.join(pend)}); nothing written.")
+        return
     dirs = select_dirs(DEV, a.dirs, models)
     loaded = [load_dir(d) for d in dirs]
     done = [L for L in loaded if not L["incomplete"]]

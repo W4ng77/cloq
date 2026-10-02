@@ -101,6 +101,10 @@ def main():
     a = ap.parse_args()
     t0 = time.time()
     models = a.models.split(",")
+    pend = AE.superseded_pending(models)
+    if pend:
+        print(f"ext_r2: W99o reruns not complete yet ({', '.join(pend)}); nothing written.")
+        return
     dirs = AE.select_dirs(AE.DEV, None, models)
     loaded = [AE.load_dir(d) for d in dirs]
     done = [L for L in loaded if not L["incomplete"]]
