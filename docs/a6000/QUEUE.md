@@ -1,20 +1,20 @@
-# A6000 queue snapshot (2026-10-02 15:05:49 PDT)
+# A6000 queue snapshot (2026-10-02 15:35:52 PDT)
 
 ## running (24)
 
 - `a6k2_q14_kvq_int3`
 - `a6k2_q32_tel_rtn_w3`
 - `a6k2_q32_tel_rtn_w4`
-- `ext_m24_gptq_w4_d1_bfcl_nmp1`
+- `ext_q8_kivi_k2v2_bfcl_nmp1`
 - `fork_repair_q4_rtn_w3`
 - `fork_sameprec_q8_g3`
 - `fork_sameprec_q8_g6`
 - `fork_sameprec_w3_q4_q3`
-- `fork_sameprec_w3_q4_q4`
 - `fork_sameprec_w3_q4_q5`
 - `fork_sameprec_w3_q8_q3`
 - `fork_sameprec_w3_q8_q4`
 - `fork_sameprec_w3_q8_q5`
+- `nmp_gate_bank_q8_kivi_k2v2_fx`
 - `nmp_tau2_q8_kivi_k2v2_f01`
 - `nmp_tau2_q8_kivi_k2v2_f02`
 - `nmp_tau2_q8_kivi_k2v2_f03`
@@ -39,7 +39,7 @@
 - `kivi_gate_q8` · RuntimeError('cmd failed rc=-9')
 - `pert_q4_rtn_w3_restore_rand_mlp_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_mlp_s3_q3/retail: 1 infrastructure_error episodes (outage)')
 
-## done (1101)
+## done (1105)
 
 - `a6k2_det_q14_x1_awq_a` · 11 min · node005
 - `a6k2_det_q14_x1_awq_b` · 54 min · node004
@@ -242,7 +242,7 @@
 - `a6k2_q32_ol_gauss0.03_s2` · 26 min · node007
 - `a6k2_q32_ol_gauss0.03_s3` · 24 min · node005
 
-## todo (122)
+## todo (118)
 
 - `a6k2_q14_tel_gauss0.1_s1`
 - `a6k2_q14_tel_gauss1_s1`
@@ -275,8 +275,6 @@
 - `a6k2_q8_tel_rtn_w4`
 - `a6k2_q8_x1_awq`
 - `a6k2_q8_x1_fp8`
-- `ext_q8_kivi_k2v2_bfcl_nmp1`
-- `kivi_gate_q8_toy4`
 - `nmp_bfcl_m24_gptq_w4_d1_base`
 - `nmp_bfcl_m24_gptq_w4_d1_long_context`
 - `nmp_bfcl_m24_gptq_w4_d1_miss_func`
@@ -291,8 +289,6 @@
 - `nmp_bfcl_q8_kivi_k2v2_miss_param`
 - `nmp_gate_bank_m24_gptq_w4_d1`
 - `nmp_gate_bank_m24_rtn_w4`
-- `nmp_gate_bank_q8_kivi_k16v16_fx`
-- `nmp_gate_bank_q8_kivi_k2v2_fx`
 - `nmp_gate_bank_q8_kivi_k4v4_fx`
 - `nmp_gate_bank_q8_quarot_w16`
 - `nmp_gate_bank_q8_spinquant_w4a4`
