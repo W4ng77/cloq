@@ -2,7 +2,9 @@
 
 **TL;DR (2026-10-02 04:15 PDT, end of the 6-hour feasibility window at ~06:10).**
 - **QuaRot: PASS on every check.** This covers QuaRot-W4A16-KV16, QuaRot-W4A4-KV16 and the W16 transform-path control.
-- **SpinQuant: NOT EVALUATED in the window. This is not a failure.**
+- **SpinQuant: rotation learned (04:15–05:36), but the served gate was NOT EVALUATED in the window. This is not a failure.**
+  - The learning converged.
+  - Its WikiText-2 perplexity at W16A4 fell from 11.04 (the QuaRot point) to 8.76, below BF16's 9.73. This is domain adaptation through the quantizer, not fidelity (see "Rotation optimisation").
   - The implementation is done and passes its CPU tests: Cayley-SGD learning of R1/R2, and export through the same QuaRot builder.
   - The GPU rotation-learning task `rot_spin_learn_q8` (1 GPU) was queued at 00:24 at priority −25. It had not been claimed by 04:15, for three reasons:
     - Higher- and equal-priority work was ahead of it: same-precision, Mistral, KIVI and BFCL tasks at −29…−25.
@@ -51,7 +53,24 @@ The only difference is R1/R2. The SpinQuant learner starts at the QuaRot point (
 
   The official default pipeline is reserved as the separate, optional `spinqoff_w4` row. It is not built.
 - **Export.** `cloq.quarot --rotations` projects R onto O(n) with the fp64 polar factor and pins it by sha256. It then runs the identical transform and GPTQ code path.
-- **Not yet run on GPU.** The learning curve, wall time and learned-vs-init perplexity will appear in `spin_learn_q8.json` (written every 10 steps).
+- **Ran on GPU at 04:15–05:36 PDT (`spin_learn_q8.json`, R sha `1f1719b5…`).**
+  - 100 steps at 43 s/step, 30.7 GB peak, 81 min including the four perplexity passes.
+  - Epoch-mean training CE over the same 128 windows: 2.435 → 2.278 → 2.260 → 2.243 → 2.234 → 2.228.
+  - Grad norm 25 → about 5. R1 orthogonality error ≤ 5.2e-4 in fp32; 42 QR retractions; polar-projected at export.
+- **WikiText-2 test perplexity, on-the-fly learner path (bf16):**
+
+  | | init (= QuaRot point) | learned |
+  |---|---|---|
+  | A16 | 9.737 | 9.644 |
+  | A4 | 11.043 | **8.761** |
+
+  BF16 is 9.726.
+- **Caution: this is not a fidelity gain.** The learned W16**A4** network has lower WikiText perplexity than BF16 itself, and lower than the same rotation at A16.
+  - The rotation acts on the function only through the activation quantizer (A4) and bf16 rounding (A16); at A16 the loss is otherwise rotation-invariant.
+  - R1/R2 (about 17M parameters) therefore work as an adaptation of the instruction-tuned Qwen3-8B to WikiText. They were learned on WikiText-2 *train* and evaluated on WikiText-2 *test*, the same domain.
+  - So WikiText perplexity cannot show whether SpinQuant is closer to BF16. The gate's direction criteria P1/P2 (ppl-based, frozen before this was seen) are kept as frozen but are **uninformative**.
+  - The meaningful direction is the agent-domain fidelity: act flip and first-token KL vs BF16 on 400 BF16 agent decisions, measured for SpinQuant W16A4 and W4A4 in `rot_gate_sp_q8`. It is reported next to QuaRot's, not used as a gate.
+  - The same hazard applies to the official SpinQuant recipe (WikiText-2 train for rotations, WikiText-2 test for reporting) whenever the model is not a WikiText-like base LM.
 
 ## Gate checks
 
@@ -119,8 +138,8 @@ Transform-path control, q8, served under the batch-invariant vLLM path:
 
 | Check | QuaRot | SpinQuant |
 |---|---|---|
-| Implementation correctness (invariance) | PASS | CPU PASS; GPU pending |
-| Published direction (ppl ≤ QuaRot at W4A4) | n/a | pending |
+| Implementation correctness (invariance) | PASS | CPU PASS; learning ran (GPU); served invariance pending |
+| Published direction (ppl ≤ QuaRot at W4A4) | n/a | learner path: 8.76 ≤ 11.04, **but uninformative** (WikiText train→test adaptation); agent-domain KL pending |
 | Deterministic serving (hook level) | PASS | pending |
 | QQ no-op (gate_same) / BB no-op (bank gate) | queued | queued after the rotation gate |
 | Throughput | PASS | pending |

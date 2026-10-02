@@ -28,14 +28,19 @@ Newest first.
 
 Evidence: `scripts/a6000/{make_tasks_rotpanel,rot_gate_check}.py`, `/data/ziyangs/cloq_work/queue/todo/{rot_*,nmp_gate_*_quarot_*}.json`, `analysis/fork/rot_gate/GATE.md`.
 
-## W99r — Rotation gate (QuaRot vs SpinQuant, weight + activation axis, q8): QuaRot PASS; SpinQuant implemented and CPU-verified, GPU gate not reached in the 6-hour window (queue capacity) (2026-10-02 04:20 PDT)
+## W99r — Rotation gate (QuaRot vs SpinQuant, weight + activation axis, q8): QuaRot PASS; SpinQuant rotations learned (WikiText ppl below BF16 = domain adaptation through the A4 quantizer, not fidelity); served SpinQuant gate runs past the 6-hour window (2026-10-02 05:45 PDT)
 **TL;DR** SpinQuant is added as Cayley-SGD learning of R1/R2 (`cloq/spinquant.py`). It sits in QuaRot's skeleton, so the controlled pair differs only in the rotation: same 128×2048 WikiText-2 windows, same GPTQ-W4 grid and clip, same A4 grid (per-token sym INT4, clip 0.9), same online Hadamards, KV16r.
 - **QuaRot passes the gate on q8.**
   - Transform control: W16A16 ppl 9.749 vs BF16 9.726; act flip 0.005; first-token KL 0.0026.
   - Batch, prefix and chunk invariance, and causal prefix identity, all hold.
   - Throughput is not reduced.
 - **Local fidelity, measured only.** Adding A4 to QuaRot-W4 raises the act flip from 0.075 to 0.198 and the first-token KL from 0.31 to 1.15. W16A4 alone (0.125 / 0.66) is worse than W4A16 alone.
-- **SpinQuant.** CPU tests pass: the QuaRot point is reproduced exactly, learned-rotation invariance holds to 3e-7, and the learner path equals the serving path at A4. The GPU learning task was not claimed within the window: 1-GPU slots were starved by priority and the runners' pair reservation. The gate stays queued with frozen pass criteria.
+- **SpinQuant.** CPU tests pass: the QuaRot point is reproduced exactly, learned-rotation invariance holds to 3e-7, and the learner path equals the serving path at A4.
+  - The GPU learning ran 04:15–05:36, after 3 h 50 min in the queue: 1-GPU slots were starved by priority and the runners' pair reservation. 100 steps took 43 s/step with a 30.7 GB peak. Epoch-mean CE fell 2.435 → 2.228.
+  - **WikiText-2 test perplexity (learner path):** A4 went 11.04 (QuaRot point) → **8.76**, below BF16's 9.73. A16 went 9.74 → 9.64.
+  - **This is a confound, not fidelity.** The rotation changes the function only through the A4 quantizer (and bf16 rounding). Learned on WikiText-2 train, it adapts the instruction-tuned model to WikiText, and WikiText test perplexity then rewards that adaptation.
+  - The ppl-based "published direction" criterion therefore passes but is uninformative. Agent-domain KL / act flip vs BF16 is the meaningful fidelity direction, and the panel's D_cc answers research question 2.
+  - The served SpinQuant gate (`rot_gate_sp_q8`) was claimed at 05:37 and ends after the window.
 
 | q8, KV16r | ppl | act flip | 1st-token KL | E3 token flip |
 |---|---|---|---|---|
