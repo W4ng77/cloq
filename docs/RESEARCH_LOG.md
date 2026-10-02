@@ -10,6 +10,18 @@ Newest first.
 
 ---
 
+## W99i — Abstract and introduction rewritten around the advisor's fixed framing; external R2 moved into the main R2 (2026-10-01 PDT)
+**TL;DR** The abstract and introduction now lead with one message: in a closed-loop agent, the value of a single precision upgrade is jointly determined by the action it changes and by the execution that follows, and the crossed same-state intervention measures it directly. Three findings follow: (i) controller dependence (26.9% of dev W4 divergent states; pairing control 38.0%, κ 0.29; post hoc BFCL 4.7–17.1%, q8 ALFWorld 32.8–40.0%, holdout 20.7%), with the P17 caveat; (ii) local upgrades redistribute success (15.5–20.9% of units; holdout −4.6 pp, 90% CI −7.2 to −2.0, primary reading inconclusive); (iii) finding sensitive decisions ≠ choosing beneficial replacements (trigger vs matched oracle +3.3 to +3.7 pp). There are two contributions: the framework and the systematic findings.
+- **Abstract.** It went from 485 to about 300 words. The Bank U text-difference detail, the simulator-control labels, the AUC range and the S1/S2 readings were removed; they remain in R3/R4.
+- **Introduction.** Paragraphs: decision problem, then Case 5 (q4 AWQ-W4 airline 31 f13, verified against ghf §4), then the framework with scope, then three findings, then two contributions, then one closing sentence.
+- **Moved.** The BFCL/ALFWorld controller-dependence result moved from R3 to a new R2 paragraph ("Controller dependence without an LLM user"), with the per-cell ranges, pairing control ranges and κ; R3 now points to it. No result was deleted.
+- **Page fit.** The discussion's "Escalation can hurt" paragraph is merged into "When to escalate"; its numbers stay in R2/R3.
+- **Other wording.** The remaining unscoped "first divergent action" phrases in R1 caption, R3 and the discussion now read "first tool-structure-divergent action" (CLAIM_AUDIT P10).
+- **Appendix src fix.** The RESTORE src glob now points to `queue/*/`; s2/s3 were re-queued to todo, so the text says "have not completed".
+- **Checks.** check_numbers PASS (0 unverified, 0 missing src). tectonic: 0 undefined references, 0 overfull boxes. The main text ends on p. 8, and Limitations starts at the top of p. 9.
+
+Evidence: `paper/latex/sections/{abstract,introduction,results_r2,results_r3,results_r1,discussion,appendix}.tex`; sources `analysis/fork/out/{ghf_20261001T211519Z,agreement_control_20261002T024240Z,ext_r2_20261002T024433Z,holdout_r2_posthoc_20261002T024414Z,dev_all_20261001T070326Z,holdout_confirm_20261002T012353Z,token_mech_20261002T003130Z,oracle_trigger_20261002T024423Z}.md`.
+
 ## W99g — q14 (Qwen3-14B) BFCL four-arm fork gate: PASS; call-rewriter instance-name leak fixed; process-shared BFCL long-context state found and fixed (2026-10-01 23:05 PDT)
 **TL;DR** This is the short gate for the q14 BFCL fork, a within-Qwen-family scale sensitivity check (GPTQ-W4 d1 only; exploratory). Every check passes, so the 4 staged q14 fork tasks are queued (W99h).
 - **(a) Acceptance.** BB no-op passes 4/4 and QQ no-op 8/8. Q replay at t is bit-exact, and replay fidelity, re-prefill, save/load and isolation (4/4) all pass, with 0 branch errors. The 8 divergent states come from 12 items.
