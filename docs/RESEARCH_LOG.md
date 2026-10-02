@@ -10,6 +10,39 @@ Newest first.
 
 ---
 
+## W99v — New-method common panels frozen: τ² U2B ordinary-state bank (q8, 6 blocks) + 200-item BFCL panel; protocol, manifest, builder, analysis skeleton (2026-10-02 PDT)
+**TL;DR** This entry freezes the common panels that the QuaRot/SpinQuant (q8 W4) and KIVI (q8 KV) agents and the Mistral agent run against. CPU only; nothing was queued and no outcome was read.
+- **Panel A (τ²).** Sub-bank **U2B**: one ordinary state per task × block on the BF16 trajectory `a6k2_q8_bfpair_<blk>`, using the Bank U rule.
+  - **Why U2B.** It is the only method-independent state source.
+    - U1 and Bank P select states per method.
+    - U2Q (GPTQ-sourced) privileges one quantizer.
+    - Under U2B, BB is the shared BF16 original, so the common-continuation contrast between two methods is exactly Y_QB(m1) − Y_QB(m2).
+  - **Size.** f01–f06 × 85 retail/airline tasks = 510 states, 0 missing. Every configuration runs all four arms.
+  - **Reference cells at no GPU cost.** The f01–f03 rows are byte-identical to Bank U U2B (255/255 asserted by the builder), so the existing q8 GPTQ-W4 d1/AWQ-W4/KV8 four-arm rows on those states serve as reference cells.
+- **Phase 2 (f04–f06), effect-blind rule.** Decided once, at the earlier of "all phase-1 tasks finished" or 2026-10-03 20:00 PDT. Expansion is all-or-none over the eligible cells plus the reference cells, iff now + 1.25 × (measured phase-1 GPU-h + the references' U2B share) / 8 GPUs ≤ 2026-10-04 12:00 PDT. The rule reads only queue status and summary throughput fields.
+- **Panel B (BFCL).** 50 ids per category (200 in total), ordered by sha256("cloq-nmp-bfcl-v1:" + id).
+  - The pool is the eval ids minus 214 dev, smoke and gate ids (q4/q14/l8 gates, l8 probe, and every id in the gate directories).
+  - Four arms per item, following fork-ext-v1.
+  - The existing q8 BFCL reference forks cover all 200 items.
+- **Estimands.** G, H, F, D_cc = Y_QB − Y_BB, I, r/d/M and damage_cc/gain_cc/M_cc.
+  - τ² intervals: t over block means as primary (k < 10), the block bootstrap alongside, and the crossed task × block bootstrap as secondary.
+  - BFCL intervals: item bootstrap within category.
+  - Holm family: P1 QuaRot − GPTQ, P2 SpinQuant − QuaRot, P3 KIVI − KV8, on D_cc.
+  - Local fidelity (exact agreement; KLu teacher-forced on a_B) is reported as descriptive only.
+  - The SpinQuant vs QuaRot controlled comparison fixes the same WikiText-2 128×2048 calibration, the same GPTQ grid and MSE clip, and KV16 with Q/K rotation. W16 transform-path controls are included. The official SpinQuant default is a separate row.
+- **No new fork_driver mode is needed.** Panel A runs in `bank_u` with `subs ["U2B"]`. The gates are `gate_same` with `foreign_states` and the `bank_u` gate. KL comes from the score driver. BFCL uses `bfcl_run` with `subset nmp_v1` and `fork_ext dev`. `make_newmethod_panel.py spec` prints the exact specs.
+- **Mistral.** The same rules apply: BF16 runs `a6k2_<m>_bfpair_f01..f06` on the same nonces with eval_tasks_v0, then `build --model <m>` gives `newmethod_panel_v1_<m>.json` with its own sha (dated amendment). BFCL is forked only if Mistral's BF16 success is ≥ 10% on the 200 items.
+- **Dry run (counts only, no estimates printed).** The guard passes. The reference τ² cells are admitted on f01–f03, 85/85 states each. The BFCL reference cells have 200/200 items, and the W99o replay guard passes.
+
+| Artifact | sha256 |
+|---|---|
+| `manifests/fork/newmethod_panel_v1.json` | `7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201` |
+| `docs/insights/NEWMETHOD_PANEL_PROTOCOL.md` (frozen in the analysis script) | `9cd5c97982e62358a20574e4a9ecff923b68c9758742b1d8e74335b79cccc21d` |
+| `scripts/a6000/make_newmethod_panel.py` (= `builder_sha256` in the manifest) | `5fcc530872cd4d8dc77177607d31ae11668568a04c8933743cce852c35deb6cd` |
+| `analysis/fork/analyze_newmethod.py` | `25856853d8d9596fce470c49cfe004544411b52409464b80dc0cb1daad5e6f5b` |
+
+Evidence: the four files above, plus the snapshot `analysis/insights/iter_3/out/snapshot_auto_20261002T0631Z.json` (its sha256 is in the manifest) and `manifests/fork/bank_u_v1.json` (U2B identity). `analysis/fork/holdout/` was not opened.
+
 ## W99n — Feynman-review edits E1–E10 and prose rewrites P1–P21 applied to the paper (2026-10-02 PDT)
 **TL;DR** The edits of `docs/reviews/feynman_review_20261002.md` are in the paper, after each factual claim was checked against its source. Same-precision baseline: the primary ΔM (with both designs' divergence rates) now sits at the end of R1, the off-diagonal comparison stays in R2 labelled descriptive, and the abstract asks whether "turnover and controller dependence are specific to precision". Both outcome versions (precision-specific excess / largely generic sensitivity) are pre-written, unrendered, in `paper/latex/sections/pending_sameprec_variants.tex`. The holdout is reported as "estimated effect −4.6 pp (90% CI −7.2 to −2.0); the pre-registered readings, which had no negative category, classify it as inconclusive", and "near-zero net" is limited to development tasks. The counterfactual-replay related work is restored, and telecom-development forks (q8 GPTQ-W4 +2.7 [−4.7, +10.1], q8 AWQ-W4 −0.6 [−4.9, +3.7]; 80 tasks × 6 blocks; fixed-pool t 95%) are reported. Main text still ends on p. 8 (Limitations at the top of p. 9).
 - **E1.** R1 gets the paragraph "Same-precision baseline": analysis set K, Q′ and B divergence rates, ΔM = M − M′ (fixed pool; primary), frozen 3 pp rule, `\pending{}` reading. R2 gets "Same-precision baseline (descriptive)": Δoff plus readings (a)/(b). Abstract clause per review; intro slot moved to bullet 2; Discussion one-sentence `\pending{}` slot; Limitations "calibration" → "only reference for how much turnover and controller dependence a non-precision perturbation produces" (P17). Variants file: per slot, Variant A and Variant B text, plus the protocol §6 rules for mixed and other outcomes, under `\iffalse`; it is not `\input`.
