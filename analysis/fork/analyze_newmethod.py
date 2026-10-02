@@ -48,8 +48,10 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "analysis/fork/out"
 PROTOCOL = ROOT / "docs/insights/NEWMETHOD_PANEL_PROTOCOL.md"
 # Amendment A1 (W99v-a1, 2026-10-02): was 9cd5c979... (frozen nmp-v1); only the amended protocol is accepted.
-PROTOCOL_SHA256 = "28b78509dc1848344406071be2614763d6445eacb267303714d5ef7c884545bb"
-MANIFESTS = {"q8": ("manifests/fork/newmethod_panel_v1.json", "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201")}
+# Amendment A2 (W100e, 2026-10-02): was 28b78509... (A1); m24 manifest registered.
+PROTOCOL_SHA256 = "c6603f90298069af78de59ea1ae9992e722ed927e1a2d951582b28d51d1687c4"
+MANIFESTS = {"q8": ("manifests/fork/newmethod_panel_v1.json", "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"),
+             "m24": ("manifests/fork/newmethod_panel_v1_m24.json", "53295b64fbcc7c4501ea8883aa34ce922a5ca0e23c5636c8bb1c4efe38e3ff4c")}
 BANK_U_SHA256 = "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907"
 NM = ROOT / "analysis/fork/newmethod"
 REF_TAU2 = {"q8": ("gptq_w4_d1", "awq_w4", "kvq_int8")}

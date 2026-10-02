@@ -10,6 +10,24 @@ Newest first.
 
 ---
 
+## W100e — m24 panel: manifest `newmethod_panel_v1_m24` frozen (sha 53295b64…), protocol amendment A2, rtn_w4 + gptq_w4_d1 τ² and BFCL panel queued at −26; OPEN: strict-block rule admits no m24 block (airline 44 missing in all six BF16 blocks) (2026-10-02 13:35 PDT)
+**TL;DR** No m24 panel outcome exists, so no G/H/F/D_cc is reported.
+- **Manifest.** All six BF16 blocks `a6k2_m24_bfpair_f01…f06` were admitted in snapshot `snapshot_auto_20261002T2022Z` (sha f8c4dde2…). `make_newmethod_panel.py build --model m24` then wrote `manifests/fork/newmethod_panel_v1_m24.json`, sha **53295b64fbcc7c4501ea8883aa34ce922a5ca0e23c5636c8bb1c4efe38e3ff4c**. It has 510 τ² rows, 7 of them missing, and the same 200 BFCL ids as q8 (checked id by id).
+- **Amendment A2.** Appended to `docs/insights/NEWMETHOD_PANEL_PROTOCOL.md`; protocol sha 28b78509… → **c6603f90298069af78de59ea1ae9992e722ed927e1a2d951582b28d51d1687c4**. `analyze_newmethod.py` has the new `PROTOCOL_SHA256` and `MANIFESTS["m24"]`, and its guard passes for m24 and q8.
+- **BFCL floor (§10, BF16 only).** `ext_m24_bf16_bfcl_nmp1` succeeds on 40/200 = 20%, which is ≥ 10%, so the BFCL forks are queued.
+- **Queued at −26** with `make_tasks_m24.py panel --cell {rtn_w4,gptq_w4_d1} --bfcl --write`, 25 tasks. Forks use 4 GPUs (`gpus_per_role 2`); the eval uses 2. No node pins.
+  - Per cell: `nmp_gate_{same,bank}_m24_<cell>`, then `nmp_tau2_m24_<cell>_f0{1,2,3}`, then `nmp_score_m24_<cell>_f0{1,2,3}`, plus `nmp_bfcl_m24_<cell>_{base,miss_param,miss_func,long_context}`.
+  - GPTQ also gets its closed-loop BFCL Q run `ext_m24_gptq_w4_d1_bfcl_nmp1`. `make_tasks_m24.panel` previously left this as a dangling dependency; it is fixed here.
+  - Estimated cost: about 55–60 GPU-h per cell (W99q gate throughput: τ² gates plus f01–f03 take about 6–8 h wall on 4 GPUs; BFCL takes about 4 × 1–1.5 h on 4 GPUs). GPTQ-W4 at 24B has not been built yet, and every gptq task pays its build.
+- **OPEN, for the main session (not decided; A2.3).**
+  - The 7 missing rows are BF16 source episodes that ended in `infrastructure_error` / `agent_parse_error`: airline task 44 in **every** block, plus airline task 13 in f01.
+  - The frozen row rule keeps them missing. But §7's strict-block rule (`strict_blocks`, n = 85) then admits **no** m24 τ² block.
+  - Options: (a) the denominator is the block's non-missing rows; (b) exclude task 44 for m24 from the BF16 source only; (c) complete-case only. All three are effect-blind, and the queued forks are the same under each.
+  - The choice must be appended as a dated amendment before any `analysis/fork/newmethod/*/m24_*` output is read.
+- **Expansion.** `expansion --model m24 --cells rtn_w4 gptq_w4_d1`, T_decide 2026-10-04 00:00 PDT. It is not yet due, and this entry does not write it.
+
+Evidence: `manifests/fork/newmethod_panel_v1_m24.json`, `docs/insights/NEWMETHOD_PANEL_PROTOCOL.md` (Amendment A2), `analysis/fork/analyze_newmethod.py`, `scripts/a6000/make_tasks_m24.py`, `analysis/insights/iter_3/out/snapshot_auto_20261002T2022Z.json`, `runs/a6k2_m24_bfpair_f0*/airline/infra_causes.json` and `runs/ext_m24_bf16_bfcl_nmp1/*/metrics.json` (cluster), queue `todo/{nmp_*_m24_*,ext_m24_gptq_w4_d1_bfcl_nmp1}.json`.
+
 ## W100f — Paper: §5 common-state slots filled from W100b; Figure F8 replaces the placeholder (2026-10-02 PDT)
 **TL;DR** `sections/results_r2.tex` "Common-state action sources" now reports W100b (q8, 255 states, k = 3, 0 excluded): K(c = Q) −0.4 pp (t95 [−9.3, +8.5], boot95 [−3.5, +2.7]) and K(c = B) +2.4 pp ([−3.5, +8.2], [−0.8, +5.5]), both "not resolved"; turnover 5.5–7.5%; action agreement 57.6 / 56.9 / 55.7%; interaction +2.7 pp (t90 [+0.5, +5.0], boot90 [−0.4, +5.9]) as secondary, not resolved. Reading kept modest: no "irrelevant", no "equivalent".
 - **Figure:** `paper/latex/figures/f8_commonstate.pdf` (column width): (a) 3×2 V(source, continuation), (b) K(c) with boot95 (thick) and t95 (thin) against ±3 pp, (c) agreement patterns (130 / 17 / 15 / 12 / 81). Script `paper/latex/tools/figs/make_fig_commonstate.py` imports make_figs.py style only (make_figs.py untouched), asserts the quoted numbers, and merges its entry with source and script sha256 into `figures/provenance.json`.

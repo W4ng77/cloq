@@ -319,3 +319,48 @@ Two-sided α = .05, τ² D_cc, t over block-mean differences. The BFCL family ha
 - `NEW_CELLS` is set to the cells in A1.1 plus KIVI;
 - `PRIMARY` / `BFCL_PRIMARY` follow A1.2;
 - `SECONDARY` is T1, T2, T3 and K2.
+
+---
+
+## Amendment A2 (2026-10-02 13:35 PDT, W100e): Mistral (m24) panel manifest sha, m24 cells, BFCL floor check, and one open analysis-rule question
+
+**TL;DR** This amendment records the m24 manifest sha that §10 requires before any Mistral panel task. It was written before any m24 panel task existed: no `nmp_*_m24_*` task was in the queue's todo, running, done or failed directories, and no `analysis/fork/newmethod/*/m24_*` output existed. The only m24 outcomes in existence are the BF16 source runs (`a6k2_m24_bfpair_f01…f06`), the closed-loop BFCL runs `ext_m24_{bf16,rtn_w4}_bfcl_nmp1`, and the W99p gate outputs.
+- The manifest is built by the unchanged builder with the frozen row rule (§2.2; failed rows kept missing).
+- Cells: `rtn_w4` first, then `gptq_w4_d1` (as W99p/W99q planned).
+- BFCL applies: BF16 clears the §10 floor.
+- **Open question for the main session (not decided here):** under §7's strict-block rule, no m24 τ² block can be admitted, because airline task 44 is a missing row in all six blocks (A2.3).
+
+### A2.1 Frozen artifact
+
+| Artifact | sha256 |
+|---|---|
+| `manifests/fork/newmethod_panel_v1_m24.json` (510 τ² rows, 7 missing; the same 200 BFCL ids as `newmethod_panel_v1.json`, checked id by id) | `53295b64fbcc7c4501ea8883aa34ce922a5ca0e23c5636c8bb1c4efe38e3ff4c` |
+| Builder `scripts/a6000/make_newmethod_panel.py` at build time (recorded in the manifest as `builder_sha256`; same file as a98a2a6) | `81039a8e151536deb50599884f8a2578f9c2b52d05d672d9a3a606cebcb84f9a` |
+| Integrity snapshot `analysis/insights/iter_3/out/snapshot_auto_20261002T2022Z.json` (all six `a6k2_m24_bfpair_*` blocks admitted, no G6 pending warning) | `f8c4dde206cc7e0571cec5fee08c95625594ad4cc030eed1f4393b8d8cddfab2` |
+
+Command: `make_newmethod_panel.py build --model m24 --snapshot analysis/insights/iter_3/out/snapshot_auto_20261002T2022Z.json` (source template `a6k2_m24_bfpair_{blk}`).
+
+### A2.2 Cells, gates, expansion
+
+- **Cells (Q role; B = BF16; m24 text-only view, mistral tokenizer/parser as in W99p):** `rtn_w4` (RTN-W4) and `gptq_w4_d1` (GPTQ-W4, calibration `manifests/a6k2/m24/calib_fp_traj_c1.json`, draw c1). They are never pooled with q8 (§10). m24 has no reference cells.
+- **Tasks:** `scripts/a6000/make_tasks_m24.py panel --cell <cell> --bfcl`. The specs come verbatim from `make_newmethod_panel.py spec --model m24 --cell <cell>`. Forks use 4 GPUs (`gpus_per_role 2`, TP=2 per role), like the W99p gates. Every panel task depends on both gates of its cell (§6). `gptq_w4_d1` also queues its closed-loop BFCL Q run `ext_m24_gptq_w4_d1_bfcl_nmp1`.
+- **Expansion (§5):** `make_newmethod_panel.py expansion --model m24 --cells rtn_w4 gptq_w4_d1`, recorded once in `analysis/fork/newmethod/expansion_m24.json`. T_decide is 2026-10-04 00:00 PDT and T_deadline is 2026-10-04 12:00 PDT. The rule is unchanged and effect-blind.
+- **BFCL floor (§10), an outcome of BF16 alone:** `ext_m24_bf16_bfcl_nmp1` has 40/200 = 20% success (base 16/50, miss_param 8/50, miss_func 7/50, long_context 9/50). That is ≥ 10%, so the BFCL forks run.
+
+### A2.3 Missing source rows and the strict-block rule (OPEN; for the main session)
+
+- The 7 missing rows are BF16 source episodes that ended in `infrastructure_error`, with cause `agent_parse_error` (W99p's Mistral invalid-function-name failure class):
+  - airline task 44 in every block f01–f06;
+  - airline task 13 in f01.
+- The frozen row rule (§2.2) keeps such rows missing. So the manifest is as the protocol prescribes.
+- **Consequence.** §7's strict-block rule as implemented (`analyze_newmethod.strict_blocks`, n_tasks = 85 from the manifest rows) admits a block only if all 85 states have four arms. With task 44 missing in all six blocks, **no m24 block can be admitted**, and the primary τ² analysis would be empty. Only the labelled complete-case sensitivity would remain.
+- **This amendment does not choose a resolution**, because each option changes the analysis design. The options seen:
+  - (a) for m24, define the strict-block denominator as the non-missing manifest rows of the block (84, or 83 for f01);
+  - (b) drop airline task 44 from every m24 block, a task-level exclusion based on the BF16 source only, and treat f01 under (a) or as dropped;
+  - (c) report only the complete-case analysis for m24, labelled.
+- Each option reads only the BF16 source and manifest fields, never a panel outcome. Whichever is chosen must be appended as a dated amendment **before any `analysis/fork/newmethod/*/m24_*` output is read**.
+- The queued fork tasks are the same under all three options; the missing rows simply produce `missing_reason` records.
+
+### A2.4 Analysis script
+
+In the same commit, `analysis/fork/analyze_newmethod.py` sets `PROTOCOL_SHA256` to this file's new sha256 and adds `MANIFESTS["m24"]` with the sha above. Nothing else changes, and A2.3 is not resolved in code.

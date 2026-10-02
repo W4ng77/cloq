@@ -173,6 +173,11 @@ def panel(prio: float, cell: str, bfcl: bool) -> list[dict]:
         st = fork(f"nmp_score_m24_{cell}_{blk}", "bf16", cell, spec_s, prio, [pt["id"]])
         ts += [pt, st]
     if bfcl:
+        if cell != "rtn_w4":  # rtn_w4's closed-loop BFCL Q run was queued in stage 1 (bfpair); other cells need theirs (W100e)
+            rid = f"ext_m24_{cell}_bfcl_nmp1"
+            ts.append({"id": rid, "kind": "eval", "env": "bfcl", "model": "m24", "arm": ARM[cell], "ckpt": CK[cell], "domains": DOMS, "gpus": 2,
+                       "priority": prio, "deps": [], "runs": [{"run_id": rid, "task_file": "manifests/fork/newmethod_panel_v1.json", "subset": "nmp_v1"}],
+                       "note": NOTE + ": NEWMETHOD_PANEL_PROTOCOL panel B closed-loop Q run (same 200 ids as newmethod_panel_v1_m24)"})
         for k, spec_f in zip(("base", "miss_param", "miss_func", "long_context"), sp["BFCL fork tasks (fork_ext dev, one per category)"]):
             ts.append(fork(f"nmp_bfcl_m24_{cell}_{k}", "bf16", cell, spec_f, prio, [f"ext_m24_{cell}_bfcl_nmp1", "ext_m24_bf16_bfcl_nmp1"], env="bfcl"))
     return ts
