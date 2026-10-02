@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import collections
+import copy
 import json
 import os
 import random
@@ -91,14 +92,51 @@ def complete_ids(base: str, prompt_ids: list[int], max_tokens: int, seed: int) -
     return c.get("token_ids")
 
 
+MISTRAL_CHAT_PROBE = os.environ.get("CLOQ_TOKENIZER_MODE") == "mistral"  # W99p (m24 only); False for every Qwen/Llama model
+
+
+def chat_regen(base: str, b: F.Block, d: dict) -> dict:
+    """W99p identity probe for models served with --tokenizer-mode mistral (m24). vLLM's mistral tool parser constrains
+    every chat request that carries tools with mistral-common's tool-call grammar (the official path that generated the
+    recorded decisions), so the unconstrained /v1/completions regeneration is not the same generation. This repeats the
+    agent's own request exactly as tau2.utils.llm_utils.generate sends it (litellm, the recorded kept messages, the
+    environment's tool schemas with their sha checked against the record, tool_choice auto, the run's llm_args_agent with
+    this server's api_base and the episode seed) and requires prompt ids, completion ids and the canonical message to equal
+    the record. Tool-call ids in the history are the recorded deterministic ids (cloq.agent.det_tool_call_id)."""
+    import litellm
+    from tau2.runner.build import build_environment
+    from cloq.context_policy import canonical_json, sha256_text
+    rc = b.run_config
+    schema = [t.openai_schema for t in build_environment(b.domain).get_tools()]
+    if sha256_text(canonical_json(schema)) != d.get("tools_sha256"):
+        return {"match": False, "error": "tools_sha256 differs from the record"}
+    args = copy.deepcopy(rc["llm_args_agent"])
+    args.update(api_base=base, seed=b.traj[d["task_id"]]["seed"])
+    r = litellm.completion(model=rc["llm_agent"], messages=copy.deepcopy(d["messages"]), tools=schema, tool_choice="auto", **args)
+    raw = r.to_dict() if hasattr(r, "to_dict") else r.model_dump()
+    ch = (raw.get("choices") or [{}])[0]
+    got_c = ch.get("token_ids") or (ch.get("provider_specific_fields") or {}).get("token_ids")
+    msg = ch.get("message") or {}
+    canon = lambda c, tcs: {"content": c or None, "tool_calls": [(t.get("name") or (t.get("function") or {}).get("name"),  # noqa: E731
+                            F._args(t.get("arguments") if "arguments" in t else (t.get("function") or {}).get("arguments"))) for t in (tcs or [])]}
+    same_msg = canon(msg.get("content"), msg.get("tool_calls")) == canon(d.get("content"), d.get("tool_calls"))
+    return {"prompt_ids_equal": raw.get("prompt_token_ids") == d["prompt_token_ids"], "completion_ids_equal": got_c == d["completion_token_ids"],
+            "message_equal": same_msg, "match": raw.get("prompt_token_ids") == d["prompt_token_ids"] and got_c == d["completion_token_ids"] and same_msg}
+
+
 def idcheck(base: str, blocks: list[F.Block], n: int, label: str) -> dict:
-    """Checkpoint identity: the server regenerates n recorded decisions of the blocks (prompt ids -> completion ids)."""
+    """Checkpoint identity: the server regenerates n recorded decisions of the blocks (prompt ids -> completion ids).
+    W99p: under the Mistral tokenizer mode the probe is the agent's own chat request (chat_regen); else unchanged."""
     pool = [(b, d) for b in blocks for v in b.dec.values() for d in v if d.get("completion_token_ids")]
     pool.sort(key=lambda x: hsel(f"{x[0].run_id}|{x[0].domain}|{x[1]['task_id']}|{x[1]['decision_idx']}"))
     pool = pool[:n]
 
     def one(x):
         b, d = x
+        if MISTRAL_CHAT_PROBE:
+            return {"run_id": b.run_id, "domain": b.domain, "task_id": d["task_id"], "t": d["decision_idx"],
+                    "n_prompt": len(d["prompt_token_ids"]), "n_completion": len(d["completion_token_ids"]),
+                    "probe": "chat (mistral grammar path)", **chat_regen(base, b, d)}
         seed = b.traj[d["task_id"]]["seed"]
         got = complete_ids(base, d["prompt_token_ids"], len(d["completion_token_ids"]), seed)
         return {"run_id": b.run_id, "domain": b.domain, "task_id": d["task_id"], "t": d["decision_idx"],
