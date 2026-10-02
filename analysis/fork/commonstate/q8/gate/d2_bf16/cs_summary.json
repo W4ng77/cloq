@@ -1,0 +1,564 @@
+{
+ "protocol": "commonstate-v1 (COMMONSTATE_SOURCES_PROTOCOL.md)",
+ "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907",
+ "spec": {
+  "mode": "commonstate",
+  "manifest": "manifests/fork/bank_u_v1.json",
+  "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907",
+  "model": "q8",
+  "blocks": [
+   "f01",
+   "f02",
+   "f03"
+  ],
+  "subs": [
+   "U2B"
+  ],
+  "ref_dir": "analysis/fork/bank_u/q8_gptq_w4_d1",
+  "action_handle": "Q",
+  "cont_handle": "B",
+  "ref_rerun": "bf16_orig",
+  "source_label": "gptq_w4_d2",
+  "cont_label": "bf16",
+  "noop_frac": 0.2,
+  "concurrency": 8,
+  "resume": true,
+  "out": "analysis/fork/commonstate/q8/gate/d2_bf16",
+  "gate": true,
+  "limit": 12,
+  "idcheck": {
+   "Q": [
+    [
+     "a6k2_q8_gptq_w4_d2_n1",
+     "retail"
+    ],
+    [
+     "a6k2_q8_gptq_w4_d2_n1",
+     "airline"
+    ]
+   ],
+   "B": [
+    [
+     "a6k2_q8_bfpair_f01",
+     "retail"
+    ],
+    [
+     "a6k2_q8_bfpair_f01",
+     "airline"
+    ]
+   ]
+  },
+  "idcheck_n": 16
+ },
+ "servers": {
+  "B": {
+   "gpu": "4",
+   "port": 8105,
+   "pid": 3578060,
+   "ckpt": {
+    "kind": "bf16"
+   },
+   "path": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "4",
+    "8105",
+    "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.90",
+   "hook_coverage": null,
+   "canary": "e340c7991fa5bc08",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-8B",
+     "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+     "chat_template_kwargs": {
+      "enable_thinking": false
+     }
+    },
+    "weights": "Qwen/Qwen3-8B@b968826d9c46dd6066d109eabc6255188de91218",
+    "ckpt": {
+     "kind": "bf16"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 16,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "0d4bf272db1da1c5",
+   "canary_ref_ok": true
+  },
+  "Q": {
+   "gpu": "5",
+   "port": 8205,
+   "pid": 3578477,
+   "ckpt": {
+    "kind": "gptq",
+    "wbits": 4,
+    "calib": "manifests/a6k2/q8/calib_fp_traj_c2.json"
+   },
+   "path": "/tmp/cloq_49866/ckpt_cs_gate_q8_d2_bf16_Q",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "5",
+    "8205",
+    "/tmp/cloq_49866/ckpt_cs_gate_q8_d2_bf16_Q",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.90",
+   "hook_coverage": null,
+   "canary": "15e5098c08c412da",
+   "ckpt_sha256": "320409ad7d28102cd4b78c32c5233f76a03b65cb6cb137c1309eee5fddfd873e",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-8B",
+     "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+     "chat_template_kwargs": {
+      "enable_thinking": false
+     }
+    },
+    "weights": "sha256:320409ad7d28102cd4b78c32c5233f76a03b65cb6cb137c1309eee5fddfd873e",
+    "ckpt": {
+     "kind": "gptq",
+     "wbits": 4,
+     "calib": "manifests/a6k2/q8/calib_fp_traj_c2.json"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 4,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "6efd8895e51ea91e"
+  },
+  "same_effective_config": false,
+  "q_quantization": {
+   "method": "GPTQ",
+   "wbits": 4,
+   "group_size": 128,
+   "sym": false,
+   "percdamp": 0.01,
+   "blocksize": 128,
+   "act_order": true,
+   "true_sequential": true,
+   "source_model": "Qwen/Qwen3-8B",
+   "source_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+   "storage": "fake-quant bf16",
+   "calibration_manifest": "/data/ziyangs/cloq/manifests/a6k2/q8/calib_fp_traj_c2.json",
+   "moe_experts": null,
+   "calibration": {
+    "protocol": "v1",
+    "arm": "fp_traj",
+    "draw": "c2",
+    "draw_seed": 20260730,
+    "budget_rows": 64000,
+    "total_rows": 64000,
+    "rows_within_budget": true,
+    "n_states": 57,
+    "n_tasks": 57,
+    "rows_per_state_min": 1122,
+    "rows_per_state_max": 1123,
+    "median_context_tokens": 6031.0,
+    "total_context_tokens": 378095,
+    "states_by_source": {
+     "fp": 57
+    },
+    "states_by_depth_quartile": {
+     "0": 15,
+     "1": 14,
+     "2": 14,
+     "3": 14
+    },
+    "states_by_domain": {
+     "retail": 39,
+     "airline": 18
+    },
+    "fp_run": "a6k2_q8_bf16_cal",
+    "q_run": null,
+    "novelty": null,
+    "notes": [],
+    "split_file_sha256": "7d1671154c37375990fd01999df2257e1bef916ee8201158b850846876315a79",
+    "manifest_sha256": "46809d5e38daf1ad1943f7ee0de302599b9c84da3044b8bd2a24d645fadd18f5"
+   },
+   "seconds_quantize": 581.952513217926,
+   "n_expert_tensors_rtn": 0
+  },
+  "user_base": "http://127.0.0.1:8000/v1",
+  "host": "node001",
+  "job": "49866"
+ },
+ "user_base": "http://127.0.0.1:8000/v1",
+ "arm": "QB",
+ "source": "gptq_w4_d2",
+ "continuation": "bf16",
+ "idcheck_Q": {
+  "label": "Q",
+  "base": "http://127.0.0.1:8205/v1",
+  "n": 16,
+  "n_match": 16,
+  "rows": [
+   {
+    "run_id": "a6k2_q8_gptq_w4_d2_n1",
+    "domain": "retail",
+    "task_id": "9",
+    "t": 5,
+    "n_prompt": 5272,
+    "n_completion": 31,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_gptq_w4_d2_n1",
+    "domain": "retail",
+    "task_id": "89",
+    "t": 1,
+    "n_prompt": 5068,
+    "n_completion": 30,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_gptq_w4_d2_n1",
+    "domain": "airline",
+    "task_id": "32",
+    "t": 13,
+    "n_prompt": 7372,
+    "n_completion": 65,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_gptq_w4_d2_n1",
+    "domain": "retail",
+    "task_id": "62",
+    "t": 18,
+    "n_prompt": 9222,
+    "n_completion": 107,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_gptq_w4_d2_n1",
+    "domain": "retail",
+    "task_id": "112",
+    "t": 8,
+    "n_prompt": 6546,
+    "n_completion": 83,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_gptq_w4_d2_n1",
+    "domain": "retail",
+    "task_id": "54",
+    "t": 23,
+    "n_prompt": 13117,
+    "n_completion": 37,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_gptq_w4_d2_n1",
+    "domain": "airline",
+    "task_id": "11",
+    "t": 9,
+    "n_prompt": 6771,
+    "n_completion": 109,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_gptq_w4_d2_n1",
+    "domain": "airline",
+    "task_id": "17",
+    "t": 5,
+    "n_prompt": 6008,
+    "n_completion": 31,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_gptq_w4_d2_n1",
+    "domain": "airline",
+    "task_id": "17",
+    "t": 2,
+    "n_prompt": 5026,
+    "n_completion": 31,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_gptq_w4_d2_n1",
+    "domain": "retail",
+    "task_id": "95",
+    "t": 62,
+    "n_prompt": 14032,
+    "n_completion": 31,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_gptq_w4_d2_n1",
+    "domain": "retail",
+    "task_id": "95",
+    "t": 47,
+    "n_prompt": 12232,
+    "n_completion": 31,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_gptq_w4_d2_n1",
+    "domain": "airline",
+    "task_id": "33",
+    "t": 1,
+    "n_prompt": 4996,
+    "n_completion": 36,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_gptq_w4_d2_n1",
+    "domain": "airline",
+    "task_id": "37",
+    "t": 8,
+    "n_prompt": 6650,
+    "n_completion": 107,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_gptq_w4_d2_n1",
+    "domain": "retail",
+    "task_id": "47",
+    "t": 3,
+    "n_prompt": 5120,
+    "n_completion": 54,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_gptq_w4_d2_n1",
+    "domain": "airline",
+    "task_id": "35",
+    "t": 4,
+    "n_prompt": 5173,
+    "n_completion": 74,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_gptq_w4_d2_n1",
+    "domain": "retail",
+    "task_id": "72",
+    "t": 10,
+    "n_prompt": 6556,
+    "n_completion": 59,
+    "match": true
+   }
+  ],
+  "ok": true
+ },
+ "idcheck_B": {
+  "label": "B",
+  "base": "http://127.0.0.1:8105/v1",
+  "n": 16,
+  "n_match": 16,
+  "rows": [
+   {
+    "run_id": "a6k2_q8_bfpair_f01",
+    "domain": "retail",
+    "task_id": "112",
+    "t": 3,
+    "n_prompt": 5208,
+    "n_completion": 31,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_bfpair_f01",
+    "domain": "retail",
+    "task_id": "10",
+    "t": 0,
+    "n_prompt": 4928,
+    "n_completion": 25,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_bfpair_f01",
+    "domain": "airline",
+    "task_id": "19",
+    "t": 46,
+    "n_prompt": 9125,
+    "n_completion": 41,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_bfpair_f01",
+    "domain": "airline",
+    "task_id": "14",
+    "t": 3,
+    "n_prompt": 5570,
+    "n_completion": 136,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_bfpair_f01",
+    "domain": "retail",
+    "task_id": "36",
+    "t": 3,
+    "n_prompt": 5139,
+    "n_completion": 32,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_bfpair_f01",
+    "domain": "retail",
+    "task_id": "72",
+    "t": 15,
+    "n_prompt": 7020,
+    "n_completion": 31,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_bfpair_f01",
+    "domain": "retail",
+    "task_id": "49",
+    "t": 3,
+    "n_prompt": 5233,
+    "n_completion": 45,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_bfpair_f01",
+    "domain": "airline",
+    "task_id": "18",
+    "t": 7,
+    "n_prompt": 6027,
+    "n_completion": 44,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_bfpair_f01",
+    "domain": "retail",
+    "task_id": "26",
+    "t": 2,
+    "n_prompt": 5274,
+    "n_completion": 29,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_bfpair_f01",
+    "domain": "retail",
+    "task_id": "35",
+    "t": 8,
+    "n_prompt": 5551,
+    "n_completion": 46,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_bfpair_f01",
+    "domain": "airline",
+    "task_id": "14",
+    "t": 34,
+    "n_prompt": 9463,
+    "n_completion": 44,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_bfpair_f01",
+    "domain": "airline",
+    "task_id": "8",
+    "t": 1,
+    "n_prompt": 4998,
+    "n_completion": 32,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_bfpair_f01",
+    "domain": "airline",
+    "task_id": "2",
+    "t": 10,
+    "n_prompt": 7263,
+    "n_completion": 54,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_bfpair_f01",
+    "domain": "retail",
+    "task_id": "102",
+    "t": 15,
+    "n_prompt": 7365,
+    "n_completion": 81,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_bfpair_f01",
+    "domain": "retail",
+    "task_id": "66",
+    "t": 19,
+    "n_prompt": 12669,
+    "n_completion": 80,
+    "match": true
+   },
+   {
+    "run_id": "a6k2_q8_bfpair_f01",
+    "domain": "retail",
+    "task_id": "26",
+    "t": 8,
+    "n_prompt": 7890,
+    "n_completion": 31,
+    "match": true
+   }
+  ],
+  "ok": true
+ },
+ "n_rows": 12,
+ "n_ok": 12,
+ "n_missing": 0,
+ "n_errors": 0,
+ "n_ref_rerun": 12,
+ "n_ref_rerun_pass": 12,
+ "n_implicit": 4,
+ "n_identity_fail": 0,
+ "n_exact_vs_bf16": 4,
+ "n_exact_vs_d1": 5,
+ "budget_ok": true,
+ "branch_seconds": [
+  38.014310359954834,
+  31.98724341392517,
+  44.32817459106445,
+  58.031601667404175,
+  35.11292862892151,
+  392.0109522342682,
+  200.0865797996521,
+  0.644566535949707,
+  0.6123988628387451,
+  89.01305437088013,
+  24.063024759292603,
+  76.85655808448792
+ ],
+ "seconds": 453.5893335342407,
+ "verdict": {
+  "idcheck": true,
+  "rows_complete": true,
+  "ref_rerun": true,
+  "identity": true,
+  "budget": true,
+  "pass": true
+ }
+}

@@ -1,0 +1,593 @@
+{
+ "BQ": {
+  "tag": "cs-BQ-e4653bb714d5e75b-BQ",
+  "state_id": "0904a14293cfeb95",
+  "branch": "BQ",
+  "first": "B",
+  "controller": "Q",
+  "controller_base": "http://127.0.0.1:8205/v1",
+  "termination_reason": "user_stop",
+  "reward": 0.0,
+  "db_match": true,
+  "official_reward": 1.0,
+  "env_assert_all": null,
+  "reward_info": {
+   "reward": 0.0,
+   "db_check": {
+    "db_match": true,
+    "db_reward": 1.0
+   },
+   "env_assertions": [],
+   "action_checks": [
+    {
+     "action": {
+      "action_id": "26_0",
+      "requestor": "assistant",
+      "name": "find_user_id_by_name_zip",
+      "arguments": {
+       "first_name": "Isabella",
+       "last_name": "Johansson",
+       "zip": "32286"
+      },
+      "info": null,
+      "compare_args": null
+     },
+     "action_match": true,
+     "action_reward": 1.0,
+     "tool_type": "read"
+    },
+    {
+     "action": {
+      "action_id": "26_1",
+      "requestor": "assistant",
+      "name": "get_user_details",
+      "arguments": {
+       "user_id": "isabella_johansson_2152"
+      },
+      "info": null,
+      "compare_args": null
+     },
+     "action_match": true,
+     "action_reward": 1.0,
+     "tool_type": "read"
+    },
+    {
+     "action": {
+      "action_id": "26_2",
+      "requestor": "assistant",
+      "name": "get_order_details",
+      "arguments": {
+       "order_id": "#W3792453"
+      },
+      "info": null,
+      "compare_args": null
+     },
+     "action_match": true,
+     "action_reward": 1.0,
+     "tool_type": "read"
+    },
+    {
+     "action": {
+      "action_id": "26_3",
+      "requestor": "assistant",
+      "name": "get_order_details",
+      "arguments": {
+       "order_id": "#W7181492"
+      },
+      "info": null,
+      "compare_args": null
+     },
+     "action_match": true,
+     "action_reward": 1.0,
+     "tool_type": "read"
+    },
+    {
+     "action": {
+      "action_id": "26_4",
+      "requestor": "assistant",
+      "name": "get_order_details",
+      "arguments": {
+       "order_id": "#W5565470"
+      },
+      "info": null,
+      "compare_args": null
+     },
+     "action_match": true,
+     "action_reward": 1.0,
+     "tool_type": "read"
+    },
+    {
+     "action": {
+      "action_id": "26_5",
+      "requestor": "assistant",
+      "name": "get_order_details",
+      "arguments": {
+       "order_id": "#W2575533"
+      },
+      "info": null,
+      "compare_args": null
+     },
+     "action_match": true,
+     "action_reward": 1.0,
+     "tool_type": "read"
+    },
+    {
+     "action": {
+      "action_id": "26_6",
+      "requestor": "assistant",
+      "name": "return_delivered_order_items",
+      "arguments": {
+       "order_id": "#W5565470",
+       "item_ids": [
+        "7602931732",
+        "9570044148"
+       ],
+       "payment_method_id": "paypal_3024827"
+      },
+      "info": null,
+      "compare_args": null
+     },
+     "action_match": true,
+     "action_reward": 1.0,
+     "tool_type": "write"
+    },
+    {
+     "action": {
+      "action_id": "26_7",
+      "requestor": "assistant",
+      "name": "transfer_to_human_agents",
+      "arguments": {
+       "summary": "The user wants to refund to the amex credit card, but the agent cannot help."
+      },
+      "info": null,
+      "compare_args": []
+     },
+     "action_match": false,
+     "action_reward": 0.0,
+     "tool_type": "generic"
+    }
+   ],
+   "nl_assertions": null,
+   "communicate_checks": null,
+   "reward_basis": [
+    "DB",
+    "ENV_ASSERTION",
+    "ACTION",
+    "COMMUNICATE"
+   ],
+   "reward_breakdown": {
+    "DB": 1.0,
+    "ACTION": 0.0,
+    "COMMUNICATE": 1.0
+   },
+   "info": {
+    "env": null,
+    "nl": null,
+    "communicate": {
+     "note": "No communicate_info to evaluate"
+    },
+    "action": null
+   }
+  },
+  "step_count_final": 23,
+  "num_errors_final": 0,
+  "budget_recount": [
+   23,
+   0
+  ],
+  "prefix_ok": true,
+  "env_hash_init": {
+   "db": "b25c9cb211f5efcaee5dd646054a73c4a9f43f4f5acc32c10713cd9f9ac20e9c",
+   "user_db": null
+  },
+  "env_hash_init_ok": true,
+  "counters_tau2_default": [
+   0,
+   0
+  ],
+  "to_role_at_init": "agent",
+  "env_hash_final": {
+   "db": "232e66188bb835cef11147346b2c4e73b0cf9440951e99a123366b5cc4bc01dd",
+   "user_db": null
+  },
+  "suffix": [
+   {
+    "role": "assistant",
+    "content": "The user has four orders:\n\n1. **Order #W3792453** - Delivered, contains a Skateboard.\n2. **Order #W7181492** - Delivered, contains a Garden Hose, Backpack, Bookshelf, Hiking Boots, and Coffee Maker.\n3. **Order #W5565470** - Delivered, contains an Electric Kettle, Mechanical Keyboard, and Pet Bed.\n4. **Order #W2575533** - Pending, contains a Vacuum Cleaner, Portable Charger, E-Reader, Garden Hose, and Office Chair.\n\nThe user mentioned that the order was mistakenly shipped to Texas, but the address for all orders is Jacksonville, FL, except for **Order #W5565470**, which was shipped to Houston, TX. This is the order that was mistakenly shipped to Texas.\n\nThe user wants to return all items **except the pet bed** from the order that was mistakenly shipped to Texas. Since the pet bed is part of **Order #W5565470**, we need to return the other items in that order.\n\nLet me confirm the details of **Order #W5565470** and proceed with the return. Would you like to continue with this process?",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 14,
+    "timestamp": "2026-10-02T12:26:58.362725",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 275,
+     "prompt_tokens": 7444
+    },
+    "generation_time_seconds": 18.490801268722862,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "role": "user",
+    "content": "Yes, please proceed with the return for Order #W5565470, which was mistakenly shipped to Houston, TX. I want to return the Electric Kettle, Mechanical Keyboard, but keep the Pet Bed. Could you provide the tracking number for this order so I can confirm the shipment details?",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 15,
+    "timestamp": "2026-10-02T12:27:07.005952",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 64,
+     "prompt_tokens": 742
+    },
+    "generation_time_seconds": null,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-9a0547c90790ea9e",
+      "name": "get_order_details",
+      "arguments": {
+       "order_id": "#W5565470"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "is_audio": false,
+    "turn_idx": 16,
+    "timestamp": "2026-10-02T12:27:10.807004",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 29,
+     "prompt_tokens": 7791
+    },
+    "generation_time_seconds": 3.7897699046880007,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "id": "chatcmpl-tool-9a0547c90790ea9e",
+    "role": "tool",
+    "content": "{\"order_id\": \"#W5565470\", \"user_id\": \"isabella_johansson_2152\", \"address\": {\"address1\": \"812 Cedar Avenue\", \"address2\": \"Suite 500\", \"city\": \"Houston\", \"country\": \"USA\", \"state\": \"TX\", \"zip\": \"77129\"}, \"items\": [{\"name\": \"Electric Kettle\", \"product_id\": \"1075968781\", \"item_id\": \"7602931732\", \"price\": 153.25, \"options\": {\"capacity\": \"1L\", \"material\": \"stainless steel\", \"color\": \"black\"}}, {\"name\": \"Mechanical Keyboard\", \"product_id\": \"1656367028\", \"item_id\": \"9570044148\", \"price\": 231.37, \"options\": {\"switch type\": \"linear\", \"backlight\": \"none\", \"size\": \"full size\"}}, {\"name\": \"Pet Bed\", \"product_id\": \"2747247837\", \"item_id\": \"6857426243\", \"price\": 196.53, \"options\": {\"size\": \"medium\", \"material\": \"fleece\", \"color\": \"grey\"}}], \"status\": \"delivered\", \"fulfillments\": [{\"tracking_id\": [\"907614527588\"], \"item_ids\": [\"7602931732\", \"9570044148\", \"6857426243\"]}], \"payment_history\": [{\"transaction_type\": \"payment\", \"amount\": 581.15, \"payment_method_id\": \"paypal_3024827\"}], \"cancel_reason\": null, \"exchange_items\": null, \"exchange_new_items\": null, \"exchange_payment_method_id\": null, \"exchange_price_difference\": null, \"return_items\": null, \"return_payment_method_id\": null}",
+    "requestor": "assistant",
+    "error": false,
+    "turn_idx": 17,
+    "timestamp": "2026-10-02T12:27:10.816421"
+   },
+   {
+    "role": "assistant",
+    "content": "The tracking number for **Order #W5565470** is **907614527588**. This tracking number corresponds to the shipment to Houston, TX, which includes the Electric Kettle, Mechanical Keyboard, and Pet Bed.\n\nSince you want to return the **Electric Kettle** and **Mechanical Keyboard** but keep the **Pet Bed**, I will proceed with the return process for those two items. \n\nBefore proceeding, I need to confirm the following:\n- You want to return the Electric Kettle and Mechanical Keyboard.\n- You would like the refund to be processed via the original payment method (PayPal).\n\nWould you like to confirm and proceed with the return?",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 18,
+    "timestamp": "2026-10-02T12:27:24.323069",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 148,
+     "prompt_tokens": 8302
+    },
+    "generation_time_seconds": 13.493367897812277,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "role": "user",
+    "content": "Yes, please proceed with returning the Electric Kettle and Mechanical Keyboard from Order #W5565470. Refund via the original payment method (PayPal) is correct.  \n\nCould you please confirm the return label and instructions for sending the items back? I need to make sure I do this right since it’s urgent.",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 19,
+    "timestamp": "2026-10-02T12:27:31.260631",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 70,
+     "prompt_tokens": 962
+    },
+    "generation_time_seconds": null,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-a6bcd319187a84a1",
+      "name": "return_delivered_order_items",
+      "arguments": {
+       "order_id": "#W5565470",
+       "item_ids": [
+        "7602931732",
+        "9570044148"
+       ],
+       "payment_method_id": "paypal_3024827"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "is_audio": false,
+    "turn_idx": 20,
+    "timestamp": "2026-10-02T12:27:38.645207",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 75,
+     "prompt_tokens": 8528
+    },
+    "generation_time_seconds": 7.345702585298568,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "id": "chatcmpl-tool-a6bcd319187a84a1",
+    "role": "tool",
+    "content": "{\"order_id\": \"#W5565470\", \"user_id\": \"isabella_johansson_2152\", \"address\": {\"address1\": \"812 Cedar Avenue\", \"address2\": \"Suite 500\", \"city\": \"Houston\", \"country\": \"USA\", \"state\": \"TX\", \"zip\": \"77129\"}, \"items\": [{\"name\": \"Electric Kettle\", \"product_id\": \"1075968781\", \"item_id\": \"7602931732\", \"price\": 153.25, \"options\": {\"capacity\": \"1L\", \"material\": \"stainless steel\", \"color\": \"black\"}}, {\"name\": \"Mechanical Keyboard\", \"product_id\": \"1656367028\", \"item_id\": \"9570044148\", \"price\": 231.37, \"options\": {\"switch type\": \"linear\", \"backlight\": \"none\", \"size\": \"full size\"}}, {\"name\": \"Pet Bed\", \"product_id\": \"2747247837\", \"item_id\": \"6857426243\", \"price\": 196.53, \"options\": {\"size\": \"medium\", \"material\": \"fleece\", \"color\": \"grey\"}}], \"status\": \"return requested\", \"fulfillments\": [{\"tracking_id\": [\"907614527588\"], \"item_ids\": [\"7602931732\", \"9570044148\", \"6857426243\"]}], \"payment_history\": [{\"transaction_type\": \"payment\", \"amount\": 581.15, \"payment_method_id\": \"paypal_3024827\"}], \"cancel_reason\": null, \"exchange_items\": null, \"exchange_new_items\": null, \"exchange_payment_method_id\": null, \"exchange_price_difference\": null, \"return_items\": [\"7602931732\", \"9570044148\"], \"return_payment_method_id\": \"paypal_3024827\"}",
+    "requestor": "assistant",
+    "error": false,
+    "turn_idx": 21,
+    "timestamp": "2026-10-02T12:27:38.768076"
+   },
+   {
+    "role": "assistant",
+    "content": "The return process for the **Electric Kettle** and **Mechanical Keyboard** from **Order #W5565470** has been initiated. The refund will be processed via your original payment method (PayPal).\n\nYou will receive an email with detailed return instructions and a return label. Please ensure you follow the instructions carefully to return the items. If you have any questions or need further assistance, feel free to ask.\n\nThank you for your cooperation!",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 22,
+    "timestamp": "2026-10-02T12:27:47.793871",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 95,
+     "prompt_tokens": 9116
+    },
+    "generation_time_seconds": 9.010407725349069,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "role": "user",
+    "content": "###STOP###",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 23,
+    "timestamp": "2026-10-02T12:27:48.145570",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 4,
+     "prompt_tokens": 1135
+    },
+    "generation_time_seconds": null,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   }
+  ],
+  "suffix_sha": "603febb5b7cffeaaa5cf1463071e10dcdd33aba3cf772c34b8df9a54de38b4ba",
+  "n_messages": 24,
+  "decisions": [
+   {
+    "decision_idx": 6,
+    "forced": true,
+    "prompt_ids_sha": "9f258a6269b12a510a5f704b784f05bb01855cd45c802225d7e129d1f111d916",
+    "n_prompt_tokens": 7444,
+    "prompt_ids_from_server": false,
+    "prompt_ids_match_local": null,
+    "completion_ids_sha": null,
+    "n_completion_tokens": null,
+    "finish_reason": null,
+    "content": "The user has four orders:\n\n1. **Order #W3792453** - Delivered, contains a Skateboard.\n2. **Order #W7181492** - Delivered, contains a Garden Hose, Backpack, Bookshelf, Hiking Boots, and Coffee Maker.\n3. **Order #W5565470** - Delivered, contains an Electric Kettle, Mechanical Keyboard, and Pet Bed.\n4. **Order #W2575533** - Pending, contains a Vacuum Cleaner, Portable Charger, E-Reader, Garden Hose, and Office Chair.\n\nThe user mentioned that the order was mistakenly shipped to Texas, but the address for all orders is Jacksonville, FL, except for **Order #W5565470**, which was shipped to Houston, TX. This is the order that was mistakenly shipped to Texas.\n\nThe user wants to return all items **except the pet bed** from the order that was mistakenly shipped to Texas. Since the pet bed is part of **Order #W5565470**, we need to return the other items in that order.\n\nLet me confirm the details of **Order #W5565470** and proceed with the return. Would you like to continue with this process?",
+    "tool_calls": null,
+    "parser_error": null,
+    "system_sha256": "0d4d0791d9526145f6799fc8f9d069f838be523609087a679fbd26420888fccc",
+    "usage": null,
+    "wall_seconds": null,
+    "api_base": null
+   },
+   {
+    "decision_idx": 7,
+    "forced": false,
+    "prompt_ids_sha": "6148ea86deae218f6ab7ec9c82ea9ad9f775aaf7bd71110eec3a1cfd89704f26",
+    "n_prompt_tokens": 7791,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "afea5fbb9247bd8f7e83a0f393c08ea9944833fe3ba46f496a9f2ae2daa5522c",
+    "n_completion_tokens": 29,
+    "finish_reason": "tool_calls",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-9a0547c90790ea9e",
+      "name": "get_order_details",
+      "arguments": {
+       "order_id": "#W5565470"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "parser_error": false,
+    "system_sha256": "0d4d0791d9526145f6799fc8f9d069f838be523609087a679fbd26420888fccc",
+    "usage": {
+     "completion_tokens": 29,
+     "prompt_tokens": 7791,
+     "total_tokens": 7820,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 3.8102619647979736,
+    "api_base": "http://127.0.0.1:8205/v1"
+   },
+   {
+    "decision_idx": 8,
+    "forced": false,
+    "prompt_ids_sha": "a0948c9d721c8e0a9ea6242528a6bf9bdf41766efcd75cf70aaad30c385f9d9d",
+    "n_prompt_tokens": 8302,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "f8e7ea0f135729b04f640194fc79d6422b94405cfb6639084ac6a1ff27d26fa5",
+    "n_completion_tokens": 148,
+    "finish_reason": "stop",
+    "content": "The tracking number for **Order #W5565470** is **907614527588**. This tracking number corresponds to the shipment to Houston, TX, which includes the Electric Kettle, Mechanical Keyboard, and Pet Bed.\n\nSince you want to return the **Electric Kettle** and **Mechanical Keyboard** but keep the **Pet Bed**, I will proceed with the return process for those two items. \n\nBefore proceeding, I need to confirm the following:\n- You want to return the Electric Kettle and Mechanical Keyboard.\n- You would like the refund to be processed via the original payment method (PayPal).\n\nWould you like to confirm and proceed with the return?",
+    "tool_calls": null,
+    "parser_error": false,
+    "system_sha256": "0d4d0791d9526145f6799fc8f9d069f838be523609087a679fbd26420888fccc",
+    "usage": {
+     "completion_tokens": 148,
+     "prompt_tokens": 8302,
+     "total_tokens": 8450,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 13.51743769645691,
+    "api_base": "http://127.0.0.1:8205/v1"
+   },
+   {
+    "decision_idx": 9,
+    "forced": false,
+    "prompt_ids_sha": "ed15ab2747b711d021832725b9e3c5c78931f7123af286c0990a3e72e338c0ee",
+    "n_prompt_tokens": 8528,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "76a1050ebb349166d3943e1a4dec2703c3253ee4e9f006f0fdb1644af2ad33cf",
+    "n_completion_tokens": 75,
+    "finish_reason": "tool_calls",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-a6bcd319187a84a1",
+      "name": "return_delivered_order_items",
+      "arguments": {
+       "order_id": "#W5565470",
+       "item_ids": [
+        "7602931732",
+        "9570044148"
+       ],
+       "payment_method_id": "paypal_3024827"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "parser_error": false,
+    "system_sha256": "0d4d0791d9526145f6799fc8f9d069f838be523609087a679fbd26420888fccc",
+    "usage": {
+     "completion_tokens": 75,
+     "prompt_tokens": 8528,
+     "total_tokens": 8603,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 7.5071632862091064,
+    "api_base": "http://127.0.0.1:8205/v1"
+   },
+   {
+    "decision_idx": 10,
+    "forced": false,
+    "prompt_ids_sha": "9f66e7cb95b6ebd31811fc5334554c823d2df11c29f8fe29e21e4c1785893f93",
+    "n_prompt_tokens": 9116,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "eb8498f19be62cace07e240f7b586f0de10fc27dd9b23a716e7d3d4f66146957",
+    "n_completion_tokens": 95,
+    "finish_reason": "stop",
+    "content": "The return process for the **Electric Kettle** and **Mechanical Keyboard** from **Order #W5565470** has been initiated. The refund will be processed via your original payment method (PayPal).\n\nYou will receive an email with detailed return instructions and a return label. Please ensure you follow the instructions carefully to return the items. If you have any questions or need further assistance, feel free to ask.\n\nThank you for your cooperation!",
+    "tool_calls": null,
+    "parser_error": false,
+    "system_sha256": "0d4d0791d9526145f6799fc8f9d069f838be523609087a679fbd26420888fccc",
+    "usage": {
+     "completion_tokens": 95,
+     "prompt_tokens": 9116,
+     "total_tokens": 9211,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 9.037237882614136,
+    "api_base": "http://127.0.0.1:8205/v1"
+   }
+  ],
+  "duration": 49.87037420272827,
+  "sim_seed": 626729,
+  "n_user_msgs": 3,
+  "env_hash_replay": {
+   "db": "232e66188bb835cef11147346b2c4e73b0cf9440951e99a123366b5cc4bc01dd",
+   "user_db": null
+  }
+ }
+}

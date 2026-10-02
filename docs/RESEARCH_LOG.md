@@ -10,6 +10,22 @@ Newest first.
 
 ---
 
+## W100b — Common-state action sources on q8 (BF16 / W4-d1 / W4-d2 actions × BF16 or d1 continuation): K not resolved under either continuation (2026-10-02 13:16 PDT)
+**TL;DR** Prereg `docs/insights/COMMONSTATE_SOURCES_PROTOCOL.md` (sha c73ab2eec…, deviation D1 = logistics unpin only). 255 frozen q8 U2B states, f01–f03, 85 tasks, 0 excluded, every block complete.
+- **Acceptance:** all 6 panel tasks pass idcheck, d2-replay, reference reruns (22/22, 19/19, 15/15, 18/18, 23/23, 19/19) and implicit identities. Canaries and ckpt shas match.
+- **Key estimand K(c) = BF16 − d2 at the same state:**
+  - K(c = d1) −0.4 pp, t95 [−9.3, +8.5], boot95 [−3.5, +2.7];
+  - K(c = BF16) +2.4 pp, t95 [−3.5, +8.2], boot95 [−0.8, +5.5], Holm p 0.32.
+  - Both readings: **not resolved** (no difference shown, no TOST equivalence).
+- **Cells V(source, continuation), %:** BF16/BF16 31.4, BF16/d1 28.2, d1/BF16 28.6, d1/d1 27.8, d2/BF16 29.0, d2/d1 28.6.
+- **Turnover:** all contrasts flip 5.5–7.5% of states. BF16−d1 and d2−d1 are both small (+0.4 / +0.8 pp under d1).
+- **Action agreement:** BF16 = d1 57.6%, BF16 = d2 56.9%, d1 = d2 55.7%. A second W4 checkpoint differs from d1 as often as BF16 does.
+- **Interaction with continuation:** BF16−d2 I = +2.7 pp, t90 [+0.5, +5.0], boot90 [−0.4, +5.9]. Secondary; not resolved.
+- **Exploratory:** on the 110 states where a_d2 ≠ a_BF16, K(d1) −0.9 and K(BF16) +5.5 pp (points only).
+- **Reading:** on identical states, BF16's action is not shown to be worth more than another W4 checkpoint's. Any edge appears only when BF16 also continues, which is consistent with the paper's continuation-dependence argument, but unresolved at k = 3.
+- Evidence: `analysis/fork/out/commonstate_20261002T201612Z.{md,json}`, `analysis/fork/commonstate/q8/`, `analysis/fork/analyze_commonstate.py`.
+- Also: W3 same-precision replay gates pass on q4 and q8; 6 formal tasks queued at −27 (`make_tasks_sameprec_w3.py --formal --write`).
+
 ## W99t — KIVI (q8 KV cache) feasibility gate: kivi_k2v2 PASS, phase 1 queued; kivi_k4v4 held (original toy T2 at the BF16 floor); amendment a2 fixes a real scale mismatch (2026-10-02 10:00 PDT)
 **TL;DR** KIVI (official jy-yuan/KIVI @ 876b4d2; G = 32, R = 128) is served on vLLM by a stateless position-determined Triton kernel (70addfa).
 - **kivi_k2v2 passes** every gate criterion:

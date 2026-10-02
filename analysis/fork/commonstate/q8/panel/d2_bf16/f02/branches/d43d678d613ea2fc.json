@@ -1,0 +1,479 @@
+{
+ "QB": {
+  "tag": "cs-QB-d43d678d613ea2fc-QB",
+  "state_id": "e857d1dbc554454e",
+  "branch": "QB",
+  "first": "Q",
+  "controller": "B",
+  "controller_base": "http://127.0.0.1:8105/v1",
+  "termination_reason": "user_stop",
+  "reward": 0.0,
+  "db_match": false,
+  "official_reward": 0.0,
+  "env_assert_all": null,
+  "reward_info": {
+   "reward": 0.0,
+   "db_check": {
+    "db_match": false,
+    "db_reward": 0.0
+   },
+   "env_assertions": [],
+   "action_checks": [
+    {
+     "action": {
+      "action_id": "30_0",
+      "requestor": "assistant",
+      "name": "get_reservation_details",
+      "arguments": {
+       "reservation_id": "1N99U6"
+      },
+      "info": null,
+      "compare_args": null
+     },
+     "action_match": true,
+     "action_reward": 1.0,
+     "tool_type": "read"
+    },
+    {
+     "action": {
+      "action_id": "30_1",
+      "requestor": "assistant",
+      "name": "search_direct_flight",
+      "arguments": {
+       "origin": "LAS",
+       "destination": "IAH",
+       "date": "2024-05-19"
+      },
+      "info": null,
+      "compare_args": null
+     },
+     "action_match": true,
+     "action_reward": 1.0,
+     "tool_type": "read"
+    },
+    {
+     "action": {
+      "action_id": "30_2",
+      "requestor": "assistant",
+      "name": "update_reservation_flights",
+      "arguments": {
+       "reservation_id": "1N99U6",
+       "cabin": "economy",
+       "flights": [
+        {
+         "flight_number": "HAT266",
+         "date": "2024-05-19"
+        },
+        {
+         "flight_number": "HAT112",
+         "date": "2024-05-27"
+        }
+       ],
+       "payment_id": "gift_card_5634230"
+      },
+      "info": null,
+      "compare_args": null
+     },
+     "action_match": false,
+     "action_reward": 0.0,
+     "tool_type": "write"
+    }
+   ],
+   "nl_assertions": null,
+   "communicate_checks": null,
+   "reward_basis": [
+    "DB",
+    "ENV_ASSERTION",
+    "ACTION",
+    "COMMUNICATE"
+   ],
+   "reward_breakdown": {
+    "DB": 0.0,
+    "ACTION": 0.0,
+    "COMMUNICATE": 1.0
+   },
+   "info": {
+    "env": null,
+    "nl": null,
+    "communicate": {
+     "note": "No communicate_info to evaluate"
+    },
+    "action": null
+   }
+  },
+  "step_count_final": 23,
+  "num_errors_final": 0,
+  "budget_recount": [
+   23,
+   0
+  ],
+  "prefix_ok": true,
+  "env_hash_init": {
+   "db": "96a052c874a2aefad8d7bc4c1bfb5999d9fe25591f0227c1a4b579e4403fc761",
+   "user_db": null
+  },
+  "env_hash_init_ok": true,
+  "counters_tau2_default": [
+   0,
+   0
+  ],
+  "to_role_at_init": "agent",
+  "env_hash_final": {
+   "db": "20e4827d28e615b4d7fb220e8b43f51f1de82d3f1e9913aa5d3c8891f73072fc",
+   "user_db": null
+  },
+  "suffix": [
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-8370dab1af92337d",
+      "name": "search_direct_flight",
+      "arguments": {
+       "origin": "LAS",
+       "destination": "IAH",
+       "date": "2024-05-19"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "is_audio": false,
+    "turn_idx": 16,
+    "timestamp": "2026-10-02T10:49:48.966822",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 43,
+     "prompt_tokens": 6320
+    },
+    "generation_time_seconds": 3.042558384127915,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "id": "chatcmpl-tool-8370dab1af92337d",
+    "role": "tool",
+    "content": "[{\"flight_number\": \"HAT175\", \"origin\": \"LAS\", \"destination\": \"IAH\", \"status\": \"available\", \"scheduled_departure_time_est\": \"17:00:00\", \"scheduled_arrival_time_est\": \"20:00:00\", \"date\": null, \"available_seats\": {\"basic_economy\": 10, \"economy\": 3, \"business\": 2}, \"prices\": {\"basic_economy\": 96, \"economy\": 155, \"business\": 203}}, {\"flight_number\": \"HAT266\", \"origin\": \"LAS\", \"destination\": \"IAH\", \"status\": \"available\", \"scheduled_departure_time_est\": \"13:00:00\", \"scheduled_arrival_time_est\": \"16:00:00\", \"date\": null, \"available_seats\": {\"basic_economy\": 8, \"economy\": 16, \"business\": 13}, \"prices\": {\"basic_economy\": 89, \"economy\": 146, \"business\": 373}}]",
+    "requestor": "assistant",
+    "error": false,
+    "turn_idx": 17,
+    "timestamp": "2026-10-02T10:49:48.967134"
+   },
+   {
+    "role": "assistant",
+    "content": "Here are the nonstop flight options available from LAS to IAH on May 19, 2024:\n\n1. **Flight HAT175**:\n   - **Departure**: 17:00 EST\n   - **Arrival**: 20:00 EST\n   - **Prices**:\n     - Basic Economy: $96\n     - Economy: $155\n     - Business: $203\n\n2. **Flight HAT266**:\n   - **Departure**: 13:00 EST\n   - **Arrival**: 16:00 EST\n   - **Prices**:\n     - Basic Economy: $89\n     - Economy: $146\n     - Business: $373\n\nWhich flight would you like to proceed with? Please specify the flight number and cabin class.",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 18,
+    "timestamp": "2026-10-02T10:50:02.885281",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 188,
+     "prompt_tokens": 6628
+    },
+    "generation_time_seconds": 13.900364323053509,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "role": "user",
+    "content": "I’d like to switch to Flight HAT266 in Economy class. Please proceed with the change.",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 19,
+    "timestamp": "2026-10-02T10:50:42.822847",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 23,
+     "prompt_tokens": 1136
+    },
+    "generation_time_seconds": null,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-bb212588949ce6dd",
+      "name": "update_reservation_flights",
+      "arguments": {
+       "reservation_id": "1N99U6",
+       "cabin": "economy",
+       "flights": [
+        {
+         "flight_number": "HAT266",
+         "date": "2024-05-19",
+         "origin": "LAS",
+         "destination": "IAH",
+         "price": 146
+        },
+        {
+         "flight_number": "HAT112",
+         "date": "2024-05-27",
+         "origin": "IAH",
+         "destination": "LAS",
+         "price": 184
+        }
+       ],
+       "payment_id": "gift_card_5634230"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "is_audio": false,
+    "turn_idx": 20,
+    "timestamp": "2026-10-02T10:50:52.737657",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 150,
+     "prompt_tokens": 6847
+    },
+    "generation_time_seconds": 9.902913299854845,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "id": "chatcmpl-tool-bb212588949ce6dd",
+    "role": "tool",
+    "content": "{\"reservation_id\": \"1N99U6\", \"user_id\": \"james_taylor_7043\", \"origin\": \"LAS\", \"destination\": \"IAH\", \"flight_type\": \"round_trip\", \"cabin\": \"economy\", \"flights\": [{\"flight_number\": \"HAT266\", \"origin\": \"LAS\", \"destination\": \"IAH\", \"date\": \"2024-05-19\", \"price\": 146}, {\"flight_number\": \"HAT112\", \"origin\": \"IAH\", \"destination\": \"LAS\", \"date\": \"2024-05-27\", \"price\": 184}], \"passengers\": [{\"first_name\": \"James\", \"last_name\": \"Taylor\", \"dob\": \"1997-01-23\"}, {\"first_name\": \"Ivan\", \"last_name\": \"Taylor\", \"dob\": \"1975-09-15\"}], \"payment_history\": [{\"payment_id\": \"gift_card_5634230\", \"amount\": 1134}, {\"payment_id\": \"gift_card_5634230\", \"amount\": -414}], \"created_at\": \"2024-05-08T11:37:17\", \"total_baggages\": 0, \"nonfree_baggages\": 0, \"insurance\": \"yes\", \"status\": null}",
+    "requestor": "assistant",
+    "error": false,
+    "turn_idx": 21,
+    "timestamp": "2026-10-02T10:50:52.746792"
+   },
+   {
+    "role": "assistant",
+    "content": "Your reservation (ID: 1N99U6) has been successfully updated:\n\n- **Flight**: HAT266 from LAS to IAH on May 19, 2024 (Economy class, Price: $146)\n- **Return Flight**: HAT112 from IAH to LAS on May 27, 2024 (Economy class, Price: $184)\n- **Payment**: Refund of $414 has been processed to your gift card (gift_card_5634230)\n\nYour checked bag has been removed, and the refund for it has been processed. Let me know if you need any further assistance!",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 22,
+    "timestamp": "2026-10-02T10:51:03.255642",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 150,
+     "prompt_tokens": 7335
+    },
+    "generation_time_seconds": 10.496558242011815,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "role": "user",
+    "content": "Thank you for the update. Everything looks good on my end. I appreciate your help.  \n\n###STOP###",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 23,
+    "timestamp": "2026-10-02T10:51:33.907624",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 23,
+     "prompt_tokens": 1317
+    },
+    "generation_time_seconds": null,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   }
+  ],
+  "suffix_sha": "13c8da5506dc5218d395e0662b7389e6e69c1f15786effcc4acf73cb988b66f1",
+  "n_messages": 24,
+  "decisions": [
+   {
+    "decision_idx": 7,
+    "forced": true,
+    "prompt_ids_sha": "624790f640a1aa89f31a9acb56d050b15ad835df2eaf39bdec1006f58418d319",
+    "n_prompt_tokens": 6320,
+    "prompt_ids_from_server": false,
+    "prompt_ids_match_local": null,
+    "completion_ids_sha": null,
+    "n_completion_tokens": null,
+    "finish_reason": null,
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-8370dab1af92337d",
+      "name": "search_direct_flight",
+      "arguments": {
+       "origin": "LAS",
+       "destination": "IAH",
+       "date": "2024-05-19"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "parser_error": null,
+    "system_sha256": "71d2d2d514d23ce6930e67705139667de4a3eaa3bf13859e5327b99a9e86d596",
+    "usage": null,
+    "wall_seconds": null,
+    "api_base": null
+   },
+   {
+    "decision_idx": 8,
+    "forced": false,
+    "prompt_ids_sha": "eb64360473a471e8fde7297ffc62cffc9462bf473820c1ae6de666893f949a0e",
+    "n_prompt_tokens": 6628,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "2fb7a7601988c34c755ee937dd86dd348a8576516b24b02b9fc893e56f893e39",
+    "n_completion_tokens": 188,
+    "finish_reason": "stop",
+    "content": "Here are the nonstop flight options available from LAS to IAH on May 19, 2024:\n\n1. **Flight HAT175**:\n   - **Departure**: 17:00 EST\n   - **Arrival**: 20:00 EST\n   - **Prices**:\n     - Basic Economy: $96\n     - Economy: $155\n     - Business: $203\n\n2. **Flight HAT266**:\n   - **Departure**: 13:00 EST\n   - **Arrival**: 16:00 EST\n   - **Prices**:\n     - Basic Economy: $89\n     - Economy: $146\n     - Business: $373\n\nWhich flight would you like to proceed with? Please specify the flight number and cabin class.",
+    "tool_calls": null,
+    "parser_error": false,
+    "system_sha256": "71d2d2d514d23ce6930e67705139667de4a3eaa3bf13859e5327b99a9e86d596",
+    "usage": {
+     "completion_tokens": 188,
+     "prompt_tokens": 6628,
+     "total_tokens": 6816,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 13.927184104919434,
+    "api_base": "http://127.0.0.1:8105/v1"
+   },
+   {
+    "decision_idx": 9,
+    "forced": false,
+    "prompt_ids_sha": "2938379ffe7cd6646c89c4744c3066105fc2c1b267b4e03563554367ad8aed2e",
+    "n_prompt_tokens": 6847,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "9dda31a88b8f4927679ad27ab73d492e94df89ccd09023aebb53f7ec5ac590af",
+    "n_completion_tokens": 150,
+    "finish_reason": "tool_calls",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-bb212588949ce6dd",
+      "name": "update_reservation_flights",
+      "arguments": {
+       "reservation_id": "1N99U6",
+       "cabin": "economy",
+       "flights": [
+        {
+         "flight_number": "HAT266",
+         "date": "2024-05-19",
+         "origin": "LAS",
+         "destination": "IAH",
+         "price": 146
+        },
+        {
+         "flight_number": "HAT112",
+         "date": "2024-05-27",
+         "origin": "IAH",
+         "destination": "LAS",
+         "price": 184
+        }
+       ],
+       "payment_id": "gift_card_5634230"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "parser_error": false,
+    "system_sha256": "71d2d2d514d23ce6930e67705139667de4a3eaa3bf13859e5327b99a9e86d596",
+    "usage": {
+     "completion_tokens": 150,
+     "prompt_tokens": 6847,
+     "total_tokens": 6997,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 9.923697471618652,
+    "api_base": "http://127.0.0.1:8105/v1"
+   },
+   {
+    "decision_idx": 10,
+    "forced": false,
+    "prompt_ids_sha": "7464259cbacabd33ced071c2cdd70225390ca877a5e9bde994ec4e40fd772c46",
+    "n_prompt_tokens": 7335,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "cd4bb59c3b36ec068f056df293f146982f9b10d8378574a4b1bc5f8c82aaca40",
+    "n_completion_tokens": 150,
+    "finish_reason": "stop",
+    "content": "Your reservation (ID: 1N99U6) has been successfully updated:\n\n- **Flight**: HAT266 from LAS to IAH on May 19, 2024 (Economy class, Price: $146)\n- **Return Flight**: HAT112 from IAH to LAS on May 27, 2024 (Economy class, Price: $184)\n- **Payment**: Refund of $414 has been processed to your gift card (gift_card_5634230)\n\nYour checked bag has been removed, and the refund for it has been processed. Let me know if you need any further assistance!",
+    "tool_calls": null,
+    "parser_error": false,
+    "system_sha256": "71d2d2d514d23ce6930e67705139667de4a3eaa3bf13859e5327b99a9e86d596",
+    "usage": {
+     "completion_tokens": 150,
+     "prompt_tokens": 7335,
+     "total_tokens": 7485,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 10.518686771392822,
+    "api_base": "http://127.0.0.1:8105/v1"
+   }
+  ],
+  "duration": 105.12549591064453,
+  "sim_seed": 626729,
+  "n_user_msgs": 2,
+  "env_hash_replay": {
+   "db": "20e4827d28e615b4d7fb220e8b43f51f1de82d3f1e9913aa5d3c8891f73072fc",
+   "user_db": null
+  }
+ }
+}

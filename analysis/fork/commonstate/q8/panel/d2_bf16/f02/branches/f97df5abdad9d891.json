@@ -1,0 +1,1001 @@
+{
+ "QB": {
+  "tag": "cs-QB-f97df5abdad9d891-QB",
+  "state_id": "c1e1e47b7b2a4f67",
+  "branch": "QB",
+  "first": "Q",
+  "controller": "B",
+  "controller_base": "http://127.0.0.1:8105/v1",
+  "termination_reason": "user_stop",
+  "reward": 1.0,
+  "db_match": true,
+  "official_reward": 1.0,
+  "env_assert_all": null,
+  "reward_info": {
+   "reward": 1.0,
+   "db_check": {
+    "db_match": true,
+    "db_reward": 1.0
+   },
+   "env_assertions": [],
+   "action_checks": [
+    {
+     "action": {
+      "action_id": "25_0",
+      "requestor": "assistant",
+      "name": "book_reservation",
+      "arguments": {
+       "user_id": "ivan_muller_7015",
+       "origin": "DTW",
+       "destination": "SEA",
+       "flight_type": "one_way",
+       "cabin": "economy",
+       "flights": [
+        {
+         "flight_number": "HAT097",
+         "date": "2024-05-17"
+        },
+        {
+         "flight_number": "HAT251",
+         "date": "2024-05-17"
+        }
+       ],
+       "passengers": [
+        {
+         "first_name": "Ivan",
+         "last_name": "Smith",
+         "dob": "1986-03-14"
+        }
+       ],
+       "payment_methods": [
+        {
+         "payment_id": "gift_card_8516878",
+         "amount": 128
+        },
+        {
+         "payment_id": "credit_card_3563913",
+         "amount": 247
+        }
+       ],
+       "total_baggages": 0,
+       "nonfree_baggages": 0,
+       "insurance": "no"
+      },
+      "info": null,
+      "compare_args": null
+     },
+     "action_match": true,
+     "action_reward": 1.0,
+     "tool_type": "write"
+    }
+   ],
+   "nl_assertions": null,
+   "communicate_checks": null,
+   "reward_basis": [
+    "DB",
+    "ENV_ASSERTION",
+    "ACTION",
+    "COMMUNICATE"
+   ],
+   "reward_breakdown": {
+    "DB": 1.0,
+    "ACTION": 1.0,
+    "COMMUNICATE": 1.0
+   },
+   "info": {
+    "env": null,
+    "nl": null,
+    "communicate": {
+     "note": "No communicate_info to evaluate"
+    },
+    "action": null
+   }
+  },
+  "step_count_final": 19,
+  "num_errors_final": 2,
+  "budget_recount": [
+   19,
+   2
+  ],
+  "prefix_ok": true,
+  "env_hash_init": {
+   "db": "124e39a664b56402bcd09cb8a6a9cece6acb8462337c969799d5658e3250f263",
+   "user_db": null
+  },
+  "env_hash_init_ok": true,
+  "counters_tau2_default": [
+   0,
+   0
+  ],
+  "to_role_at_init": "agent",
+  "env_hash_final": {
+   "db": "d0579b8ae59e360f8b63f84a55ac00a27a8d51a175b42b2e997f1f056a83e363",
+   "user_db": null
+  },
+  "suffix": [
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-86bd9bfb73a7f375",
+      "name": "get_user_details",
+      "arguments": {
+       "user_id": "ivan_muller_7015"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "is_audio": false,
+    "turn_idx": 2,
+    "timestamp": "2026-10-02T10:53:13.570490",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 30,
+     "prompt_tokens": 4907
+    },
+    "generation_time_seconds": 2.4959812299348414,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "id": "chatcmpl-tool-86bd9bfb73a7f375",
+    "role": "tool",
+    "content": "{\"user_id\": \"ivan_muller_7015\", \"name\": {\"first_name\": \"Ivan\", \"last_name\": \"Muller\"}, \"address\": {\"address1\": \"256 Pine Lane\", \"address2\": \"Suite 661\", \"city\": \"New York\", \"country\": \"USA\", \"state\": \"NY\", \"zip\": \"10029\"}, \"email\": \"ivan.muller6623@example.com\", \"dob\": \"1968-04-25\", \"payment_methods\": {\"certificate_8998287\": {\"source\": \"certificate\", \"id\": \"certificate_8998287\", \"amount\": 500.0}, \"credit_card_3563913\": {\"source\": \"credit_card\", \"id\": \"credit_card_3563913\", \"brand\": \"mastercard\", \"last_four\": \"6710\"}, \"gift_card_8516878\": {\"source\": \"gift_card\", \"id\": \"gift_card_8516878\", \"amount\": 128.0}}, \"saved_passengers\": [{\"first_name\": \"Ivan\", \"last_name\": \"Smith\", \"dob\": \"1986-03-14\"}, {\"first_name\": \"Lucas\", \"last_name\": \"Davis\", \"dob\": \"1988-10-12\"}], \"membership\": \"gold\", \"reservations\": [\"G72NSF\"]}",
+    "requestor": "assistant",
+    "error": false,
+    "turn_idx": 3,
+    "timestamp": "2026-10-02T10:53:13.570647"
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-ab7eb4ab52eab8b6",
+      "name": "get_reservation_details",
+      "arguments": {
+       "reservation_id": "G72NSF"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "is_audio": false,
+    "turn_idx": 4,
+    "timestamp": "2026-10-02T10:53:15.546675",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 26,
+     "prompt_tokens": 5291
+    },
+    "generation_time_seconds": 1.9673693287186325,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "id": "chatcmpl-tool-ab7eb4ab52eab8b6",
+    "role": "tool",
+    "content": "{\"reservation_id\": \"G72NSF\", \"user_id\": \"ivan_muller_7015\", \"origin\": \"DTW\", \"destination\": \"SEA\", \"flight_type\": \"one_way\", \"cabin\": \"economy\", \"flights\": [{\"flight_number\": \"HAT097\", \"origin\": \"DTW\", \"destination\": \"PHX\", \"date\": \"2024-05-17\", \"price\": 158}, {\"flight_number\": \"HAT251\", \"origin\": \"PHX\", \"destination\": \"SEA\", \"date\": \"2024-05-17\", \"price\": 141}], \"passengers\": [{\"first_name\": \"Ivan\", \"last_name\": \"Muller\", \"dob\": \"1968-04-25\"}, {\"first_name\": \"Isabella\", \"last_name\": \"Moore\", \"dob\": \"1952-01-28\"}], \"payment_history\": [{\"payment_id\": \"gift_card_8516878\", \"amount\": 658}], \"created_at\": \"2024-05-11T19:32:36\", \"total_baggages\": 2, \"nonfree_baggages\": 0, \"insurance\": \"yes\", \"status\": null}",
+    "requestor": "assistant",
+    "error": false,
+    "turn_idx": 5,
+    "timestamp": "2026-10-02T10:53:15.554082"
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-8b706f2c931b6807",
+      "name": "book_reservation",
+      "arguments": {
+       "user_id": "ivan_muller_7015",
+       "origin": "DTW",
+       "destination": "SEA",
+       "flight_type": "one_way",
+       "cabin": "economy",
+       "flights": [
+        {
+         "flight_number": "HAT097",
+         "date": "2024-05-17"
+        },
+        {
+         "flight_number": "HAT251",
+         "date": "2024-05-17"
+        }
+       ],
+       "passengers": [
+        {
+         "first_name": "Ivan",
+         "last_name": "Smith",
+         "dob": "1986-03-14"
+        }
+       ],
+       "payment_methods": [
+        {
+         "payment_id": "gift_card_8516878",
+         "amount": 658
+        }
+       ],
+       "total_baggages": 2,
+       "nonfree_baggages": 0,
+       "insurance": "yes"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "is_audio": false,
+    "turn_idx": 6,
+    "timestamp": "2026-10-02T10:53:32.037433",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 203,
+     "prompt_tokens": 5634
+    },
+    "generation_time_seconds": 16.473690901882946,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "id": "chatcmpl-tool-8b706f2c931b6807",
+    "role": "tool",
+    "content": "Error: Not enough balance in payment method gift_card_8516878",
+    "requestor": "assistant",
+    "error": true,
+    "turn_idx": 7,
+    "timestamp": "2026-10-02T10:53:32.045017"
+   },
+   {
+    "role": "assistant",
+    "content": "The gift card balance is insufficient to cover the reservation cost. Would you like to use a different payment method or add more funds to the gift card?",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 8,
+    "timestamp": "2026-10-02T10:53:34.829715",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 31,
+     "prompt_tokens": 5868
+    },
+    "generation_time_seconds": 2.774541815277189,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "role": "user",
+    "content": "I'd like to use my certificate instead. Can you check how much balance is left on it? Also, please make sure the booking is only for Ivan Smith—no baggage or insurance.",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 9,
+    "timestamp": "2026-10-02T10:53:46.850298",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 39,
+     "prompt_tokens": 550
+    },
+    "generation_time_seconds": null,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-95db3ce5c05f7207",
+      "name": "get_user_details",
+      "arguments": {
+       "user_id": "ivan_muller_7015"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "is_audio": false,
+    "turn_idx": 10,
+    "timestamp": "2026-10-02T10:53:49.005950",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 30,
+     "prompt_tokens": 5946
+    },
+    "generation_time_seconds": 2.1448823153041303,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "id": "chatcmpl-tool-95db3ce5c05f7207",
+    "role": "tool",
+    "content": "{\"user_id\": \"ivan_muller_7015\", \"name\": {\"first_name\": \"Ivan\", \"last_name\": \"Muller\"}, \"address\": {\"address1\": \"256 Pine Lane\", \"address2\": \"Suite 661\", \"city\": \"New York\", \"country\": \"USA\", \"state\": \"NY\", \"zip\": \"10029\"}, \"email\": \"ivan.muller6623@example.com\", \"dob\": \"1968-04-25\", \"payment_methods\": {\"certificate_8998287\": {\"source\": \"certificate\", \"id\": \"certificate_8998287\", \"amount\": 500.0}, \"credit_card_3563913\": {\"source\": \"credit_card\", \"id\": \"credit_card_3563913\", \"brand\": \"mastercard\", \"last_four\": \"6710\"}, \"gift_card_8516878\": {\"source\": \"gift_card\", \"id\": \"gift_card_8516878\", \"amount\": 128.0}}, \"saved_passengers\": [{\"first_name\": \"Ivan\", \"last_name\": \"Smith\", \"dob\": \"1986-03-14\"}, {\"first_name\": \"Lucas\", \"last_name\": \"Davis\", \"dob\": \"1988-10-12\"}], \"membership\": \"gold\", \"reservations\": [\"G72NSF\"]}",
+    "requestor": "assistant",
+    "error": false,
+    "turn_idx": 11,
+    "timestamp": "2026-10-02T10:53:49.013985"
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-813acb4f1283ce64",
+      "name": "book_reservation",
+      "arguments": {
+       "user_id": "ivan_muller_7015",
+       "origin": "DTW",
+       "destination": "SEA",
+       "flight_type": "one_way",
+       "cabin": "economy",
+       "flights": [
+        {
+         "flight_number": "HAT097",
+         "date": "2024-05-17"
+        },
+        {
+         "flight_number": "HAT251",
+         "date": "2024-05-17"
+        }
+       ],
+       "passengers": [
+        {
+         "first_name": "Ivan",
+         "last_name": "Smith",
+         "dob": "1986-03-14"
+        }
+       ],
+       "payment_methods": [
+        {
+         "payment_id": "certificate_8998287",
+         "amount": 500
+        }
+       ],
+       "total_baggages": 0,
+       "nonfree_baggages": 0,
+       "insurance": "no"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "is_audio": false,
+    "turn_idx": 12,
+    "timestamp": "2026-10-02T10:54:05.144161",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 202,
+     "prompt_tokens": 6330
+    },
+    "generation_time_seconds": 16.118500323034823,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "id": "chatcmpl-tool-813acb4f1283ce64",
+    "role": "tool",
+    "content": "Error: Payment amount does not add up, total price is 375, but paid 500",
+    "requestor": "assistant",
+    "error": true,
+    "turn_idx": 13,
+    "timestamp": "2026-10-02T10:54:05.153823"
+   },
+   {
+    "role": "assistant",
+    "content": "The total price for the reservation is $375, but the certificate amount provided is $500. Would you like to adjust the payment method or the amount to match the total price?",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 14,
+    "timestamp": "2026-10-02T10:54:08.800721",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 41,
+     "prompt_tokens": 6568
+    },
+    "generation_time_seconds": 3.6363209881819785,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "role": "user",
+    "content": "Since the total price is $375, which is less than $400, I must use the gift card and credit card instead of the certificate, as per my instructions. Please proceed with the gift card and credit card for this booking.",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 15,
+    "timestamp": "2026-10-02T10:54:10.821282",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 52,
+     "prompt_tokens": 638
+    },
+    "generation_time_seconds": null,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-8d50fe528b153335",
+      "name": "book_reservation",
+      "arguments": {
+       "user_id": "ivan_muller_7015",
+       "origin": "DTW",
+       "destination": "SEA",
+       "flight_type": "one_way",
+       "cabin": "economy",
+       "flights": [
+        {
+         "flight_number": "HAT097",
+         "date": "2024-05-17"
+        },
+        {
+         "flight_number": "HAT251",
+         "date": "2024-05-17"
+        }
+       ],
+       "passengers": [
+        {
+         "first_name": "Ivan",
+         "last_name": "Smith",
+         "dob": "1986-03-14"
+        }
+       ],
+       "payment_methods": [
+        {
+         "payment_id": "gift_card_8516878",
+         "amount": 128
+        },
+        {
+         "payment_id": "credit_card_3563913",
+         "amount": 247
+        }
+       ],
+       "total_baggages": 0,
+       "nonfree_baggages": 0,
+       "insurance": "no"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "is_audio": false,
+    "turn_idx": 16,
+    "timestamp": "2026-10-02T10:54:29.245210",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 227,
+     "prompt_tokens": 6669
+    },
+    "generation_time_seconds": 18.41187896206975,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "id": "chatcmpl-tool-8d50fe528b153335",
+    "role": "tool",
+    "content": "{\"reservation_id\": \"HATHAT\", \"user_id\": \"ivan_muller_7015\", \"origin\": \"DTW\", \"destination\": \"SEA\", \"flight_type\": \"one_way\", \"cabin\": \"economy\", \"flights\": [{\"flight_number\": \"HAT097\", \"origin\": \"DTW\", \"destination\": \"PHX\", \"date\": \"2024-05-17\", \"price\": 175}, {\"flight_number\": \"HAT251\", \"origin\": \"PHX\", \"destination\": \"SEA\", \"date\": \"2024-05-17\", \"price\": 200}], \"passengers\": [{\"first_name\": \"Ivan\", \"last_name\": \"Smith\", \"dob\": \"1986-03-14\"}], \"payment_history\": [{\"payment_id\": \"gift_card_8516878\", \"amount\": 128}, {\"payment_id\": \"credit_card_3563913\", \"amount\": 247}], \"created_at\": \"2024-05-15T15:00:00\", \"total_baggages\": 0, \"nonfree_baggages\": 0, \"insurance\": \"no\", \"status\": null}",
+    "requestor": "assistant",
+    "error": false,
+    "turn_idx": 17,
+    "timestamp": "2026-10-02T10:54:29.253952"
+   },
+   {
+    "role": "assistant",
+    "content": "Your reservation has been successfully processed. Here are the details:\n\n- **Reservation ID:** HATHAT\n- **User ID:** ivan_muller_7015\n- **Origin:** DTW\n- **Destination:** SEA\n- **Flight Type:** One Way\n- **Cabin Class:** Economy\n- **Flights:**\n  - Flight Number: HAT097, Date: 2024-05-17, Origin: DTW, Destination: PHX, Price: $175\n  - Flight Number: HAT251, Date: 2024-05-17, Origin: PHX, Destination: SEA, Price: $200\n- **Passengers:**\n  - Ivan Smith, DOB: 1986-03-14\n- **Payment Methods:**\n  - Gift Card: $128\n  - Credit Card: $247\n- **Total Price:** $375\n- **Baggage:** 0\n- **Insurance:** No\n\nLet me know if you need any further assistance!",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 18,
+    "timestamp": "2026-10-02T10:54:46.327971",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 242,
+     "prompt_tokens": 7202
+    },
+    "generation_time_seconds": 17.063004651106894,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "role": "user",
+    "content": "###STOP###",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 19,
+    "timestamp": "2026-10-02T10:55:06.067132",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 4,
+     "prompt_tokens": 940
+    },
+    "generation_time_seconds": null,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   }
+  ],
+  "suffix_sha": "c45d6b5d7413850c7d786830b00a28f9c3041de603d367f6d5c014c3271869f1",
+  "n_messages": 20,
+  "decisions": [
+   {
+    "decision_idx": 0,
+    "forced": true,
+    "prompt_ids_sha": "180735e8244986038387b37d11b1238b4936a120dc8540b5ccd4c0eae6e99e57",
+    "n_prompt_tokens": 4907,
+    "prompt_ids_from_server": false,
+    "prompt_ids_match_local": null,
+    "completion_ids_sha": null,
+    "n_completion_tokens": null,
+    "finish_reason": null,
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-86bd9bfb73a7f375",
+      "name": "get_user_details",
+      "arguments": {
+       "user_id": "ivan_muller_7015"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "parser_error": null,
+    "system_sha256": "71d2d2d514d23ce6930e67705139667de4a3eaa3bf13859e5327b99a9e86d596",
+    "usage": null,
+    "wall_seconds": null,
+    "api_base": null
+   },
+   {
+    "decision_idx": 1,
+    "forced": false,
+    "prompt_ids_sha": "fd4e640ff19bbb0377b4626b688d86486df35e7f6d7df28d93ed498a5862e6b7",
+    "n_prompt_tokens": 5291,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "8ec1f68abd4877723098b2543f4fc1c68e8b930b5dc7670bcbb2f49e1a2cf061",
+    "n_completion_tokens": 26,
+    "finish_reason": "tool_calls",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-ab7eb4ab52eab8b6",
+      "name": "get_reservation_details",
+      "arguments": {
+       "reservation_id": "G72NSF"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "parser_error": false,
+    "system_sha256": "71d2d2d514d23ce6930e67705139667de4a3eaa3bf13859e5327b99a9e86d596",
+    "usage": {
+     "completion_tokens": 26,
+     "prompt_tokens": 5291,
+     "total_tokens": 5317,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 1.9832768440246582,
+    "api_base": "http://127.0.0.1:8105/v1"
+   },
+   {
+    "decision_idx": 2,
+    "forced": false,
+    "prompt_ids_sha": "d28f9b7c4aa3de84cafd66a7b3d3fafcf8b37ff2c581fd9c16f3304895d7e144",
+    "n_prompt_tokens": 5634,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "fdd3209961694382b958f77c0b7d7e7a2330c372e65b2b2aa6c26bf27680cdec",
+    "n_completion_tokens": 203,
+    "finish_reason": "tool_calls",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-8b706f2c931b6807",
+      "name": "book_reservation",
+      "arguments": {
+       "user_id": "ivan_muller_7015",
+       "origin": "DTW",
+       "destination": "SEA",
+       "flight_type": "one_way",
+       "cabin": "economy",
+       "flights": [
+        {
+         "flight_number": "HAT097",
+         "date": "2024-05-17"
+        },
+        {
+         "flight_number": "HAT251",
+         "date": "2024-05-17"
+        }
+       ],
+       "passengers": [
+        {
+         "first_name": "Ivan",
+         "last_name": "Smith",
+         "dob": "1986-03-14"
+        }
+       ],
+       "payment_methods": [
+        {
+         "payment_id": "gift_card_8516878",
+         "amount": 658
+        }
+       ],
+       "total_baggages": 2,
+       "nonfree_baggages": 0,
+       "insurance": "yes"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "parser_error": false,
+    "system_sha256": "71d2d2d514d23ce6930e67705139667de4a3eaa3bf13859e5327b99a9e86d596",
+    "usage": {
+     "completion_tokens": 203,
+     "prompt_tokens": 5634,
+     "total_tokens": 5837,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 16.490743398666382,
+    "api_base": "http://127.0.0.1:8105/v1"
+   },
+   {
+    "decision_idx": 3,
+    "forced": false,
+    "prompt_ids_sha": "d9944e88abd262d48704f03f5f0cac6cfe2fb101d628687ce4f4c8523dd24faf",
+    "n_prompt_tokens": 5868,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "5de915a038f49a8639c4a1cc805e5531bde9c7654606324c9a3719796d46a61f",
+    "n_completion_tokens": 31,
+    "finish_reason": "stop",
+    "content": "The gift card balance is insufficient to cover the reservation cost. Would you like to use a different payment method or add more funds to the gift card?",
+    "tool_calls": null,
+    "parser_error": false,
+    "system_sha256": "71d2d2d514d23ce6930e67705139667de4a3eaa3bf13859e5327b99a9e86d596",
+    "usage": {
+     "completion_tokens": 31,
+     "prompt_tokens": 5868,
+     "total_tokens": 5899,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 2.792344570159912,
+    "api_base": "http://127.0.0.1:8105/v1"
+   },
+   {
+    "decision_idx": 4,
+    "forced": false,
+    "prompt_ids_sha": "f10f62dc468bbf313bb2abc501e0403b65c639539b496f68756041fecdff36bc",
+    "n_prompt_tokens": 5946,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "bca18beb52a3dc3bcf1477ce9fc2b118cfc8be531a2e839a1b6eb73ef66d38f2",
+    "n_completion_tokens": 30,
+    "finish_reason": "tool_calls",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-95db3ce5c05f7207",
+      "name": "get_user_details",
+      "arguments": {
+       "user_id": "ivan_muller_7015"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "parser_error": false,
+    "system_sha256": "71d2d2d514d23ce6930e67705139667de4a3eaa3bf13859e5327b99a9e86d596",
+    "usage": {
+     "completion_tokens": 30,
+     "prompt_tokens": 5946,
+     "total_tokens": 5976,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 2.163473606109619,
+    "api_base": "http://127.0.0.1:8105/v1"
+   },
+   {
+    "decision_idx": 5,
+    "forced": false,
+    "prompt_ids_sha": "27c5fb81a14d42603defaeffb58d0f7734b58658dc1007067e880a66464ba3c9",
+    "n_prompt_tokens": 6330,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "5d551eb0e34f53ecbc7112b4843b3a0caebf2f8033c7cad5ea9470775980a54a",
+    "n_completion_tokens": 202,
+    "finish_reason": "tool_calls",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-813acb4f1283ce64",
+      "name": "book_reservation",
+      "arguments": {
+       "user_id": "ivan_muller_7015",
+       "origin": "DTW",
+       "destination": "SEA",
+       "flight_type": "one_way",
+       "cabin": "economy",
+       "flights": [
+        {
+         "flight_number": "HAT097",
+         "date": "2024-05-17"
+        },
+        {
+         "flight_number": "HAT251",
+         "date": "2024-05-17"
+        }
+       ],
+       "passengers": [
+        {
+         "first_name": "Ivan",
+         "last_name": "Smith",
+         "dob": "1986-03-14"
+        }
+       ],
+       "payment_methods": [
+        {
+         "payment_id": "certificate_8998287",
+         "amount": 500
+        }
+       ],
+       "total_baggages": 0,
+       "nonfree_baggages": 0,
+       "insurance": "no"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "parser_error": false,
+    "system_sha256": "71d2d2d514d23ce6930e67705139667de4a3eaa3bf13859e5327b99a9e86d596",
+    "usage": {
+     "completion_tokens": 202,
+     "prompt_tokens": 6330,
+     "total_tokens": 6532,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 16.13961124420166,
+    "api_base": "http://127.0.0.1:8105/v1"
+   },
+   {
+    "decision_idx": 6,
+    "forced": false,
+    "prompt_ids_sha": "c10258da98d96b5c07dc335962a6d88ae21587e6bd55cb7d5e0876f0b3df32d8",
+    "n_prompt_tokens": 6568,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "2053957ebdc72afa12e8bcf10839ae3d105bd56a15843658295aa4155d6dd93e",
+    "n_completion_tokens": 41,
+    "finish_reason": "stop",
+    "content": "The total price for the reservation is $375, but the certificate amount provided is $500. Would you like to adjust the payment method or the amount to match the total price?",
+    "tool_calls": null,
+    "parser_error": false,
+    "system_sha256": "71d2d2d514d23ce6930e67705139667de4a3eaa3bf13859e5327b99a9e86d596",
+    "usage": {
+     "completion_tokens": 41,
+     "prompt_tokens": 6568,
+     "total_tokens": 6609,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 3.65552020072937,
+    "api_base": "http://127.0.0.1:8105/v1"
+   },
+   {
+    "decision_idx": 7,
+    "forced": false,
+    "prompt_ids_sha": "ceb77db6f63dab7bdd9526ef95fa7b6eb31c7834dbcc0130b3b59569ac2295b5",
+    "n_prompt_tokens": 6669,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "3095c3edf3a30bc87bb88e1f8caaf966dee9dc10842d98154af85c9e8ed3fc07",
+    "n_completion_tokens": 227,
+    "finish_reason": "tool_calls",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-8d50fe528b153335",
+      "name": "book_reservation",
+      "arguments": {
+       "user_id": "ivan_muller_7015",
+       "origin": "DTW",
+       "destination": "SEA",
+       "flight_type": "one_way",
+       "cabin": "economy",
+       "flights": [
+        {
+         "flight_number": "HAT097",
+         "date": "2024-05-17"
+        },
+        {
+         "flight_number": "HAT251",
+         "date": "2024-05-17"
+        }
+       ],
+       "passengers": [
+        {
+         "first_name": "Ivan",
+         "last_name": "Smith",
+         "dob": "1986-03-14"
+        }
+       ],
+       "payment_methods": [
+        {
+         "payment_id": "gift_card_8516878",
+         "amount": 128
+        },
+        {
+         "payment_id": "credit_card_3563913",
+         "amount": 247
+        }
+       ],
+       "total_baggages": 0,
+       "nonfree_baggages": 0,
+       "insurance": "no"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "parser_error": false,
+    "system_sha256": "71d2d2d514d23ce6930e67705139667de4a3eaa3bf13859e5327b99a9e86d596",
+    "usage": {
+     "completion_tokens": 227,
+     "prompt_tokens": 6669,
+     "total_tokens": 6896,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 18.432377576828003,
+    "api_base": "http://127.0.0.1:8105/v1"
+   },
+   {
+    "decision_idx": 8,
+    "forced": false,
+    "prompt_ids_sha": "755546c45232b8449fb96dd08956f3073d3b5876f0e0b47cde44d0ab495b51bb",
+    "n_prompt_tokens": 7202,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "80c98b7953fcdaed7e8887b20881dce1dd01f7e342177ddd17c785a7f955cd8f",
+    "n_completion_tokens": 242,
+    "finish_reason": "stop",
+    "content": "Your reservation has been successfully processed. Here are the details:\n\n- **Reservation ID:** HATHAT\n- **User ID:** ivan_muller_7015\n- **Origin:** DTW\n- **Destination:** SEA\n- **Flight Type:** One Way\n- **Cabin Class:** Economy\n- **Flights:**\n  - Flight Number: HAT097, Date: 2024-05-17, Origin: DTW, Destination: PHX, Price: $175\n  - Flight Number: HAT251, Date: 2024-05-17, Origin: PHX, Destination: SEA, Price: $200\n- **Passengers:**\n  - Ivan Smith, DOB: 1986-03-14\n- **Payment Methods:**\n  - Gift Card: $128\n  - Credit Card: $247\n- **Total Price:** $375\n- **Baggage:** 0\n- **Insurance:** No\n\nLet me know if you need any further assistance!",
+    "tool_calls": null,
+    "parser_error": false,
+    "system_sha256": "71d2d2d514d23ce6930e67705139667de4a3eaa3bf13859e5327b99a9e86d596",
+    "usage": {
+     "completion_tokens": 242,
+     "prompt_tokens": 7202,
+     "total_tokens": 7444,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 17.08403968811035,
+    "api_base": "http://127.0.0.1:8105/v1"
+   }
+  ],
+  "duration": 112.69987368583679,
+  "sim_seed": 626729,
+  "n_user_msgs": 3,
+  "env_hash_replay": {
+   "db": "d0579b8ae59e360f8b63f84a55ac00a27a8d51a175b42b2e997f1f056a83e363",
+   "user_db": null
+  }
+ }
+}

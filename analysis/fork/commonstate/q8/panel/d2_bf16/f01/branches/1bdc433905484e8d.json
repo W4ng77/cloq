@@ -1,0 +1,880 @@
+{
+ "QB": {
+  "tag": "cs-QB-1bdc433905484e8d-QB",
+  "state_id": "f86f175588c35058",
+  "branch": "QB",
+  "first": "Q",
+  "controller": "B",
+  "controller_base": "http://127.0.0.1:8105/v1",
+  "termination_reason": "user_stop",
+  "reward": 0.0,
+  "db_match": false,
+  "official_reward": 0.0,
+  "env_assert_all": null,
+  "reward_info": {
+   "reward": 0.0,
+   "db_check": {
+    "db_match": false,
+    "db_reward": 0.0
+   },
+   "env_assertions": [],
+   "action_checks": [
+    {
+     "action": {
+      "action_id": "32_0",
+      "requestor": "assistant",
+      "name": "get_user_details",
+      "arguments": {
+       "user_id": "ivan_rossi_8555"
+      },
+      "info": null,
+      "compare_args": null
+     },
+     "action_match": true,
+     "action_reward": 1.0,
+     "tool_type": "read"
+    },
+    {
+     "action": {
+      "action_id": "32_1",
+      "requestor": "assistant",
+      "name": "get_reservation_details",
+      "arguments": {
+       "reservation_id": "OWZ4XL"
+      },
+      "info": null,
+      "compare_args": null
+     },
+     "action_match": true,
+     "action_reward": 1.0,
+     "tool_type": "read"
+    },
+    {
+     "action": {
+      "action_id": "32_2",
+      "requestor": "assistant",
+      "name": "search_direct_flight",
+      "arguments": {
+       "origin": "EWR",
+       "destination": "LAX",
+       "date": "2024-05-21"
+      },
+      "info": null,
+      "compare_args": null
+     },
+     "action_match": true,
+     "action_reward": 1.0,
+     "tool_type": "read"
+    },
+    {
+     "action": {
+      "action_id": "32_3",
+      "requestor": "assistant",
+      "name": "update_reservation_flights",
+      "arguments": {
+       "reservation_id": "OWZ4XL",
+       "cabin": "economy",
+       "flights": [
+        {
+         "flight_number": "HAT202",
+         "date": "2024-05-21"
+        },
+        {
+         "flight_number": "HAT232",
+         "date": "2024-05-21"
+        }
+       ],
+       "payment_id": "credit_card_9659780"
+      },
+      "info": null,
+      "compare_args": null
+     },
+     "action_match": false,
+     "action_reward": 0.0,
+     "tool_type": "write"
+    },
+    {
+     "action": {
+      "action_id": "32_4",
+      "requestor": "assistant",
+      "name": "update_reservation_flights",
+      "arguments": {
+       "reservation_id": "OWZ4XL",
+       "cabin": "economy",
+       "flights": [
+        {
+         "flight_number": "HAT041",
+         "date": "2024-05-21"
+        }
+       ],
+       "payment_id": "credit_card_9659780"
+      },
+      "info": null,
+      "compare_args": null
+     },
+     "action_match": true,
+     "action_reward": 1.0,
+     "tool_type": "write"
+    }
+   ],
+   "nl_assertions": null,
+   "communicate_checks": null,
+   "reward_basis": [
+    "DB",
+    "ENV_ASSERTION",
+    "ACTION",
+    "COMMUNICATE"
+   ],
+   "reward_breakdown": {
+    "DB": 0.0,
+    "ACTION": 0.0,
+    "COMMUNICATE": 1.0
+   },
+   "info": {
+    "env": null,
+    "nl": null,
+    "communicate": {
+     "note": "No communicate_info to evaluate"
+    },
+    "action": null
+   }
+  },
+  "step_count_final": 19,
+  "num_errors_final": 1,
+  "budget_recount": [
+   19,
+   1
+  ],
+  "prefix_ok": true,
+  "env_hash_init": {
+   "db": "124e39a664b56402bcd09cb8a6a9cece6acb8462337c969799d5658e3250f263",
+   "user_db": null
+  },
+  "env_hash_init_ok": true,
+  "counters_tau2_default": [
+   0,
+   0
+  ],
+  "to_role_at_init": "agent",
+  "env_hash_final": {
+   "db": "77798ab79a312034f5bd77c7be926fc46613e4b1bfde091d995175f5624cebc4",
+   "user_db": null
+  },
+  "suffix": [
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-85529212e2e43129",
+      "name": "get_user_details",
+      "arguments": {
+       "user_id": "ivan_rossi_123"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "is_audio": false,
+    "turn_idx": 2,
+    "timestamp": "2026-10-02T10:28:00.008843",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 29,
+     "prompt_tokens": 4929
+    },
+    "generation_time_seconds": 2.7995225433260202,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "id": "chatcmpl-tool-85529212e2e43129",
+    "role": "tool",
+    "content": "Error: User ivan_rossi_123 not found",
+    "requestor": "assistant",
+    "error": true,
+    "turn_idx": 3,
+    "timestamp": "2026-10-02T10:28:00.008920"
+   },
+   {
+    "role": "assistant",
+    "content": "I apologize for the inconvenience. It seems there was an issue retrieving your user details. Could you please provide your user ID or any other details that might help me locate your reservation?",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 4,
+    "timestamp": "2026-10-02T10:28:02.936077",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 37,
+     "prompt_tokens": 4985
+    },
+    "generation_time_seconds": 2.9062985740602016,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "role": "user",
+    "content": "Sure, my user ID is ivan_rossi_8555. Let me know if you need anything else to locate my reservation.",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 5,
+    "timestamp": "2026-10-02T10:28:04.309514",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 31,
+     "prompt_tokens": 583
+    },
+    "generation_time_seconds": null,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-b9002c30742bac07",
+      "name": "get_user_details",
+      "arguments": {
+       "user_id": "ivan_rossi_8555"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "is_audio": false,
+    "turn_idx": 6,
+    "timestamp": "2026-10-02T10:28:06.768804",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 30,
+     "prompt_tokens": 5061
+    },
+    "generation_time_seconds": 2.4505541380494833,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "id": "chatcmpl-tool-b9002c30742bac07",
+    "role": "tool",
+    "content": "{\"user_id\": \"ivan_rossi_8555\", \"name\": {\"first_name\": \"Ivan\", \"last_name\": \"Rossi\"}, \"address\": {\"address1\": \"513 Main Street\", \"address2\": \"Suite 805\", \"city\": \"Philadelphia\", \"country\": \"USA\", \"state\": \"PA\", \"zip\": \"19102\"}, \"email\": \"ivan.rossi2633@example.com\", \"dob\": \"1954-01-14\", \"payment_methods\": {\"gift_card_7344518\": {\"source\": \"gift_card\", \"id\": \"gift_card_7344518\", \"amount\": 183.0}, \"gift_card_9823297\": {\"source\": \"gift_card\", \"id\": \"gift_card_9823297\", \"amount\": 224.0}, \"credit_card_9659780\": {\"source\": \"credit_card\", \"id\": \"credit_card_9659780\", \"brand\": \"visa\", \"last_four\": \"1777\"}}, \"saved_passengers\": [{\"first_name\": \"Ava\", \"last_name\": \"Silva\", \"dob\": \"1971-01-14\"}, {\"first_name\": \"Anya\", \"last_name\": \"Patel\", \"dob\": \"1990-06-13\"}], \"membership\": \"silver\", \"reservations\": [\"OWZ4XL\", \"F3IQK1\", \"8WMF4C\", \"L2H5FP\"]}",
+    "requestor": "assistant",
+    "error": false,
+    "turn_idx": 7,
+    "timestamp": "2026-10-02T10:28:06.775688"
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-b58caa045c9d1861",
+      "name": "get_reservation_details",
+      "arguments": {
+       "reservation_id": "OWZ4XL"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "is_audio": false,
+    "turn_idx": 8,
+    "timestamp": "2026-10-02T10:28:09.066357",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 25,
+     "prompt_tokens": 5468
+    },
+    "generation_time_seconds": 2.27462300658226,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "id": "chatcmpl-tool-b58caa045c9d1861",
+    "role": "tool",
+    "content": "{\"reservation_id\": \"OWZ4XL\", \"user_id\": \"ivan_rossi_8555\", \"origin\": \"EWR\", \"destination\": \"LAX\", \"flight_type\": \"one_way\", \"cabin\": \"basic_economy\", \"flights\": [{\"flight_number\": \"HAT202\", \"origin\": \"EWR\", \"destination\": \"MIA\", \"date\": \"2024-05-21\", \"price\": 94}, {\"flight_number\": \"HAT232\", \"origin\": \"MIA\", \"destination\": \"LAX\", \"date\": \"2024-05-21\", \"price\": 80}], \"passengers\": [{\"first_name\": \"Ivan\", \"last_name\": \"Rossi\", \"dob\": \"1954-01-14\"}, {\"first_name\": \"Olivia\", \"last_name\": \"Santos\", \"dob\": \"1984-06-23\"}, {\"first_name\": \"Lei\", \"last_name\": \"Johansson\", \"dob\": \"1995-10-22\"}], \"payment_history\": [{\"payment_id\": \"gift_card_9823297\", \"amount\": 522}], \"created_at\": \"2024-05-09T13:43:03\", \"total_baggages\": 0, \"nonfree_baggages\": 0, \"insurance\": \"no\", \"status\": null}",
+    "requestor": "assistant",
+    "error": false,
+    "turn_idx": 9,
+    "timestamp": "2026-10-02T10:28:09.073110"
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-b141f7694ee4a75a",
+      "name": "search_direct_flight",
+      "arguments": {
+       "origin": "EWR",
+       "destination": "LAX",
+       "date": "2024-05-21"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "is_audio": false,
+    "turn_idx": 10,
+    "timestamp": "2026-10-02T10:28:12.775690",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 44,
+     "prompt_tokens": 5842
+    },
+    "generation_time_seconds": 3.6939002629369497,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "id": "chatcmpl-tool-b141f7694ee4a75a",
+    "role": "tool",
+    "content": "[{\"flight_number\": \"HAT041\", \"origin\": \"EWR\", \"destination\": \"LAX\", \"status\": \"available\", \"scheduled_departure_time_est\": \"07:00:00\", \"scheduled_arrival_time_est\": \"12:30:00\", \"date\": null, \"available_seats\": {\"basic_economy\": 7, \"economy\": 15, \"business\": 19}, \"prices\": {\"basic_economy\": 53, \"economy\": 136, \"business\": 458}}]",
+    "requestor": "assistant",
+    "error": false,
+    "turn_idx": 11,
+    "timestamp": "2026-10-02T10:28:12.783100"
+   },
+   {
+    "role": "assistant",
+    "content": "I found a direct flight from EWR to LAX on May 21, flight number HAT041, departing at 07:00 AM and arriving at 12:30 PM. The available cabin classes are basic economy, economy, and business with prices of $53, $136, and $458 respectively. Would you like to proceed with this flight?",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 12,
+    "timestamp": "2026-10-02T10:28:19.321478",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 86,
+     "prompt_tokens": 6027
+    },
+    "generation_time_seconds": 6.529247807338834,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "role": "user",
+    "content": "Yes, I’d like to change to that nonstop flight. However, I currently have a basic economy ticket, and I’m willing to upgrade to economy to make this change. I’m also willing to pay up to $100 for the change. Could you please upgrade me to economy first and confirm that change?",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 13,
+    "timestamp": "2026-10-02T10:28:30.189313",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 66,
+     "prompt_tokens": 708
+    },
+    "generation_time_seconds": null,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-b77dd7953a14264b",
+      "name": "update_reservation_flights",
+      "arguments": {
+       "reservation_id": "OWZ4XL",
+       "cabin": "economy",
+       "flights": [
+        {
+         "flight_number": "HAT041",
+         "date": "2024-05-21"
+        }
+       ],
+       "payment_id": "credit_card_9659780"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "is_audio": false,
+    "turn_idx": 14,
+    "timestamp": "2026-10-02T10:28:37.849521",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 81,
+     "prompt_tokens": 6187
+    },
+    "generation_time_seconds": 7.6498413272202015,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "id": "chatcmpl-tool-b77dd7953a14264b",
+    "role": "tool",
+    "content": "{\"reservation_id\": \"OWZ4XL\", \"user_id\": \"ivan_rossi_8555\", \"origin\": \"EWR\", \"destination\": \"LAX\", \"flight_type\": \"one_way\", \"cabin\": \"economy\", \"flights\": [{\"flight_number\": \"HAT041\", \"origin\": \"EWR\", \"destination\": \"LAX\", \"date\": \"2024-05-21\", \"price\": 136}], \"passengers\": [{\"first_name\": \"Ivan\", \"last_name\": \"Rossi\", \"dob\": \"1954-01-14\"}, {\"first_name\": \"Olivia\", \"last_name\": \"Santos\", \"dob\": \"1984-06-23\"}, {\"first_name\": \"Lei\", \"last_name\": \"Johansson\", \"dob\": \"1995-10-22\"}], \"payment_history\": [{\"payment_id\": \"gift_card_9823297\", \"amount\": 522}, {\"payment_id\": \"credit_card_9659780\", \"amount\": -114}], \"created_at\": \"2024-05-09T13:43:03\", \"total_baggages\": 0, \"nonfree_baggages\": 0, \"insurance\": \"no\", \"status\": null}",
+    "requestor": "assistant",
+    "error": false,
+    "turn_idx": 15,
+    "timestamp": "2026-10-02T10:28:37.857458"
+   },
+   {
+    "role": "assistant",
+    "content": "The upgrade to economy class has been confirmed for your flight HAT041 on May 21. The price for the economy class is $136, and the difference of $114 has been refunded to your credit card. Your reservation details have been updated. Is there anything else I can assist you with?",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 16,
+    "timestamp": "2026-10-02T10:28:44.098258",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 68,
+     "prompt_tokens": 6594
+    },
+    "generation_time_seconds": 6.230227949097753,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "role": "user",
+    "content": "Thank you for confirming the upgrade to economy. I appreciate that. Now, could you please confirm that the flight has been changed to the nonstop option (HAT041) on May 21? I’d like to verify that this change is fully completed.",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 17,
+    "timestamp": "2026-10-02T10:29:08.068830",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 56,
+     "prompt_tokens": 850
+    },
+    "generation_time_seconds": null,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "role": "assistant",
+    "content": "Your flight has been successfully changed to the nonstop option, flight number HAT041, on May 21. The upgrade to economy class is confirmed, and the change is fully completed. If you have any further questions or need additional assistance, feel free to ask. Safe travels!",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 18,
+    "timestamp": "2026-10-02T10:29:12.682687",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 61,
+     "prompt_tokens": 6726
+    },
+    "generation_time_seconds": 4.603437488898635,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   },
+   {
+    "role": "user",
+    "content": "###STOP###",
+    "tool_calls": null,
+    "is_audio": false,
+    "turn_idx": 19,
+    "timestamp": "2026-10-02T10:29:13.616786",
+    "cost": 0.0,
+    "usage": {
+     "completion_tokens": 4,
+     "prompt_tokens": 975
+    },
+    "generation_time_seconds": null,
+    "audio_format": null,
+    "audio_path": null,
+    "audio_script_gold": null,
+    "speech_effects": null,
+    "source_effects": null,
+    "channel_effects": null,
+    "turn_taking_action": null,
+    "utterance_ids": null,
+    "chunk_id": null,
+    "is_final_chunk": true,
+    "source": null,
+    "contains_speech": true
+   }
+  ],
+  "suffix_sha": "d00fba15cc669ae914b35d7941642c920bd8175f0325ad6be16f48fd636fb880",
+  "n_messages": 20,
+  "decisions": [
+   {
+    "decision_idx": 0,
+    "forced": true,
+    "prompt_ids_sha": "5d5d5a0f9e85616e0fb329d9020a71e54bee92b205887c8b1183fafa57736e91",
+    "n_prompt_tokens": 4929,
+    "prompt_ids_from_server": false,
+    "prompt_ids_match_local": null,
+    "completion_ids_sha": null,
+    "n_completion_tokens": null,
+    "finish_reason": null,
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-85529212e2e43129",
+      "name": "get_user_details",
+      "arguments": {
+       "user_id": "ivan_rossi_123"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "parser_error": null,
+    "system_sha256": "93c931bb95288e8b77a7b2dd2e9f736b566e6d1afed0a371d77a9e94301d9242",
+    "usage": null,
+    "wall_seconds": null,
+    "api_base": null
+   },
+   {
+    "decision_idx": 1,
+    "forced": false,
+    "prompt_ids_sha": "81ae4afe61cf45ce4e5e70d5b46105a3016e089d4f05d9fcc443affc4199b872",
+    "n_prompt_tokens": 4985,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "f599ee3b4222a1b89394eb48a624ce7d5e6682d0d0ac0f57f6f26e22d9e88e78",
+    "n_completion_tokens": 37,
+    "finish_reason": "stop",
+    "content": "I apologize for the inconvenience. It seems there was an issue retrieving your user details. Could you please provide your user ID or any other details that might help me locate your reservation?",
+    "tool_calls": null,
+    "parser_error": false,
+    "system_sha256": "93c931bb95288e8b77a7b2dd2e9f736b566e6d1afed0a371d77a9e94301d9242",
+    "usage": {
+     "completion_tokens": 37,
+     "prompt_tokens": 4985,
+     "total_tokens": 5022,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 2.9335012435913086,
+    "api_base": "http://127.0.0.1:8105/v1"
+   },
+   {
+    "decision_idx": 2,
+    "forced": false,
+    "prompt_ids_sha": "2362e6c1eab792c3ef38a2bad804a20e3ed53854ee8c4c082b0412323d3d995c",
+    "n_prompt_tokens": 5061,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "a2ff6b8ca2318c4928f4794d15f2921c55c1f153aeed3097fcd019cb870fe6e9",
+    "n_completion_tokens": 30,
+    "finish_reason": "tool_calls",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-b9002c30742bac07",
+      "name": "get_user_details",
+      "arguments": {
+       "user_id": "ivan_rossi_8555"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "parser_error": false,
+    "system_sha256": "93c931bb95288e8b77a7b2dd2e9f736b566e6d1afed0a371d77a9e94301d9242",
+    "usage": {
+     "completion_tokens": 30,
+     "prompt_tokens": 5061,
+     "total_tokens": 5091,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 2.465980291366577,
+    "api_base": "http://127.0.0.1:8105/v1"
+   },
+   {
+    "decision_idx": 3,
+    "forced": false,
+    "prompt_ids_sha": "b4f16a6a4d9d92fcc28346566e41cfc878ec8b65378b2ccca655ddcd02d71760",
+    "n_prompt_tokens": 5468,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "0d7bba264c8d0776c343e7a1c9868a098bd8c4e4dc58e0365127709986ab3405",
+    "n_completion_tokens": 25,
+    "finish_reason": "tool_calls",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-b58caa045c9d1861",
+      "name": "get_reservation_details",
+      "arguments": {
+       "reservation_id": "OWZ4XL"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "parser_error": false,
+    "system_sha256": "93c931bb95288e8b77a7b2dd2e9f736b566e6d1afed0a371d77a9e94301d9242",
+    "usage": {
+     "completion_tokens": 25,
+     "prompt_tokens": 5468,
+     "total_tokens": 5493,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 2.2972664833068848,
+    "api_base": "http://127.0.0.1:8105/v1"
+   },
+   {
+    "decision_idx": 4,
+    "forced": false,
+    "prompt_ids_sha": "6ce6924a523a7d2ee56369beabeae22f390838895885daf874346fee6c7512ac",
+    "n_prompt_tokens": 5842,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "88514fee5a47fd5783dfe29932673ea7f9587ba8789f7b592033cbf10223c4f6",
+    "n_completion_tokens": 44,
+    "finish_reason": "tool_calls",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-b141f7694ee4a75a",
+      "name": "search_direct_flight",
+      "arguments": {
+       "origin": "EWR",
+       "destination": "LAX",
+       "date": "2024-05-21"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "parser_error": false,
+    "system_sha256": "93c931bb95288e8b77a7b2dd2e9f736b566e6d1afed0a371d77a9e94301d9242",
+    "usage": {
+     "completion_tokens": 44,
+     "prompt_tokens": 5842,
+     "total_tokens": 5886,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 3.7097160816192627,
+    "api_base": "http://127.0.0.1:8105/v1"
+   },
+   {
+    "decision_idx": 5,
+    "forced": false,
+    "prompt_ids_sha": "d3533458995cc470dffee4e7838f571cc37eb2115013c2ce5841f80530e8d979",
+    "n_prompt_tokens": 6027,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "285d965dedea78bcf7e8763030f43e90553db3f17e58decebe438c4cc83d311a",
+    "n_completion_tokens": 86,
+    "finish_reason": "stop",
+    "content": "I found a direct flight from EWR to LAX on May 21, flight number HAT041, departing at 07:00 AM and arriving at 12:30 PM. The available cabin classes are basic economy, economy, and business with prices of $53, $136, and $458 respectively. Would you like to proceed with this flight?",
+    "tool_calls": null,
+    "parser_error": false,
+    "system_sha256": "93c931bb95288e8b77a7b2dd2e9f736b566e6d1afed0a371d77a9e94301d9242",
+    "usage": {
+     "completion_tokens": 86,
+     "prompt_tokens": 6027,
+     "total_tokens": 6113,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 6.546160936355591,
+    "api_base": "http://127.0.0.1:8105/v1"
+   },
+   {
+    "decision_idx": 6,
+    "forced": false,
+    "prompt_ids_sha": "b641602f7cc6ca38ae04dffabeb5b909f5f9bba065a39cc9697439fdc1802042",
+    "n_prompt_tokens": 6187,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "a6a5219fff288c9ab38bed401720c86b3633f5c06d670db06a11f0552c28ad9e",
+    "n_completion_tokens": 81,
+    "finish_reason": "tool_calls",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "chatcmpl-tool-b77dd7953a14264b",
+      "name": "update_reservation_flights",
+      "arguments": {
+       "reservation_id": "OWZ4XL",
+       "cabin": "economy",
+       "flights": [
+        {
+         "flight_number": "HAT041",
+         "date": "2024-05-21"
+        }
+       ],
+       "payment_id": "credit_card_9659780"
+      },
+      "requestor": "assistant"
+     }
+    ],
+    "parser_error": false,
+    "system_sha256": "93c931bb95288e8b77a7b2dd2e9f736b566e6d1afed0a371d77a9e94301d9242",
+    "usage": {
+     "completion_tokens": 81,
+     "prompt_tokens": 6187,
+     "total_tokens": 6268,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 7.667913436889648,
+    "api_base": "http://127.0.0.1:8105/v1"
+   },
+   {
+    "decision_idx": 7,
+    "forced": false,
+    "prompt_ids_sha": "3d3f57d8038aceb78d234fe548e58ffd7e02af52373de16b068880d537e9d914",
+    "n_prompt_tokens": 6594,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "11046b336b39a8cc5f4e25cb10b5c29443bb1e255da7e38509942b36379b6a27",
+    "n_completion_tokens": 68,
+    "finish_reason": "stop",
+    "content": "The upgrade to economy class has been confirmed for your flight HAT041 on May 21. The price for the economy class is $136, and the difference of $114 has been refunded to your credit card. Your reservation details have been updated. Is there anything else I can assist you with?",
+    "tool_calls": null,
+    "parser_error": false,
+    "system_sha256": "93c931bb95288e8b77a7b2dd2e9f736b566e6d1afed0a371d77a9e94301d9242",
+    "usage": {
+     "completion_tokens": 68,
+     "prompt_tokens": 6594,
+     "total_tokens": 6662,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 6.24902606010437,
+    "api_base": "http://127.0.0.1:8105/v1"
+   },
+   {
+    "decision_idx": 8,
+    "forced": false,
+    "prompt_ids_sha": "e1f3b6da3acf427d4d931ad62fcc5519c287d84a6d8d98f90f330e4c53d410c2",
+    "n_prompt_tokens": 6726,
+    "prompt_ids_from_server": true,
+    "prompt_ids_match_local": true,
+    "completion_ids_sha": "de96fe10e1a93be31209e1cad7a0b5393f4fd7d0ad1452a052af21c52c650596",
+    "n_completion_tokens": 61,
+    "finish_reason": "stop",
+    "content": "Your flight has been successfully changed to the nonstop option, flight number HAT041, on May 21. The upgrade to economy class is confirmed, and the change is fully completed. If you have any further questions or need additional assistance, feel free to ask. Safe travels!",
+    "tool_calls": null,
+    "parser_error": false,
+    "system_sha256": "93c931bb95288e8b77a7b2dd2e9f736b566e6d1afed0a371d77a9e94301d9242",
+    "usage": {
+     "completion_tokens": 61,
+     "prompt_tokens": 6726,
+     "total_tokens": 6787,
+     "completion_tokens_details": null,
+     "prompt_tokens_details": null
+    },
+    "wall_seconds": 4.621816873550415,
+    "api_base": "http://127.0.0.1:8105/v1"
+   }
+  ],
+  "duration": 73.7314121723175,
+  "sim_seed": 626729,
+  "n_user_msgs": 4,
+  "env_hash_replay": {
+   "db": "77798ab79a312034f5bd77c7be926fc46613e4b1bfde091d995175f5624cebc4",
+   "user_db": null
+  }
+ }
+}
