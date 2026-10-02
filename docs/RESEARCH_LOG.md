@@ -10,6 +10,21 @@ Newest first.
 
 ---
 
+## W99l — Same-precision 2×2 results (INTERIM, K = 6 blocks f01–f06): turnover and controller dependence are not precision-specific (2026-10-02 06:30 PDT)
+**TL;DR** On the pre-registered analysis set so far (f01–f06, q4+q8, 85 tasks per block), replacing BF16 with a second GPTQ-W4 calibration draw (Q′) gives the same turnover. Precision M is 16.8 [13.9, 19.6]% and same-precision M′ is 17.7 [15.7, 19.8]%. The paired ΔM is −1.0 [−3.9, +1.9] pp (t over 6 blocks; crossed −4.5 to +2.7). The off-diagonal share is 25.0% vs 26.2%, Δ −1.2 [−4.9, +2.5] pp (descriptive). Frozen reading (§6): **similar on both** → the paper must say that turnover and controller dependence largely reflect generic trajectory sensitivity of the closed loop rather than precision-specific effects. This is interim: the prefix will grow as q8 g3–g6 complete before the 2026-10-03 freeze.
+- **Divergence rate.** 76.9% in both designs (q4 65.3% vs 68.0% precision; q8 88.4% vs 85.7%). Q′ and Q differ in tool structure about as often as BF16 and Q.
+- **Per cell (secondary).**
+  - q4: ΔM +0.6 [−3.1, +4.3]; Δoff −2.9 [−9.7, +4.1].
+  - q8: ΔM −2.5 [−5.6, +0.5]; Δoff +0.5 [−2.8, +3.6].
+  - Both cells read "similar".
+- **Divergent states (pool).**
+  - Same-precision: G′ +0.6, H′ −0.3, F′ −0.3, I +0.6 pp; strict reversals 3.7% (precision 2.6%).
+  - 3×3 off-diagonal mass: 201/784 states (precision 194/784).
+- **Per state, conditional on divergence in both designs.** Off-diagonal share precision 24.8% vs same-precision 26.1% (n 697). At the same t*: 27.3% vs 26.9% (n 404).
+- **Acceptance.** QQ no-op samples 146/146. Q replay 784/784 states. Prefix and env-hash checks 2437/2437 branches. 0 quarantined directories.
+
+Evidence: `analysis/fork/out/sameprec_20261002T125556Z.{md,json}` (protocol sha 5c58d1e7… verified by the script), fork outputs `analysis/fork/sameprec/{q4,q8}_gptq_w4_d1_vs_d2/g*/` (cluster), queue `done/fork_sameprec_*`.
+
 ## W99q — m24 results: none yet; the formal panel is not queued because the gate is incomplete (2026-10-02 04:10 PDT)
 **TL;DR** No formal m24 results exist, so no G/H/F, rescue/damage, turnover, interaction or interval is reported. The W99p gate's fork checks are blocked on infrastructure (a runner restart onto the multi-pair noderunner), and the protocol queues the panel only after the gate passes.
 - **Once the four fork gates pass:**
