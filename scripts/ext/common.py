@@ -39,7 +39,7 @@ ADAPTER_VERSION = "ext-v1"
 class ChatError(Exception):
     def __init__(self, kind: str, msg: str):
         super().__init__(f"{kind}: {msg}")
-        self.kind = kind  # "context_overflow" (the agent's doing: a task failure) | "outage" (infrastructure)
+        self.kind = kind  # "context_overflow" | "agent_parse_error" (the agent's doing: a task failure) | "outage" (infrastructure)
 
 
 def sha256_text(s: str) -> str:
@@ -84,6 +84,10 @@ def chat(base: str, messages: list[dict], tools: list[dict] | None, timeout: flo
             if e.code == 400 and ("context length" in txt or "maximum context" in txt or "max_model_len" in txt
                                   or "too long" in txt or "exceeds" in txt):
                 raise ChatError("context_overflow", txt)
+            if "only supports single tool-calls" in txt:
+                # W99f: the Llama-3.1 chat template refuses to render an assistant turn with several tool calls (the agent's
+                # own earlier output); an agent failure like W27 in tau2, never an outage. Never raised for Qwen.
+                raise ChatError("agent_parse_error", txt)
             last = f"HTTP {e.code}: {txt}"
             if e.code < 500:
                 raise ChatError("outage", last)
