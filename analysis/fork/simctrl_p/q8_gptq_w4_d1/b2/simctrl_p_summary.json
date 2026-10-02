@@ -1,0 +1,232 @@
+{
+ "protocol": "simctrl_p_v1 (W97)",
+ "manifest_sha256": "fa3dbf366b8584d837cc5231378e683f4a39615b024b662e5bbbb9d79e5a48a3",
+ "spec": {
+  "mode": "simctrl_p",
+  "manifest": "manifests/fork/simctrl_p_v1.json",
+  "manifest_sha256": "fa3dbf366b8584d837cc5231378e683f4a39615b024b662e5bbbb9d79e5a48a3",
+  "model": "q8",
+  "cell": "gptq_w4_d1",
+  "unit_ids": [
+   "245926096fbe89e2",
+   "dff29a4e8d0669fc",
+   "b4ddea7824e177f1",
+   "831644c73a3680c7",
+   "7f0cc1ce7abd81da",
+   "ad7697d4688030cb",
+   "b46edb9cd869d39d",
+   "bb65a9a331e6cf12",
+   "de8c967c29930a35",
+   "50bff6201ea4b687"
+  ],
+  "user_llm": {
+   "provider": "relay",
+   "model": "claude-sonnet-5-5 (headless claude -p, one clean call per user turn)",
+   "protocol": "simrelay-v2",
+   "max_tokens": 512
+  },
+  "arms": [
+   "BB",
+   "BQ",
+   "QB",
+   "QQ"
+  ],
+  "replicates": 5,
+  "concurrency": 5,
+  "out": "analysis/fork/simctrl_p/q8_gptq_w4_d1/b2"
+ },
+ "servers": {
+  "B": {
+   "gpu": "4",
+   "port": 8105,
+   "pid": 3948340,
+   "ckpt": {
+    "kind": "bf16"
+   },
+   "path": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "4",
+    "8105",
+    "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.90",
+   "hook_coverage": null,
+   "canary": "e340c7991fa5bc08",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-8B",
+     "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+     "chat_template_kwargs": {
+      "enable_thinking": false
+     }
+    },
+    "weights": "Qwen/Qwen3-8B@b968826d9c46dd6066d109eabc6255188de91218",
+    "ckpt": {
+     "kind": "bf16"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 16,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "0d4bf272db1da1c5",
+   "canary_ref_ok": true
+  },
+  "Q": {
+   "gpu": "5",
+   "port": 8205,
+   "pid": 3949909,
+   "ckpt": {
+    "kind": "gptq",
+    "wbits": 4,
+    "calib": "manifests/a6k2/q8/calib_fp_traj_c1.json"
+   },
+   "path": "/tmp/cloq_49673/ckpt_simctrl_p_b2_q8_gptq_w4_d1_Q",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "5",
+    "8205",
+    "/tmp/cloq_49673/ckpt_simctrl_p_b2_q8_gptq_w4_d1_Q",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.90",
+   "hook_coverage": null,
+   "canary": "a9f812fb17241b72",
+   "ckpt_sha256": "6ee628e67194f0c073cb8efe917eaa083fe53281f507a48b1d6146f636e10d70",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-8B",
+     "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+     "chat_template_kwargs": {
+      "enable_thinking": false
+     }
+    },
+    "weights": "sha256:6ee628e67194f0c073cb8efe917eaa083fe53281f507a48b1d6146f636e10d70",
+    "ckpt": {
+     "kind": "gptq",
+     "wbits": 4,
+     "calib": "manifests/a6k2/q8/calib_fp_traj_c1.json"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 4,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "cd7c70f5e9fe40d4"
+  },
+  "same_effective_config": false,
+  "q_quantization": {
+   "method": "GPTQ",
+   "wbits": 4,
+   "group_size": 128,
+   "sym": false,
+   "percdamp": 0.01,
+   "blocksize": 128,
+   "act_order": true,
+   "true_sequential": true,
+   "source_model": "Qwen/Qwen3-8B",
+   "source_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+   "storage": "fake-quant bf16",
+   "calibration_manifest": "/data/ziyangs/cloq/manifests/a6k2/q8/calib_fp_traj_c1.json",
+   "moe_experts": null,
+   "calibration": {
+    "protocol": "v1",
+    "arm": "fp_traj",
+    "draw": "c1",
+    "draw_seed": 20260729,
+    "budget_rows": 64000,
+    "total_rows": 64000,
+    "rows_within_budget": true,
+    "n_states": 57,
+    "n_tasks": 57,
+    "rows_per_state_min": 1122,
+    "rows_per_state_max": 1123,
+    "median_context_tokens": 6310.0,
+    "total_context_tokens": 401883,
+    "states_by_source": {
+     "fp": 57
+    },
+    "states_by_depth_quartile": {
+     "0": 15,
+     "1": 14,
+     "2": 13,
+     "3": 15
+    },
+    "states_by_domain": {
+     "retail": 39,
+     "airline": 18
+    },
+    "fp_run": "a6k2_q8_bf16_cal",
+    "q_run": null,
+    "novelty": null,
+    "notes": [],
+    "split_file_sha256": "7d1671154c37375990fd01999df2257e1bef916ee8201158b850846876315a79",
+    "manifest_sha256": "f371bcafe843e95327a3f7bc72325862405ead830bf456fea172656ebb9fc108"
+   },
+   "seconds_quantize": 618.8875970840454,
+   "n_expert_tensors_rtn": 0
+  },
+  "user_base": "http://127.0.0.1:8000/v1",
+  "host": "node007",
+  "job": "49673"
+ },
+ "n_units": 10,
+ "n_ran": 10,
+ "n_state_ok": 10,
+ "n_missing": 0,
+ "n_errors": 0,
+ "n_skipped_dry": 0,
+ "n_branches": 200,
+ "n_arm_errors": 0,
+ "n_unexposed": 5,
+ "unexposed_by_arm": {
+  "QB": 5
+ },
+ "protocol_ok": true,
+ "protocol_failures": [],
+ "termination": {
+  "user_stop": 183,
+  "max_steps": 7,
+  "too_many_errors": 10
+ },
+ "user_llm_usage": {
+  "n_calls": 1047,
+  "n_errors": 0,
+  "cost_usd": 12.2709228
+ },
+ "seconds": 2950.2171342372894,
+ "dry": false,
+ "pass": true
+}

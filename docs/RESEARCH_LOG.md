@@ -10,6 +10,28 @@ Newest first.
 
 ---
 
+## W99a — Bank P four-arm simulator control: final result (80 states) and paper integration (2026-10-01 19:00 PDT)
+**TL;DR** On 80 outcome-blind Bank P states (20 per core W4 cell, BB/BQ/QB/QQ × 5, Sonnet 5.5 as the user via isolated single calls), the per-state arm outcomes track the originals (r 0.63–0.68). Pooled under Sonnet: G −3.0 [−10.2, +4.8], H +5.5 [+0.0, +11.2], **G−H −8.5 [−14.8, −2.8]**. On the same states under the original simulator, G−H is −2.5 [−11.2, +6.2] (change −6.0 [−16.2, +4.2]). The sample cannot test the few-pp W93 contrasts: even the original gives G−H = 0.0 in both q8 W4 cells here. **The within-cell G−H orderings of R2 are therefore labelled simulator-specific.**
+- **Integrity:**
+  - 1,600 branches; 0 arm errors, 0 missing; v2 checks 1580/1580.
+  - 7,896 unique request ids; daemon: 0 gave up, 0 rejected; cost $85.62.
+  - Unexposed branches: 20 (BB 10, QB 10, on 3 states). The sensitivity analysis excluding them is unchanged (G−H −8.6).
+- **Within-arm replicate disagreement:** 17–28 of 80 states per arm. Arm success is higher under Sonnet (pooled 38–42% → 50–58%).
+- **Paper edits:**
+  - R3: new paragraph "Sensitivity of the four-arm results".
+  - R2: G−H marked exploratory and not reproduced under a second simulator.
+  - Intro: R2/R3/R4 bullets updated (holdout, simulator, token).
+  - Discussion: "Which part to replace" qualified; "What we do not claim" moved to Limitations.
+  - Limitations: rewritten as "two small controls".
+  - R1: the concentration test is reported as passed on the holdout (S2).
+  - Trimmed to fit: the main text ends on p. 8. `check_numbers.py` PASS; 0 overfull, 0 undefined.
+- **Bug fixed:** three sentences had been swallowed by inline `% src:` comments and never appeared in the PDF: limitations (simulator scope; annotation agreement) and method (more nonce blocks). They are restored.
+- **Evidence:**
+  - `analysis/fork/out/simctrl_p_20261002T015200Z.{md,json}`
+  - `analysis/fork/simctrl_p/<cell>/b{1,2}/` (rows, summaries, branches)
+  - `manifests/fork/simctrl_p_v1.json`
+  - `/data/ziyangs/cloq_work/logs/simrelay_cli.log`
+
 ## W98b — Telecom holdout: pre-registered confirmatory analysis (2026-10-01 18:25 PDT)
 **TL;DR** G_all = −4.57 pp, crossed 90% [−7.17, −1.96] (block-t [−6.08, −3.05]). The **pre-registered reading is inconclusive**: §6 defines only positive gain, gain above 3 pp and small effect, with no negative category. Descriptively the interval lies entirely below 0, so on unseen telecom tasks BF16 current-action replacement *lowered* average success. **S1 passes**: r +5.21 [+3.30, +7.11], d +9.77 [+6.45, +13.10], M +14.98. **S2 passes**: ρ 0.588, permutation p 0.0001.
 - **Run conditions:**
