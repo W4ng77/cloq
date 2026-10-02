@@ -34,6 +34,27 @@ Newest first.
 
 Evidence: `analysis/fork/out/sameprec_20261002T142834Z.{md,json}` (TOST, K = 6), `analysis/fork/out/sameprec_overlap_20261002T143218Z.{md,json}`, `analysis/fork/analyze_sameprec.py`, `analysis/fork/sameprec_overlap.py`, `docs/insights/SAMEPREC_PROTOCOL.md` §Amendment A1, `docs/REPORT_GPT61_20261002_0730.md` (correction section).
 
+## W100a — Common-state action sources on q8 (BF16 vs GPTQ-W4 d1 vs d2 actions; BF16 / d1 continuations): protocol pre-registered, gate queued (2026-10-02 07:50 PDT)
+**TL;DR** Advisor GPT-6.1 asked for a common-state action-source comparison. On the 255 frozen q8 U2B states (Bank U f01–f03), the current action comes from BF16, W4-d1 or W4-d2, and the continuation is BF16 or d1. The key question is whether BF16 − d1 differs from d2 − d1 (= BF16 − d2), with a ±3 pp TOST. Only the two d2 arms are new (≤ 510 suffixes), produced by an additive fork_driver mode `commonstate`. Protocol sha256 `d76a8e3ee0bd607e7362ac629c3f458691cf44f4f59b26f1f061671bae92ecff`, commit `87733f7`, written before any d2 outcome at these states.
+- **Design.**
+  - Two task types per block: A (servers BF16 + d2: a_d2 → BF16) and B (servers d2 + d1: a_d2 → d1).
+  - a_d2 is d2's own greedy action at the frozen state. A second generation must reproduce it bit-exactly (Q-replay), and it must be token-identical across A and B.
+  - The four existing cells (BB/BQ/QB/QQ of `analysis/fork/bank_u/q8_gptq_w4_d1/`) are reused.
+  - Rejected alternatives: a bank_u run with B = BF16, Q = d2 would need 3 suffixes per row. A bank_u run with B = d2, Q = d1 cannot work on U2B rows, because bank_u takes the B-role action from the recorded BF16 trajectory.
+- **Same-state check (CPU, before queueing).** All 255 rebuilt states equal the reference Bank U rows on state_id, history_sha, recorded prompt ids, steps_left, the recorded action and the initial env hash. The f01–f03 U2B rows of `newmethod_panel_v1.json` are the same 255 rows.
+- **Reuse validation.** Reference re-runs run on 20 % of rows (gate: all rows):
+  - type A: BF16 continuation of the recorded action vs the original suffix;
+  - type B: d1 regenerates a_Q, and its QQ must equal the reference QQ branch signature.
+  - Implicit identities: if a_d2 = a_BF16 or a_d2 = a_d1, the new arm must equal the reference arm. Any failure quarantines the block.
+- **Gate.** `cs_gate_q8_d2_bf16` (node005) and `cs_gate_q8_d2_d1` (node007): 12 rows each, all re-runs, idchecks (d2 on `a6k2_q8_gptq_w4_d2_n1`, BF16, d1). Both nodes differ from node004, where the reference arms ran. Result: pending.
+- **Queued (priority −29, 2 GPUs each).** 2 gates, then 6 panel tasks `cs_q8_{d2_bf16,d2_d1}_f0{1,2,3}`, which depend on both gates.
+- **Analysis.** `analysis/fork/analyze_commonstate.py`:
+  - it refuses to run unless the protocol sha matches;
+  - it computes t over 3 block means and a task-cluster bootstrap (B = 2000, seed 20261002), with a frozen three-way reading and Holm across the two continuations;
+  - `--selftest` (synthetic d2 := d1) exercises the code without new outcomes.
+
+Evidence: `docs/insights/COMMONSTATE_SOURCES_PROTOCOL.md`, `manifests/fork/commonstate_v1.json`, `scripts/a6000/fork_driver.py` (mode `commonstate`), `scripts/a6000/make_tasks_commonstate.py`, `analysis/fork/analyze_commonstate.py`, queue `/data/ziyangs/cloq_work/queue/todo/cs_*.json`.
+
 ## W99v-a1 — New-method panel protocol amendment A1 (before any panel outcome): rotation cells QuaRot-W4A16 / QuaRot-W4A4 / SpinQuant-W4A4 (KV16r) + W16 controls; Holm P2 = spinquant_w4a4 − quarot_w4a4; disclosed post-hoc rotation-gate T4 change (2026-10-02 06:30 PDT)
 **TL;DR** The protocol sha moves from `9cd5c97982e62358a20574e4a9ecff923b68c9758742b1d8e74335b79cccc21d` to `28b78509dc1848344406071be2614763d6445eacb267303714d5ef7c884545bb`. The amendment is appended as a dated section (A1); the frozen text is unchanged and remains a byte-identical prefix. `analyze_newmethod.py` accepts only the new sha. The manifest (`7534c690…`) and its states are unchanged.
 - **No panel outcome existed when this was written.** Checked at 06:24 PDT:
