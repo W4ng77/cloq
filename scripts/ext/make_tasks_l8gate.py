@@ -4,8 +4,9 @@ gate  : a6k2_l8_bf16_cal (tau2 calibration-split BF16 run, as a6k2_<m>_bf16_cal)
         every Qwen d1 checkpoint) -> ext_l8_{bf16,gptq_w4_d1}_bfcl_smokeg (manifests/bfcl/bfcl_mt_l8gate_v1.json,
         subset smoke_l8g, 5 per category) -> fork_ext_gate_l8_gptq_w4_d1_bfcl (fork-ext-v1 gate mode: 4 arms on every
         smoke state, QQ no-op on every state, BB no-op on 4 BF16 mid states, isolation, re-prefill) and
-        fork_ext_dev_l8_gptq_w4_d1_bfcl_smokeg (dev mode: effects.jsonl for analyze_ext, QQ no-op on every state).
-formal: the same pair on subset formal_l8 (50 per category) as the q4/q8 dev forks, one fork task per category; written to
+        fork_ext_dev_l8_gptq_w4_d1_bfcl_smokeg_<cat> (dev mode, one per category: effects.jsonl for analyze_ext, QQ no-op on
+        every state). Outputs stay outside analysis/fork/ext/dev so the Qwen pools of analyze_ext/ext_r2 are untouched.
+formal: the same pair on subset formal_l8 (50 per category) as the q4/q8 dev forks, one fork task per category (out analysis/fork/ext_l8/dev/, outside the Qwen pools); written to
         --stage DIR only (the main session decides whether to queue them).
 B = BF16, Q = GPTQ-W4 d1 (calib_fp_traj_c1). l8 forks are 2-GPU (8B B+Q do not fit one card at max_len 33792).
 
@@ -22,11 +23,12 @@ MAN = "manifests/bfcl/bfcl_mt_l8gate_v1.json"
 DOMS = ["bfcl_base", "bfcl_miss_param", "bfcl_miss_func", "bfcl_long_context"]
 CAL = "manifests/a6k2/l8/calib_fp_traj_c1.json"
 CK = {"bf16": {"kind": "bf16"}, "gptq_w4_d1": {"kind": "gptq", "wbits": 4, "calib": CAL}}
+TAG = "_sc"  # single tool call per response (models.json l8 ext_request parallel_tool_calls=false; r0 without it ended at decision 1)
 NOTE = "W99f l8 second-family BFCL four-arm fork (exploratory external replication)"
 
 
 def ev(arm, subset, prio, node, deps):
-    rid = f"ext_l8_{arm}_bfcl_{subset}"
+    rid = f"ext_l8_{arm}_bfcl_{subset}{TAG}"
     t = {"id": rid, "kind": "eval", "env": "bfcl", "model": "l8", "arm": "bf16" if arm == "bf16" else "gptq", "ckpt": CK[arm],
          "domains": DOMS, "gpus": 1, "priority": prio, "deps": deps,
          "runs": [{"run_id": rid, "task_file": MAN, "subset": subset}], "note": NOTE}
@@ -39,6 +41,9 @@ def fork(tid, spec, prio, node, deps):
     return {**t, **({"node": node} if node else {})}
 
 
+DEV_NODE = {"bfcl_base": "node006", "bfcl_miss_param": "node006"}  # spread the 2-GPU dev forks over two idle runners
+
+
 def gate(prio, node):
     pre = [{"id": "a6k2_l8_bf16_cal", "kind": "eval", "model": "l8", "arm": "bf16", "ckpt": {"kind": "bf16"}, "gpus": 1,
             "runs": [{"run_id": "a6k2_l8_bf16_cal", "task_file": "manifests/cal_tasks_v0.json", "nonce": None}],
@@ -47,12 +52,13 @@ def gate(prio, node):
             "out": CAL, "priority": prio, "deps": ["a6k2_l8_bf16_cal"], "node": node, "note": NOTE}]
     b, q = ev("bf16", "smoke_l8g", prio, node, []), ev("gptq_w4_d1", "smoke_l8g", prio, node, ["a6k2_l8_calib_c1"])
     deps = [b["id"], q["id"]]
-    g = fork("fork_ext_gate_l8_gptq_w4_d1_bfcl", {"mode": "gate", "q_blocks": [f"{q['id']}:{d}" for d in DOMS],
+    g = fork(f"fork_ext_gate_l8_gptq_w4_d1_bfcl{TAG}", {"mode": "gate", "q_blocks": [f"{q['id']}:{d}" for d in DOMS],
              "b_blocks": [f"{b['id']}:{d}" for d in DOMS], "n_bb": 4, "max_states": 20, "n_iso": 4, "concurrency": 8,
-             "out": "analysis/fork/ext_l8_gate/gate_bfcl_l8_gptq_w4_d1"}, prio, node, deps)
-    d = fork("fork_ext_dev_l8_gptq_w4_d1_bfcl_smokeg", {"mode": "dev", "q_blocks": [f"{q['id']}:{x}" for x in DOMS], "noop_frac": 1.0,
-             "concurrency": 8, "out": "analysis/fork/ext_l8_gate/dev_bfcl_l8_gptq_w4_d1_smokeg"}, prio, node, deps)
-    return pre + [b, q, g, d]
+             "out": f"analysis/fork/ext_l8_gate/gate_bfcl_l8_gptq_w4_d1{TAG}"}, prio, node, deps)
+    ds = [fork(f"fork_ext_dev_l8_gptq_w4_d1_bfcl_smokeg{TAG}_{x.replace('bfcl_', '')}", {"mode": "dev", "q_blocks": [f"{q['id']}:{x}"],
+               "noop_frac": 1.0, "concurrency": 8, "out": f"analysis/fork/ext_l8_gate/dev/bfcl_l8_gptq_w4_d1_{x.replace('bfcl_', '')}"},
+               prio, DEV_NODE.get(x, node), deps) for x in DOMS]  # one dir per category: analyze_ext.parse_dir takes the stratum from the dir name
+    return pre + [b, q, g] + ds
 
 
 def formal(prio):
@@ -60,8 +66,8 @@ def formal(prio):
     ts = [b, q]
     for dom in DOMS:
         tag = dom.replace("bfcl_", "")
-        ts.append(fork(f"fork_ext_dev_l8_gptq_w4_d1_bfcl_{tag}", {"mode": "dev", "q_blocks": [f"{q['id']}:{dom}"], "noop_frac": 0.1,
-                       "concurrency": 12, "out": f"analysis/fork/ext/dev/bfcl_l8_gptq_w4_d1_{tag}"}, prio, None, [b["id"], q["id"]]))
+        ts.append(fork(f"fork_ext_dev_l8_gptq_w4_d1_bfcl{TAG}_{tag}", {"mode": "dev", "q_blocks": [f"{q['id']}:{dom}"], "noop_frac": 0.1,
+                       "concurrency": 12, "out": f"analysis/fork/ext_l8/dev/bfcl_l8_gptq_w4_d1_{tag}"}, prio, None, [b["id"], q["id"]]))
     return ts
 
 

@@ -50,6 +50,19 @@ def canonical_json(x) -> str:
     return json.dumps(x, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
 
 
+def _ext_request_opts() -> dict:
+    """Per-model extra chat-request fields for the ext adapters (scripts/a6000/models.json "ext_request", keyed by
+    CLOQ_MODEL_ID). Empty for every Qwen model, so their requests are unchanged. W99f: l8 sets
+    {"parallel_tool_calls": false}: vLLM then keeps only the first tool call of a response, because the official
+    Llama-3.1 template cannot render an assistant turn with several calls (BFCL items otherwise end at decision 1)."""
+    try:
+        ms = json.load(open(ROOT / "scripts/a6000/models.json"))
+    except OSError:
+        return {}
+    mid = os.environ.get("CLOQ_MODEL_ID")
+    return next((dict(m.get("ext_request") or {}) for m in ms.values() if isinstance(m, dict) and m.get("hf_id") == mid), {})
+
+
 def gen_params() -> dict:
     g = FROZEN["generation_agent"]
     ctk = json.loads(os.environ.get("CLOQ_CHAT_TEMPLATE_KWARGS") or "{}")
@@ -62,6 +75,7 @@ def gen_params() -> dict:
         p["chat_template_kwargs"] = ctk
     if topl:
         p.update(logprobs=True, top_logprobs=topl)
+    p.update(_ext_request_opts())
     return p
 
 
