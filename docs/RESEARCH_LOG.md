@@ -10,6 +10,35 @@ Newest first.
 
 ---
 
+## W99v-a1 — New-method panel protocol amendment A1 (before any panel outcome): rotation cells QuaRot-W4A16 / QuaRot-W4A4 / SpinQuant-W4A4 (KV16r) + W16 controls; Holm P2 = spinquant_w4a4 − quarot_w4a4; disclosed post-hoc rotation-gate T4 change (2026-10-02 06:30 PDT)
+**TL;DR** The protocol sha moves from `9cd5c97982e62358a20574e4a9ecff923b68c9758742b1d8e74335b79cccc21d` to `28b78509dc1848344406071be2614763d6445eacb267303714d5ef7c884545bb`. The amendment is appended as a dated section (A1); the frozen text is unchanged and remains a byte-identical prefix. `analyze_newmethod.py` accepts only the new sha. The manifest (`7534c690…`) and its states are unchanged.
+- **No panel outcome existed when this was written.** Checked at 06:24 PDT:
+  - there is no `analysis/fork/newmethod/{tau2,bfcl,token_scores}/`;
+  - no `nmp_tau2_*`, `nmp_score_*` or `nmp_bfcl_*` task is in the queue's done, running or todo directories;
+  - the only outputs under `newmethod/` are the KIVI gates;
+  - the rotation cells' nmp gates are still in todo.
+- **Cells (A1.1).** `quarot_w4` (W4A16), `quarot_w4a4` (new), `quarot_w16`, `spinquant_w4a4` (new) and `spinquant_w16`, all at KV16r.
+  - `spinquant_w4` is retired. Rotations learned at W16A16 do not move from their starting point, because the loss does not depend on the rotation.
+  - `spinqoff_w4` is not built and is reported as "not run".
+- **Holm (A1.2).**
+  - P1: `quarot_w4` − `gptq_w4_d1`. The named confound is kept: the calibration data differ (WikiText-2 vs `calib_fp_traj_c1`).
+  - **P2: `spinquant_w4a4` − `quarot_w4a4`**, the advisor's controlled contrast: same calibration, grid, clipping and KV16.
+  - P3: unchanged.
+  - Secondary: T1 `quarot_w4` − `quarot_w16`, T2 `spinquant_w4a4` − `spinquant_w16`, T3 `quarot_w4a4` − `quarot_w16`, K2. S1 is dropped.
+- **Disclosed post-hoc change (A1.3).** The rotation gate's T4 was changed after SpinQuant's value (0.9976) had been seen.
+  - Before: absolute fp32 top-1 ≥ 0.999 (3fd9522).
+  - After: ≥ QuaRot − 0.002 and mean |Δlogprob| ≤ 1.5 × QuaRot (38db810).
+  - The reason: QuaRot's accepted export reaches only 0.9956, because of bf16 storage.
+  - No served SpinQuant output and no panel outcome existed at the time.
+- **Interpretation (A1.4).** SpinQuant's W16A4 WikiText perplexity, 8.76, is below BF16's 9.73. The learned rotation partly acts as domain adaptation, so WikiText perplexity is not a fidelity criterion. The relevant measures are agent-domain KL, act flip and D_cc.
+- **q_blocks spec bug (A1.5).** It is fixed in `make_newmethod_panel.py` (a98a2a6).
+- **Dry run.** `analyze_newmethod.py --dry` runs and passes the guard.
+  - The reference cells gptq_w4_d1, awq_w4 and kvq_int8 have f01–f03 at 85/85, all admitted.
+  - The BFCL reference cells cover 200/200 items with 0 quarantined.
+  - No new-cell rows exist.
+
+Evidence: `docs/insights/NEWMETHOD_PANEL_PROTOCOL.md` (Amendment A1), `analysis/fork/analyze_newmethod.py`, `analysis/fork/rot_gate/GATE.md`, `scripts/a6000/{rot_gate_check,make_tasks_rotpanel,make_newmethod_panel}.py`, W99r, W99s.
+
 ## W99l — Same-precision 2×2 results (INTERIM, K = 6 blocks f01–f06): turnover and controller dependence are not precision-specific (2026-10-02 06:30 PDT)
 **TL;DR** On the pre-registered analysis set so far (f01–f06, q4+q8, 85 tasks per block), replacing BF16 with a second GPTQ-W4 calibration draw (Q′) gives the same turnover. Precision M is 16.8 [13.9, 19.6]% and same-precision M′ is 17.7 [15.7, 19.8]%. The paired ΔM is −1.0 [−3.9, +1.9] pp (t over 6 blocks; crossed −4.5 to +2.7). The off-diagonal share is 25.0% vs 26.2%, Δ −1.2 [−4.9, +2.5] pp (descriptive). Frozen reading (§6): **similar on both** → the paper must say that turnover and controller dependence largely reflect generic trajectory sensitivity of the closed loop rather than precision-specific effects. This is interim: the prefix will grow as q8 g3–g6 complete before the 2026-10-03 freeze.
 - **Divergence rate.** 76.9% in both designs (q4 65.3% vs 68.0% precision; q8 88.4% vs 85.7%). Q′ and Q differ in tool structure about as often as BF16 and Q.

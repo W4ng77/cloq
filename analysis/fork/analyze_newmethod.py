@@ -1,5 +1,5 @@
-"""New-method common panels: frozen analysis (docs/insights/NEWMETHOD_PANEL_PROTOCOL.md, W99v). SKELETON, frozen with the
-protocol; it refuses to run if the protocol or the manifest sha256 differs from the frozen values below.
+"""New-method common panels: frozen analysis (docs/insights/NEWMETHOD_PANEL_PROTOCOL.md, W99v; amendment A1 = W99v-a1).
+SKELETON, frozen with the protocol; it refuses to run if the protocol or the manifest sha256 differs from the frozen values below.
 
 Panel A (tau2, U2B ordinary states on the BF16 trajectory; fork_driver mode bank_u):
   inputs  analysis/fork/newmethod/tau2/<model>_<cell>/<blk>/{bank_summary.json, bank_rows.jsonl}
@@ -47,17 +47,22 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "analysis/fork/out"
 PROTOCOL = ROOT / "docs/insights/NEWMETHOD_PANEL_PROTOCOL.md"
-PROTOCOL_SHA256 = "9cd5c97982e62358a20574e4a9ecff923b68c9758742b1d8e74335b79cccc21d"
+# Amendment A1 (W99v-a1, 2026-10-02): was 9cd5c979... (frozen nmp-v1); only the amended protocol is accepted.
+PROTOCOL_SHA256 = "28b78509dc1848344406071be2614763d6445eacb267303714d5ef7c884545bb"
 MANIFESTS = {"q8": ("manifests/fork/newmethod_panel_v1.json", "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201")}
 BANK_U_SHA256 = "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907"
 NM = ROOT / "analysis/fork/newmethod"
 REF_TAU2 = {"q8": ("gptq_w4_d1", "awq_w4", "kvq_int8")}
 REF_BFCL = {"q8": ("gptq_w4_d1", "awq_w4_d1", "kvq_int4", "gptq_w3")}
-NEW_CELLS = ("quarot_w4", "quarot_w16", "spinquant_w4", "spinquant_w16", "spinqoff_w4", "kivi_k2v2", "kivi_k4v4")
-# Primary contrast family (protocol §7). P3's KIVI cell falls back to kivi_k4v4 only if kivi_k2v2 is not admitted (gate).
-PRIMARY = [("P1", "quarot_w4", "gptq_w4_d1"), ("P2", "spinquant_w4", "quarot_w4"), ("P3", "kivi_k2v2", "kvq_int8")]
-BFCL_PRIMARY = [("P1", "quarot_w4", "gptq_w4_d1"), ("P2", "spinquant_w4", "quarot_w4"), ("P3", "kivi_k2v2", "kvq_int4")]
-SECONDARY = [("T1", "quarot_w4", "quarot_w16"), ("T2", "spinquant_w4", "spinquant_w16"), ("S1", "spinqoff_w4", "spinquant_w4"),
+# Amendment A1.1: rotation cells (all KV16r). spinquant_w4 retired (rotation does not move under a rotation-invariant
+# W16A16 loss); spinqoff_w4 not built (reported "not run").
+NEW_CELLS = ("quarot_w4", "quarot_w4a4", "quarot_w16", "spinquant_w4a4", "spinquant_w16", "kivi_k2v2", "kivi_k4v4")
+NOT_RUN = {"spinquant_w4": "retired (amendment A1.1)", "spinqoff_w4": "not built (amendment A1.1)"}
+# Primary contrast family (protocol §7 as amended by A1.2). P3's KIVI cell falls back to kivi_k4v4 only if kivi_k2v2 is not
+# admitted (gate). P1 confound (named): calibration data differ (WikiText-2 vs calib_fp_traj_c1).
+PRIMARY = [("P1", "quarot_w4", "gptq_w4_d1"), ("P2", "spinquant_w4a4", "quarot_w4a4"), ("P3", "kivi_k2v2", "kvq_int8")]
+BFCL_PRIMARY = [("P1", "quarot_w4", "gptq_w4_d1"), ("P2", "spinquant_w4a4", "quarot_w4a4"), ("P3", "kivi_k2v2", "kvq_int4")]
+SECONDARY = [("T1", "quarot_w4", "quarot_w16"), ("T2", "spinquant_w4a4", "spinquant_w16"), ("T3", "quarot_w4a4", "quarot_w16"),
              ("K2", "kivi_k4v4", "kvq_int8")]
 CATS = ("base", "miss_param", "miss_func", "long_context")
 ALL_KEYS = ["G", "H", "F", "D_cc", "I", "rescue", "damage", "M", "damage_cc", "gain_cc", "M_cc", "offdiag", "strict_reversal", "exact"]
@@ -390,11 +395,11 @@ def main():
         cc_cells[c] = [u for u in us if "excluded" not in u]
     bcells, blog = load_bfcl(a.model, man)
     if a.dry:
-        print(json.dumps({"guard": g, "tau2_blocks": blocks_info, "tau2_log": tlog, "bfcl_log": blog,
+        print(json.dumps({"guard": g, "not_run": NOT_RUN, "tau2_blocks": blocks_info, "tau2_log": tlog, "bfcl_log": blog,
                           "expansion_ok": expansion_ok(a.model)}, indent=1, default=str))
         return
     R = {"guard": g, "script_sha256": sha(Path(__file__)), "git": subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip(),
-         "B": a.B, "seed": AD.SEED, "expansion_ok": expansion_ok(a.model), "tau2": {"blocks": blocks_info, "log": tlog, "cells": {}, "complete_case": {}}}
+         "B": a.B, "seed": AD.SEED, "not_run": NOT_RUN, "expansion_ok": expansion_ok(a.model), "tau2": {"blocks": blocks_info, "log": tlog, "cells": {}, "complete_case": {}}}
     for c, us in sorted(cells.items()):
         if us:
             R["tau2"]["cells"][c] = tau2_cell(us, a.B)

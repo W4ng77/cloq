@@ -227,3 +227,95 @@ The controlled pair differs only in how R1/R2 are obtained (random Hadamard vs l
 - `analyze_newmethod.py` checks this protocol's sha and the manifest sha, and refuses to run on a mismatch.
 - Phase-2 rows are analysed only if `expansion_q8.json` says `expand: true`. Otherwise their outputs are refused.
 - Holdout data (`analysis/fork/holdout/`, the telecom split) is out of scope and never opened.
+
+---
+
+## Amendment A1 (2026-10-02 06:30 PDT, W99v-a1): rotation cells on the weight + activation axis, Holm P2, a disclosed post-hoc gate change
+
+**TL;DR** This amendment was written before any panel outcome existed for any rotation cell. At this time no `analysis/fork/newmethod/tau2/` or `analysis/fork/newmethod/bfcl/` output exists. No `nmp_tau2_*`, `nmp_score_*` or `nmp_bfcl_*` task is in the queue's done, running or todo directories. The only outputs under `analysis/fork/newmethod/` are the KIVI gates. The rotation cells' own nmp gates (`nmp_gate_{same,bank}_q8_quarot_*`) are still in todo.
+- The rotation cells become the advisor's weight + activation design: QuaRot-W4A16, QuaRot-W4A4 and SpinQuant-W4A4, all at KV16r, plus the two W16 transform-path controls.
+- `spinquant_w4` (W4A16) is retired. `spinqoff_w4` is not built and is reported as "not run".
+- Holm P2 becomes spinquant_w4a4 − quarot_w4a4 on D_cc. P1 and P3 are unchanged.
+- One post-hoc change to the rotation gate is disclosed: its HF-invariance criterion T4 was changed after SpinQuant's value had been seen.
+- The manifest (`newmethod_panel_v1.json`, sha `7534c690…`) and the states do not change.
+
+Evidence: `analysis/fork/rot_gate/GATE.md` (with `verdict.json`, `validate_*_q8*.json`, `spin_learn_q8.json`), `scripts/a6000/rot_gate_check.py`, `scripts/a6000/make_tasks_rotpanel.py`, RESEARCH_LOG W99r / W99s / W99v-a1.
+
+### A1.1 Cells (replaces the rotation rows of the §1 table)
+
+All five cells use model q8, B = BF16, and KV16 with the online Q/K rotation on (`CLOQ_KVQ_ROT qk`, the "kv16r" serving config). The weight grid, calibration windows, online Hadamards (R3/R4) and fused norms are as in §8.
+
+| Cell | Configuration | Serving env (activation part) | Status |
+|---|---|---|---|
+| `quarot_w4` | QuaRot-W4A16-KV16: random Hadamard R1 (seed 0) + per-head R2, GPTQ-W4 | `CLOQ_AQ_BITS=16 CLOQ_AQ_HAD=quarot` | registered (unchanged from §1) |
+| `quarot_w4a4` | QuaRot-W4A4-KV16: the same checkpoint as `quarot_w4` | `CLOQ_AQ_BITS=4 CLOQ_AQ_FMT=sym_quarot CLOQ_AQ_CLIP=0.9 CLOQ_AQ_HAD=quarot` (per-token symmetric INT4, clip 0.9, on the inputs of q/k/v, o, gate/up, down) | **new** |
+| `quarot_w16` | QuaRot transform-path control: the same rotations, W16A16 | A16 | registered (unchanged) |
+| `spinquant_w4a4` | SpinQuant-W4A4-KV16. R1/R2 are learned by Cayley SGD (`cloq/spinquant.py learn`). The objective is next-token CE at W16A4KV16 with STE activation quantization, following SpinQuant's README rule for GPTQ weights. Training starts at the QuaRot point and uses the same 128 × 2048 WikiText-2 windows (6.25 epochs). The rotations are then exported through the identical QuaRot builder + GPTQ-W4 | identical to `quarot_w4a4` | **new** |
+| `spinquant_w16` | SpinQuant transform-path control: the learned rotations, W16A16 | A16 | registered (unchanged) |
+| `spinquant_w4` | SpinQuant-W4A16 | – | **retired** (reason below) |
+| `spinqoff_w4` | SpinQuant official default pipeline | – | **not built; reported as "not run"** |
+
+- **Why `spinquant_w4` is retired.** At W16A16, or at W4A16 with the rotations learned at W16A16, the training loss does not depend on the rotation. The network is rotation-invariant apart from bf16 rounding, so the gradient on R1/R2 is essentially zero and the rotations stay at their starting point. A "SpinQuant-W4A16" cell would therefore be QuaRot-W4A16 under another name. A genuine W4A16 SpinQuant would need rotations learned with the W4 weight quantizer in the loop. That is not the README rule for GPTQ weights, and it was not built. The learned rotation acts on the function only through the A4 quantizer, so the SpinQuant cell is evaluated where it differs: W4A4.
+- **The controlled pair** `spinquant_w4a4` vs `quarot_w4a4` differs only in R1/R2. It shares the calibration windows (token-set sha `ec0a043b2c48…`), the GPTQ grid and MSE clip, the A4 grid and clip, the online Hadamards and KV16r. At step 0 of learning, SpinQuant *is* the QuaRot model; CPU test 1 shows 0.0 max difference.
+- **Deviations from SpinQuant's official recipe, each made for the controlled contrast:**
+  - 128 GPTQ windows instead of 800 fresh blocks;
+  - the symmetric clip-0.9 activation grid of the serving path;
+  - QuaRot's across-head H_32 on the o_proj input is kept;
+  - R2 is initialised at H_hd.
+
+  These are listed in GATE.md and are reported with every SpinQuant result.
+- **Gates.** §2.4 applies to every cell, and phase-1 release is additionally conditional on the rotation gate (`rot_gate_check.py`), as already queued. Those criteria are effect-blind. They read gate files and gate_same verdicts only.
+- **Expansion (§5).** The registered new cells for `expansion --cells` are `quarot_w4 quarot_w4a4 quarot_w16 spinquant_w4a4 spinquant_w16` plus the KIVI cell(s) that passed their gate.
+
+### A1.2 Primary Holm family (replaces the list in §7)
+
+Two-sided α = .05, τ² D_cc, t over block-mean differences. The BFCL family has the same three contrasts on D_cc_all.
+
+| Id | Contrast | Reading |
+|---|---|---|
+| P1 | `quarot_w4` − `gptq_w4_d1` | QuaRot pipeline (W4A16, KV16r) vs the main study's GPTQ-W4 cell. **Named confound (unchanged, §8): the calibration data differ.** QuaRot uses WikiText-2 128 × 2048; GPTQ-W4 d1 uses the τ² BF16 calibration trajectories (`calib_fp_traj_c1`). Rotation and calibration are therefore not separated. The rotation-alone reading comes from T1 and the W16 control. |
+| P2 | `spinquant_w4a4` − `quarot_w4a4` | **The advisor's controlled contrast:** learned vs random rotation, with the same calibration, weight grid, clipping, activation grid and KV16r |
+| P3 | `kivi_k2v2` (or its gate fallback `kivi_k4v4`) − `kvq_int8` (τ²); − `kvq_int4` (BFCL) | unchanged |
+
+- **Secondary (per-cell intervals, no claim family), replacing the §7 transform-adjusted list:**
+  - T1 `quarot_w4` − `quarot_w16`;
+  - T2 `spinquant_w4a4` − `spinquant_w16`;
+  - T3 `quarot_w4a4` − `quarot_w16`;
+  - K2 `kivi_k4v4` − `kvq_int8`.
+- The former S1 (`spinqoff_w4` − `spinquant_w4`) is dropped, because neither cell is run.
+
+### A1.3 Disclosed post-hoc change to the rotation gate
+
+**Plain statement: this amendment was made after a gate value had been observed.**
+- The rotation gate's criterion T4 (HF invariance of the exported W16 checkpoint, fp32 compute) was frozen in `rot_gate_check.py` at commit 3fd9522 as an absolute fp32 top-1 agreement ≥ 0.999.
+- On 2026-10-02 at 05:50 PDT (commit 38db810), it was replaced by a QuaRot-relative threshold: fp32 top-1 agreement ≥ QuaRot's − 0.002, **and** mean |Δlogprob(top-1)| ≤ 1.5 × QuaRot's.
+- **SpinQuant's value had already been seen when the threshold was replaced:** 0.9976, mean |Δlogprob| 0.0040.
+- **The reason.** The absolute threshold was mis-specified. QuaRot's accepted export does not reach it either (0.9956, mean |Δlogprob| 0.0045), because the rotated weights are stored in bf16. Under the original criterion no rotated checkpoint built by this pipeline could pass.
+- **What existed at the time.** No served SpinQuant output and no panel outcome of any cell existed. The change could not have been informed by any agent-level SpinQuant result or by any D_cc / G / H / F.
+- **Corroboration that does not depend on T4.** Measured later, SpinQuant's served W16A16 transform control has act flip 0.0025 and first-token KL 0.0020. Both are at or below QuaRot's 0.005 and 0.0026.
+- This change is reported with every SpinQuant result.
+
+### A1.4 Interpretation note: WikiText perplexity is not a fidelity criterion for learned rotations
+
+- The SpinQuant rotations are trained with a WikiText-2 (train) cross-entropy objective. In part they act as domain adaptation of the instruction-tuned model, working through the A4 quantizer.
+- On the learner path, W16A4 WikiText-2 test perplexity is **8.76, below BF16's 9.73**, and below the QuaRot point's 11.04.
+- A lower perplexity than the unquantized model cannot mean closer to BF16. WikiText perplexity is therefore **not** used as a fidelity criterion for any rotation cell, and the rotation gate's ppl-based direction checks (P1/P2 in `rot_gate_check.py`) are reported as uninformative.
+- **The relevant measures**, all on the agent domain and relative to BF16:
+  - the top-k act flip and first-token KL on the 400 BF16 agent decisions (rotation gate);
+  - the panel's local fidelity, §9: KLu over a_B tokens and exact agreement;
+  - the panel's D_cc.
+
+### A1.5 q_blocks spec bug (fixed)
+
+- **The bug.** `make_newmethod_panel.py spec` printed the τ² `gate_same` `q_blocks` as "run:domain" strings, but `fork_driver.load_blocks` unpacks [run, domain] pairs.
+- **The fix.** Commit a98a2a6 (2026-10-02 04:29 PDT, `scripts/a6000/make_newmethod_panel.py`, one line) now emits [run, domain] pairs for the τ² gate. The BFCL `fork_ext` `q_blocks` keep their "run:domain" strings, which `fork_ext` expects.
+- **What it does not change.** The manifest and its rows are unaffected. The builder's frozen sha in the header table (`5fcc5308…`) is the sha *as it built the manifest*, and stays the manifest's `builder_sha256`.
+- `make_tasks_rotpanel.py` already used pairs.
+
+### A1.6 Analysis script
+
+`analysis/fork/analyze_newmethod.py` was updated in the same commit as this amendment:
+- `PROTOCOL_SHA256` is set to this file's new sha256, and only the new value is accepted;
+- `NEW_CELLS` is set to the cells in A1.1 plus KIVI;
+- `PRIMARY` / `BFCL_PRIMARY` follow A1.2;
+- `SECONDARY` is T1, T2, T3 and K2.
