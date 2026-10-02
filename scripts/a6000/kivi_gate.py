@@ -154,6 +154,12 @@ def toy(dev, quick=False, dt=None):
                 outs.append(off.decode(Q[:, :, t:t + 1], K[:, :, t:t + 1], V[:, :, t:t + 1]))
                 splits.append(off.state_split())
             off_out = torch.cat(outs, 2).squeeze(0).permute(1, 0, 2)
+            # official at serving precision: dequantized K/V and P rounded to the model dtype (amendment, GATE.md)
+            offs = kivi_ref.OfficialKIVI(kb, vb, 32, 128, deq_dtype=dt)
+            os_ = [offs.prefill(Q[:, :, :1], K[:, :, :1], V[:, :, :1])]
+            for t in range(1, L):
+                os_.append(offs.decode(Q[:, :, t:t + 1], K[:, :, t:t + 1], V[:, :, t:t + 1]))
+            offs_out = torch.cat(os_, 2).squeeze(0).permute(1, 0, 2)
             # official with a real multi-token prefill (L0 = 300): its decode steps match, its prefill rows do not
             L0 = 300 if L > 300 else L // 2
             off2 = kivi_ref.OfficialKIVI(kb, vb, 32, 128)
@@ -170,11 +176,15 @@ def toy(dev, quick=False, dt=None):
                 "quant_effect_max_abs": float((off_out - exact).abs().max()),
                 "quant_effect_mean_abs": float((off_out - exact).abs().mean()),
                 "kernel_vs_official_mean_abs": float((out_dec - off_out).abs().mean()),
+                "kernel_vs_official_servingprec_max_abs": float((out_dec - offs_out).abs().max()),
+                "kernel_vs_official_servingprec_mean_abs": float((out_dec - offs_out).abs().mean()),
+                "official_servingprec_vs_official_fp32_mean_abs": float((offs_out - off_out).abs().mean()),
                 "official_prefill300_decode_rows_vs_kernel_max_abs": float((off2_out[L0:] - out_dec[L0:]).abs().max()),
                 "official_prefill300_prefill_rows_vs_kernel_max_abs": float((off2_out[:L0] - out_dec[:L0]).abs().max()),
                 "official_prefill300_prefill_rows_vs_exact_max_abs": float((off2_out[:L0] - exact[:L0]).abs().max()),
             })
             r["ratio_err_to_effect"] = r["kernel_vs_official_mean_abs"] / max(r["quant_effect_mean_abs"], 1e-12)
+            r["ratio_err_to_effect_servingprec"] = r["kernel_vs_official_servingprec_mean_abs"] / max(r["quant_effect_mean_abs"], 1e-12)
         else:
             r["kernel_null_vs_exact_max_abs"] = float((out_dec - exact).abs().max())
         t2[name] = r
@@ -226,6 +236,17 @@ def toy(dev, quick=False, dt=None):
             t3[name][vn] = {"bitwise_equal_seqs": sum(eq), "n_seqs": len(eq), "any_nan": any(nan),
                             "max_abs": max(float((a.float() - b.float()).abs().max()) for a, b in zip(base, outs))}
     res["T3_invariance"] = t3
+    # Amendment (GATE.md section 3; written after the first GPU run): T1 = integer codes identical and dequantized values
+    # within 1 fp32 ulp of the official ones; T2 = against the official algorithm at serving precision.
+    def codes_ok(v):
+        return v["K_max_abs_vs_official"] < 4e-6 and v["V_max_abs_vs_official"] < 4e-6
+    t1a = all(codes_ok(v) and v["K_n"] > 0 for v in t1.values())
+    t2a = all(r.get("kernel_null_vs_exact_max_abs", 0) < 2e-2 for r in t2.values()) and all(
+        r["official_state_split_matches_position_rule"] and r["view_vs_official_max_abs"] < 1e-4
+        and r["ratio_err_to_effect_servingprec"] < 0.05
+        and r["kernel_vs_official_servingprec_max_abs"] < 0.25 * r["quant_effect_max_abs"]
+        for r in t2.values() if "ratio_err_to_effect" in r)
+    res["verdict_amended"] = {"T1_codes_identical_1ulp": t1a, "T2_servingprec": t2a}
     t3_ok = all(x["bitwise_equal_seqs"] == x["n_seqs"] and not x["any_nan"] for d in t3.values() for x in d.values())
     res["verdict"] = {"T1_quantizer": t1_ok, "T2_semantics": t2_ok, "T3_invariance": t3_ok}
     return res

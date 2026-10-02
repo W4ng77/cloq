@@ -49,9 +49,15 @@ def repeat_kv(x, n_rep):
 class OfficialKIVI:
     """Stateful KIVI cache, B=1. q [1, Hq, L, D]; k, v [1, Hkv, L, D] (post-RoPE)."""
 
-    def __init__(self, kbits, vbits, group=32, resid=128):
+    def __init__(self, kbits, vbits, group=32, resid=128, deq_dtype=None):
+        """deq_dtype: round dequantized K/V and the softmax output to this dtype (the official code runs at model dtype:
+        unpack_and_dequant returns model-dtype values, attn_weights are cast to the query dtype). None = keep fp32."""
         self.kb, self.vb, self.G, self.R = kbits, vbits, group, resid
+        self.dd = deq_dtype
         self.past = None
+
+    def _r(self, x):
+        return x if self.dd is None else x.to(self.dd).to(x.dtype)
 
     def prefill(self, q, k, v):
         G, R = self.G, self.R
@@ -71,12 +77,12 @@ class OfficialKIVI:
                 k_full = k[:, :, -(k.shape[-2] % R):, :].contiguous()
         else:
             k_quant, k_full = k, None
-        self.kq_trans = None if k_quant is None else official_qdq_lastdim(k_quant.transpose(2, 3), G, self.kb)[0]
+        self.kq_trans = None if k_quant is None else self._r(official_qdq_lastdim(k_quant.transpose(2, 3), G, self.kb)[0])
         self.k_full = k_full
         if v.shape[-2] <= R:
             self.vq, self.v_full = None, v
         else:
-            self.vq = official_qdq_lastdim(v[:, :, :-R, :], G, self.vb)[0]
+            self.vq = self._r(official_qdq_lastdim(v[:, :, :-R, :], G, self.vb)[0])
             self.v_full = v[:, :, -R:, :].contiguous()
         return out
 
@@ -90,10 +96,10 @@ class OfficialKIVI:
         att = (torch.cat([att_qkquant, att_qkfull], dim=-1) if att_qkquant is not None else att_qkfull) / math.sqrt(d)
         if self.k_full.shape[-2] == R:
             assert R % G == 0
-            new = official_qdq_lastdim(self.k_full.transpose(2, 3), G, self.kb)[0]
+            new = self._r(official_qdq_lastdim(self.k_full.transpose(2, 3), G, self.kb)[0])
             self.k_full = None
             self.kq_trans = new if self.kq_trans is None else torch.cat([self.kq_trans, new], dim=3)
-        att = torch.softmax(att, dim=-1, dtype=torch.float32).to(q.dtype)
+        att = self._r(torch.softmax(att, dim=-1, dtype=torch.float32).to(q.dtype))
         self.v_full = torch.cat([self.v_full, v], dim=2)
         n_full = self.v_full.shape[-2]
         if self.vq is None:
@@ -103,7 +109,7 @@ class OfficialKIVI:
             out += torch.matmul(att[:, :, :, -n_full:], repeat_kv(self.v_full, n_rep))
         if n_full > R:
             assert n_full == R + 1
-            new = official_qdq_lastdim(self.v_full[:, :, :1, :], G, self.vb)[0]
+            new = self._r(official_qdq_lastdim(self.v_full[:, :, :1, :], G, self.vb)[0])
             self.v_full = self.v_full[:, :, 1:, :].contiguous()
             self.vq = new if self.vq is None else torch.cat([self.vq, new], dim=2)
         return out
