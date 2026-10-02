@@ -10,6 +10,24 @@ Newest first.
 
 ---
 
+## W98b — Telecom holdout: pre-registered confirmatory analysis (2026-10-01 18:25 PDT)
+**TL;DR** G_all = −4.57 pp, crossed 90% [−7.17, −1.96] (block-t [−6.08, −3.05]). The **pre-registered reading is inconclusive**: §6 defines only positive gain, gain above 3 pp and small effect, with no negative category. Descriptively the interval lies entirely below 0, so on unseen telecom tasks BF16 current-action replacement *lowered* average success. **S1 passes**: r +5.21 [+3.30, +7.11], d +9.77 [+6.45, +13.10], M +14.98. **S2 passes**: ρ 0.588, permutation p 0.0001.
+- **Run conditions:**
+  - K' = 12 (h01–h12) with no reserves used.
+  - Structural exclusions: 1 task in q4 GPTQ and 1 in q8 AWQ (search decision/trajectory count mismatch).
+  - Complete-case sensitivity is identical.
+  - Script sha 2af1b689 and prereg sha 902892dd were both verified before the run. Snapshot: `analysis/insights/iter_3/out/snapshot_holdout_20261002T0123Z.json` (iter_2/integrity.py).
+- **Per cell (descriptive):** q4 GPTQ −3.03 [−7.86, +1.80]; q8 GPTQ −5.64 [−9.33, −1.94]; q8 AWQ −6.57 [−11.98, −1.15].
+- **Strata:** every level estimate is ≤ 0. The Holm-significant levels are all negative: step budget T2/T3, mobile_data_issue −9.09, and the fewest-faults tercile −6.37.
+- **Paper:**
+  - The abstract sentence, the R3 paragraph and the appendix table `tab:holdout` are filled.
+  - The holdout limitation is updated.
+  - Discussion "Escalation can hurt" now cites the holdout.
+  - R3 is condensed (the simctrl flagged and scope sentences).
+  - `check_numbers.py` PASS. The main text runs ~5 lines onto p. 9; the final fit will be done after the Bank P paragraph.
+- **Not done:** prereg step 4 supplementary descriptive outputs (analyze_dev / analyze_difficulty on the holdout; non-decisional).
+- **Evidence:** `analysis/fork/out/holdout_confirm_20261002T012353Z.{md,json}`, `analysis/fork/out/holdout_confirm_cc_20261002T012358Z.{md,json}`.
+
 ## W98a — GPT-6.1 review 8 wording corrections after W98 (2026-10-01 PDT)
 **TL;DR** The claims now match the evidence. Finding consequence-bearing decisions is not the same as finding net-beneficial replacements.
 - **Bank U:** 150/208 is a share of deduplicated cell×state rows, not of independent states.

@@ -243,7 +243,24 @@ It fixes the following design:
 \item six stratum families, with Holm correction within each.
 \end{itemize}
 % src: docs/insights/PREREG_FORK_CONFIRM.md §0, §3, §6-§9
-The analysis script refuses holdout data unless the hash matches. \todo{HOLDOUT: full confirmatory table (per cell and pooled: units, exclusions, $r$, $d$, $M$, $\Gall$ with crossed and block-$t$ intervals; S2 $\rho_c$; strata)}
+The analysis script refuses holdout data unless the hash matches. Table~\ref{tab:holdout} gives the confirmatory result. Strata (six families, Holm within family) are descriptive here. Every level estimate is $\le 0$, and the Holm-significant levels are negative: step-budget T2 and T3, mobile-data issues ($-9.09$\pp{}) and the fewest-faults tercile ($-6.37$\pp{}). % src: analysis/fork/out/holdout_confirm_20261002T012353Z.md (Strata)
+\begin{table}[h]
+\centering\scriptsize\setlength{\tabcolsep}{2.5pt}
+% src: analysis/fork/out/holdout_confirm_20261002T012353Z.md
+\resizebox{\columnwidth}{!}{\begin{tabular}{@{}lrrllll@{}}
+\toprule
+Cell (weight) & units & excl. & $G$ & $r$ & $d$ & $\rho_c$ \\
+\midrule
+q4 GPTQ-W4 (1/2) & 396 & 1 & $-3.03$ [$-7.86$, $+1.80$] & $+5.05$ & $+8.08$ & 0.668 \\
+q8 GPTQ-W4 (1/4) & 408 & 0 & $-5.64$ [$-9.33$, $-1.94$] & $+4.41$ & $+10.05$ & 0.374 \\
+q8 AWQ-W4 (1/4) & 396 & 1 & $-6.57$ [$-11.98$, $-1.15$] & $+6.31$ & $+12.88$ & 0.644 \\
+\midrule
+Weighted ($\Gall$) & & & $-4.57$ [$-7.17$, $-1.96$] & $+5.21$ & $+9.77$ & 0.588 \\
+\bottomrule
+\end{tabular}}
+\caption{Telecom holdout, pre-registered analysis (34 tasks $\times$ 12 blocks; pp; crossed 90\% intervals). Per-cell rows are descriptive; the weighted row is decisional ($\Gall$, reading: inconclusive) and S1/S2 (both pass). Excl.: structurally excluded tasks (decision/trajectory count mismatch at search). Source: \nolinkurl{analysis/fork/out/holdout_confirm_20261002T012353Z.md}.}
+\label{tab:holdout}
+\end{table}
 
 \section{Withdrawn and Negative Results}
 \label{app:withdrawn}
