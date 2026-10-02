@@ -1,0 +1,116 @@
+{
+ "method": "SpinQuant-rotation (W16)",
+ "wbits": null,
+ "rotation": {
+  "residual": "random Hadamard diag(s) H_d / sqrt(d) (cloq.rotate.random_hadamard)",
+  "seed": 0,
+  "norms_fused": true,
+  "embedding_mean_subtraction": false,
+  "v_proj_out": "per-head Hadamard H_hd",
+  "o_proj_in": "full Hadamard H_{nh*hd} (offline) + H_nh across heads (online)",
+  "down_proj_in": "H_12 kron H_1024 (offline + online)",
+  "qk": "per-head Hadamard after RoPE (online, cloq_kvq CLOQ_KVQ_ROT=qk)",
+  "d": 4096,
+  "num_heads": 32,
+  "head_dim": 128,
+  "num_kv_heads": 8,
+  "intermediate": 12288,
+  "down_had_K": 12,
+  "tied_untied": false,
+  "rotated_tensors": 254,
+  "rtn_quantized": 0,
+  "learned": {
+   "R1": "learned (cloq.spinquant, replaces the random Hadamard; seed unused)",
+   "R2": "learned per layer; replaces H_hd on v_proj out / o_proj in (H_nh across heads kept)",
+   "path": "/data/ziyangs/cloq_work/rot/spinquant_q8_a4_s0/R.pt",
+   "sha256": "1f1719b58be67060acbb25426d16c2ee877ca2e519e4ca6676a9fb83fec3f5ed",
+   "orth_err_stored": {
+    "R1": 7.395008299040592e-07,
+    "R2_max": 4.85616062362304e-07
+   },
+   "polar_shift_max": {
+    "R1": 3.478143931270883e-07,
+    "R2": 2.380762918474666e-07
+   },
+   "orth_err_used": {
+    "R1": 6.8833827526759706e-15,
+    "R2_max": 2.220446049250313e-15
+   },
+   "learn_meta": {
+    "method": "SpinQuant rotation learning (controlled: QuaRot skeleton and grid)",
+    "args": {
+     "cmd": "learn",
+     "model_dir": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+     "out": "/data/ziyangs/cloq_work/rot/spinquant_q8_a4_s0",
+     "steps": 100,
+     "lr": 1.5,
+     "batch": 8,
+     "micro": 4,
+     "abits": 4,
+     "nsamples": 128,
+     "seqlen": 2048,
+     "calib_seed": 0,
+     "rot_seed": 0,
+     "seed": 0,
+     "ppl_windows": 0
+    },
+    "calibration": {
+     "source": "WikiText-2 raw v1 train (cloq.quarot.wikitext_windows; = the GPTQ windows)",
+     "source_sha256": "57947bc7b58df4b19662c0609cc30651bc84328dab5fd588860b752072911789",
+     "seed": 0,
+     "n_samples": 128,
+     "seq_len": 2048,
+     "token_ids_sha256": "ec0a043b2c48080ebb5cce82773928c13562007527fc443b1fd8f651a02820d8"
+    },
+    "abits_train": 4,
+    "a_fmt": "sym_quarot",
+    "a_clip": 0.9,
+    "init": {
+     "R1": "random_hadamard(d, seed=0) = QuaRot Q",
+     "R2": "H_hd / sqrt(hd) = QuaRot per-head Hadamard"
+    }
+   }
+  }
+ },
+ "weight_quant": null,
+ "calibration": null,
+ "requires_serve_env": {
+  "CLOQ_PYHOOKS": "1",
+  "CLOQ_AQ_HAD": "quarot"
+ },
+ "forbids_serve_env": {
+  "CLOQ_KVQ_ROT": "1"
+ },
+ "reference_serve_env_W4A4KV4": {
+  "CLOQ_PYHOOKS": "1",
+  "CLOQ_AQ_BITS": "4",
+  "CLOQ_AQ_FMT": "sym_quarot",
+  "CLOQ_AQ_CLIP": "0.9",
+  "CLOQ_AQ_HAD": "quarot",
+  "CLOQ_KVQ_BITS": "4",
+  "CLOQ_KVQ_ROT": "qk",
+  "CLOQ_KVQ_FMT": "quarot",
+  "CLOQ_KVQ_KCLIP": "0.95",
+  "CLOQ_KVQ_VCLIP": "0.95"
+ },
+ "invariance_check_hf": {
+  "float32": {
+   "positions": 2048,
+   "top1_agreement": 0.99755859375,
+   "mean_abs_dlogprob_top1": 0.003999916836619377,
+   "max_abs_dlogprob_top1": 0.055249810218811035
+  },
+  "bfloat16": {
+   "positions": 2048,
+   "top1_agreement": 0.98291015625,
+   "mean_abs_dlogprob_top1": 0.02447764202952385,
+   "max_abs_dlogprob_top1": 0.7922072410583496
+  }
+ },
+ "source_model": "Qwen/Qwen3-8B",
+ "source_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+ "source_dir": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+ "storage": "fake-quant bf16",
+ "seconds": 389.7577669620514,
+ "build_seconds": 392
+}
