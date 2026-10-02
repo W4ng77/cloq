@@ -1,0 +1,430 @@
+"""Same-precision 2x2 fork analysis (W99k/W99l; docs/insights/SAMEPREC_PROTOCOL.md, frozen; manifests/fork/sameprec_v1.json).
+
+Precision 2x2: B = BF16, Q = GPTQ-W4 d1 (analysis/fork/dev/<m>_gptq_w4_d1). Same-precision 2x2: the driver's B role is
+Q' = GPTQ-W4 d2 (analysis/fork/sameprec/<m>_gptq_w4_d1_vs_d2). Both share the Q episodes (QQ arm), so the task x block
+units pair one to one. Driver branch names map BB = Q'Q', BQ = Q'Q, QB = QQ', QQ = QQ.
+
+Admission, effects, intervals: analyze_dev (imported): snapshot gate, quarantine, dedupe, strict complete-block rule
+(W70), complete 85-task retail/airline panel blocks (W78), split guard dev; Boot / summarise (block bootstrap with >= 10
+blocks else t over block means; crossed task x block alongside); B = 2000, seed 20261001. The 2x2 contrasts (offdiag,
+3x3, 16 patterns): analyze_ghf (imported). Each design is admitted separately (the unit keys coincide).
+Analysis set: longest prefix of the manifest's ordered blocks complete in the same-precision fork of BOTH cells (and in
+the precision fork). Primary: paired Delta M = M_prec - M' on the same units, pooled q4+q8 equal weight. Secondary
+(descriptive): Delta offdiag. Frozen reading (protocol §6). Per-block numbers for every completed block.
+Refuses to run unless sha256(protocol) equals PROTOCOL_SHA256 here and in the manifest.
+
+usage: python analysis/fork/analyze_sameprec.py [--B 2000]  ->  analysis/fork/out/sameprec_<UTC>.{md,json}
+"""
+from __future__ import annotations
+
+import argparse
+import glob
+import hashlib
+import json
+import subprocess
+import sys
+import time
+from collections import defaultdict
+from pathlib import Path
+
+import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import analyze_dev as AD  # noqa: E402
+import analyze_ghf as GH  # noqa: E402
+
+ROOT, OUT = AD.ROOT, AD.OUT
+MANIFEST = ROOT / "manifests/fork/sameprec_v1.json"
+PROTOCOL_SHA256 = "5c58d1e7d07ef10bd39f841236fccfd1436107c57ad264c62eaf14df94735823"
+PANEL = ("retail", "airline")
+CELL = "gptq_w4_d1"
+DESIGNS = ("prec", "same")
+FULL = ["G", "rescue", "damage", "M"]
+CONDK = ["G", "H", "F", "I", "offdiag", "strict_reversal", "M", "rescue", "damage"]
+
+
+def guard(man: dict) -> str:
+    p = ROOT / man["protocol"]
+    s = AD.sha256(p)
+    if s != PROTOCOL_SHA256 or s != man["protocol_sha256"]:
+        raise SystemExit(f"analyze_sameprec: refusing: sha256({man['protocol']}) = {s} differs from the pre-registered "
+                         f"{PROTOCOL_SHA256} (script) / {man['protocol_sha256']} (manifest)")
+    return s
+
+
+def dirs_under(rel: str) -> list[Path]:
+    out = []
+    for p in sorted(glob.glob(str(ROOT / rel / "**" / "search.json"), recursive=True)):
+        d = Path(p).parent
+        if (d / "states").is_dir() and (d / "branches").is_dir():
+            assert "/holdout/" not in str(d)
+            out.append(d)
+    return out
+
+
+def admit(dirs: list[Path], snap: dict) -> tuple[list[dict], list[dict], dict]:
+    loaded = [AD.load_dir(d, snap, {}) for d in dirs]
+    allu = [u for L in loaded for u in L["units"]]
+    AD.split_guard(allu, "dev", "analyze_sameprec")
+    for L in loaded:
+        if L["quarantined"]:
+            for u in L["units"]:
+                u.setdefault("excluded", "quarantined fork task (QQ no-op mismatch)")
+    units, _ = AD.dedupe_units(allu)
+    AD.mark_incomplete_blocks(units, "dev", strict=True)
+    AD.mark_partial_panel_blocks(units, "dev")
+    units = [u for u in units if u["cell"] == CELL and u["domain"] in PANEL]
+    for u in units:
+        if "Y" in u:
+            u["E"] = AD.effects(u["Y"], u["div"])
+            if u["div"]:
+                GH.add_E(u)
+    noop = [x for L in loaded for x in L["noop"]]
+    meta = {"dirs": [L["dir"] for L in loaded], "quarantined": [L["dir"] for L in loaded if L["quarantined"]],
+            "noop_sample": {"n": len(noop), "n_pass": sum(x["ok"] for x in noop)},
+            "files_digest": hashlib.sha256(json.dumps({k: v for L in loaded for k, v in L["files"].items()}, sort_keys=True).encode()).hexdigest()}
+    return units, loaded, meta
+
+
+def acceptance(units: list[dict]) -> dict:
+    """Q replay at the state; prefix_ok and env_hash_init_ok of every branch (counts only; exclusion is via quarantine)."""
+    n = qr = br = brok = 0
+    for u in units:
+        if not u.get("div") or "excluded" in u:
+            continue
+        d = ROOT / u["dir"]
+        st = json.load(open(d / "states" / f"{u['state_id']}.json"))
+        r4 = json.load(open(d / "branches" / f"{u['state_id']}.json"))
+        n += 1
+        qr += int(all((st.get("q_replay") or {}).values()) and bool(st.get("q_replay")))
+        for b, r in r4.items():
+            br += 1
+            brok += int(bool(r.get("prefix_ok")) and bool(r.get("env_hash_init_ok")))
+    return {"states": n, "q_replay_ok": qr, "branches": br, "prefix_and_env_ok": brok}
+
+
+def complete_blocks(units: list[dict], m: str) -> set:
+    """Blocks of model m with both panel domains admitted (strict + W78 rules already applied)."""
+    have = defaultdict(set)
+    for u in units:
+        if u["model"] == m and "excluded" not in u:
+            have[u["block"]].add(u["domain"])
+    return {b for b, ds in have.items() if set(PANEL) <= ds}
+
+
+def per_block(units: list[dict]) -> dict:
+    """Every block with units: found / admitted, complete flag, states, divergence rate, r, d, M, G (block means)."""
+    out = {}
+    g = defaultdict(list)
+    for u in units:
+        g[(u["model"], u["block"])].append(u)
+    for (m, b), us in sorted(g.items()):
+        y = [u for u in us if "Y" in u and (("excluded" not in u) or u["excluded"].startswith(("incomplete block", "partial-panel")))]
+        row = {"units_found": len(us), "units_with_outcomes": len(y), "admitted": sum(1 for u in us if "excluded" not in u),
+               "complete": all("excluded" not in u for u in us) and {u["domain"] for u in us} >= set(PANEL)
+               and len(us) == sum(AD.panel_task_counts().values()),
+               "excluded_by_reason": dict(sorted(defaultdict(int, {r: sum(1 for u in us if u.get("excluded") == r)
+                                                                   for r in {u.get("excluded") for u in us if u.get("excluded")}}).items()))}
+        if y:
+            # retail/airline weights 58/85, 27/85 only when complete; otherwise plain unit mean (labelled)
+            row["states"] = sum(1 for u in y if u["div"])
+            row["divergence_rate_pct"] = round(100 * row["states"] / len(y), 2)
+            for k in ("rescue", "damage", "M", "G"):
+                row[f"{k}_pct"] = round(100 * float(np.mean([u["E"][k] for u in y])), 2)
+            dv = [u for u in y if u["div"]]
+            row["offdiag_pct"] = round(100 * float(np.mean([u["E"]["offdiag"] for u in dv])), 2) if dv else None
+        out[f"{m}|{b}"] = row
+    return out
+
+
+def pair_units(prec: list[dict], same: list[dict]) -> list[dict]:
+    key = lambda u: (u["model"], u["domain"], u["task"], u["block"])  # noqa: E731
+    sp = {key(u): u for u in same}
+    out = []
+    for p in prec:
+        s = sp.get(key(p))
+        if s is None:
+            continue
+        E = {f"d{k}": p["E"][k] - s["E"][k] for k in ("M", "rescue", "damage", "G")}
+        E["both_div"] = int(p["div"] and s["div"])
+        E["same_t"] = int(p["div"] and s["div"] and p["t"] == s["t"])
+        E["div_prec"], E["div_same"] = int(p["div"]), int(s["div"])
+        E["d_div"] = E["div_prec"] - E["div_same"]
+        if p["div"] and s["div"]:
+            E["off_prec"], E["off_same"] = p["E"]["offdiag"], s["E"]["offdiag"]
+            E["d_off"] = E["off_prec"] - E["off_same"]
+        else:
+            E["off_prec"] = E["off_same"] = E["d_off"] = None
+        out.append({"model": p["model"], "domain": p["domain"], "task": p["task"], "block": p["block"], "div": True, "E": E,
+                    "t_prec": p.get("t"), "t_same": s.get("t")})
+    return out
+
+
+def full_stat(boot, us, key):
+    pt, dr = boot.task_mean(*boot.arrays(us, key))
+    return pt, dr
+
+
+def ratio_stat(boot, us, key, mask=None):
+    sub = [u for u in us if (mask is None or u["E"].get(mask))]
+    pt, dr = boot.ratio(*boot.arrays(sub, key))
+    return pt, dr
+
+
+def pool_pairs(vals: list[tuple]) -> dict:
+    """Equal-weight pool of (pt, Draws) pairs on shared draws: block bootstrap mean, t over pooled block means, crossed."""
+    pt = float(np.mean([v[0] for v in vals]))
+    dr = np.mean([np.asarray(v[1]) for v in vals], axis=0)
+    bms = [v[1].block_means for v in vals]
+    t = AD.t_interval(np.nanmean(np.vstack(bms), axis=0)) if all(b is not None for b in bms) else None
+    cr = (float(np.mean([v[1].crossed_pt for v in vals])), np.mean([v[1].crossed for v in vals], axis=0))
+    return AD.summarise(pt, dr, t=t, crossed=cr)
+
+
+def diff_pair(a: tuple, b: tuple) -> tuple:
+    """(pt, Draws) of a - b on the shared draws (ratio statistics of two designs)."""
+    pa, da = a
+    pb, db = b
+    bm = np.asarray(da.block_means) - np.asarray(db.block_means)
+    return pa - pb, AD.Draws(np.asarray(da) - np.asarray(db), AD.t_interval(bm), np.asarray(da.crossed) - np.asarray(db.crossed),
+                             da.crossed_pt - db.crossed_pt, bm)
+
+
+def reading(x: dict, few: float, what: str) -> dict:
+    lo, hi = x["ci95"]
+    est = x["est"]
+    inc0 = lo <= 0 <= hi
+    if inc0 and abs(est) <= few:
+        case, text = "similar", f"{what}: similar under same precision (interval includes 0, |diff| <= {few} pp) -> generic trajectory sensitivity"
+    elif lo > 0:
+        case, text = "precision_excess", f"{what}: precision-specific excess {est:+.1f} pp [{lo:+.1f}, {hi:+.1f}]"
+    elif hi < 0:
+        case, text = "same_larger", f"{what}: same-precision at least as large (interval excludes 0, diff < 0)"
+    else:
+        case, text = "unresolved", f"{what}: not resolved by this control (interval includes 0, |diff| > {few} pp)"
+    return {"case": case, "text": text, "est": est, "ci95": x["ci95"], "primary": x.get("primary")}
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--B", type=int, default=AD.B_BOOT)
+    a = ap.parse_args()
+    t0 = time.time()
+    try:
+        from loguru import logger
+        logger.remove()
+        logger.add(sys.stderr, level="ERROR")
+    except Exception:
+        pass
+    man = json.load(open(MANIFEST))
+    psha = guard(man)
+    snap = json.load(open(ROOT / man["snapshot"]))
+    models = man["cells"]
+    U, M = {}, {}
+    for des, key in (("prec", "precision_dirs"), ("same", "sameprec_dirs")):
+        dirs = [d for m in models for d in dirs_under(man[key][m])]
+        U[des], _, M[des] = admit(dirs, snap)
+    blocks_all = {des: {m: complete_blocks(U[des], m) for m in models} for des in DESIGNS}
+    prefix = []
+    for b in man["blocks_ordered"]:
+        if all(b in blocks_all[des][m] for des in DESIGNS for m in models):
+            prefix.append(b)
+        else:
+            break
+    K = len(prefix)
+    res = {"protocol": man["protocol"], "protocol_sha256": psha, "manifest": str(MANIFEST.relative_to(ROOT)),
+           "script_sha256": AD.sha256(__file__), "analyze_dev_sha256": AD.sha256(AD.__file__), "analyze_ghf_sha256": AD.sha256(GH.__file__),
+           "git_head": subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip(),
+           "utc": time.strftime("%Y%m%dT%H%M%SZ", time.gmtime()), "snapshot": man["snapshot"], "B": a.B, "seed": AD.SEED,
+           "mapping": {"BB": "Q'Q'", "BQ": "Q'Q", "QB": "QQ'", "QQ": "QQ"},
+           "admission_meta": M, "complete_blocks": {d: {m: sorted(v) for m, v in x.items()} for d, x in blocks_all.items()},
+           "analysis_set": {"blocks": prefix, "K": K, "rule": "longest prefix of blocks_ordered complete in both cells and both designs"},
+           "per_block": {d: per_block(U[d]) for d in DESIGNS}}
+    if K >= 1:
+        sel = {d: [u for u in U[d] if "excluded" not in u and u["block"] in prefix] for d in DESIGNS}
+        bo = defaultdict(set)
+        for d in DESIGNS:
+            for u in sel[d]:
+                bo[u["task"]].add(u["block"])
+        boot = AD.Boot(sorted(bo), {t: sorted(v) for t, v in bo.items()}, B=a.B)
+        cells, pairs_by = {}, {}
+        for m in models:
+            c = {}
+            for d in DESIGNS:
+                us = [u for u in sel[d] if u["model"] == m]
+                div = [u for u in us if u["div"]]
+                r = {"n_units": len(us), "n_states": len(div), "divergence_rate_pct": round(100 * len(div) / max(1, len(us)), 2),
+                     "full_pp": {k: AD.summarise(*full_stat(boot, us, k)) for k in FULL}}
+                r["cond_pp"] = {k: AD.summarise(*ratio_stat(boot, div, k)) for k in CONDK} if div else {}
+                r["table3"] = GH.table3(div)
+                r["patterns16"] = GH.patterns16(div)
+                r["acceptance"] = acceptance(us)
+                c[d] = r
+            pu = pair_units([u for u in sel["prec"] if u["model"] == m], [u for u in sel["same"] if u["model"] == m])
+            pairs_by[m] = pu
+            c["paired"] = {"n_pairs": len(pu), "n_both_div": sum(u["E"]["both_div"] for u in pu), "n_same_t": sum(u["E"]["same_t"] for u in pu)}
+            c["paired"]["full_pp"] = {k: AD.summarise(*full_stat(boot, pu, k)) for k in ("dM", "drescue", "ddamage", "dG", "d_div")}
+            divp = [u for u in sel["prec"] if u["model"] == m and u["div"]]
+            divs = [u for u in sel["same"] if u["model"] == m and u["div"]]
+            c["paired"]["d_offdiag_pp"] = AD.summarise(*diff_pair(ratio_stat(boot, divp, "offdiag"), ratio_stat(boot, divs, "offdiag"))) if divp and divs else None
+            c["paired"]["d_strict_reversal_pp"] = AD.summarise(*diff_pair(ratio_stat(boot, divp, "strict_reversal"), ratio_stat(boot, divs, "strict_reversal"))) if divp and divs else None
+            for lab, mask in (("a_both_div", "both_div"), ("b_same_t", "same_t")):
+                sub = [u for u in pu if u["E"][mask]]
+                c["paired"][lab] = ({"n": len(sub), "off_prec_pp": AD.summarise(*ratio_stat(boot, sub, "off_prec")),
+                                     "off_same_pp": AD.summarise(*ratio_stat(boot, sub, "off_same")),
+                                     "d_off_pp": AD.summarise(*ratio_stat(boot, sub, "d_off"))} if sub else {"n": 0})
+            cells[m] = c
+        res["cells"] = cells
+        # pooled q4 + q8, equal weight on the shared draws
+        pool = {"prec": {}, "same": {}, "paired": {}}
+        for d in DESIGNS:
+            for k in FULL:
+                pool[d][k] = pool_pairs([full_stat(boot, [u for u in sel[d] if u["model"] == m], k) for m in models])
+            for k in ("offdiag", "strict_reversal", "G", "H", "F", "I"):
+                pool[d][f"cond_{k}"] = pool_pairs([ratio_stat(boot, [u for u in sel[d] if u["model"] == m and u["div"]], k) for m in models])
+            pool[d]["divergence_rate_pct"] = round(float(np.mean([cells[m][d]["divergence_rate_pct"] for m in models])), 2)
+            pool[d]["table3_counts_summed"] = {k: sum(cells[m][d]["table3"]["counts"][k] for m in models) for k in cells[models[0]][d]["table3"]["counts"]}
+            pool[d]["n_states"] = sum(cells[m][d]["n_states"] for m in models)
+        for k in ("dM", "drescue", "ddamage", "dG", "d_div"):
+            pool["paired"][k] = pool_pairs([full_stat(boot, pairs_by[m], k) for m in models])
+        pool["paired"]["d_offdiag"] = pool_pairs([diff_pair(ratio_stat(boot, [u for u in sel["prec"] if u["model"] == m and u["div"]], "offdiag"),
+                                                            ratio_stat(boot, [u for u in sel["same"] if u["model"] == m and u["div"]], "offdiag")) for m in models])
+        for lab, mask in (("a_both_div", "both_div"), ("b_same_t", "same_t")):
+            subs = [[u for u in pairs_by[m] if u["E"][mask]] for m in models]
+            if all(subs):
+                pool["paired"][lab] = {"n": sum(len(s) for s in subs), **{k: pool_pairs([ratio_stat(boot, s, kk) for s in subs])
+                                                                          for k, kk in (("off_prec_pp", "off_prec"), ("off_same_pp", "off_same"), ("d_off_pp", "d_off"))}}
+        res["pooled"] = pool
+        few = float(man["few_pp"])
+        if K >= int(man["min_blocks_reading"]):
+            rm = reading(pool["paired"]["dM"], few, "Turnover M (paired, primary)")
+            ro = reading(pool["paired"]["d_offdiag"], few, "Off-diagonal share (DESCRIPTIVE: different state sets)")
+            both = rm["case"] == "similar" and ro["case"] == "similar"
+            res["reading"] = {"K": K, "few_pp": few, "M": rm, "offdiag": ro,
+                              "per_cell": {m: {"M": reading(cells[m]["paired"]["full_pp"]["dM"], few, f"{m} M"),
+                                               "offdiag": reading(cells[m]["paired"]["d_offdiag_pp"], few, f"{m} off-diagonal (descriptive)")}
+                                           for m in models if cells[m]["paired"]["d_offdiag_pp"]},
+                              "frozen_statement": ("The paper must say that turnover and controller dependence largely reflect generic trajectory "
+                                                   "sensitivity of the closed loop rather than precision-specific effects." if both else
+                                                   "The paper must say that the turnover largely reflects generic trajectory sensitivity of the closed loop "
+                                                   "rather than a precision-specific effect." if rm["case"] == "similar" else
+                                                   f"The paper reports the precision-specific excess in turnover: ΔM {rm['est']:+.1f} pp "
+                                                   f"[{rm['ci95'][0]:+.1f}, {rm['ci95'][1]:+.1f}], {100 * rm['est'] / max(1e-9, pool['prec']['M']['est']):.0f}% of M_prec."
+                                                   if rm["case"] == "precision_excess" else rm["text"])}
+        else:
+            res["reading"] = {"K": K, "note": f"fewer than {man['min_blocks_reading']} complete prefix blocks: no reading (protocol §2); per-block numbers only"}
+    # context: precision M on all its complete blocks
+    res["precision_all_blocks"] = {}
+    for m in models:
+        us = [u for u in U["prec"] if u["model"] == m and "excluded" not in u]
+        if us:
+            bo = defaultdict(set)
+            for u in us:
+                bo[u["task"]].add(u["block"])
+            bt = AD.Boot(sorted(bo), {t: sorted(v) for t, v in bo.items()}, B=a.B)
+            res["precision_all_blocks"][m] = {"K": len({u["block"] for u in us}), "M_pp": AD.summarise(*full_stat(bt, us, "M"))}
+    res["seconds"] = round(time.time() - t0, 1)
+    OUT.mkdir(parents=True, exist_ok=True)
+    jp = OUT / f"sameprec_{res['utc']}.json"
+    jp.write_text(json.dumps(res, indent=1, default=lambda o: o.item() if hasattr(o, "item") else sorted(o) if isinstance(o, set) else str(o)))
+    (OUT / f"sameprec_{res['utc']}.md").write_text(markdown(res, jp))
+    print(f"analyze_sameprec: wrote {jp.relative_to(ROOT)} (K = {K}, {res['seconds']} s)")
+
+
+def markdown(r: dict, jp: Path) -> str:
+    def f(x):
+        return "n/a" if not x else f"{x['est']:+.1f} [{x['ci95'][0]:+.1f}, {x['ci95'][1]:+.1f}]"
+
+    def fr(x):
+        return "n/a" if not x else f"{x['est']:.1f} [{x['ci95'][0]:.1f}, {x['ci95'][1]:.1f}]"
+
+    def cx(x):
+        return f"[{x['crossed_ci95'][0]:+.1f}, {x['crossed_ci95'][1]:+.1f}]" if x and "crossed_ci95" in x else "n/a"
+    K = r["analysis_set"]["K"]
+    L = []
+    if K and r.get("pooled"):
+        P = r["pooled"]
+        rd = r["reading"]
+        tl = (f"**TL;DR** Same-precision control (Q′ = GPTQ-W4 d2 in place of BF16; Q = GPTQ-W4 d1), q4+q8 pooled on K = {K} blocks "
+              f"({r['analysis_set']['blocks'][0]}–{r['analysis_set']['blocks'][-1]}), 85 tasks each. Turnover M: precision {fr(P['prec']['M'])} vs "
+              f"same-precision {fr(P['same']['M'])} pp; paired ΔM {f(P['paired']['dM'])} pp ({P['paired']['dM']['primary']}; crossed {cx(P['paired']['dM'])}). "
+              f"Off-diagonal share (descriptive): {fr(P['prec']['cond_offdiag'])} vs {fr(P['same']['cond_offdiag'])}%, Δ {f(P['paired']['d_offdiag'])} pp. "
+              f"Divergence rate {P['prec']['divergence_rate_pct']:.1f}% vs {P['same']['divergence_rate_pct']:.1f}%. ")
+        tl += ("Frozen reading: " + rd["frozen_statement"]) if "frozen_statement" in rd else rd.get("note", "")
+        L += [tl, ""]
+    else:
+        L += [f"**TL;DR** Same-precision control: no complete prefix block yet (K = {K}); per-block numbers below.", ""]
+    L += [f"# Same-precision 2×2 fork (Q vs Q′) ({r['utc']})", "",
+          f"Protocol `{r['protocol']}` sha256 {r['protocol_sha256'][:16]} (verified); manifest `{r['manifest']}`; script sha {r['script_sha256'][:12]}, "
+          f"analyze_dev {r['analyze_dev_sha256'][:12]}, analyze_ghf {r['analyze_ghf_sha256'][:12]}, git {r['git_head'][:10]}. Full numbers: `{jp.relative_to(ROOT)}`.",
+          "Arm mapping (driver → same-precision): BB = Q′Q′, BQ = Q′Q, QB = QQ′, QQ = QQ. Admission = analyze_dev (strict complete blocks, 85-task panel). "
+          "Intervals: fixed pool = t over block means when K < 10, block bootstrap when K ≥ 10 (both in JSON); crossed task × block = generalisation.", "",
+          f"Analysis set: {r['analysis_set']['blocks'] or 'none'} (rule: {r['analysis_set']['rule']}). Complete blocks: "
+          + "; ".join(f"{d} {m}: {','.join(v) or '-'}" for d, x in r["complete_blocks"].items() for m, v in x.items()), ""]
+    if K and r.get("cells"):
+        rd = r["reading"]
+        if "M" in rd:
+            L += ["## Frozen reading (protocol §6, pooled q4+q8)", "", f"- {rd['M']['text']} — ΔM {f(rd['M'])} ({rd['M']['primary']})",
+                  f"- {rd['offdiag']['text']} — Δoff {f(rd['offdiag'])}", f"- **Statement:** {rd['frozen_statement']}"]
+            for m, x in rd["per_cell"].items():
+                L.append(f"- per cell {m} (secondary): {x['M']['case']} (ΔM {f(x['M'])}); off-diagonal {x['offdiag']['case']} ({f(x['offdiag'])})")
+            L.append("")
+        L += ["## Full pool (task × block units; pp)", "", "| cell | design | units | states (div. rate) | r | d | M | G_all |", "|---|---|---|---|---|---|---|---|"]
+        for m, c in r["cells"].items():
+            for d, lab in (("prec", "precision (B = BF16)"), ("same", "same-precision (Q′ = d2)")):
+                x = c[d]
+                L.append(f"| {m} | {lab} | {x['n_units']} | {x['n_states']} ({x['divergence_rate_pct']:.1f}%) | {fr(x['full_pp']['rescue'])} | "
+                         f"{fr(x['full_pp']['damage'])} | {fr(x['full_pp']['M'])} | {f(x['full_pp']['G'])} |")
+        P = r["pooled"]
+        for d, lab in (("prec", "precision"), ("same", "same-precision")):
+            L.append(f"| pool q4+q8 | {lab} | | {P[d]['n_states']} ({P[d]['divergence_rate_pct']:.1f}%) | {fr(P[d]['rescue'])} | {fr(P[d]['damage'])} | {fr(P[d]['M'])} | {f(P[d]['G'])} |")
+        L += ["", "## Paired differences (precision − same-precision, same units)", "",
+              "| cell | pairs | ΔM (primary) | ΔM crossed | Δr | Δd | ΔG_all | Δ divergence rate | Δ off-diagonal (descriptive) |", "|---|---|---|---|---|---|---|---|---|"]
+        for m, c in r["cells"].items():
+            p = c["paired"]
+            L.append(f"| {m} | {p['n_pairs']} | {f(p['full_pp']['dM'])} | {cx(p['full_pp']['dM'])} | {f(p['full_pp']['drescue'])} | {f(p['full_pp']['ddamage'])} | "
+                     f"{f(p['full_pp']['dG'])} | {f(p['full_pp']['d_div'])} | {f(p['d_offdiag_pp'])} |")
+        pp = P["paired"]
+        L.append(f"| pool | | {f(pp['dM'])} | {cx(pp['dM'])} | {f(pp['drescue'])} | {f(pp['ddamage'])} | {f(pp['dG'])} | {f(pp['d_div'])} | {f(pp['d_offdiag'])} |")
+        L += ["", "## On divergent states (ratio of block sums; pp)", "",
+              "| cell | design | states | G | H | F | I | off-diagonal | strict reversal |", "|---|---|---|---|---|---|---|---|---|"]
+        for m, c in r["cells"].items():
+            for d in DESIGNS:
+                x = c[d]["cond_pp"]
+                if x:
+                    L.append(f"| {m} | {d} | {c[d]['n_states']} | {f(x['G'])} | {f(x['H'])} | {f(x['F'])} | {f(x['I'])} | {fr(x['offdiag'])} | {fr(x['strict_reversal'])} |")
+        for d in DESIGNS:
+            L.append(f"| pool | {d} | {P[d]['n_states']} | {f(P[d]['cond_G'])} | {f(P[d]['cond_H'])} | {f(P[d]['cond_F'])} | {f(P[d]['cond_I'])} | "
+                     f"{fr(P[d]['cond_offdiag'])} | {fr(P[d]['cond_strict_reversal'])} |")
+        L += ["", "Same-precision notation: G′ = Y_Q′Q − Y_QQ, H′ = Y_QQ′ − Y_QQ, F′ = Y_Q′Q′ − Y_QQ, Δ_Q = Y_Q′Q − Y_QQ, Δ_Q′ = Y_Q′Q′ − Y_QQ′.", "",
+              "3×3 (Δ_Q, Δ_partner) counts, summed over q4+q8 (rows Δ_Q −1/0/+1, columns Δ_partner −1/0/+1):", ""]
+        for d in DESIGNS:
+            t3 = P[d]["table3_counts_summed"]
+            L.append(f"- {d}: " + " | ".join(" ".join(str(t3[f'{a},{b}']) for b in (-1, 0, 1)) for a in (-1, 0, 1)))
+        L += ["", "Off-diagonal per state, conditional on divergence in both designs (descriptive):", ""]
+        for m, c in list(r["cells"].items()) + [("pool", {"paired": P["paired"]})]:
+            for lab in ("a_both_div", "b_same_t"):
+                x = c["paired"].get(lab) or {}
+                if x.get("n"):
+                    L.append(f"- {m} {lab}: n {x['n']}; precision {fr(x['off_prec_pp'])}, same-precision {fr(x['off_same_pp'])}, Δ {f(x['d_off_pp'])}")
+        L += ["", "Acceptance (counts; exclusion only via quarantine, as in the precision analysis):", ""]
+        for m, c in r["cells"].items():
+            for d in DESIGNS:
+                L.append(f"- {m} {d}: {c[d]['acceptance']}")
+        L.append(f"- QQ no-op samples: prec {r['admission_meta']['prec']['noop_sample']}, same {r['admission_meta']['same']['noop_sample']}; "
+                 f"quarantined dirs: {r['admission_meta']['prec']['quarantined'] + r['admission_meta']['same']['quarantined'] or 'none'}")
+    L += ["", "Precision 2×2 on all its complete blocks (context): " + "; ".join(f"{m}: M {fr(x['M_pp'])} on {x['K']} blocks" for m, x in r["precision_all_blocks"].items()),
+          "", "## Per block (every block with units; partial completion)", "",
+          "| design | model\\|block | found | admitted | complete | states | div. rate | r | d | M | G | off-diag |", "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    for d in DESIGNS:
+        for k, x in r["per_block"][d].items():
+            if d == "prec" and k.split("|")[1] not in (r["analysis_set"]["blocks"] or []) and not any(k in r["per_block"]["same"] for _ in [0]):
+                continue
+            L.append(f"| {d} | {k} | {x['units_found']} | {x['admitted']} | {x['complete']} | {x.get('states', '')} | {x.get('divergence_rate_pct', '')} | "
+                     f"{x.get('rescue_pct', '')} | {x.get('damage_pct', '')} | {x.get('M_pct', '')} | {x.get('G_pct', '')} | {x.get('offdiag_pct', '')} |")
+    L.append("\nPer-block r/d/M/G are plain unit means over units with outcomes (incomplete blocks included and flagged).")
+    return "\n".join(L) + "\n"
+
+
+if __name__ == "__main__":
+    main()
