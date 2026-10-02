@@ -9,6 +9,9 @@ Panel A (tau2, U2B ordinary states on the BF16 trajectory; fork_driver mode bank
           (reference cells: analysis/fork/token_scores/q8_<cell>/<blk>/)
   unit    state (one per task x block); four arms required (never imputed); a task output with a failed no-op is dropped
   rules   strict blocks: a (cell, block) enters only with all 85 states complete (complete-case sensitivity alongside);
+          m24 (amendment A3): a frozen analysis mask (MASKS) fixes the population to 83 tasks (airline 13, 44 excluded
+          uniformly, all cells and blocks); strict blocks then need all 83; the actual-available-rows analysis (all
+          non-missing rows per block, unmasked) is reported alongside, labelled sensitivity
           phase-2 blocks (f04-f06) only if analysis/fork/newmethod/expansion_<model>.json says expand = true
   stats   analyze_dev.effects + analyze_ghf.add_E (imported), plus D_cc = Y_QB - Y_BB, damage_cc, gain_cc, M_cc;
           all-state task-equal means (analyze_dev.Boot.task_mean: t over block means primary for k < 10, block bootstrap
@@ -25,8 +28,9 @@ Local fidelity (descriptive): exact agreement, agreement category, KLu_0 / KLu_m
   (cut points from the KL values alone, pooled over admitted cells' phase-1 states); Spearman across cells (descriptive).
 Never opens analysis/fork/holdout/.
 
-usage: /data/ziyangs/cloq_work/envs/cloq/bin/python analysis/fork/analyze_newmethod.py [--model q8] [--B 2000] [--dry]  (needs scipy)
-  --dry  load and admit everything, print counts only (no estimates), write nothing
+usage: /data/ziyangs/cloq_work/envs/cloq/bin/python analysis/fork/analyze_newmethod.py [--model q8] [--B 2000] [--dry] [--selftest]  (needs scipy)
+  --dry       load and admit everything, print counts only (no estimates), write nothing
+  --selftest  synthetic units only (reads no fork output): mask, strict blocks, sensitivity, m24 contrasts; writes nothing
 -> analysis/fork/out/newmethod_<model>_<UTC>.{json,md}
 """
 from __future__ import annotations
@@ -49,7 +53,11 @@ OUT = ROOT / "analysis/fork/out"
 PROTOCOL = ROOT / "docs/insights/NEWMETHOD_PANEL_PROTOCOL.md"
 # Amendment A1 (W99v-a1, 2026-10-02): was 9cd5c979... (frozen nmp-v1); only the amended protocol is accepted.
 # Amendment A2 (W100e, 2026-10-02): was 28b78509... (A1); m24 manifest registered.
-PROTOCOL_SHA256 = "c6603f90298069af78de59ea1ae9992e722ed927e1a2d951582b28d51d1687c4"
+# Amendment A3 (W100e-b, 2026-10-02): was c6603f90... (A2); m24 83-task analysis mask, M1 contrast.
+PROTOCOL_SHA256 = "da8b69baaff0f47fc6d4ff0674d73c8890896d7a997a7dfa44062448ea27ca77"
+# Amendment A3 (W100e-b): per-model tau2 analysis mask (frozen file + sha); the population is the manifest tasks minus the mask's
+# excluded tasks, uniformly for all cells and blocks.
+MASKS = {"m24": ("manifests/fork/newmethod_panel_v1_m24_mask_v1.json", "b03a8a918959e3568315b1ae134f2902580e6af822d80beccb692729c2f82c81")}
 MANIFESTS = {"q8": ("manifests/fork/newmethod_panel_v1.json", "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"),
              "m24": ("manifests/fork/newmethod_panel_v1_m24.json", "53295b64fbcc7c4501ea8883aa34ce922a5ca0e23c5636c8bb1c4efe38e3ff4c")}
 BANK_U_SHA256 = "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907"
@@ -66,6 +74,11 @@ PRIMARY = [("P1", "quarot_w4", "gptq_w4_d1"), ("P2", "spinquant_w4a4", "quarot_w
 BFCL_PRIMARY = [("P1", "quarot_w4", "gptq_w4_d1"), ("P2", "spinquant_w4a4", "quarot_w4a4"), ("P3", "kivi_k2v2", "kvq_int4")]
 SECONDARY = [("T1", "quarot_w4", "quarot_w16"), ("T2", "spinquant_w4a4", "spinquant_w16"), ("T3", "quarot_w4a4", "quarot_w16"),
              ("K2", "kivi_k4v4", "kvq_int8")]
+# Amendment A3: m24 (second family) cells and contrast. One primary contrast per panel (Holm over one = unadjusted):
+# M1 gptq_w4_d1 - rtn_w4 on tau2 D_cc (t over block-mean differences, blocks complete in both cells) and on BFCL D_cc_all.
+M24_CELLS = ("rtn_w4", "gptq_w4_d1")
+CONTRASTS = {"q8": {"primary": PRIMARY, "bfcl_primary": BFCL_PRIMARY, "secondary": SECONDARY},
+             "m24": {"primary": [("M1", "gptq_w4_d1", "rtn_w4")], "bfcl_primary": [("M1", "gptq_w4_d1", "rtn_w4")], "secondary": []}}
 CATS = ("base", "miss_param", "miss_func", "long_context")
 ALL_KEYS = ["G", "H", "F", "D_cc", "I", "rescue", "damage", "M", "damage_cc", "gain_cc", "M_cc", "offdiag", "strict_reversal", "exact"]
 BFCL_ALL = ["G", "rescue", "damage", "M", "D_cc", "damage_cc", "gain_cc", "M_cc"]
@@ -85,7 +98,7 @@ ER = _load("ext_r2", "analysis/fork/ext_r2.py")
 sys.path.insert(0, str(ROOT / "analysis/fork"))
 import analyze_ghf as GHF  # noqa: E402
 
-AE.ARMS = tuple(AE.ARMS) + tuple(c for c in NEW_CELLS if c not in AE.ARMS)  # parse_dir must know the new cell names
+AE.ARMS = tuple(AE.ARMS) + tuple(c for c in NEW_CELLS + M24_CELLS if c not in AE.ARMS)  # parse_dir must know the new cell names
 
 
 def sha(p: Path) -> str:
@@ -102,7 +115,29 @@ def guard(model: str) -> dict:
     ms = sha(ROOT / rel)
     if ms != want:
         raise SystemExit(f"analyze_newmethod: manifest sha256 {ms} != frozen {want}")
-    return {"protocol_sha256": ps, "manifest": rel, "manifest_sha256": ms}
+    g = {"protocol_sha256": ps, "manifest": rel, "manifest_sha256": ms}
+    if model in MASKS:
+        mrel, mwant = MASKS[model]
+        mss = sha(ROOT / mrel)
+        if mss != mwant:
+            raise SystemExit(f"analyze_newmethod: mask sha256 {mss} != frozen {mwant}")
+        mk = json.loads((ROOT / mrel).read_text())
+        if mk["applies_to"]["manifest_sha256"] != ms:
+            raise SystemExit("analyze_newmethod: mask was frozen for a different manifest")
+        g.update(mask=mrel, mask_sha256=mss)
+    return g
+
+
+def population(model: str, man: dict) -> tuple[set, list]:
+    """Analysis population (tasks) = manifest tasks minus the frozen mask's excluded tasks (amendment A3)."""
+    tasks = {f"{r['domain']}|{r['task_id']}" for r in man["rows"]}
+    if model not in MASKS:
+        return tasks, []
+    mk = json.loads((ROOT / MASKS[model][0]).read_text())
+    exc = list(mk["excluded_tasks"])
+    pop = tasks - set(exc)
+    assert pop == set(mk["population"]) and len(pop) == mk["n_tasks_population"], "mask population != manifest minus excluded"
+    return pop, exc
 
 
 def no_holdout(p: Path) -> Path:
@@ -180,17 +215,34 @@ def load_tau2(model: str, man: dict) -> tuple[dict, dict]:
     return dict(cells), dict(log)
 
 
-def strict_blocks(units: list[dict], n_tasks: int) -> tuple[list[dict], dict]:
+def strict_blocks(units: list[dict], n_tasks: int, pop: set | None = None) -> tuple[list[dict], dict]:
+    """A block enters only if it has a complete four-arm state for every task of the population (n_tasks; with a mask,
+    exactly the set pop). Missing arms are never imputed; a newly missing branch fails the block."""
     by = defaultdict(list)
     for u in units:
         by[u["block"]].append(u)
     keep, info = [], {}
     for blk, us in sorted(by.items()):
         ok = [u for u in us if "excluded" not in u]
-        info[blk] = {"rows": len(us), "complete": len(ok), "admitted": len(ok) == n_tasks}
-        if len(ok) == n_tasks:
+        full = len(ok) == n_tasks and len({u["task"] for u in ok}) == n_tasks and (pop is None or {u["task"] for u in ok} == pop)
+        info[blk] = {"rows": len(us), "complete": len(ok), "population": n_tasks, "admitted": full}
+        if not full:
+            info[blk]["incomplete_tasks"] = sorted((pop or {u["task"] for u in us}) - {u["task"] for u in ok})[:20]
+        if full:
             keep += ok
     return keep, info
+
+
+def apply_population(raw: dict, pop: set, n_tasks: int) -> tuple[dict, dict, dict, dict]:
+    """Primary (strict, on the frozen population), complete-case (population, any block) and the amendment-A3 sensitivity
+    'actual available rows' (every non-missing four-arm row of every block, unmasked, no strictness)."""
+    cells, info, cc, avail = {}, {}, {}, {}
+    for c, us in raw.items():
+        inpop = [u for u in us if u["task"] in pop]
+        cells[c], info[c] = strict_blocks(inpop, n_tasks, pop)
+        cc[c] = [u for u in inpop if "excluded" not in u]
+        avail[c] = [u for u in us if "excluded" not in u]
+    return cells, info, cc, avail
 
 
 def load_scores(model: str, cell: str, blk: str, ref: bool) -> dict:
@@ -244,7 +296,9 @@ def t_pvalue(bm: np.ndarray) -> float | None:
     return float(ttest_1samp(bm, 0.0).pvalue) if len(bm) >= 2 and np.std(bm) > 0 else (1.0 if len(bm) >= 2 else None)
 
 
-def tau2_contrast(a: list[dict], b: list[dict], B: int) -> dict:
+def tau2_contrast(a: list[dict], b: list[dict], B: int, match_tasks: bool = False) -> dict:
+    """Primary: a, b are strict-admitted units, so common blocks are complete in both cells. match_tasks (sensitivity only):
+    pair the states present in both cells within the common blocks."""
     ib = {(u["task"], u["block"]): u for u in b}
     common_blocks = sorted({u["block"] for u in a} & {u["block"] for u in b})
     pairs = []
@@ -339,7 +393,8 @@ def load_bfcl(model: str, man: dict) -> tuple[dict, dict]:
     return dict(cells), log
 
 
-def bfcl_stats(cells: dict, B: int) -> dict:
+def bfcl_stats(cells: dict, B: int, contrasts: dict | None = None) -> dict:
+    contrasts = contrasts or CONTRASTS["q8"]
     strata = defaultdict(set)
     for us in cells.values():
         for u in us:
@@ -361,7 +416,7 @@ def bfcl_stats(cells: dict, B: int) -> dict:
         r["table3"], r["patterns16"] = ER.table3(div), ER.patterns16(div)
         res[c] = r
     con = {}
-    for lab, a, b in BFCL_PRIMARY + SECONDARY:
+    for lab, a, b in contrasts["bfcl_primary"] + contrasts["secondary"]:
         if a not in cells or b not in cells:
             con[lab] = {"not_estimable": "cell not admitted", "cells": [a, b]}
             continue
@@ -375,7 +430,7 @@ def bfcl_stats(cells: dict, B: int) -> dict:
             con[lab][k] = AD.summarise(pt, dr)
             d = np.asarray(dr)
             con[lab][k]["boot_p_two_sided"] = float(min(1.0, 2 * min((d <= 0).mean(), (d >= 0).mean())))
-    fam = {lab: con[lab].get("D_cc", {}).get("boot_p_two_sided") for lab, _, _ in BFCL_PRIMARY if "D_cc" in con[lab]}
+    fam = {lab: con[lab].get("D_cc", {}).get("boot_p_two_sided") for lab, _, _ in contrasts["bfcl_primary"] if "D_cc" in con[lab]}
     return {"cells": res, "contrasts": con, "holm_primary_D_cc_all": holm(fam)}
 
 
@@ -385,36 +440,52 @@ def main():
     ap.add_argument("--model", default="q8")
     ap.add_argument("--B", type=int, default=AD.B_BOOT)
     ap.add_argument("--dry", action="store_true")
+    ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args()
+    if a.selftest:
+        selftest(a.B)
+        return
     g = guard(a.model)
+    CT = CONTRASTS.get(a.model, CONTRASTS["q8"])
     man = json.loads((ROOT / g["manifest"]).read_text())
-    n_tasks = len({(r["domain"], r["task_id"]) for r in man["rows"]})
+    pop, excluded = population(a.model, man)
+    n_tasks = len(pop)
     t0 = time.time()
     raw, tlog = load_tau2(a.model, man)
-    cells, blocks_info, cc_cells = {}, {}, {}
-    for c, us in raw.items():
-        cells[c], blocks_info[c] = strict_blocks(us, n_tasks)
-        cc_cells[c] = [u for u in us if "excluded" not in u]
+    cells, blocks_info, cc_cells, avail_cells = apply_population(raw, pop, n_tasks)
     bcells, blog = load_bfcl(a.model, man)
     if a.dry:
-        print(json.dumps({"guard": g, "not_run": NOT_RUN, "tau2_blocks": blocks_info, "tau2_log": tlog, "bfcl_log": blog,
+        print(json.dumps({"guard": g, "population": {"n_tasks": n_tasks, "excluded_by_mask": excluded}, "not_run": NOT_RUN, "tau2_blocks": blocks_info, "tau2_log": tlog, "bfcl_log": blog,
                           "expansion_ok": expansion_ok(a.model)}, indent=1, default=str))
         return
     R = {"guard": g, "script_sha256": sha(Path(__file__)), "git": subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip(),
-         "B": a.B, "seed": AD.SEED, "not_run": NOT_RUN, "expansion_ok": expansion_ok(a.model), "tau2": {"blocks": blocks_info, "log": tlog, "cells": {}, "complete_case": {}}}
+         "B": a.B, "seed": AD.SEED, "not_run": NOT_RUN, "expansion_ok": expansion_ok(a.model), "tau2": {"population": {"n_tasks": n_tasks, "excluded_by_mask": excluded,
+                                                                                                "label": "conditional population (amendment A3)" if excluded else "full panel"},
+                                                                                 "blocks": blocks_info, "log": tlog, "cells": {}, "complete_case": {},
+                                                                                 "sensitivity_available_rows": {}}}
     for c, us in sorted(cells.items()):
         if us:
             R["tau2"]["cells"][c] = tau2_cell(us, a.B)
         if cc_cells[c]:
             R["tau2"]["complete_case"][c] = {k: v for k, v in tau2_cell(cc_cells[c], a.B).items() if k in ("n_states", "k_blocks", "all_states_pp")}
+        if excluded and avail_cells[c]:
+            R["tau2"]["sensitivity_available_rows"][c] = {"label": "SENSITIVITY: actual available rows (non-missing four-arm rows per block, no mask, no strictness)",
+                                                          **{k: v for k, v in tau2_cell(avail_cells[c], a.B).items() if k in ("n_states", "k_blocks", "all_states_pp")}}
     con = {}
-    for lab, x, y in PRIMARY + SECONDARY:
+    for lab, x, y in CT["primary"] + CT["secondary"]:
         if lab == "P3" and not cells.get("kivi_k2v2") and cells.get("kivi_k4v4"):
             x = "kivi_k4v4"  # protocol §1: gate fallback
         con[lab] = tau2_contrast(cells[x], cells[y], a.B) if cells.get(x) and cells.get(y) else {"not_estimable": "cell not admitted", "cells": [x, y]}
         con[lab]["cells"] = [x, y]
     R["tau2"]["contrasts"] = con
-    R["tau2"]["holm_primary_D_cc"] = holm({lab: con[lab].get("D_cc", {}).get("t_p_two_sided") for lab, _, _ in PRIMARY if "D_cc" in con[lab]})
+    R["tau2"]["holm_primary_D_cc"] = holm({lab: con[lab].get("D_cc", {}).get("t_p_two_sided") for lab, _, _ in CT["primary"] if "D_cc" in con[lab]})
+    if excluded:
+        sc = {}
+        for lab, x, y in CT["primary"]:
+            sc[lab] = (tau2_contrast(avail_cells[x], avail_cells[y], a.B, match_tasks=True) if avail_cells.get(x) and avail_cells.get(y)
+                       else {"not_estimable": "cell has no rows"})
+            sc[lab].update(cells=[x, y], label="SENSITIVITY: actual available rows")
+        R["tau2"]["sensitivity_available_rows_contrasts"] = sc
     scores = {}
     for c, us in cells.items():
         ref = all(u["source"] == "bank_u" for u in us if u["phase"] == 1)
@@ -422,7 +493,7 @@ def main():
         for blk in sorted({u["block"] for u in us}):
             scores[c].update(load_scores(a.model, c, blk, ref and blk in ("f01", "f02", "f03")))
     R["fidelity"] = fidelity(cells, scores)
-    R["bfcl"] = {"log": blog, **(bfcl_stats(bcells, a.B) if bcells else {"cells": {}})}
+    R["bfcl"] = {"log": blog, **(bfcl_stats(bcells, a.B, CT) if bcells else {"cells": {}})}
     R["seconds"] = time.time() - t0
     OUT.mkdir(parents=True, exist_ok=True)
     utc = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
@@ -457,6 +528,56 @@ def markdown(R: dict, jp: Path) -> str:
     L += ["", "Local fidelity, BFCL contrasts and complete-case sensitivities: see the JSON. Descriptive fidelity only (protocol §9).",
           f"Source: `{jp.relative_to(ROOT)}`.", ""]
     return "\n".join(L)
+
+
+# ---------------------------------------------------------------------------- selftest (synthetic only)
+def selftest(B: int) -> None:
+    """Synthetic m24-shaped units; reads only the frozen manifest + mask (no fork output). Checks: the population is 83 tasks;
+    blocks complete on the 83 are admitted even though airline 13/44 rows are missing; a newly missing branch fails its
+    block; masked tasks never enter the primary; the sensitivity keeps every available row; M1 uses blocks complete in
+    both cells; no arm is imputed."""
+    rng = np.random.default_rng(0)
+    g = guard("m24")
+    man = json.loads((ROOT / g["manifest"]).read_text())
+    pop, exc = population("m24", man)
+    assert len(pop) == 83 and set(exc) == {"airline|13", "airline|44"}, (len(pop), exc)
+    raw = {}
+    for cell in M24_CELLS:
+        us = []
+        for r in man["rows"]:
+            if r["phase"] != 1:
+                continue
+            task = f"{r['domain']}|{r['task_id']}"
+            u = {"cell": cell, "block": r["block"], "phase": 1, "task": task, "state_key": r["state_key"], "domain": r["domain"], "div": True, "source": "panel"}
+            if r["missing_reason"]:
+                u["excluded"] = r["missing_reason"]
+            else:
+                Y = {k: int(rng.random() < 0.3) for k in ("BB", "BQ", "QB", "QQ")}
+                ex = bool(rng.random() < 0.5)
+                if ex:
+                    Y["BQ"], Y["QB"] = Y["QQ"], Y["BB"]
+                u.update(Y=Y, E=unit_effects(Y, ex), exact=ex, category=None)
+            us.append(u)
+        raw[cell] = us
+    # newly missing branch: gptq f03 loses one in-population state -> that block must fail for gptq only
+    victim = next(u for u in raw["gptq_w4_d1"] if u["block"] == "f03" and u["task"] in pop and "excluded" not in u)
+    victim.pop("Y"); victim.pop("E"); victim["excluded"] = "arm missing"
+    cells, info, cc, avail = apply_population(raw, pop, len(pop))
+    assert all(info["rtn_w4"][b]["admitted"] for b in ("f01", "f02", "f03")), info["rtn_w4"]
+    assert info["gptq_w4_d1"]["f03"]["admitted"] is False and info["gptq_w4_d1"]["f01"]["admitted"], info["gptq_w4_d1"]
+    assert len(cells["rtn_w4"]) == 249 and len(cells["gptq_w4_d1"]) == 166
+    assert not any(u["task"] in exc for c in cells.values() for u in c)
+    n_avail = sum(1 for u in raw["rtn_w4"] if "excluded" not in u)
+    assert len(avail["rtn_w4"]) == n_avail == 255 - 4 and any(u["task"] == "airline|13" for u in avail["rtn_w4"])
+    assert all("Y" in u and all(u["Y"][k] in (0, 1) for k in ("BB", "BQ", "QB", "QQ")) for c in cells.values() for u in c)
+    r1 = tau2_cell(cells["rtn_w4"], B)
+    con = tau2_contrast(cells["gptq_w4_d1"], cells["rtn_w4"], B)
+    assert con["common_blocks"] == ["f01", "f02"] and con["n_states"] == 166, con.get("common_blocks")
+    sens = tau2_contrast(avail["gptq_w4_d1"], avail["rtn_w4"], B, match_tasks=True)
+    assert sens["common_blocks"] == ["f01", "f02", "f03"]
+    print(json.dumps({"selftest": "PASS", "population": len(pop), "excluded": exc, "blocks": info,
+                      "rtn_w4_states": r1["n_states"], "M1_common_blocks": con["common_blocks"], "M1_n_states": con["n_states"],
+                      "sensitivity_n_states": sens["n_states"]}, indent=1, default=str))
 
 
 if __name__ == "__main__":

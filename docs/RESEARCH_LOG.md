@@ -10,6 +10,29 @@ Newest first.
 
 ---
 
+## W100e-b — m24 analysis population fixed at 83 tasks (airline 13 and 44 excluded uniformly): mask v1 + protocol amendment A3, done before any m24 panel output existed; analyze_newmethod gains the m24 mask, M1 contrast and available-rows sensitivity (2026-10-02 14:10 PDT)
+**TL;DR** This resolves W100e's open strict-block question as the advisor (GPT-6.1) decided, a corrected option (b).
+- **Population.** For both m24 cells and all six blocks, airline tasks 13 and 44 are excluded. The analysis population is fixed at 83 tasks: 249 states per cell in phase 1, 498 if expanded.
+- **Why they are excluded.** The BF16 source episodes of these tasks end in the model's own invalid tool name (`agent_parse_error`, GATE.md 1c), not in infrastructure. End-to-end evaluation keeps scoring them as failures. Fork results are conditional on a complete, recoverable BF16 source state.
+- **Frozen artifacts.**
+  - Mask: `manifests/fork/newmethod_panel_v1_m24_mask_v1.json`, sha **b03a8a918959e3568315b1ae134f2902580e6af822d80beccb692729c2f82c81**.
+  - Protocol after amendment A3: sha **da8b69baaff0f47fc6d4ff0674d73c8890896d7a997a7dfa44062448ea27ca77** (was c6603f90…).
+  - The manifest (53295b64…) and the 25 queued tasks are unchanged.
+- **Timing.** When this was written, no `analysis/fork/newmethod/*/m24_*` directory existed and no `nmp_*_m24_*` task had started.
+- **Disclosure (A3.2).** Outcome-blind selection shows a transparent process. It does not show that the missingness is unrelated to task difficulty or to the effects.
+- **Changes to `analyze_newmethod.py`.**
+  - The guard checks the mask sha and that the mask is bound to the manifest.
+  - Strict blocks need exactly the 83 tasks, so a newly missing branch fails the block. Arms are never imputed and tasks are never retried.
+  - Contrast M1 = `gptq_w4_d1` − `rtn_w4`: on τ² D_cc over blocks complete in both cells, and on BFCL D_cc_all.
+  - Labelled sensitivity: actual available rows (unmasked, non-strict), per cell and for M1. The complete-case analysis is also reported.
+  - `rtn_w4` is registered with the BFCL directory parser.
+- **Tests.**
+  - `--selftest` PASS on synthetic m24-shaped units, which read only the manifest and mask. It checks: population 83; blocks with missing 13/44 rows admitted; an injected missing branch fails gptq f03 only; M1 uses f01–f02 (166 states); the sensitivity keeps airline 13 rows.
+  - The q8 `--dry` run is unchanged: 85 tasks, reference cells admitted f01–f03.
+  - No m24 output was read.
+
+Evidence: `manifests/fork/newmethod_panel_v1_m24_mask_v1.json`, `docs/insights/NEWMETHOD_PANEL_PROTOCOL.md` (Amendment A3), `analysis/fork/analyze_newmethod.py` (`MASKS`, `population`, `apply_population`, `CONTRASTS["m24"]`, `selftest`), `analysis/fork/m24_gate/GATE.md` row 1c, `runs/a6k2_m24_bfpair_f0*/airline/infra_causes.json` (cluster).
+
 ## W100e — m24 panel: manifest `newmethod_panel_v1_m24` frozen (sha 53295b64…), protocol amendment A2, rtn_w4 + gptq_w4_d1 τ² and BFCL panel queued at −26; OPEN: strict-block rule admits no m24 block (airline 44 missing in all six BF16 blocks) (2026-10-02 13:35 PDT)
 **TL;DR** No m24 panel outcome exists, so no G/H/F/D_cc is reported.
 - **Manifest.** All six BF16 blocks `a6k2_m24_bfpair_f01…f06` were admitted in snapshot `snapshot_auto_20261002T2022Z` (sha f8c4dde2…). `make_newmethod_panel.py build --model m24` then wrote `manifests/fork/newmethod_panel_v1_m24.json`, sha **53295b64fbcc7c4501ea8883aa34ce922a5ca0e23c5636c8bb1c4efe38e3ff4c**. It has 510 τ² rows, 7 of them missing, and the same 200 BFCL ids as q8 (checked id by id).

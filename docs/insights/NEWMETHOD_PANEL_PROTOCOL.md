@@ -364,3 +364,58 @@ Command: `make_newmethod_panel.py build --model m24 --snapshot analysis/insights
 ### A2.4 Analysis script
 
 In the same commit, `analysis/fork/analyze_newmethod.py` sets `PROTOCOL_SHA256` to this file's new sha256 and adds `MANIFESTS["m24"]` with the sha above. Nothing else changes, and A2.3 is not resolved in code.
+
+---
+
+## Amendment A3 (2026-10-02 14:10 PDT, W100e-b): m24 analysis population, a fixed 83-task mask (resolves A2.3)
+
+**TL;DR** This resolves the open question in A2.3. The decision was made by the advisor (GPT-6.1) and implemented **before any m24 panel output existed or was read**. At the time of writing, no `analysis/fork/newmethod/*/m24_*` directory exists, and no `nmp_*_m24_*` task is in the queue's running, done or failed directories.
+- For **both** m24 cells (`rtn_w4`, `gptq_w4_d1`) and **all** blocks f01–f06, airline tasks **13** and **44** are excluded uniformly.
+- The analysis population is the remaining **83 tasks**, fixed: 249 states per cell in phase 1, and 498 if expanded.
+- The manifest (`53295b64…`) and the queued tasks are unchanged. The exclusion is a separate, versioned analysis mask.
+
+| Frozen artifact | sha256 |
+|---|---|
+| `manifests/fork/newmethod_panel_v1_m24_mask_v1.json` (excluded tasks, the 83-task population, the 7 missing source rows and their recorded causes; bound to manifest sha `53295b64…`) | `b03a8a918959e3568315b1ae134f2902580e6af822d80beccb692729c2f82c81` |
+
+### A3.1 Why these two tasks
+
+- **The cause is the model, not infrastructure.** Their BF16 source episodes ended in an invalid tool call produced by the model itself: an empty function name, or free text in the name field. mistral_common then refuses to render the next turn. This is `agent_parse_error` (GATE.md row 1c; W99p; the W27 rule).
+  - The run files label it `infrastructure_error` only because the episode cannot continue.
+  - Task 44 fails this way in all six blocks; task 13 in f01.
+- **End-to-end evaluation is unchanged.** Those episodes keep counting as model failures (W10/W27).
+- **Fork results are conditional.** They are restricted to "tasks with a complete, recoverable BF16 source state in every block". The paper states this conditional population in one sentence, and the full missingness record is in the appendix.
+- **Why task 13 is excluded in every block, not only f01.** Excluding it uniformly keeps one fixed population across blocks and cells. Without that, f01 would differ from the other blocks.
+
+### A3.2 Disclosure (binding wording)
+
+- The selection used only the BF16 source runs and the manifest; it used no fork result. That shows the **process** was transparent and outcome-blind.
+- It does **not** show that the missingness is unrelated to task difficulty or to the intervention effects.
+  - The excluded tasks are ones on which BF16 Mistral itself fails structurally, so they may differ systematically from the retained tasks.
+  - m24 fork estimates therefore describe the 83-task conditional population, not the 85-task panel. They are not compared with q8 as if the populations were equal.
+
+### A3.3 Rules
+
+- **Strict completeness still applies (§7, W70) on the 83 tasks.** A (cell, block) is admitted only if it has a complete four-arm state for exactly the 83 predefined tasks.
+  - Any newly missing branch (missing record, error, a missing arm) fails that block for that cell.
+  - Missing arms are never filled with zeros or otherwise imputed.
+  - Tasks are never retried until they succeed.
+- **The two-cell comparison uses blocks complete in both cells.** The contrast is **M1 = `gptq_w4_d1` − `rtn_w4`**.
+  - On τ²: D_cc, with t over block-mean differences, the block bootstrap alongside, and ΔG reported beside it.
+  - On BFCL: D_cc_all, item-paired.
+  - M1 is the only m24 primary contrast, so Holm over one contrast is the unadjusted p.
+  - Per-cell G, H, F, D_cc, I, r, d, M and M_cc are reported with intervals (§7).
+- **Sensitivity (labelled).** The actual-available-rows analysis uses every non-missing four-arm row of every block. It applies no mask and no strictness, so it includes task 13 in f02–f06. It is reported per cell and for M1 next to the primary. The complete-case analysis on the 83-task population is also reported.
+- **BFCL (panel B) is unaffected by the mask.**
+- **Expansion (§5) is unchanged.** It reads no outcome.
+
+### A3.4 Analysis script
+
+`analysis/fork/analyze_newmethod.py` was changed in the same commit:
+- `PROTOCOL_SHA256` = this file's new sha256.
+- `MASKS["m24"]` holds the mask path and sha. The guard refuses to run on a mask sha mismatch, or if the mask was frozen for another manifest.
+- `population()` = manifest tasks minus the mask, asserted equal to the mask's stored population.
+- `strict_blocks` needs exactly the population's task set.
+- `apply_population` produces the primary, complete-case and available-rows sensitivity.
+- `CONTRASTS["m24"]` = M1, and `M24_CELLS` registers `rtn_w4` and `gptq_w4_d1`, also with the BFCL directory parser.
+- `--selftest` runs on synthetic units only.
