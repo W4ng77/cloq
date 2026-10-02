@@ -46,7 +46,11 @@
   "gpus": 2,
   "parser": "mistral",
   "chat_template_kwargs": {},
-  "note": "fallback for l8 (Llama-3.1-8B gated); multimodal checkpoint, needs a dedicated serving path"
+  "note": "fallback for l8 (Llama-3.1-8B gated); multimodal checkpoint, needs a dedicated serving path. W99p: served text-only from src_path = the language_model.* tensors of the pinned HF shards, byte-identical, renamed to MistralForCausalLM (scripts/a6000/m24_textonly.py; provenance and file sha256 in src_path/textonly.json), official tekken.json tokenizer with vLLM --tokenizer-mode mistral and --tool-call-parser mistral; local prompt rendering via cloq/mistral_render.py. The Pixtral/Mistral3 vLLM classes cannot be imported with transformers 5.17 (a6k2_smoke_m24 failure).",
+  "src_path": "/data/ziyangs/cloq_work/ckpt_cache/m24_textonly_v1",
+  "tokenizer_mode": "mistral",
+  "fork_gpus_per_role": 2,
+  "fork_gpus_per_role_note": "W99p: 24B BF16 (47 GB) does not fit one A6000, so B and Q are each TP=2 on an NVLink pair (fork tasks: gpus 4, gpus_per_role 2)"
  },
  "l8": {
   "hf_id": "meta-llama/Llama-3.1-8B-Instruct",

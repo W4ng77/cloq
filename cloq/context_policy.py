@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import threading
 from dataclasses import dataclass, field
 from typing import Any, Optional
@@ -24,6 +25,7 @@ from cloq.config import CHAT_TEMPLATE_KWARGS, MAX_PROMPT_TOKENS, MODEL_ID, MODEL
 
 _TOK = None
 _TOK_LOCK = threading.Lock()
+_MISTRAL = os.environ.get("CLOQ_TOKENIZER_MODE") == "mistral"  # W99p; unset for every HF-template model
 
 
 def get_tokenizer():
@@ -31,8 +33,18 @@ def get_tokenizer():
     if _TOK is None:
         with _TOK_LOCK:
             if _TOK is None:
-                _TOK = AutoTokenizer.from_pretrained(MODEL_ID, revision=MODEL_REVISION)
+                if _MISTRAL:  # W99p: m24 is served with --tokenizer-mode mistral (no HF chat template)
+                    from cloq.mistral_render import MistralChatRender
+                    _TOK = MistralChatRender(os.environ["CLOQ_MODEL_PATH"])
+                else:
+                    _TOK = AutoTokenizer.from_pretrained(MODEL_ID, revision=MODEL_REVISION)
     return _TOK
+
+
+def _view(messages: list[dict]) -> list[dict]:
+    """HF templates: template_view (vLLM's HF chat preprocessing). Mistral tokenizer mode: the raw messages; the
+    server-side normalisation for that path is applied by cloq.mistral_render."""
+    return messages if _MISTRAL else template_view(messages)
 
 
 def template_view(messages: list[dict]) -> list[dict]:
@@ -81,14 +93,14 @@ def render_prompt(messages: list[dict], tools: Optional[list[dict]]) -> str:
     """Render exactly what the chat template produces for a generation request."""
     tok = get_tokenizer()
     return tok.apply_chat_template(
-        template_view(messages), tools=tools or None, add_generation_prompt=True, tokenize=False, **CHAT_TEMPLATE_KWARGS
+        _view(messages), tools=tools or None, add_generation_prompt=True, tokenize=False, **CHAT_TEMPLATE_KWARGS
     )
 
 
 def render_prompt_ids(messages: list[dict], tools: Optional[list[dict]]) -> list[int]:
     tok = get_tokenizer()
     out = tok.apply_chat_template(
-        template_view(messages), tools=tools or None, add_generation_prompt=True, tokenize=True, **CHAT_TEMPLATE_KWARGS
+        _view(messages), tools=tools or None, add_generation_prompt=True, tokenize=True, **CHAT_TEMPLATE_KWARGS
     )
     if isinstance(out, dict) or hasattr(out, "input_ids"):
         out = out["input_ids"]

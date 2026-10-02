@@ -46,6 +46,12 @@ def snapshot(hf_id: str, rev: str) -> str:
     return str(WORK / "hf/hub" / ("models--" + hf_id.replace("/", "--")) / "snapshots" / rev)
 
 
+def model_src(m: dict) -> str:
+    """BF16 source directory of a model: the pinned HF snapshot, or models.json "src_path" when the snapshot cannot be
+    served as is (W99p m24: text-only view of the multimodal checkpoint, scripts/a6000/m24_textonly.py)."""
+    return m.get("src_path") or snapshot(m["hf_id"], m["revision"])
+
+
 class Status:
     def __init__(self, prefix: str, gpus: list[str], task: dict):
         self.paths = [Path(f"{prefix}-g{g}.json") for g in gpus]
@@ -71,6 +77,8 @@ def model_env(code: str, port: int) -> dict:
         "CLOQ_TOOL_PARSER": m["parser"], "CLOQ_MAX_PROMPT_TOKENS": "32768", "CLOQ_TOP_LOGPROBS": "5",
         "CLOQ_AGENT_PORT": str(port), "CLOQ_USER_PORT": "8000",
     })
+    if m.get("tokenizer_mode"):  # W99p (m24): serve.sh --tokenizer-mode; cloq.context_policy renders with the same tokenizer
+        env.update({"CLOQ_TOKENIZER_MODE": m["tokenizer_mode"], "CLOQ_MODEL_PATH": model_src(m)})
     return env
 
 
@@ -210,7 +218,7 @@ def stop_server(proc, gpus):
 
 def build_ckpt(task, env, gpus, scratch: Path, log) -> tuple[str, dict | None]:
     m = MODELS[task["model"]]
-    src = snapshot(m["hf_id"], m["revision"])
+    src = model_src(m)
     ck = task["ckpt"]
     if ck["kind"] == "bf16":
         return src, None
@@ -262,6 +270,8 @@ def build_ckpt(task, env, gpus, scratch: Path, log) -> tuple[str, dict | None]:
     else:
         cmd = [sys.executable, "-m", "cloq.quantize", "--method", ck["kind"], "--wbits", str(ck["wbits"]),
                "--calib", str(ROOT / ck["calib"]), "--out", str(out), "--no-sha"]
+        if m.get("src_path"):  # W99p m24: quantize the text-only view (the pinned repo is a multimodal checkpoint)
+            cmd += ["--src", src]
         if ck.get("keep_manifest"):  # W54 restore_recal: these linears stay BF16, the rest re-calibrated (derived.py)
             cmd += ["--keep", str(ROOT / ck["keep_manifest"])]
     r = subprocess.run(cmd, cwd=ROOT, env=e, stdout=log, stderr=subprocess.STDOUT)
@@ -531,6 +541,10 @@ def run_fork(task, args, st: Status):
     if len(gpus) != int(task.get("gpus", 1)) or (len(gpus) == 1 and task["model"] != "q4"):
         raise RuntimeError(f"fork {task['model']}: allocated GPUs {gpus} but the task needs {task.get('gpus')} "
                            f"(1-GPU B+Q only for q4; q8 at max_model_len {AGENT_MAXLEN} needs one GPU per server)")
+    gpr = int(task.get("gpus_per_role", 1))  # W99p: >1 = each role tensor-parallel on its own NVLink pair (m24: 2)
+    if gpr > 1 and (len(gpus) != 2 * gpr or any(int(gpus[i + 1]) != int(gpus[i]) + 1 or int(gpus[i]) % 2
+                                                 for i in range(0, len(gpus), 2))):
+        raise RuntimeError(f"fork {task['model']}: gpus_per_role={gpr} needs {2 * gpr} GPUs as whole NVLink pairs, got {gpus}")
     cfg = {r: FS.role_cfg(task, r) for r in ("B", "Q")}
     q_ck, b_ck = cfg["Q"]["ckpt"], cfg["B"]["ckpt"]
     same_w = q_ck == b_ck  # same weights spec: build once (the configurations may still differ, e.g. pure-KV Q)
@@ -547,6 +561,8 @@ def run_fork(task, args, st: Status):
                 raise RuntimeError(f"fork {role}: checkpoint {cfg[role]['ckpt']['kind']} forbids serve_env {k}={v}")
     one_gpu = len(gpus) == 1
     plan = {"B": (gpus[0], args.port + 100, b_path, b_ck), "Q": (gpus[-1], args.port + 200, q_path, q_ck)}
+    if gpr > 1:  # W99p: B on the first pair, Q on the second (serve.sh: TP = number of GPUs given)
+        plan = {"B": (",".join(gpus[:gpr]), args.port + 100, b_path, b_ck), "Q": (",".join(gpus[gpr:]), args.port + 200, q_path, q_ck)}
     servers, procs = {}, {}
     try:
         for role in ("B", "Q"):  # sequential start: on one GPU the second server profiles after the first holds its share
@@ -656,7 +672,7 @@ def run_fork(task, args, st: Status):
     finally:
         lease_close(locals().get("drv_lease"))
         for role, p in procs.items():
-            stop_server(p, [plan[role][0]])
+            stop_server(p, plan[role][0].split(","))  # one GPU id, or a W99p pair "2,3"
     outp = ROOT / task["fork"]["out"]
     res = {"out": str(outp.relative_to(ROOT)), "servers": {k: {kk: vv for kk, vv in v.items() if kk != "path"} if isinstance(v, dict) else v
                                                            for k, v in servers.items() if k != "q_quantization"}}

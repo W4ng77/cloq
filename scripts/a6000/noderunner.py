@@ -5,7 +5,8 @@ Starts the node's user simulator replicas (--sims N: N TP=2 replicas on the firs
 identically to replica 1; each is registered in /data/ziyangs/cloq_work/sims/<node>-<port>.json and heartbeats there,
 scripts/a6000/simreg.py), then keeps every remaining GPU busy by claiming tasks from the
 shared file queue (/data/ziyangs/cloq_work/queue/todo -> running, atomic rename) whose dependencies
-are done, and running each in scripts/a6000/worker.py on 1 or 2 GPUs. Writes per-GPU status JSON
+are done, and running each in scripts/a6000/worker.py on 1 or 2 GPUs (or on 2k GPUs = k whole NVLink pairs, for a fork
+task with "gpus_per_role" = 2: B and Q each tensor-parallel on one pair, W99p). Writes per-GPU status JSON
 under /data/ziyangs/cloq_work/status/ for the dashboard.
 
 Stops claiming when <queue>/STOP or <queue>/STOP.<node> exists, or when less than --min-left
@@ -263,6 +264,14 @@ def main():
             pairs = sorted({str(int(g) & ~1) for g in all_gpus if g not in sim_gpus
                             and str(int(g) ^ 1) in all_gpus and str(int(g) ^ 1) not in sim_gpus}, key=int)
             reserved = {x for p0 in (pairs[1:] if len(pairs) > 1 else pairs) for x in (p0, str(int(p0) + 1))} if tp2_wait else set()
+            # W99p multi-pair tasks (need = 2k > 2, k whole NVLink pairs): while one is runnable here, the top k agent
+            # pairs take nothing smaller, so they empty as their tasks finish (else 1/2-GPU tasks refill them forever).
+            # Absent such a task (every pre-W99p queue), reserved_big is empty and the claim loop is unchanged.
+            big_need = max([gpus_needed(t) for _, t in pend if gpus_needed(t) > 2 and gpus_needed(t) % 2 == 0
+                            and gpus_needed(t) <= args.max_gpus_per_task and not (t.get("node") and t["node"] != NODE)
+                            and (not only or t.get("model") in only) and all(d in ready for d in t.get("deps", []))
+                            and gpus_needed(t) // 2 <= len(pairs)], default=0)
+            reserved_big = {x for p0 in pairs[len(pairs) - big_need // 2:] for x in (p0, str(int(p0) + 1))} if big_need else set()
             for path, t in pend:
                 if only and t.get("model") not in only:
                     continue
@@ -282,11 +291,16 @@ def main():
                 pairs_free = [g for g in sorted(avail, key=int) if int(g) % 2 == 0 and str(int(g) + 1) in avail]
                 if is_sim and drain:  # a sim task waits for the drained pair to be empty
                     pairs_free = [g for g in pairs_free if g in drain and str(int(g) + 1) in drain]
+                if need <= 2 and reserved_big:  # W99p: keep the reserved pairs for the waiting multi-pair task
+                    avail = [g for g in avail if g not in reserved_big]
+                    pairs_free = [g for g in pairs_free if g not in reserved_big]
                 pair = pairs_free[0] if pairs_free else None
                 if need == 2 and pair is None:
                     continue
-                if need > 2:
-                    continue
+                if need > 2:  # W99p: k = need/2 whole free NVLink pairs (never a split pair), else wait
+                    if need % 2 or is_sim or len(pairs_free) < need // 2:
+                        continue
+                    multi = [x for p0 in pairs_free[-(need // 2):] for x in (p0, str(int(p0) + 1))]
                 if need == 1 and not [g for g in avail if g not in reserved]:
                     continue
                 if need == 0 and any(True for w in workers.values() if w[1] == []):
@@ -296,7 +310,9 @@ def main():
                     path.replace(rp)
                 except FileNotFoundError:
                     continue
-                if need == 2:
+                if need > 2:
+                    gs = multi  # pair-major order: worker.run_fork gives role B the first pair, role Q the second
+                elif need == 2:
                     gs = [pair, str(int(pair) + 1)]
                 else:  # single-GPU tasks prefer a card whose NVLink partner is busy, keeping pairs whole
                     gs = sorted([g for g in avail if g not in reserved], key=lambda g: (str(int(g) ^ 1) in free, int(g)))[:need]

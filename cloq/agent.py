@@ -132,6 +132,12 @@ class CLOQAgent(LLMAgent[LLMAgentState]):
             **self.llm_args,
         )
         dt = time.time() - t0
+        if _DET_TOOL_IDS and assistant_message.is_tool_call():
+            # W99p (m24, Mistral tokenizer mode only): the template renders tool-call ids ([CALL_ID]) and vLLM's mistral
+            # parser draws them at random, so identical decisions would give different later prompts. Replace them by
+            # a function of the decision index (9 alphanumerics, the Mistral id format); a no-op replay then matches.
+            assistant_message.tool_calls = [tc.model_copy(update={"id": det_tool_call_id(self.decision_idx, k)})
+                                            for k, tc in enumerate(assistant_message.tool_calls)]
 
         raw = assistant_message.raw_data or {}
         prompt_ids = raw.get("prompt_token_ids")
@@ -143,7 +149,8 @@ class CLOQAgent(LLMAgent[LLMAgentState]):
         prompt_text = render_prompt(kept_lm, self.tools_schema)
 
         content = assistant_message.content
-        parser_error = bool(content) and ("<tool_call>" in content) and not assistant_message.is_tool_call()
+        # "[TOOL_CALLS]": Mistral's tool-call control token left in the text by an unparsed call (W99p; m24 only)
+        parser_error = bool(content) and ("<tool_call>" in content or "[TOOL_CALLS]" in content) and not assistant_message.is_tool_call()
 
         margins = _token_margins(choice0.get("logprobs"))
 
@@ -180,6 +187,14 @@ class CLOQAgent(LLMAgent[LLMAgentState]):
             logger.warning("CLOQAgent: no decision writer set; decision not logged")
         self.decision_idx += 1
         return assistant_message
+
+
+_DET_TOOL_IDS = os.environ.get("CLOQ_TOKENIZER_MODE") == "mistral"  # W99p; False for every HF-template model
+
+
+def det_tool_call_id(decision_idx: int, k: int) -> str:
+    """Deterministic Mistral tool-call id (exactly 9 alphanumerics): decision index and call position."""
+    return f"d{decision_idx % 100000:05d}c{k % 100:02d}"
 
 
 def _token_margins(lp) -> dict:

@@ -1,0 +1,85 @@
+{
+ "benchmark": "BFCL v3 multi-turn",
+ "blog": "https://gorilla.cs.berkeley.edu/blogs/13_bfcl_v3_multi_turn.html",
+ "package": {
+  "name": "bfcl-eval",
+  "version": "2026.3.23",
+  "wheel_sha256": "3bb6dfa5f0c68ad403c9ec50b00db2bb3b4cc9b38ab1ff33f48fe30d853d3a0a",
+  "env": "/data/ziyangs/cloq_work/envs/bfcl"
+ },
+ "data_sha256": {
+  "BFCL_v4_multi_turn_base.json": "1a21a995d06fd6f20ba55de7bced30ef953ec35e998f502ec2ecf4d66ef1c43a",
+  "possible_answer/BFCL_v4_multi_turn_base.json": "1fee67823b317571649177dd89d63969feaae4e810cc7448ee55ba797fb7c8fc",
+  "BFCL_v4_multi_turn_miss_param.json": "f0c66dda3795f5f53e3e1c0cc8ba0246b6761c8f58bdba8317203bf451ab8838",
+  "possible_answer/BFCL_v4_multi_turn_miss_param.json": "59c442901779e2c31c33abcd566d032e03736e5ad8069de2fe05489873046ecf",
+  "BFCL_v4_multi_turn_miss_func.json": "87d28ce10e37d864b72de85d5732eef2a867b241d6c1c99b4ae682c9e3ea921c",
+  "possible_answer/BFCL_v4_multi_turn_miss_func.json": "69e679b806d1c871b05393a4b95583bb973248e5b8d96c2d7f4ca05e29fc32e6",
+  "BFCL_v4_multi_turn_long_context.json": "78c3268c5cc8e97c0f4ec6c811b3b9a2bba14323b1830b7a874b06d822749324",
+  "possible_answer/BFCL_v4_multi_turn_long_context.json": "e82aa0e839c39d23c64a05834f7ae024d7c9738ec21738ecee78dc876e3d0d18"
+ },
+ "func_doc_tree_sha256": "0a52b88512f2554e470975abc5461b10c3e3046e9bdb3faafd2802d714e28c26",
+ "backend_source_tree_sha256": "52c283928a9f3e397b37c5d87997e8d3593db5e152d59317fe37605db3e6971e",
+ "inference": "BFCL's own BaseHandler.inference_multi_turn_FC loop (FC mode, OpenAI-compatible chat completions to the CLOQ vLLM agent server; MAXIMUM_STEP_LIMIT 20 per turn; miss_func holdout functions injected by the loop)",
+ "evaluator": "bfcl_eval.eval_checker.eval_runner._evaluate_single_multi_turn_entry (the per-entry body of the official multi_turn_runner: decode_execute + multi_turn_checker state/response checks), unchanged",
+ "manifest": "bfcl_mt_m24_v1",
+ "parent_manifest": "bfcl_mt_v1",
+ "parent_manifest_sha256": "d8b090007463c9ca1ead13f1d9172267926d62154c51b6493ec10cdcef7cfcba",
+ "excluded_panel": "manifests/fork/newmethod_panel_v1.json (nmp_v1, the formal 200-item BFCL panel)",
+ "excluded_panel_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+ "selection": {
+  "rule": "per category, bfcl_mt_v1 ids minus its dev ids minus the nmp_v1 panel ids, sorted by sha256('cloq-ext-m24-v1:' + id); gate_m24 = first 5 (disjoint from the formal panel). No model outcome or divergence used.",
+  "salt": "cloq-ext-m24-v1"
+ },
+ "created": "2026-10-02T07:23:32Z",
+ "categories": {
+  "base": {
+   "test_category": "multi_turn_base",
+   "n_total": 200,
+   "n_pool": 147,
+   "gate_m24": [
+    "multi_turn_base_0",
+    "multi_turn_base_54",
+    "multi_turn_base_20",
+    "multi_turn_base_37",
+    "multi_turn_base_63"
+   ]
+  },
+  "miss_param": {
+   "test_category": "multi_turn_miss_param",
+   "n_total": 200,
+   "n_pool": 147,
+   "gate_m24": [
+    "multi_turn_miss_param_74",
+    "multi_turn_miss_param_110",
+    "multi_turn_miss_param_73",
+    "multi_turn_miss_param_5",
+    "multi_turn_miss_param_15"
+   ]
+  },
+  "miss_func": {
+   "test_category": "multi_turn_miss_func",
+   "n_total": 200,
+   "n_pool": 147,
+   "gate_m24": [
+    "multi_turn_miss_func_176",
+    "multi_turn_miss_func_196",
+    "multi_turn_miss_func_130",
+    "multi_turn_miss_func_150",
+    "multi_turn_miss_func_44"
+   ]
+  },
+  "long_context": {
+   "test_category": "multi_turn_long_context",
+   "n_total": 200,
+   "n_pool": 147,
+   "gate_m24": [
+    "multi_turn_long_context_26",
+    "multi_turn_long_context_13",
+    "multi_turn_long_context_96",
+    "multi_turn_long_context_8",
+    "multi_turn_long_context_25"
+   ]
+  }
+ },
+ "frozen_before_model_runs": true
+}

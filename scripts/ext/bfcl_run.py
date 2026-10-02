@@ -33,7 +33,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import (ROOT, ChatError, RunDir, assistant_history_message, canonical_json, chat, common_args, decision_record,  # noqa: E402
+from common import (ROOT, ChatError, RunDir, assistant_history_message, det_tool_call_ids, canonical_json, chat, common_args, decision_record,  # noqa: E402
                     sha256_text, summarize, write_headers)  # noqa: E402
 
 from bfcl_eval.constants.default_prompts import MAXIMUM_STEP_LIMIT  # noqa: E402
@@ -208,6 +208,7 @@ class CloqFCHandler(OpenAICompletionsHandler):
             raw, dt = self.policy(len(self.decisions), messages, tools)
         else:
             raw, dt = chat(self.base, messages, tools)
+        raw = det_tool_call_ids(raw, len(self.decisions))  # W99p: deterministic Mistral tool-call ids; identity otherwise
         rec = decision_record(self.meta, self.task_id, self.trajectory_id, len(self.decisions), messages, tools, raw, dt)
         names = [t["function"]["name"] for t in tools]
         tcs = rec["tool_calls"] or []

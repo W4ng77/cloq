@@ -144,9 +144,21 @@ def decision_record(meta: dict, task_id: str, trajectory_id: str, idx: int, mess
         "prompt_token_ids": pids, "prompt_ids_from_server": pids is not None, "n_prompt_tokens": len(pids) if pids else None,
         "completion_token_ids": ch.get("token_ids"), "n_completion_tokens": (raw.get("usage") or {}).get("completion_tokens"),
         "finish_reason": ch.get("finish_reason"), "raw_content": content, "content": content, "tool_calls": tcs or None,
-        "parser_error": bool(content) and ("<tool_call>" in content) and not tcs, "generation_seconds": dt,
+        "parser_error": bool(content) and ("<tool_call>" in content or "[TOOL_CALLS]" in content) and not tcs, "generation_seconds": dt,
         **token_margins(ch.get("logprobs")),
     }
+
+
+def det_tool_call_ids(raw: dict, decision_idx: int) -> dict:
+    """W99p (m24 only, CLOQ_TOKENIZER_MODE=mistral): the Mistral template renders tool-call ids and vLLM's mistral parser
+    draws them at random; replace them in place by d<idx:05d>c<k:02d> (9 alphanumerics, as cloq.agent.det_tool_call_id)
+    so that identical decisions give identical later prompts. Idempotent; a no-op for every other model."""
+    if os.environ.get("CLOQ_TOKENIZER_MODE") != "mistral":
+        return raw
+    for ch in raw.get("choices") or []:
+        for k, tc in enumerate((ch.get("message") or {}).get("tool_calls") or []):
+            tc["id"] = f"d{decision_idx % 100000:05d}c{k % 100:02d}"
+    return raw
 
 
 def assistant_history_message(raw: dict) -> dict:
