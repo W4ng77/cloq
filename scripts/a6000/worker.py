@@ -326,6 +326,15 @@ def run_eval(task, args, st: Status):
                                "kclip": float(senv.get("CLOQ_KVQ_KCLIP", 1.0)), "vclip": float(senv.get("CLOQ_KVQ_VCLIP", 1.0)),
                                "which": senv.get("CLOQ_KVQ_WHICH", "kv"), "granularity": "per-token per-head, group=head_dim, asymmetric",
                                "hook": "pyhooks/cloq_kvq.py"})
+    if senv.get("CLOQ_PYHOOKS") == "1" and senv.get("CLOQ_KIVI_KBITS"):  # W99t: KIVI attention hook (pyhooks/cloq_kivi.py)
+        m = MODELS[task["model"]]
+        qmeta = dict(qmeta or {"method": "bf16", "source_model": m["hf_id"], "source_revision": m["revision"]},
+                     kv_cache={"method": "kivi_fake", "kbits": int(senv["CLOQ_KIVI_KBITS"]),
+                               "vbits": int(senv.get("CLOQ_KIVI_VBITS", senv["CLOQ_KIVI_KBITS"])),
+                               "group": int(senv.get("CLOQ_KIVI_GROUP", 32)), "resid": int(senv.get("CLOQ_KIVI_RESID", 128)),
+                               "granularity": "K per-channel over G-token groups, V per-token over G-channel groups, "
+                                              "asymmetric; last R tokens full precision (decode-step view per query)",
+                               "hook": "pyhooks/cloq_kivi.py"})
     aq = senv.get("CLOQ_PYHOOKS") == "1" and bool(senv.get("CLOQ_AQ_BITS") or senv.get("CLOQ_AQ_HAD", "0") != "0")
     for k, v in ((qmeta or {}).get("requires_serve_env") or {}).items():  # SmoothQuant / QuaRot ckpts need their online half
         if str(senv.get(k)) != str(v):

@@ -61,6 +61,18 @@ def kvq(cfg: dict) -> dict | None:
             "kclip": kc, "vclip": vc, "active": bits < 16 or rot, "namespace": ns}
 
 
+def kivi(cfg: dict) -> dict | None:
+    """KIVI hook config as scripts/a6000/pyhooks/cloq_kivi.py reads it (W99t): K per-channel / V per-token asymmetric,
+    group G (tokens for K, channels for V), full-precision residual window R."""
+    e = cfg["serve_env"]
+    if not (hooked(cfg) and e.get("CLOQ_KIVI_KBITS")):
+        return None
+    kb = int(e["CLOQ_KIVI_KBITS"])
+    vb = int(e.get("CLOQ_KIVI_VBITS", kb))
+    g, r = int(e.get("CLOQ_KIVI_GROUP", 32)), int(e.get("CLOQ_KIVI_RESID", 128))
+    return {"kbits": kb, "vbits": vb, "group": g, "resid": r, "namespace": f"kivi_k{kb}v{vb}_g{g}_r{r}"}
+
+
 def hook_namespace(cfg: dict) -> str:
     """Compile-cache namespace exactly as the hooks set it in the server processes: run sitecustomize (auto-imported
     from the hooks dir) with this role's serve_env and a dummy VLLM_CACHE_ROOT, and read the subdirectory it chose.
@@ -103,6 +115,9 @@ def bits(cfg: dict) -> dict:
     if q:
         k = q["bits"] if "k" in q["which"] else 16
         v = q["bits"] if "v" in q["which"] else 16
+    kv = kivi(cfg)
+    if kv:
+        k, v = kv["kbits"], kv["vbits"]
     a = aq(cfg)["bits"] if aq(cfg) else 16
     return {"W": w, "A": a, "K": k, "V": v}
 
@@ -158,8 +173,8 @@ def hook_coverage(log_text: str, cfg: dict, n_layers: int | None) -> dict | None
     if not hooked(cfg):
         return None
     lines = log_text.splitlines()
-    q, a = kvq(cfg), aq(cfg)
-    out = {"kvq": q, "aq": a, "cache_roots": sorted({ln.split("cache_root=")[1].split()[0] for ln in lines if "cache_root=" in ln and "[cloq_" in ln})}
+    q, a, kv = kvq(cfg), aq(cfg), kivi(cfg)
+    out = {"kvq": q, "aq": a, "kivi": kv, "cache_roots": sorted({ln.split("cache_root=")[1].split()[0] for ln in lines if "cache_root=" in ln and "[cloq_" in ln})}
     ok = True
     if q is not None:
         wrapped = [ln for ln in lines if "[cloq_kvq]" in ln and "wrapped" in ln]
@@ -171,6 +186,16 @@ def hook_coverage(log_text: str, cfg: dict, n_layers: int | None) -> dict | None
                 by_pid[pid] = by_pid.get(pid, 0) + 1
         n_dec = max(by_pid.values()) if by_pid else 0
         out.update({"n_wrapped_processes": len(wrapped), "decoder_attention_hooked": n_dec, "expected_layers": n_layers})
+        ok &= len(wrapped) > 0 and n_layers is not None and n_dec == n_layers
+    if kv is not None:  # KIVI (cloq_kivi.py): wrapped FlashAttentionImpl.forward + one impl per decoder layer
+        wrapped = [ln for ln in lines if "[cloq_kivi]" in ln and "wrapped" in ln and f"tag={kv['namespace']}" in ln]
+        by_pid = {}
+        for ln in lines:
+            if "[cloq_kivi]" in ln and "hooked attention" in ln and "decoder" in ln.lower():
+                pid = ln.split("pid=")[1].split()[0]
+                by_pid[pid] = by_pid.get(pid, 0) + 1
+        n_dec = max(by_pid.values()) if by_pid else 0
+        out.update({"kivi_n_wrapped_processes": len(wrapped), "kivi_attention_hooked": n_dec, "expected_layers": n_layers})
         ok &= len(wrapped) > 0 and n_layers is not None and n_dec == n_layers
     if a is not None:
         cnt: dict = {}
