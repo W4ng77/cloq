@@ -8,7 +8,8 @@ queue records, and writes analysis/fork/m24_gate/gate_summary.json. Per check:
   capability: BF16 tau2 success (normal stop and DB match) on the 20 gate tasks vs Qwen BF16 on the same tasks (the
               a6k2_<q>_bf16_cal runs cover the gate tasks of the calibration split); BFCL success on the 20 gate items vs
               Qwen q4/q8/q14 BF16 eval runs on the same items
-  forks     : verdicts of gate / gate_same (tau2 and BFCL)
+  forks     : verdicts of gate / gate_same (tau2 and BFCL); tau2_rtn_w4_r2 = the tau2 gate rerun with the chat identity
+              probe (7009bec), which supersedes tau2_rtn_w4 (r1, /v1/completions probe)
   throughput: queue seconds per task, per-episode wall time
 usage: python3 analysis/fork/m24_gate/analyze_gate.py
 """
@@ -200,9 +201,9 @@ def main():
     cap["comparison_bfcl_gate_items"] = {"m24_bf16": cap["bf16"]["bfcl"], "qwen_bf16_eval_runs": qwen_bfcl(ids)}
     s["capability"] = cap
     s["invalid_tool_names"] = invalid_name_rates()
-    s["forks"] = {k: fork_verdict(k) for k in ("tau2_rtn_w4", "tau2_same_rtn_w4", "bfcl_rtn_w4", "bfcl_same_rtn_w4")}
+    s["forks"] = {k: fork_verdict(k) for k in ("tau2_rtn_w4", "tau2_rtn_w4_r2", "tau2_same_rtn_w4", "bfcl_rtn_w4", "bfcl_same_rtn_w4")}
     s["queue"] = {t: qrec(t) for t in ("a6k2_m24_bf16_gate", "a6k2_m24_rtn_w4_gate", "ext_m24_bf16_bfcl_gate_m24",
-                                       "ext_m24_rtn_w4_bfcl_gate_m24", "fork_gate_m24_rtn_w4", "fork_gate_same_m24_rtn_w4",
+                                       "ext_m24_rtn_w4_bfcl_gate_m24", "fork_gate_m24_rtn_w4", "fork_gate_m24_rtn_w4_r2", "fork_gate_same_m24_rtn_w4",
                                        "fork_ext_gate_m24_rtn_w4_bfcl", "fork_ext_gate_same_m24_rtn_w4_bfcl", "a6k2_m24_bf16_cal",
                                        "a6k2_m24_calib_c1")}
     (G / "gate_summary.json").write_text(json.dumps(s, indent=1) + "\n")

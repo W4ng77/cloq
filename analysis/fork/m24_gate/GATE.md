@@ -1,20 +1,23 @@
 # W99p — m24 (Mistral-Small-3.2-24B-Instruct-2506) second-family gate
 
-**Verdict at the end of the 6-h window (2026-10-02 06:05 PDT): NOT YET DECIDED.** Checks 1, 2 and 5–7 pass, and the BFCL halves
-of checks 3 and 4 pass. The τ² fork gate (`fork_gate_m24_rtn_w4`) is still running on the restarted node008 runner. It has one known
-failing sub-check, `idcheck Q 13/16`, explained below as a probe mismatch rather than a numerics fault. The τ² negative control
-(`fork_gate_same_m24_rtn_w4`) is queued behind it. No new backend is needed. The formal panel is **not queued**.
+**Verdict (2026-10-02 09:05 PDT): PASS.** All seven checks pass, including all four fork gates. The τ² fork gate was rerun as
+`fork_gate_m24_rtn_w4_r2` with the chat-based identity probe (7009bec). It gives idcheck **Q 16/16 and B 16/16**, and every other
+sub-check passes (QQ, BB no-op 4/4, Q replay at state, isolation, save/load, budget, re-prefill; 8 states, 0 state or BB
+errors; 5,817 s). The three r1 mismatches (airline 7/t9, 15/t2, 21/t7) are in the r2 sample and match exactly on prompt ids,
+completion ids and message. The τ² same-checkpoint control `fork_gate_same_m24_rtn_w4` passes: idcheck Q 8/8 and B-handle 8/8
+(chat probe), 6 states, shadow = a_Q, four arms equal, no-op vs the original on all four, 0 errors (3,073 s). The formal stage 1
+(`make_tasks_m24.py bfpair --write`) was queued at 09:03 PDT.
 
-**τ² idcheck finding.** fork_driver's checkpoint-identity probe regenerates recorded decisions through `/v1/completions` (raw
+**τ² idcheck finding (r1, superseded by r2).** r1 (`fork_gate_m24_rtn_w4`, `tau2_rtn_w4/`) failed only on `idcheck Q 13/16`. Every
+other sub-check passed. fork_driver's checkpoint-identity probe regenerated recorded decisions through `/v1/completions` (raw
 prompt ids, unconstrained). With `--tokenizer-mode mistral`, vLLM 0.29's mistral tool parser constrains every *chat* request that
 carries tools with mistral-common's tool-call grammar (llguidance; `vllm/parser/mistral.py::adjust_request`, the official tool
-path). The recorded Q decisions were therefore grammar-constrained, and the probe is not. The 3 mismatches are all single
-tool calls (airline 7/t9, 15/t2, 21/t7, 18–20 tokens) where the grammar changed the greedy token. B gave 16/16 because no
-constrained position changed its argmax in that sample.
+path). The recorded Q decisions were therefore grammar-constrained, and the probe was not. The 3 mismatches are all single
+tool calls (airline 7/t9, 15/t2, 21/t7, 18–20 tokens) where the grammar changed the greedy token.
 - The BFCL gate replays through chat, and there the Q replay at state is bit-exact (`q_replay_at_state` true).
-- For m24 the identity probe must go through chat with the same tools, or the grammar must be disabled for *all* m24 serving
-  (`--structured-outputs-config` / tool_choice handling). The latter would change the official tool protocol and needs a decision.
-- Until then, a τ² gate "FAIL" on `idcheck` alone is a probe artefact. The other τ² sub-checks decide.
+- Fix (7009bec): under `CLOQ_TOKENIZER_MODE=mistral` the probe repeats the agent's own chat request (recorded messages, tool
+  schemas with sha check, tool_choice auto, run llm_args, episode seed). Qwen/Llama probes are unchanged (`probe_dry.out`).
+  The grammar stays on: the official tool protocol is not changed.
 
 Model: `mistralai/Mistral-Small-3.2-24B-Instruct-2506@95a6d26c` (models.json `m24`), served **text-only** from
 `/data/ziyangs/cloq_work/ckpt_cache/m24_textonly_v1` (the `language_model.*` tensors of the pinned HF shards, byte-identical,
@@ -42,8 +45,8 @@ imports the same module. Fix: serve the language model alone (`MistralForCausalL
 | 1c | Tool protocol, BFCL | **PASS** | BF16: 172 decisions, 123 tool calls, 0 parser errors, 0 calls to tools not offered, 0 decode errors on tool calls; 20/20 items completed. RTN-W4 r0: one item ended with HTTP 400 (the agent's own call with an empty function name, which mistral_common refuses to render next turn). It is now scored `agent_parse_error` (W27 rule) and the item rerun (see 1d). |
 | 1d | Deterministic tool-call ids | **PASS (by construction, checked)** | The Mistral template renders `[CALL_ID]`; vLLM draws ids at random, so identical decisions would give different later prompts and no-op replays could never be bit-exact. τ²/BFCL now set id = `d<decision:05d>c<k:02d>` (m24 only). All recorded ids follow the rule. |
 | 2 | BF16 capability vs Qwen | **PASS (not at floor)** | τ²: 4/20 = 20% (Wilson 8–42%). On the 16 gate tasks in the calibration split, m24 25% vs Qwen BF16 q4 19%, q8 25%, q14 38%, q32 44% (same tasks, `a6k2_<q>_bf16_cal`). BFCL: 2/20 = 10% (3–30%) vs Qwen q4 10%, q8 15%, q14 15% on the same 20 items. l8 (W99f) was 0/20 and 4.2%. RTN-W4: τ² 3/20 = 15%, BFCL 1/20 = 5%. |
-| 3 | BB and QQ no-op replay bit-exact (τ², BFCL) | **BFCL PASS**; τ² running | BFCL (`bfcl_rtn_w4/gate.json`, 1197 s on 4 GPUs): 10 divergent states from 12 items, 0 excluded. Q replay at state, QQ no-op, BB no-op 4/4, replay fidelity, isolation 4/4, save/load and re-prefill all pass; 0 branch errors. Divergence types: act→talk, talk→act, tool_args, tool_count, tool_name. τ²: search 20 states from 20 tasks; idcheck B 16/16, Q 13/16 (see above); branches running. |
-| 4 | Same-checkpoint negative control (τ², BFCL) | **BFCL PASS**; τ² queued | BFCL (`bfcl_same_rtn_w4/gate_same.json`, 507 s): no divergence on any item, shadow = a_Q, four arms identical, equal to the original, replay ok (4 states). τ² `fork_gate_same_m24_rtn_w4` runs after the τ² gate. |
+| 3 | BB and QQ no-op replay bit-exact (τ², BFCL) | **PASS** (both) | BFCL (`bfcl_rtn_w4/gate.json`, 1197 s on 4 GPUs): 10 divergent states from 12 items, 0 excluded. Q replay at state, QQ no-op, BB no-op 4/4, replay fidelity, isolation 4/4, save/load and re-prefill all pass; 0 branch errors. Divergence types: act→talk, talk→act, tool_args, tool_count, tool_name. τ² r2 (`tau2_rtn_w4_r2/gate.json`, 5,817 s on 4 GPUs, chat probe): search 20 states from 20 tasks, 8 forked; idcheck Q 16/16, B 16/16; QQ, BB no-op 4/4, Q replay at state, isolation, save/load, budget and re-prefill pass; 0 state/BB errors. Divergence types act→talk, talk→act, tool_args, tool_count. r1 (`tau2_rtn_w4/`) had identical sub-checks except idcheck Q 13/16 (probe mismatch, above). |
+| 4 | Same-checkpoint negative control (τ², BFCL) | **PASS** (both) | BFCL (`bfcl_same_rtn_w4/gate_same.json`, 507 s): no divergence on any item, shadow = a_Q, four arms identical, equal to the original, replay ok (4 states). τ² (`tau2_same_rtn_w4/gate_same.json`, 3,073 s): idcheck Q 8/8, B-handle 8/8 (chat probe); 6 states (retail + airline), shadow = a_Q, all four arms equal, no-op vs original QQ/BB/BQ/QB, budget ok, 0 errors. |
 | 5 | BFCL leak regression (`tests/test_bfcl_instance_leak.py`) | **PASS** 9/9 | Default env and `CLOQ_TOKENIZER_MODE=mistral`: `test_bfcl_instance_leak{,_mistralmode}.out`. |
 | 6 | Throughput | measured | τ² eval: 20 tasks in 662 s (BF16) / 718 s (RTN-W4, including a ~30 s RTN build and ~3 min server start) on 2 GPUs; median episode 201 s retail, 129 s airline. BFCL: 20 items in 291 s on 2 GPUs (median item 91–144 s). |
 | 7 | Qwen paths unchanged | **PASS** | No m24 env → `template_view` path and random-id path untouched. `tests/test_template_view.py`: q4 257/257 server match. The q8 case gives the same counts (0/400 server match) with the pre-W99p code, so that failure predates this change (`test_template_view_qwen_unchanged.out`). Runner dry run: identical claims on a legacy queue. |
