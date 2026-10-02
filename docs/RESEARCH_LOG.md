@@ -28,6 +28,15 @@ Newest first.
 - **Not done:** prereg step 4 supplementary descriptive outputs (analyze_dev / analyze_difficulty on the holdout; non-decisional).
 - **Evidence:** `analysis/fork/out/holdout_confirm_20261002T012353Z.{md,json}`, `analysis/fork/out/holdout_confirm_cc_20261002T012358Z.{md,json}`.
 
+## W99a — SIMCTRL-P paper decision rule, committed before the final analysis (2026-10-01 19:05 PDT)
+**TL;DR** This rule is written before any final (batch 1 + 2) SIMCTRL-P output exists. Only the INTERIM batch-1 look of W99 has been seen. It fixes how the paper words R2's G−H result. It adds no pass threshold and changes nothing in `SIMCTRL_P_PROTOCOL.md` or in the frozen manifest. Source: the Feynman review in `outputs/final-plan-review.md` (weakness 2).
+- **Rule.** Use the pooled, equal-weight Sonnet-minus-original change in G−H over all 80 states. If the Sonnet G−H has the opposite sign to the original G−H on the same states, or the 95% interval of the change excludes 0, then:
+  - the q8-W4 / stress-cell G-vs-H ordering is removed from the abstract, the introduction and the discussion;
+  - it is reported as "the ranking of G/H/F was not stable across cells, task sampling or user simulator; it must be measured per configuration and simulator".
+  - Otherwise G−H stays a within-cell, fixed-pool, exploratory result, with the SIMCTRL-P estimate reported next to it.
+- **In every case:** the abstract does not state a G−H ordering as a general finding. The controller-dependence claim (3×3) is reported with its chance baseline (see W99b, pending).
+- **Evidence:** this entry (committed before `analysis/fork/out/simctrl_p_<UTC>.md` exists); `outputs/final-plan-review.md`.
+
 ## W98a — GPT-6.1 review 8 wording corrections after W98 (2026-10-01 PDT)
 **TL;DR** The claims now match the evidence. Finding consequence-bearing decisions is not the same as finding net-beneficial replacements.
 - **Bank U:** 150/208 is a share of deduplicated cell×state rows, not of independent states.
