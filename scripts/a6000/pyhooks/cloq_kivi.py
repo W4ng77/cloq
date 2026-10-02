@@ -25,8 +25,8 @@ precision inside the prompt (only the cache it leaves behind is quantized), so a
 the incremental one. Here every token, prompt or generated, gets the decode-step view, i.e. official KIVI run with a
 1-token prefill followed by decode. This is what makes multi-turn serving and replay well defined.
 
-Numerics: quantizer in fp32 with IEEE division (div_rn) and round-half-even, no FMA contraction, like torch's (x-mn)/s, clamp,
-round; a constant group (scale 0) dequantizes to its value (official code would divide by 0). Dequantized K/V are cast to
+Numerics: quantizer in fp32 as the official code runs on CUDA: scale (mx-mn)*fl32(1/L) (PyTorch divides by a CPU scalar
+via its reciprocal), IEEE (x-mn)/s (div_rn), clamp, round-half-even, no FMA contraction (W99t-a2); a constant group (scale 0) dequantizes to its value (official code would divide by 0). Dequantized K/V are cast to
 BF16 before the tensor-core dots (as the official kernels consume fp16 dequantized values). Scores in fp32, P in BF16.
 One kernel configuration for all launches (fixed BLOCK_Q, TILE, warps, no autotune, no specialisation on runtime ints).
 

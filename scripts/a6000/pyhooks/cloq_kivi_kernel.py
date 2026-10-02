@@ -15,10 +15,13 @@ def _rint(x):
 
 @triton.jit
 def _qdq(x, mn, mx, LEVELS: tl.constexpr):
-    """KIVI asymmetric quantize-dequantize, fp32: s=(mx-mn)/L; q=round(clamp((x-mn)/s, 0, L)); x^=q*s+mn.
-    IEEE division (div_rn); the kernel is compiled with enable_fp_fusion=False, so q*s+mn is a rounded multiply then a
-    rounded add (as torch). A constant group (s=0) returns mn (= x)."""
-    s = tl.div_rn(mx - mn, LEVELS * 1.0)
+    """KIVI asymmetric quantize-dequantize, fp32: s=(mx-mn)*fl32(1/L); q=round(clamp((x-mn)/s, 0, L)); x^=q*s+mn.
+    The scale is a multiply by the fp32 reciprocal of L, as the official `(mx - mn) / (2 ** bit - 1)` computes on CUDA
+    (PyTorch's division by a CPU scalar is a * (1/b)); an IEEE division here flips codes at the many exact ties of BF16
+    data (W99t-a2). (x-mn)/s is an IEEE division (div_rn), as torch's tensor/tensor division. The kernel is compiled
+    with enable_fp_fusion=False, so q*s+mn is a rounded multiply then a rounded add (as torch). A constant group (s=0)
+    returns mn (= x)."""
+    s = (mx - mn) * (1.0 / LEVELS)
     safe = tl.where(s > 0, s, 1.0)
     q = tl.div_rn(x - mn, safe)
     q = _rint(tl.minimum(tl.maximum(q, 0.0), LEVELS * 1.0))

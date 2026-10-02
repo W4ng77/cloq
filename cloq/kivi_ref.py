@@ -15,6 +15,7 @@ from __future__ import annotations
 import math
 import sys
 
+import numpy as np
 import torch
 
 KIVI_DIR = "/data/ziyangs/cloq_work/kivi_official"  # git clone https://github.com/jy-yuan/KIVI @ 876b4d2
@@ -123,9 +124,11 @@ class OfficialKIVI:
 
 
 def qdq_ref(x, mn, mx, bits):
-    """fp32 quantizer of the serving kernel, in torch: s=(mx-mn)/L, q=round(clamp((x-mn)/s)), x^=q*s+mn (s=0: x^=mn)."""
+    """fp32 quantizer of the serving kernel, in torch: s=(mx-mn)*fl32(1/L), q=round(clamp((x-mn)/s)), x^=q*s+mn (s=0: x^=mn).
+    The scale multiplies by the fp32 reciprocal on every device, as the official code's `/ (2 ** bit - 1)` does on CUDA
+    (W99t-a2); on CPU, torch would divide exactly."""
     L = float(2 ** bits - 1)
-    s = (mx - mn) / L
+    s = (mx - mn) * float(np.float32(1.0) / np.float32(L))
     safe = torch.where(s > 0, s, torch.ones_like(s))
     q = torch.round(torch.clamp((x - mn) / safe, 0.0, L))
     q = torch.where(s > 0, q, torch.zeros_like(q))
