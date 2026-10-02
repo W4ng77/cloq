@@ -1,4 +1,4 @@
-# A6000 queue snapshot (2026-10-02 05:34:13 PDT)
+# A6000 queue snapshot (2026-10-02 06:04:16 PDT)
 
 ## running (24)
 
@@ -9,12 +9,11 @@
 - `a6k2_q32_gauss3_s1`
 - `a6k2_q32_gauss3_s2`
 - `a6k2_q32_rtn_w3`
-- `a6k2_q32_tel_gauss1_s1`
+- `a6k2_q32_tel_gptq_w3`
 - `fork_gate_m24_rtn_w4`
 - `fork_repair_q4_rtn_w3`
 - `fork_sameprec_q4_g5`
-- `fork_sameprec_q4_g6`
-- `fork_sameprec_q8_g1`
+- `fork_sameprec_q8_g4`
 - `fork_sameprec_q8_g5`
 - `fork_tel_q8_awq_w4_g3`
 - `fork_tel_q8_gptq_w4_d1_g3`
@@ -25,7 +24,8 @@
 - `pert_q4_rtn_w3_restore_mlp_q345`
 - `pert_q4_rtn_w3_restore_rand_attn_s1_q345`
 - `pert_q4_rtn_w3_restore_rand_attn_s2_q345`
-- `rot_spin_learn_q8`
+- `pert_q4_rtn_w3_restore_rand_attn_s3_q345`
+- `rot_gate_sp_q8`
 
 ## failed (4)
 
@@ -34,7 +34,7 @@
 - `ext_l8_gptq_w4_d1_bfcl_smoke_l8g_sc` · RuntimeError("checkpoint build failed ({'kind': 'gptq', 'wbits': 4, 'calib': 'manifests/a6k2/l8/calib_fp_traj_c1.json'}) rc=1")
 - `kivi_gate_q8` · RuntimeError('cmd failed rc=-9')
 
-## done (1046)
+## done (1050)
 
 - `a6k2_det_q14_x1_awq_a` · 11 min · node005
 - `a6k2_det_q14_x1_awq_b` · 54 min · node004
@@ -237,7 +237,7 @@
 - `a6k2_q32_ol_gauss0.1_s1` · 25 min · node007
 - `a6k2_q32_ol_gauss0.1_s2` · 24 min · node005
 
-## todo (101)
+## todo (97)
 
 - `a6k2_q14_tel_gauss0.1_s1`
 - `a6k2_q14_tel_gauss1_s1`
@@ -247,7 +247,6 @@
 - `a6k2_q14_tel_rtn_w4`
 - `a6k2_q14_x1_awq`
 - `a6k2_q14_x1_fp8`
-- `a6k2_q32_tel_gptq_w3`
 - `a6k2_q32_tel_gptq_w4`
 - `a6k2_q32_tel_rtn_w3`
 - `a6k2_q32_tel_rtn_w4`
@@ -275,7 +274,6 @@
 - `a6k2_q8_x1_fp8`
 - `fork_gate_same_m24_rtn_w4`
 - `fork_sameprec_q8_g3`
-- `fork_sameprec_q8_g4`
 - `fork_sameprec_q8_g6`
 - `nmp_gate_bank_q8_quarot_w16`
 - `nmp_gate_bank_q8_quarot_w4`
@@ -283,7 +281,6 @@
 - `nmp_gate_same_q8_quarot_w16`
 - `nmp_gate_same_q8_quarot_w4`
 - `nmp_gate_same_q8_quarot_w4a4`
-- `pert_q4_rtn_w3_restore_rand_attn_s3_q345`
 - `pert_q4_rtn_w3_restore_rand_mlp_s3_q345`
 - `pert_q4_rtn_w3_restore_rand_third_s1_q345`
 - `pert_q4_rtn_w3_restore_rand_third_s2_q345`
@@ -337,7 +334,6 @@
 - `pivot_q8_rtn_w3_none__all`
 - `pivot_q8_rtn_w3_rand_attn_s1__rand_mlp_s1`
 - `pivot_q8_rtn_w3_resid_a0.5`
-- `rot_gate_sp_q8`
 - `rot_release_gates_sp_q8`
 - `rot_release_panel_qr_q8`
 
