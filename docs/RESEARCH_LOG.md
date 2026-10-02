@@ -10,6 +10,31 @@ Newest first.
 
 ---
 
+## W99d — Paper integration of the review-9 CPU analyses (pairing control, SIMCTRL-P E[I²], ext R2, holdout R2 post hoc, trigger oracles/KL) (2026-10-01 20:30 PDT)
+**TL;DR** Five committed CPU analyses are now in the paper, with the advisor's wording. R2: W4 equal-weight off-diagonal 26.9% vs 38.0% expected under the *marginal-preserving pairing agreement control* (κ 0.29 [0.27, 0.32], crossed [0.22, 0.36]); KV8 15.3% vs 33.6% (κ 0.55). It is not a no-interaction null; same-state I ≠ 0 is identified regardless. R3: SIMCTRL-P noise-corrected E[I_s²] = 0.050 [0.004, 0.107] (exploratory). BFCL/ALFWorld show controller dependence without an LLM user. Holdout R2 is labelled post hoc (G −4.6 conditional on divergence ≈ G_all −4.57 because 1180/1200 units diverge). R4: a matched oracle shows large headroom (the rule captures 4/34, 2/38, 5/38 of the oracle net), and a post-hoc KL row is not significant on net. The coverage table is fixed (BFCL q4 GPTQ-W3: 591 items · 540 st). Wording: no sentence says the simulator reverses the G/H/F ordering, and none says the holdout shows "no effect".
+- **Main-text edits:**
+  - R2 (`results_r2.tex`): pairing-control sentences next to the 26.9% paragraph, plus the 3×3 caption.
+  - R3 (`results_r3.tex`):
+    - SIMCTRL-P "simulator-specific" is replaced by "neither confirmed nor shown to reverse", plus one E[I²] sentence.
+    - Holdout gets a post-hoc R2 sentence and the G vs G_all note.
+    - BFCL/ALFWorld gets an R2 sentence (4.7–17.1% / 32.8–40.0%; κ 0.44–0.71 / 0.10–0.24; ALFWorld GPTQ-W3 H +38.5, G−H −34.6; KV4 reduces to H).
+  - R4 (`results_r4.tex`): new "Headroom" paragraph (action oracle, menu oracle, KL reference row).
+- **Appendix edits (`appendix.tex`):**
+  - New section "Supplementary R2 Analyses": tab:agreement (per-cell κ, stress cells flagged; q8 RTN-W3 κ ≈ 0 because Δ_Q is 93.3% zero), an SIMCTRL-P E[I²] paragraph with its assumptions, and tab:extr2.
+  - tab:holdoutr2 (post hoc) is added in the prereg section.
+  - New section "Trigger Headroom and a KL Reference Row" with tab:oracle.
+  - tab:coverage: BFCL q4 GPTQ-W3 cell fixed.
+  - Bank U simulator-control sensitivity/scope sentences moved here from R3.
+- **Page fit:** tightened related work, method, R1–R4, intro and discussion; no result deleted (moved items are in the appendix). The main text ends on p. 8 and Limitations starts at the top of p. 9. `check_numbers.py` PASS; 0 overfull, 0 undefined.
+- **Not placed:** the "20/22" no-op count for the dropped BFCL base category is not in any committed output, so the paper says only that the category was dropped by the QQ no-op rule.
+- **Evidence:**
+  - `analysis/fork/out/agreement_control_20261002T024240Z.{md,json}`
+  - `analysis/fork/out/simctrl_p_interaction_20261002T024357Z.{md,json}`
+  - `analysis/fork/out/ext_r2_20261002T024433Z.{md,json}`
+  - `analysis/fork/out/holdout_r2_posthoc_20261002T024414Z.{md,json}`
+  - `analysis/fork/out/oracle_trigger_20261002T024423Z.{md,json}`
+  - `paper/latex/sections/{results_r2,results_r3,results_r4,appendix}.tex`
+
 ## W99a — Bank P four-arm simulator control: final result (80 states) and paper integration (2026-10-01 19:00 PDT)
 **TL;DR** On 80 outcome-blind Bank P states (20 per core W4 cell, BB/BQ/QB/QQ × 5, Sonnet 5.5 as the user via isolated single calls), the per-state arm outcomes track the originals (r 0.63–0.68). Pooled under Sonnet: G −3.0 [−10.2, +4.8], H +5.5 [+0.0, +11.2], **G−H −8.5 [−14.8, −2.8]**. On the same states under the original simulator, G−H is −2.5 [−11.2, +6.2] (change −6.0 [−16.2, +4.2]). The sample cannot test the few-pp W93 contrasts: even the original gives G−H = 0.0 in both q8 W4 cells here. **The within-cell G−H orderings of R2 are therefore labelled simulator-specific.**
 - **Integrity:**
