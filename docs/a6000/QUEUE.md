@@ -1,6 +1,6 @@
-# A6000 queue snapshot (2026-10-02 05:04:11 PDT)
+# A6000 queue snapshot (2026-10-02 05:34:13 PDT)
 
-## running (23)
+## running (24)
 
 - `a6k2_q14_gauss3_s1`
 - `a6k2_q14_gauss3_s2`
@@ -10,29 +10,31 @@
 - `a6k2_q32_gauss3_s2`
 - `a6k2_q32_rtn_w3`
 - `a6k2_q32_tel_gauss1_s1`
-- `fork_ext_gate_same_m24_rtn_w4_bfcl`
+- `fork_gate_m24_rtn_w4`
 - `fork_repair_q4_rtn_w3`
 - `fork_sameprec_q4_g5`
 - `fork_sameprec_q4_g6`
 - `fork_sameprec_q8_g1`
-- `fork_sameprec_q8_g2`
+- `fork_sameprec_q8_g5`
 - `fork_tel_q8_awq_w4_g3`
 - `fork_tel_q8_gptq_w4_d1_g3`
-- `nmp_gate_same_q8_kivi_k2v2`
 - `nmp_gate_same_q8_kivi_k4v4`
 - `pert_q4_gptq_w3_resid_a2_q345`
 - `pert_q4_rtn_w3_resid_a2_q345`
 - `pert_q4_rtn_w3_restore_early_q345`
-- `pert_q4_rtn_w3_restore_late_q345`
+- `pert_q4_rtn_w3_restore_mlp_q345`
+- `pert_q4_rtn_w3_restore_rand_attn_s1_q345`
+- `pert_q4_rtn_w3_restore_rand_attn_s2_q345`
 - `rot_spin_learn_q8`
 
-## failed (3)
+## failed (4)
 
 - `a6k2_smoke_l8` · RuntimeError('run a6k2_smoke_l8/retail: 5 infrastructure_error episodes')
 - `a6k2_smoke_m24` · RuntimeError('vLLM agent server exited during startup')
 - `ext_l8_gptq_w4_d1_bfcl_smoke_l8g_sc` · RuntimeError("checkpoint build failed ({'kind': 'gptq', 'wbits': 4, 'calib': 'manifests/a6k2/l8/calib_fp_traj_c1.json'}) rc=1")
+- `kivi_gate_q8` · RuntimeError('cmd failed rc=-9')
 
-## done (1041)
+## done (1046)
 
 - `a6k2_det_q14_x1_awq_a` · 11 min · node005
 - `a6k2_det_q14_x1_awq_b` · 54 min · node004
@@ -235,7 +237,7 @@
 - `a6k2_q32_ol_gauss0.1_s1` · 25 min · node007
 - `a6k2_q32_ol_gauss0.1_s2` · 24 min · node005
 
-## todo (107)
+## todo (101)
 
 - `a6k2_q14_tel_gauss0.1_s1`
 - `a6k2_q14_tel_gauss1_s1`
@@ -271,22 +273,16 @@
 - `a6k2_q8_tel_rtn_w4`
 - `a6k2_q8_x1_awq`
 - `a6k2_q8_x1_fp8`
-- `fork_gate_m24_rtn_w4`
 - `fork_gate_same_m24_rtn_w4`
 - `fork_sameprec_q8_g3`
 - `fork_sameprec_q8_g4`
-- `fork_sameprec_q8_g5`
 - `fork_sameprec_q8_g6`
-- `kivi_gate_q8`
 - `nmp_gate_bank_q8_quarot_w16`
 - `nmp_gate_bank_q8_quarot_w4`
 - `nmp_gate_bank_q8_quarot_w4a4`
 - `nmp_gate_same_q8_quarot_w16`
 - `nmp_gate_same_q8_quarot_w4`
 - `nmp_gate_same_q8_quarot_w4a4`
-- `pert_q4_rtn_w3_restore_mlp_q345`
-- `pert_q4_rtn_w3_restore_rand_attn_s1_q345`
-- `pert_q4_rtn_w3_restore_rand_attn_s2_q345`
 - `pert_q4_rtn_w3_restore_rand_attn_s3_q345`
 - `pert_q4_rtn_w3_restore_rand_mlp_s3_q345`
 - `pert_q4_rtn_w3_restore_rand_third_s1_q345`
