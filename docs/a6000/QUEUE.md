@@ -1,124 +1,355 @@
-# A6000 queue snapshot (2026-09-28 18:45:21 PDT)
+# A6000 queue snapshot (2026-10-02 03:33:56 PDT)
 
-## running (26)
+## running (22)
 
-- `probe_det_q4`
-- `q4_bf16`
-- `q4_gauss0.1_s1`
-- `q4_gauss0.1_s2`
-- `q4_gauss1_s1`
-- `q4_gauss3_s1`
-- `q4_gauss3_s2`
-- `q4_rtn_w3`
-- `q4_rtn_w8`
-- `q8_awq_w4`
-- `q8_bf16`
-- `q8_gauss0.03_s1`
-- `q8_gauss0.03_s2`
-- `q8_gauss0.1_s1`
-- `q8_gauss0.1_s2`
-- `q8_gauss0.3_s1`
-- `q8_gauss0.3_s2`
-- `q8_gauss1_s1`
-- `q8_gauss1_s2`
-- `q8_gauss3_s1`
-- `q8_gauss3_s2`
-- `q8_gptq_w4_d1`
-- `q8_gptq_w4_d2`
-- `q8_rtn_w3`
-- `q8_rtn_w4`
-- `q8_rtn_w8`
+- `a6k2_q14_gauss3_s1`
+- `a6k2_q14_gauss3_s2`
+- `a6k2_q14_kvq_int3`
+- `a6k2_q30a3_gauss3_s1`
+- `a6k2_q32_gauss3_s1`
+- `a6k2_q32_gauss3_s2`
+- `a6k2_q32_rtn_w3`
+- `fork_repair_q4_rtn_w3`
+- `fork_sameprec_q4_g1`
+- `fork_sameprec_q4_g2`
+- `fork_sameprec_q4_g3`
+- `fork_sameprec_q4_g4`
+- `fork_sameprec_q4_g5`
+- `fork_sameprec_q4_g6`
+- `fork_sameprec_q8_g1`
+- `fork_sameprec_q8_g2`
+- `fork_tel_q8_awq_w4_g3`
+- `fork_tel_q8_gptq_w4_d1_g3`
+- `nmp_gate_bank_q8_kivi_k2v2`
+- `nmp_gate_bank_q8_kivi_k4v4`
+- `pert_q4_gptq_w3_resid_a2_q345`
+- `rot_gate_qr_q8`
 
-## failed (0)
+## failed (3)
 
+- `a6k2_smoke_l8` · RuntimeError('run a6k2_smoke_l8/retail: 5 infrastructure_error episodes')
+- `a6k2_smoke_m24` · RuntimeError('vLLM agent server exited during startup')
+- `ext_l8_gptq_w4_d1_bfcl_smoke_l8g_sc` · RuntimeError("checkpoint build failed ({'kind': 'gptq', 'wbits': 4, 'calib': 'manifests/a6k2/l8/calib_fp_traj_c1.json'}) rc=1")
 
-## done (16)
+## done (1033)
 
-- `det_q30a3_a` · 8 min · node005
-- `det_q30a3_b` · 7 min · node004
-- `det_q4_a` · 6 min · node005
-- `det_q4_b` · 8 min · node004
-- `q14_bf16_cal` · 20 min · node007
-- `q14_calib_c1` · 0 min · node006
-- `q14_calib_c2` · 0 min · node005
-- `q4_gauss0.03_s1` · 16 min · node003
-- `q4_gauss0.03_s2` · 16 min · node003
-- `q4_gauss0.3_s1` · 16 min · node006
-- `q4_gauss0.3_s2` · 16 min · node006
-- `q4_gauss1_s2` · 27 min · node006
-- `q4_rtn_w4` · 23 min · node005
-- `q8_bf16_cal` · 16 min · node003
-- `q8_calib_c1` · 0 min · node006
-- `q8_calib_c2` · 0 min · node005
+- `a6k2_det_q14_x1_awq_a` · 11 min · node005
+- `a6k2_det_q14_x1_awq_b` · 54 min · node004
+- `a6k2_det_q14_x1_fp8_a` · 10 min · node005
+- `a6k2_det_q14_x1_fp8_b` · 19 min · node004
+- `a6k2_det_q30a3_a` · 8 min · node005
+- `a6k2_det_q30a3_b` · 9 min · node004
+- `a6k2_det_q30a3_x1_fp8_a` · 7 min · node005
+- `a6k2_det_q30a3_x1_fp8_b` · 12 min · node004
+- `a6k2_det_q32_x1_awq_a` · 90 min · node005
+- `a6k2_det_q32_x1_awq_b` · 36 min · node004
+- `a6k2_det_q32_x1_fp8_a` · 6 min · node005
+- `a6k2_det_q32_x1_fp8_b` · 10 min · node004
+- `a6k2_det_q4_a` · 5 min · node005
+- `a6k2_det_q4_b` · 7 min · node004
+- `a6k2_det_q4_fp32h_a` · 5 min · node005
+- `a6k2_det_q4_fp32h_b` · 6 min · node004
+- `a6k2_det_q4_kvq_int4_rot_a` · 87 min · node005
+- `a6k2_det_q4_x1_fp8_a` · 6 min · node005
+- `a6k2_det_q4_x1_fp8_b` · 14 min · node004
+- `a6k2_det_q8_x1_awq_a` · 35 min · node005
+- `a6k2_det_q8_x1_awq_b` · 147 min · node004
+- `a6k2_det_q8_x1_fp8_a` · 40 min · node005
+- `a6k2_det_q8_x1_fp8_b` · 10 min · node004
+- `a6k2_l8_bf16` · 18 min · node005
+- `a6k2_l8_bf16_cal` · 8 min · node008
+- `a6k2_l8_calib_c1` · 0 min · node008
+- `a6k2_l8_gauss0.03_s1` · 8 min · node007
+- `a6k2_l8_gauss0.03_s2` · 6 min · node001
+- `a6k2_l8_gauss0.3_s1` · 7 min · node007
+- `a6k2_l8_null_extra` · 10 min · node001
+- `a6k2_m24_bf16_cal` · 2 min · node006
+- `a6k2_m24_bf16_gate` · 11 min · node006
+- `a6k2_m24_calib_c1` · 0 min · node004
+- `a6k2_m24_rtn_w4_gate` · 12 min · node006
+- `a6k2_q14_awq_w4` · 48 min · node006
+- `a6k2_q14_awq_w4_d2` · 124 min · node003
+- `a6k2_q14_awq_w4_qx` · 84 min · node006
+- `a6k2_q14_bf16` · 82 min · node004
+- `a6k2_q14_bf16_cal` · 20 min · node003
+- `a6k2_q14_calib_c1` · 0 min · node001
+- `a6k2_q14_calib_c2` · 0 min · node004
+- `a6k2_q14_churnctl` · 97 min · node003
+- `a6k2_q14_churnctl_k1` · 59 min · node007
+- `a6k2_q14_gauss0.03_s1` · 23 min · node005
+- `a6k2_q14_gauss0.03_s2` · 72 min · node003
+- `a6k2_q14_gauss0.1_s1` · 33 min · node007
+- `a6k2_q14_gauss0.1_s2` · 22 min · node005
+- `a6k2_q14_gauss0.3_s1` · 29 min · node007
+- `a6k2_q14_gauss0.3_s1_cf` · 52 min · node006
+- `a6k2_q14_gauss0.3_s2` · 35 min · node007
+- `a6k2_q14_gauss1_s1` · 31 min · node005
+- `a6k2_q14_gauss1_s2` · 20 min · node005
+- `a6k2_q14_gauss1_s2_cf` · 132 min · node003
+- `a6k2_q14_gptq_w3` · 86 min · node001
+- `a6k2_q14_gptq_w3_qx` · 101 min · node007
+- `a6k2_q14_gptq_w4_d1` · 65 min · node001
+- `a6k2_q14_gptq_w4_d1_qx` · 90 min · node007
+- `a6k2_q14_gptq_w4_d2` · 61 min · node006
+- `a6k2_q14_gptq_w5` · 67 min · node001
+- `a6k2_q14_gshape_w4` · 306 min · node003
+- `a6k2_q14_kvq_int4` · 165 min · node004
+- `a6k2_q14_kvq_int4_rot` · 74 min · node003
+- `a6k2_q14_kvq_int8` · 76 min · node001
+- `a6k2_q14_mxfp4` · 98 min · node006
+- `a6k2_q14_nf4` · 67 min · node006
+- `a6k2_q14_null_extra` · 91 min · node003
+- `a6k2_q14_ol_awq_w4` · 33 min · node003
+- `a6k2_q14_ol_awq_w4_d2` · 33 min · node003
+- `a6k2_q14_ol_bf16` · 17 min · node006
+- `a6k2_q14_ol_bf16_eager` · 17 min · node006
+- `a6k2_q14_ol_gauss0.03_s1` · 18 min · node003
+- `a6k2_q14_ol_gauss0.03_s2` · 18 min · node003
+- `a6k2_q14_ol_gauss0.03_s3` · 18 min · node003
+- `a6k2_q14_ol_gauss0.03_s4` · 18 min · node001
+- `a6k2_q14_ol_gauss0.03_s5` · 17 min · node003
+- `a6k2_q14_ol_gauss0.1_s1` · 18 min · node006
+- `a6k2_q14_ol_gauss0.1_s2` · 18 min · node006
+- `a6k2_q14_ol_gauss0.3_s1` · 18 min · node003
+- `a6k2_q14_ol_gauss0.3_s2` · 18 min · node003
+- `a6k2_q14_ol_gauss1_s1` · 18 min · node003
+- `a6k2_q14_ol_gauss1_s2` · 18 min · node007
+- `a6k2_q14_ol_gauss3_s1` · 18 min · node007
+- `a6k2_q14_ol_gauss3_s2` · 18 min · node003
+- `a6k2_q14_ol_gptq_w3` · 34 min · node003
+- `a6k2_q14_ol_gptq_w4_d1` · 34 min · node006
+- `a6k2_q14_ol_gptq_w4_d2` · 34 min · node003
+- `a6k2_q14_ol_gshape_w4` · 18 min · node007
+- `a6k2_q14_ol_mxfp4` · 17 min · node003
+- `a6k2_q14_ol_nf4` · 18 min · node001
+- `a6k2_q14_ol_rot_bf16` · 18 min · node003
+- `a6k2_q14_ol_rot_gptq_w4` · 35 min · node003
+- `a6k2_q14_ol_rot_rtn_w4` · 18 min · node003
+- `a6k2_q14_ol_rtn_w3` · 17 min · node007
+- `a6k2_q14_ol_rtn_w4` · 18 min · node006
+- `a6k2_q14_ol_rtn_w8` · 17 min · node001
+- `a6k2_q14_ol_rtnsign_w4` · 18 min · node003
+- `a6k2_q14_ol_rtnsr_w4` · 18 min · node004
+- `a6k2_q14_ol_x1_awq` · 19 min · node003
+- `a6k2_q14_ol_x1_fp8` · 16 min · node006
+- `a6k2_q14_olk_awq_w4` · 36 min · node003
+- `a6k2_q14_olk_bf16` · 20 min · node003
+- `a6k2_q14_olk_gptq_w4_d1` · 37 min · node006
+- `a6k2_q14_olk_gptq_w4_d2` · 36 min · node007
+- `a6k2_q14_olk_rtn_w3` · 20 min · node003
+- `a6k2_q14_olk_rtn_w4` · 20 min · node001
+- `a6k2_q14_rot_bf16` · 70 min · node003
+- `a6k2_q14_rot_gptq_w4` · 76 min · node007
+- `a6k2_q14_rot_rtn_w4` · 77 min · node007
+- `a6k2_q14_rtn_w3` · 208 min · node007
+- `a6k2_q14_rtn_w3_qx` · 244 min · node006
+- `a6k2_q14_rtn_w4` · 58 min · node005
+- `a6k2_q14_rtn_w4_qx` · 89 min · node006
+- `a6k2_q14_rtn_w5` · 53 min · node006
+- `a6k2_q14_rtn_w6` · 28 min · node006
+- `a6k2_q14_rtn_w8` · 5 min · node007
+- `a6k2_q14_rtn_w8_cf` · 64 min · node006
+- `a6k2_q14_rtnsign_w4` · 211 min · node005
+- `a6k2_q14_rtnsr_w4` · 88 min · node003
+- `a6k2_q14_tel_awq_w4` · 32 min · node008
+- `a6k2_q14_tel_bf16` · 67 min · node008
+- `a6k2_q30a3_awq_w4` · 34 min · node007
+- `a6k2_q30a3_bf16` · 20 min · node005
+- `a6k2_q30a3_bf16_cal` · 46 min · node007
+- `a6k2_q30a3_calib_c1` · 0 min · node003
+- `a6k2_q30a3_calib_c2` · 0 min · node004
+- `a6k2_q30a3_gauss0.03_s1` · 20 min · node005
+- `a6k2_q30a3_gauss0.03_s2` · 17 min · node005
+- `a6k2_q30a3_gauss0.1_s1` · 16 min · node005
+- `a6k2_q30a3_gauss0.1_s2` · 70 min · node004
+- `a6k2_q30a3_gauss0.3_s1` · 32 min · node004
+- `a6k2_q30a3_gauss0.3_s2` · 17 min · node005
+- `a6k2_q30a3_gauss1_s1` · 21 min · node007
+- `a6k2_q30a3_gauss1_s2` · 25 min · node007
+- `a6k2_q30a3_gauss3_s2` · 643 min · node005
+- `a6k2_q30a3_gptq_w3` · 44 min · node007
+- `a6k2_q30a3_gptq_w4_d1` · 38 min · node007
+- `a6k2_q30a3_gptq_w4_d2` · 38 min · node007
+- `a6k2_q30a3_null_extra` · 32 min · node005
+- `a6k2_q30a3_ol_awq_w4` · 25 min · node004
+- `a6k2_q30a3_ol_bf16` · 12 min · node004
+- `a6k2_q30a3_ol_bf16_eager` · 11 min · node004
+- `a6k2_q30a3_ol_gauss0.03_s1` · 16 min · node004
+- `a6k2_q30a3_ol_gauss0.03_s2` · 16 min · node004
+- `a6k2_q30a3_ol_gauss0.03_s3` · 16 min · node004
+- `a6k2_q30a3_ol_gauss0.03_s4` · 16 min · node004
+- `a6k2_q30a3_ol_gauss0.03_s5` · 16 min · node004
+- `a6k2_q30a3_ol_gauss0.1_s1` · 16 min · node004
+- `a6k2_q30a3_ol_gauss0.1_s2` · 16 min · node004
+- `a6k2_q30a3_ol_gauss0.3_s1` · 16 min · node004
+- `a6k2_q30a3_ol_gauss0.3_s2` · 16 min · node004
+- `a6k2_q30a3_ol_gauss1_s1` · 15 min · node004
+- `a6k2_q30a3_ol_gauss1_s2` · 16 min · node004
+- `a6k2_q30a3_ol_gauss3_s1` · 15 min · node004
+- `a6k2_q30a3_ol_gauss3_s2` · 15 min · node004
+- `a6k2_q30a3_ol_gptq_w3` · 24 min · node004
+- `a6k2_q30a3_ol_gptq_w4_d1` · 25 min · node004
+- `a6k2_q30a3_ol_gptq_w4_d2` · 26 min · node004
+- `a6k2_q30a3_ol_rtn_w3` · 17 min · node004
+- `a6k2_q30a3_ol_rtn_w4` · 15 min · node004
+- `a6k2_q30a3_ol_rtn_w8` · 16 min · node004
+- `a6k2_q30a3_ol_x1_fp8` · 11 min · node004
+- `a6k2_q30a3_rtn_w3` · 7 min · node007
+- `a6k2_q30a3_rtn_w4` · 24 min · node007
+- `a6k2_q30a3_rtn_w8` · 23 min · node007
+- `a6k2_q30a3_tel_awq_w4` · 26 min · node005
+- `a6k2_q30a3_tel_bf16` · 14 min · node004
+- `a6k2_q30a3_tel_gauss0.1_s1` · 12 min · node007
+- `a6k2_q30a3_tel_gauss1_s1` · 32 min · node004
+- `a6k2_q30a3_tel_gptq_w3` · 25 min · node007
+- `a6k2_q30a3_tel_gptq_w4` · 18 min · node002
+- `a6k2_q30a3_tel_rtn_w3` · 117 min · node008
+- `a6k2_q30a3_tel_rtn_w4` · 162 min · node008
+- `a6k2_q30a3_x1_fp8` · 94 min · node005
+- `a6k2_q32_awq_w4` · 102 min · node007
+- `a6k2_q32_bf16` · 207 min · node007
+- `a6k2_q32_bf16_cal` · 37 min · node007
+- `a6k2_q32_calib_c1` · 0 min · node003
+- `a6k2_q32_calib_c2` · 0 min · node004
+- `a6k2_q32_gauss0.03_s1` · 35 min · node007
+- `a6k2_q32_gauss0.03_s2` · 22 min · node007
+- `a6k2_q32_gauss0.1_s1` · 26 min · node007
+- `a6k2_q32_gauss0.1_s2` · 25 min · node007
+- `a6k2_q32_gauss0.3_s1` · 35 min · node007
+- `a6k2_q32_gauss0.3_s2` · 172 min · node004
+- `a6k2_q32_gauss1_s1` · 32 min · node007
+- `a6k2_q32_gauss1_s2` · 58 min · node007
+- `a6k2_q32_gptq_w3` · 291 min · node004
+- `a6k2_q32_gptq_w4_d1` · 99 min · node007
+- `a6k2_q32_gptq_w4_d2` · 100 min · node007
+- `a6k2_q32_null_extra` · 104 min · node007
+- `a6k2_q32_ol_awq_w4` · 59 min · node004
+- `a6k2_q32_ol_bf16` · 24 min · node004
+- `a6k2_q32_ol_bf16_eager` · 23 min · node004
+- `a6k2_q32_ol_gauss0.03_s1` · 29 min · node005
+- `a6k2_q32_ol_gauss0.03_s2` · 26 min · node007
+- `a6k2_q32_ol_gauss0.03_s3` · 24 min · node005
+- `a6k2_q32_ol_gauss0.03_s4` · 24 min · node004
+- `a6k2_q32_ol_gauss0.03_s5` · 25 min · node004
+- `a6k2_q32_ol_gauss0.1_s1` · 25 min · node007
+- `a6k2_q32_ol_gauss0.1_s2` · 24 min · node005
 
-## todo (68)
+## todo (116)
 
-- `q14_awq_w4`
-- `q14_bf16`
-- `q14_gauss0.03_s1`
-- `q14_gauss0.03_s2`
-- `q14_gauss0.1_s1`
-- `q14_gauss0.1_s2`
-- `q14_gauss0.3_s1`
-- `q14_gauss0.3_s2`
-- `q14_gauss1_s1`
-- `q14_gauss1_s2`
-- `q14_gauss3_s1`
-- `q14_gauss3_s2`
-- `q14_gptq_w3`
-- `q14_gptq_w4_d1`
-- `q14_gptq_w4_d2`
-- `q14_rtn_w3`
-- `q14_rtn_w4`
-- `q14_rtn_w8`
-- `q30a3_awq_w4`
-- `q30a3_bf16`
-- `q30a3_bf16_cal`
-- `q30a3_calib_c1`
-- `q30a3_calib_c2`
-- `q30a3_gauss0.03_s1`
-- `q30a3_gauss0.03_s2`
-- `q30a3_gauss0.1_s1`
-- `q30a3_gauss0.1_s2`
-- `q30a3_gauss0.3_s1`
-- `q30a3_gauss0.3_s2`
-- `q30a3_gauss1_s1`
-- `q30a3_gauss1_s2`
-- `q30a3_gauss3_s1`
-- `q30a3_gauss3_s2`
-- `q30a3_gptq_w3`
-- `q30a3_gptq_w4_d1`
-- `q30a3_gptq_w4_d2`
-- `q30a3_rtn_w3`
-- `q30a3_rtn_w4`
-- `q30a3_rtn_w8`
-- `q32_awq_w4`
-- `q32_bf16`
-- `q32_bf16_cal`
-- `q32_calib_c1`
-- `q32_calib_c2`
-- `q32_gauss0.03_s1`
-- `q32_gauss0.03_s2`
-- `q32_gauss0.1_s1`
-- `q32_gauss0.1_s2`
-- `q32_gauss0.3_s1`
-- `q32_gauss0.3_s2`
-- `q32_gauss1_s1`
-- `q32_gauss1_s2`
-- `q32_gauss3_s1`
-- `q32_gauss3_s2`
-- `q32_gptq_w3`
-- `q32_gptq_w4_d1`
-- `q32_gptq_w4_d2`
-- `q32_rtn_w3`
-- `q32_rtn_w4`
-- `q32_rtn_w8`
-- `q4_awq_w4`
-- `q4_bf16_cal`
-- `q4_calib_c1`
-- `q4_calib_c2`
-- `q4_gptq_w3`
-- `q4_gptq_w4_d1`
-- `q4_gptq_w4_d2`
-- `q8_gptq_w3`
+- `a6k2_q14_tel_gauss0.1_s1`
+- `a6k2_q14_tel_gauss1_s1`
+- `a6k2_q14_tel_gptq_w3`
+- `a6k2_q14_tel_gptq_w4`
+- `a6k2_q14_tel_rtn_w3`
+- `a6k2_q14_tel_rtn_w4`
+- `a6k2_q14_x1_awq`
+- `a6k2_q14_x1_fp8`
+- `a6k2_q32_tel_gauss1_s1`
+- `a6k2_q32_tel_gptq_w3`
+- `a6k2_q32_tel_gptq_w4`
+- `a6k2_q32_tel_rtn_w3`
+- `a6k2_q32_tel_rtn_w4`
+- `a6k2_q4_gauss2_s1_redo`
+- `a6k2_q4_gauss3_s1_redo`
+- `a6k2_q4_gauss3_s2_redo`
+- `a6k2_q4_kvq_int3`
+- `a6k2_q4_kvq_int4`
+- `a6k2_q4_samp_T0.2`
+- `a6k2_q4_samp_T0.5`
+- `a6k2_q4_samp_T0.8`
+- `a6k2_q8_gauss2_s1`
+- `a6k2_q8_gauss2_s2`
+- `a6k2_q8_gauss3_s1`
+- `a6k2_q8_gauss3_s2_redo`
+- `a6k2_q8_kvq_int3`
+- `a6k2_q8_kvq_int4`
+- `a6k2_q8_tel_gauss0.1_s1`
+- `a6k2_q8_tel_gauss1_s1`
+- `a6k2_q8_tel_gptq_w3`
+- `a6k2_q8_tel_gptq_w4`
+- `a6k2_q8_tel_rtn_w3`
+- `a6k2_q8_tel_rtn_w4`
+- `a6k2_q8_x1_awq`
+- `a6k2_q8_x1_fp8`
+- `fork_ext_gate_m24_rtn_w4_bfcl`
+- `fork_ext_gate_same_m24_rtn_w4_bfcl`
+- `fork_gate_m24_rtn_w4`
+- `fork_gate_same_m24_rtn_w4`
+- `fork_sameprec_q8_g3`
+- `fork_sameprec_q8_g4`
+- `fork_sameprec_q8_g5`
+- `fork_sameprec_q8_g6`
+- `kivi_gate_q8`
+- `nmp_gate_bank_q8_quarot_w16`
+- `nmp_gate_bank_q8_quarot_w4`
+- `nmp_gate_bank_q8_quarot_w4a4`
+- `nmp_gate_same_q8_kivi_k2v2`
+- `nmp_gate_same_q8_kivi_k4v4`
+- `nmp_gate_same_q8_quarot_w16`
+- `nmp_gate_same_q8_quarot_w4`
+- `nmp_gate_same_q8_quarot_w4a4`
+- `pert_q4_rtn_w3_resid_a2_q345`
+- `pert_q4_rtn_w3_restore_early_q345`
+- `pert_q4_rtn_w3_restore_late_q345`
+- `pert_q4_rtn_w3_restore_mlp_q345`
+- `pert_q4_rtn_w3_restore_rand_attn_s1_q345`
+- `pert_q4_rtn_w3_restore_rand_attn_s2_q345`
+- `pert_q4_rtn_w3_restore_rand_attn_s3_q345`
+- `pert_q4_rtn_w3_restore_rand_mlp_s3_q345`
+- `pert_q4_rtn_w3_restore_rand_third_s1_q345`
+- `pert_q4_rtn_w3_restore_rand_third_s2_q345`
+- `pert_q4_rtn_w3_restore_rand_third_s3_q345`
+- `pert_q8_awq_w4_resid_a0.25_fdev`
+- `pert_q8_awq_w4_resid_a0.5_fdev`
+- `pert_q8_awq_w4_resid_a2_fdev`
+- `pert_q8_awq_w4_restore_middle_fdev`
+- `pert_q8_awq_w4_restore_mlp_fdev`
+- `pert_q8_awq_w4_restore_rand_attn_s1_fdev`
+- `pert_q8_awq_w4_restore_rand_mlp_s1_fdev`
+- `pert_q8_awq_w4_restore_rand_mlp_s2_fdev`
+- `pert_q8_awq_w4_restore_rand_mlp_s3_fdev`
+- `pert_q8_awq_w4_restore_rand_third_s1_fdev`
+- `pert_q8_awq_w4_restore_rand_third_s2_fdev`
+- `pert_q8_awq_w4_restore_rand_third_s3_fdev`
+- `pert_q8_gptq_w3_resid_a2_q345`
+- `pert_q8_rtn_w3_resid_a0.25_q345`
+- `pert_q8_rtn_w3_resid_a2_q345`
+- `pert_q8_rtn_w3_restore_rand_attn_s2_q345`
+- `pert_q8_rtn_w3_restore_rand_attn_s3_q345`
+- `pert_q8_rtn_w3_restore_rand_mlp_s2_q345`
+- `pert_q8_rtn_w3_restore_rand_mlp_s3_q345`
+- `pert_q8_rtn_w3_restore_rand_third_s2_q345`
+- `pert_q8_rtn_w3_restore_rand_third_s3_q345`
+- `pert_q8_tel_awq_w4_resid_a0.5_f123`
+- `pert_q8_tel_awq_w4_restore_attn_f456`
+- `pert_q8_tel_awq_w4_restore_early_f123`
+- `pert_q8_tel_awq_w4_restore_early_f456`
+- `pert_q8_tel_awq_w4_restore_late_f123`
+- `pert_q8_tel_awq_w4_restore_late_f456`
+- `pert_q8_tel_awq_w4_restore_middle_f123`
+- `pert_q8_tel_awq_w4_restore_middle_f456`
+- `pert_q8_tel_awq_w4_restore_mlp_f123`
+- `pert_q8_tel_awq_w4_restore_mlp_f456`
+- `pert_q8_tel_awq_w4_restore_rand_attn_s1_f123`
+- `pert_q8_tel_awq_w4_restore_rand_attn_s1_f456`
+- `pert_q8_tel_awq_w4_restore_rand_mlp_s1_f123`
+- `pert_q8_tel_awq_w4_restore_rand_mlp_s1_f456`
+- `pert_q8_tel_awq_w4_restore_rand_third_s1_f123`
+- `pert_q8_tel_awq_w4_restore_rand_third_s1_f456`
+- `pivot_q4_rtn_w3_early__middle`
+- `pivot_q4_rtn_w3_late__attn`
+- `pivot_q4_rtn_w3_mlp__rand_third_s1`
+- `pivot_q4_rtn_w3_none__all`
+- `pivot_q4_rtn_w3_rand_attn_s1__rand_mlp_s1`
+- `pivot_q4_rtn_w3_resid_a0.5`
+- `pivot_q8_rtn_w3_early__middle`
+- `pivot_q8_rtn_w3_late__attn`
+- `pivot_q8_rtn_w3_mlp__rand_third_s1`
+- `pivot_q8_rtn_w3_none__all`
+- `pivot_q8_rtn_w3_rand_attn_s1__rand_mlp_s1`
+- `pivot_q8_rtn_w3_resid_a0.5`
+- `rot_gate_sp_q8`
+- `rot_release_gates_sp_q8`
+- `rot_release_panel_qr_q8`
+- `rot_spin_learn_q8`
 
