@@ -128,7 +128,12 @@ Evidence: `analysis/fork/out/sameprec_20261002T142834Z.{md,json}` (TOST, K = 6),
   - type A: BF16 continuation of the recorded action vs the original suffix;
   - type B: d1 regenerates a_Q, and its QQ must equal the reference QQ branch signature.
   - Implicit identities: if a_d2 = a_BF16 or a_d2 = a_d1, the new arm must equal the reference arm. Any failure quarantines the block.
-- **Gate.** `cs_gate_q8_d2_bf16` (node005) and `cs_gate_q8_d2_d1` (node007): 12 rows each, all re-runs, idchecks (d2 on `a6k2_q8_gptq_w4_d2_n1`, BF16, d1). Both nodes differ from node004, where the reference arms ran. Result: pending.
+- **Gate: PASS (both tasks, 2026-10-02 10:15 PDT; neither ran on node004, where the reference arms ran).**
+  - B (`cs_gate_q8_d2_d1`, node007): idcheck d2 16/16 and d1 16/16; 12/12 rows; d2 replay bit-exact; 12/12 reference d1 QQ re-runs bit-exact against the Bank U branches (branch signature); 5/5 implicit identities pass; budgets OK.
+  - A (`cs_gate_q8_d2_bf16`, node001): idcheck d2 16/16 and BF16 16/16; 12/12 rows; 12/12 BF16 no-ops of the recorded action bit-exact vs the original suffix; 4/4 implicit identities pass.
+  - a_d2 is token-identical across the two tasks on 12/12 states, from different nodes.
+  - Canaries and checkpoint shas are as pre-registered: BF16 e340…, d1 a9f8…/6ee628e6, d2 15e5…/320409ad.
+- **Deviation D1 (09:35, logistics).** Node pins were removed from the queued tasks, because the pinned nodes were busy for hours. This was done before any panel outcome existed. The protocol sha becomes `c73ab2eec2f14052633e0703c2f50b1df9356c8222ba2ad1c8541301948198d0`, and the v1 text is a byte-identical prefix.
 - **Queued (priority −29, 2 GPUs each).** 2 gates, then 6 panel tasks `cs_q8_{d2_bf16,d2_d1}_f0{1,2,3}`, which depend on both gates.
 - **Analysis.** `analysis/fork/analyze_commonstate.py`:
   - it refuses to run unless the protocol sha matches;
