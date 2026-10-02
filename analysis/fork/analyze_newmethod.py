@@ -55,7 +55,8 @@ PROTOCOL = ROOT / "docs/insights/NEWMETHOD_PANEL_PROTOCOL.md"
 # Amendment A2 (W100e, 2026-10-02): was 28b78509... (A1); m24 manifest registered.
 # Amendment A3 (W100e-b, 2026-10-02): was c6603f90... (A2); m24 83-task analysis mask, M1 contrast.
 # Amendment A4 (W99t-b, 2026-10-02): was da8b69ba... (A3); kivi_k16v16 kernel-path control, KIVI _fx gates, k4v4 secondary.
-PROTOCOL_SHA256 = "0dc3143eb0bc184bf19c8275f59f5e0c5db83ae0eeab101838f225a32eaadd83"
+# Amendment A5 (W100g, 2026-10-02): was 0dc3143e... (A4); expansion decision: registered cells, KIVI _fx gates, fixed population, KIVI pairing, frozen snapshot.
+PROTOCOL_SHA256 = "f9f8b3a5cfbbf9c068425d7dc2adbd69ae26b7229f3eb2b387d6bdcca7a0bf22"
 # Amendment A3 (W100e-b): per-model tau2 analysis mask (frozen file + sha); the population is the manifest tasks minus the mask's
 # excluded tasks, uniformly for all cells and blocks.
 MASKS = {"m24": ("manifests/fork/newmethod_panel_v1_m24_mask_v1.json", "b03a8a918959e3568315b1ae134f2902580e6af822d80beccb692729c2f82c81")}

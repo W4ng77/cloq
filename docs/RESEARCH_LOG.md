@@ -10,6 +10,32 @@ Newest first.
 
 ---
 
+## W100g — Expansion tool fixed before any expansion decision: KIVI `_fx` gates, fixed-population completeness (m24 = 249 states), KIVI pairing, frozen snapshot; protocol amendment A5 (2026-10-02 14:55 PDT)
+**TL;DR** GPT-6.1 reviewed 6e0b11b and found three gaps in `make_newmethod_panel.py expansion`. All are fixed before any expansion decision was due or written: no `expansion_*.json` exists, and no `nmp_tau2_*` task is done. Protocol sha `0dc3143e…` becomes `f9f8b3a5…` (A5); `analyze_newmethod.py` has the new constant. The rule stays effect-blind.
+- **KIVI gates.** Eligibility now reads only `nmp_gate_{same,bank}_q8_<cell>_fx` (outputs `gate/q8_<cell>_fx/`, checked against the tasks' `out`). `kivi_k4v4` additionally needs `kivi_gate_q8_toy4` strict T1. The old pre-fix gates never admit a cell.
+- **Registered cells are fixed in code** (`REGISTERED`):
+  - q8: the 5 rotation cells + `kivi_k2v2`, `kivi_k4v4`, `kivi_k16v16`;
+  - m24: `rtn_w4`, `gptq_w4_d1`.
+  `--cells` is optional and must equal the list; the old scheduler line (which omitted k4v4/k16v16) is refused.
+- **Fixed-population completeness from counts only.**
+  - Per f01–f03 block the rule needs `n_rows` = 85, `n_missing` = the manifest-missing source rows of that block (all outside the population), `n_ok` = `n_rows` − `n_missing`, `n_errors` 0 and every no-op passed.
+  - m24: the A3 mask comes from `analyze_newmethod.population`. The 7 known missing rows (tasks 13/44) do not block; any other missing row does; 249 states per cell.
+  - q8 now also requires `n_missing` 0.
+  - Branch-arm errors inside completed rows are invisible to these fields (stated limitation; the analysis strict-block rule catches them).
+- **KIVI pairing (A5.3, new).** A4 did not say how `kivi_k16v16` enters expansion. Now a quantized KIVI cell expands only together with `kivi_k16v16`, and `kivi_k16v16` only with at least one quantized KIVI cell.
+- **Snapshot.** Past T_decide, eligibility is judged as of T_decide (a task counts only if `finished` ≤ T_decide). Every input file's sha256, each task's queue state, finished time and file sha, the summary fields used, and the per-cell reasons are recorded. The record is written once (hard link; refused if it exists), and `--now` is refused with `--write`.
+- **Dry run now** (14:51 PDT, no write):
+  - q8 `decision_due` false, eligible none. The rotation cells' `nmp_tau2_*` tasks are not queued at all. The KIVI `_fx` gates are in todo and k2v2 f01–f03 are running. Reference U2B cost 13.1 GPU-h, so P ≥ 16.4 GPU-h, ≥ 2.0 h wall.
+  - m24 `decision_due` false, eligible none (gates and panel tasks in todo).
+- `--selftest` (synthetic queue in a temp dir) passes:
+  - a newly missing row, a task done after T_decide, a failed gate, unqueued tasks, old-only KIVI gates, strict T1 false and the k16v16 pairing in both directions;
+  - m24 249-state coverage vs an extra missing row;
+  - decision not due, write-once and the forbidden-path guard.
+
+Scheduler: `make_newmethod_panel.py expansion --model q8 --write` and `... --model m24 --write` (no `--cells`). Builder sha `eb505f12…` (recorded in each record as `builder_sha256`).
+
+Evidence: `scripts/a6000/make_newmethod_panel.py`, `docs/insights/NEWMETHOD_PANEL_PROTOCOL.md` (Amendment A5), `analysis/fork/analyze_newmethod.py`, W99t-b, W100e-b.
+
 ## W99t-b — KIVI follow-up (GPT-6.1 decisions): kivi_k16v16 kernel-path control + protocol amendment A4, all KIVI gates re-run on the fixed kernel (_fx), strict T1, k4v4 secondary pending its gates (2026-10-02 14:30 PDT)
 **TL;DR** Amendment A4 was written before any KIVI outcome was read. Protocol sha `da8b69ba…` becomes `0dc3143e…`; `analyze_newmethod.py` has the new constant and `NEW_CELLS += kivi_k16v16`.
 - **Control cell.** A4 registers `kivi_k16v16`: the KIVI kernel with no quantization, the same-kernel-path control. It runs τ² f01–f03 with four arms. Its BFCL run is not registered.

@@ -476,3 +476,85 @@ The KIVI cells use a replay-compatible decode-view variant: every token, prompt 
 `analysis/fork/analyze_newmethod.py` was changed in the same commit:
 - `PROTOCOL_SHA256` = this file's new sha256;
 - `NEW_CELLS` += `kivi_k16v16`.
+
+---
+
+## Amendment A5 (2026-10-02 14:55 PDT, W100g): the expansion decision — registered cells, KIVI `_fx` gates, the fixed population, KIVI pairing, a frozen snapshot
+
+**TL;DR** This amendment makes the §5 expansion rule implement what A3 and A4 already require. It was written **before any expansion decision** and before any phase-1 panel output was read. No `analysis/fork/newmethod/expansion_*.json` exists. No `nmp_tau2_*` task is in the queue's done or failed directories: the `kivi_k2v2` f01–f03 tasks are running, and every other panel task is in todo or not queued. The decision rule stays effect-blind; it reads no outcome field.
+- The registered cells are fixed in the builder, not chosen on the command line (A5.1).
+- KIVI gates count only from the `_fx` re-runs; `kivi_k4v4` also needs the strict T1 (A5.1, from A4.2 and A4.3).
+- "Phase 1 complete" means every population state of f01–f03 has a completed record. For m24 the population is the A3 83-task mask, so 249 states per cell (A5.2).
+- `kivi_k16v16` and the quantized KIVI cells expand together or not at all (A5.3).
+- Eligibility is judged on a frozen snapshot, every input is recorded with its sha256, and the record is written exactly once (A5.4).
+
+Evidence: `scripts/a6000/make_newmethod_panel.py` (`expansion`, `--selftest`), RESEARCH_LOG W100g. Reason: the GPT-6.1 review of 6e0b11b found three gaps: old KIVI gate directories, no fixed-83 check, no snapshot.
+
+### A5.1 Registered cells and their gates (no command-line choice)
+
+| Model | Registered cells for `expansion` | Gates counted |
+|---|---|---|
+| q8 | `quarot_w4`, `quarot_w4a4`, `quarot_w16`, `spinquant_w4a4`, `spinquant_w16` (A1.1) | §2.4: `nmp_gate_{same,bank}_q8_<cell>`, outputs `gate/q8_<cell>/{same,bank}` |
+| q8 | `kivi_k2v2` (primary), `kivi_k16v16` (kernel-path control, A4.1) | **only** the fixed-kernel re-runs `nmp_gate_{same,bank}_q8_<cell>_fx`, outputs `gate/q8_<cell>_fx/{same,bank}` (A4.2). The pre-fix gates never admit a cell |
+| q8 | `kivi_k4v4` (secondary, A4.3) | the `_fx` gates **and** the strict T1: task `kivi_gate_q8_toy4` done and `analysis/fork/kivi_gate/gate_q8_toy4.json` `toy.verdict_strict.T1_strict_codes_scale_mn_deq_bitwise` = true |
+| m24 | `rtn_w4`, `gptq_w4_d1` (A2.2) | §2.4: `nmp_gate_{same,bank}_m24_<cell>` |
+
+- The list is `REGISTERED` in the builder. `--cells` is no longer needed; if given, it must equal the list or the tool refuses.
+- A registered cell whose release conditions are not met, or whose phase-1 tasks are not queued, is simply ineligible, with the reason recorded.
+- A gate counts only if its queue task is done, its spec `out` is the expected directory, and its verdict passes (`gate_same.json` `verdict.pass`; bank gate `gate_pass`).
+- Trigger (a) of §5.1 ("all phase-1 panel tasks of the registered cells finished") needs all three `nmp_tau2_<model>_<cell>_f0k` tasks of every registered cell in done or failed. A cell whose tasks are not queued holds trigger (a) open, so the decision then falls to T_decide.
+
+### A5.2 Phase 1 complete (both models; m24 on the A3 population)
+
+A (cell, block) of f01–f03 is complete only if all of the following hold at the snapshot time (A5.4):
+- its `nmp_tau2_*` task is done, and its spec is the panel spec (`bank_u`, that block only, `subs ["U2B"]`, no `limit_per_sub`, the frozen manifest sha, `out` = `analysis/fork/newmethod/tau2/<model>_<cell>/<blk>`);
+- the summary's `manifest_sha256`, `spec.blocks` and `spec.cell` match;
+- `n_errors` = 0, and every no-op passed;
+- `n_rows` = the manifest's U2B rows of the block (85);
+- `n_missing` = the number of manifest-missing source rows of the block, all of which lie outside the population;
+- `n_ok` = `n_rows` − `n_missing`.
+
+How this covers the population with counts only:
+- A manifest-missing row is always recorded missing by `bank_u`.
+- So when `n_missing` equals their count, no other row is missing. Every population state of the block then has a completed record.
+- For m24 the population is the A3 mask, taken from `analyze_newmethod.population` (no duplicated semantics):
+  - the 7 manifest-missing rows (airline 13 in f01; airline 44 in f01–f03 here, f04–f06 later) do not make a cell ineligible;
+  - any other missing row does;
+  - phase 1 then covers exactly 83 × 3 = **249** states per cell.
+- For q8 the population is all 85 tasks and no row is manifest-missing, so `n_missing` must be 0. This is now enforced for q8 as well; before, only `n_errors` and the no-ops were checked.
+- The tool refuses to run if a manifest-missing row ever falls inside the population.
+
+Fields read: queue status, the task's `gpus`, `finished` and fork spec, never its `result`; and from `bank_summary.json` only seconds, n_rows, n_ok, n_missing, n_errors, budget_ok, the no-op counts and the provenance fields `manifest_sha256` / `spec`. `bank_rows.jsonl`, `branches/`, token scores and `holdout/` are refused by a path guard.
+
+**Limitation, stated:** a branch-arm error inside an otherwise completed row (`Y` = None for one arm) is counted in `n_ok` by `bank_u` and is not visible in these fields. Such a block passes A5.2. The analysis strict-block rule (§7; A3.3) still refuses it later. Expansion eligibility does not depend on it.
+
+### A5.3 KIVI pairing (defines how `kivi_k16v16` enters expansion; A4 did not)
+
+The KIVI group is `kivi_k16v16` plus the quantized KIVI cells `kivi_k2v2` and `kivi_k4v4`. Within it, §5.5 "all or none" is applied jointly with the control:
+- a quantized KIVI cell is phase-2 eligible only if it is eligible on its own **and** `kivi_k16v16` is eligible on its own;
+- `kivi_k16v16` is phase-2 eligible only if it is eligible on its own **and** at least one quantized KIVI cell is.
+
+So if `kivi_k2v2` expands, `kivi_k16v16` expands on the same blocks (f04–f06). Otherwise neither does, and the record states why: "A5.3: kernel-path control kivi_k16v16 not eligible", or "A5.3: no eligible quantized KIVI cell".
+- The rule uses only the eligibility of A5.1/A5.2 and reads no effect.
+- The A4.4 contrasts (`kivi_k2v2` − `kivi_k16v16`, `kivi_k4v4` − `kivi_k16v16`) therefore always have both cells on the same blocks.
+- The rotation W16 controls are not coupled by this amendment. Their pairing is unchanged from §5: each cell is judged alone.
+
+### A5.4 Frozen snapshot, recorded inputs, written once
+
+- **Snapshot time.** If the decision is due because T_decide has passed, eligibility is judged on the state **as of T_decide**: a task counts as done only if its queue record's `finished` ≤ T_decide. The scheduler's poll latency therefore changes nothing. If trigger (a) fires before T_decide, the snapshot time is the decision run itself.
+- **Not complete means ineligible.** A cell whose phase 1 is not complete at the snapshot time is ineligible. "Cells registered after the decision run f01–f03 only" (§5.6) still holds, and so does a cell that completes later.
+- **Inputs recorded.** Each input file is read once and parsed from the same bytes whose sha256 is recorded. The record holds, per cell:
+  - every gate and panel task's queue state, `finished` time and task-file sha256;
+  - the summary fields used;
+  - the reasons for ineligibility.
+  It also holds every input file's sha256 (`inputs.files_sha256`), the protocol, manifest and mask shas (`guard`), and the builder's own sha256 (`builder_sha256`, computed at run time).
+- **Projected cost.** The finish time uses the actual decision-run clock: now + wall ≤ T_deadline (§5.4, unchanged).
+- **Written once.** `--write` uses the clock, so `--now` is refused with it. The record `analysis/fork/newmethod/expansion_<model>.json` is created by a hard link of a complete temporary file, which fails if the record exists, so it is written exactly once.
+
+Scheduler commands (one per model, unchanged otherwise):
+- `make_newmethod_panel.py expansion --model q8 --write`
+- `make_newmethod_panel.py expansion --model m24 --write`
+
+### A5.5 Analysis script
+
+`analysis/fork/analyze_newmethod.py`: `PROTOCOL_SHA256` = this file's new sha256 (same commit). Nothing else changes.
