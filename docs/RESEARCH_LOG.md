@@ -10,6 +10,26 @@ Newest first.
 
 ---
 
+## W98a — GPT-6.1 review 8 wording corrections after W98 (2026-10-01 PDT)
+**TL;DR** The claims now match the evidence. Finding consequence-bearing decisions is not the same as finding net-beneficial replacements.
+- **Bank U:** 150/208 is a share of deduplicated cell×state rows, not of independent states.
+- **Token (R4, abstract):**
+  - New wording: "a frozen Q-only margin rule enriched outcome-changing decisions on later nonce blocks, but has not been shown to select net-beneficial replacements".
+  - The 20% threshold actually selected 222/1020 = 21.8%. Net gain 0.49 pp vs random 0.23 pp (+0.26, p = .262).
+  - This is a random-selection comparison on a fixed validation bank, not routing gains on new tasks.
+  - Holm-adjusted p for the 5% rate: ≈ .1035.
+- **Recovery (appendix):** "no error-specific effect" became "no clear difference detected". Under Q, the q8 interval [−0.30, +0.03] still allows sizeable harm.
+- **q8 premature_write manipulation failures:** 6 rejected plus 1 executed without a DB change. Checked in `analysis/recovery/inject_q8/summary_v2.md`.
+- **Discussion:** text outcome labels "did not reproduce reliably under an alternative stochastic relay simulator".
+- **Checks:** `check_numbers.py` PASS (1,971). The main text ends on p. 8 and Limitations starts on p. 9.
+- **Argument order fixed by GPT:**
+  1. current-action replacement rescues and damages;
+  2. the four-arm fork separates action from continuation, with state-level controller dependence;
+  3. Bank U shows what the selection and the action definition miss, and the simulator control bounds transfer;
+  4. the frozen trigger separates finding consequences from getting gains.
+- **Remaining before the freeze:** the final Bank P analysis on all 80 states, the frozen telecom confirmation, and the claim audit.
+- **Evidence:** `paper/latex/sections/{abstract,results_r3,results_r4,discussion,appendix}.tex`.
+
 ## W98 — Bank U f01–f03, frozen token-trigger validation (f02/f03) and recovery q8 analysed; paper placeholders BANKU-F023, TOKEN-VALIDATION, RECOVERY-Q8 filled (2026-10-01 PDT)
 **TL;DR** All expected GPU tasks were complete (18/18 Bank U native blocks, 12/12 Q0 blocks, 18/18 score blocks, inject_q8 30/30 states); nothing is missing.
 - **Bank U f01–f03** (task-equal, t over 3 block means): M stays below Bank P and every G interval covers 0. The q4 > q8 contrast seen in f01 weakens: q8 AWQ-W4 is now at the q4 level. Text (class ii) is still the main composition share (150/208 = 72.1% deduplicated), but per instance it flips no more often than tool or act/talk differences (14.4% vs 18.2% / 18.9%). These labels come from one simulator (W95/W96 caveat unchanged; the simulator control covers f01 flips only).
