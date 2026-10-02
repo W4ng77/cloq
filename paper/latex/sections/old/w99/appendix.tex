@@ -1,0 +1,570 @@
+% ===========================================================================================================
+% DELETION RULE FOR UNFILLED SLOTS (evidence freeze 2026-10-03). Any \pending{} slot below that is still unfilled
+% at the 10-03 evidence freeze is removed, never shipped as "(pending)":
+%   * q14 (Qwen3-14B BFCL scale check) unfilled -> delete the q14 sentence in results_r3.tex, the q14 clause
+%     "plus a single Qwen3-14B configuration on BFCL (pending)" and "apart from that one Qwen3-14B configuration" in
+%     limitations.tex, and the q14 row plus its caption clause in Table tab:coverage below.
+%   * Backfill perturbation slots in Appendix app:withdrawn (restoration location, error dose, low-bit failure modes)
+%     unfilled -> delete each unfilled paragraph; if all three are unfilled, delete the "Supplementary perturbation
+%     analyses" heading too. Filled results stay in app:withdrawn, next to static precision restoration.
+%   * Same-precision slots are NOT covered by this rule; they follow sections/pending_sameprec_variants.tex and
+%     docs/insights/SAMEPREC_PROTOCOL.md (K < 3 complete blocks -> per-block numbers only, no reading).
+% ===========================================================================================================
+\section{Setup Details}
+\label{app:setup}
+
+\paragraph{Splits.} The development split has 58 retail, 27 airline and 80 telecom tasks. The holdout has 34 telecom tasks, and its pre-registration hash is recorded in the split file. % src: manifests/fork/splits_v1.json
+The telecom split was fixed from \tautwo{}'s 114-task base split by a stratified, salted hash before any run. % src: manifests/telecom/dev_v1.json
+The external benchmarks use BFCL multi-turn (base, miss\_func, miss\_param and long\_context, 197 items each) and ALFWorld (134 out-of-distribution games). Items were selected by hash in manifests committed before any model run. % src: docs/RESEARCH_LOG.md W36-ext (manifests/bfcl/bfcl_mt_v1.json, manifests/alfworld/alfworld_text_v1.json)
+
+\paragraph{Success endpoints.} For retail and airline we use the final-database match with normal termination. This is not \tautwo{}'s official reward, which additionally scores natural-language or communicate checks. Telecom uses the official deterministic task-basis success. Context overflow and unparseable output count as failures. Infrastructure outages are missing, never failures, and a block with a missing unit leaves the primary analysis.
+
+\paragraph{Fork mechanics.} The forced action is returned by a fork agent for the one step that follows $h_t$. A tool call is executed by the real environment, and text is answered by the real simulator, which never reuses observations from the original trajectory. \tautwo{} resets step and error counters when it starts from a history. The fork restores them to the values used at $t$, so the remaining budget equals the original. Every max\_steps and too\_many\_errors episode on the checked blocks is reproduced by the recount. % src: docs/insights/FORK_PROTOCOL.md §2-§4
+The served user simulator is Qwen3-30B-A3B-Instruct in every episode; a user-model label stored in the fork state files is outdated and should be ignored. % src: /data/ziyangs/cloq_work/sims/*.json (hf_id); docs/RESEARCH_LOG.md (stale user_model_id field)
+
+\section{End-to-End Success Comparison}
+\label{app:e2e}
+
+The replacement gains $\Gall$, $G$, $H$ and $F$ are not end-to-end comparisons. Table~\ref{tab:e2e} gives the end-to-end comparison, computed separately on the same checkpoints, the same tasks and the same 20 nonce blocks as the forks. % src: analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md
+
+\begin{table}[h]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+% src: analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{@{}lrrcc@{}}
+\toprule
+Cell & Q / BF16 (\%) & Q$-$BF16 [95\% CI] & NI 3\pp{} & TOST $\pm$3\pp{} \\
+\midrule
+q4 GPTQ-W4 & 40.0 / 35.8 & $+4.2$ [$-2.4$, $+10.5$] & pass & fail \\
+q4 AWQ-W4  & 36.8 / 35.8 & $+0.9$ [$-5.8$, $+7.5$] & fail & fail \\
+q8 GPTQ-W4 & 30.1 / 30.4 & $-0.2$ [$-7.7$, $+6.8$] & fail & fail \\
+q8 AWQ-W4  & 31.5 / 30.4 & $+1.2$ [$-5.3$, $+7.6$] & fail & fail \\
+pool, all four & & $+1.5$ [$-2.7$, $+5.6$] & pass & fail \\
+\bottomrule
+\end{tabular}
+\caption{End-to-end closed-loop success, quantized minus BF16 (pp). Units are paired on nonce, and the crossed task$\times$block bootstrap is drawn jointly across cells. Non-inferiority (NI) at a 3\pp{} margin passes for q4 GPTQ-W4 and the all-four pool. Equivalence (TOST at $\pm$3\pp{}) passes nowhere. These comparisons therefore support neither a difference nor equivalence.}
+\label{tab:e2e}
+\end{table}
+
+\section{Full Tables for R1 and R2}
+\label{app:tables}
+
+Table~\ref{tab:r1} gives every cell of Figure~\ref{fig:rd}, including the stress cells, with new-task intervals. Table~\ref{tab:ghf} gives every cell of Figure~\ref{fig:ghf}, with $F-G$, $F-H$ and the $(\DQ,\DB)$ summaries. % nocheck: cross-reference sentence
+
+\begin{table}[h]
+\centering\scriptsize\setlength{\tabcolsep}{2.4pt}
+% src: analysis/fork/out/dev_all_20261001T070326Z.md (two-sided table; W4:all pooled row)
+\resizebox{\columnwidth}{!}{\begin{tabular}{@{}lrrrrrll@{}}
+\toprule
+Cell & units & div. & $r$ & $d$ & $M$ & $\Gall$ [fixed pool] & [new tasks] \\
+\midrule
+q4 GPTQ-W4 & 85$\times$20 & 1102 & 6.8 & 8.7 & 15.5 & $-1.9$ [$-3.7$, $-0.1$] & [$-6.8$, $+2.7$] \\
+q4 AWQ-W4  & 85$\times$20 & 1439 & 9.8 & 10.1 & 19.9 & $-0.3$ [$-2.2$, $+1.6$] & [$-5.4$, $+5.2$] \\
+q8 GPTQ-W4 & 85$\times$20 & 1473 & 10.4 & 7.5 & 17.9 & $+2.9$ [$+1.4$, $+4.4$] & [$-2.9$, $+9.2$] \\
+q8 AWQ-W4  & 85$\times$20 & 1562 & 11.4 & 9.5 & 20.9 & $+1.9$ [$-0.6$, $+4.3$] & [$-3.9$, $+8.1$] \\
+W4 pool    & 85$\times$20 & & 9.6 & 9.0 & 18.6 & $+0.7$ [$-0.3$, $+1.6$] & \\
+\midrule
+q4 KV8 & 85$\times$22 & 593 & 3.1 & 3.4 & 6.5 & $-0.3$ [$-1.7$, $+1.0$] & [$-3.0$, $+2.3$] \\
+q8 KV8 & 85$\times$22 & 855 & 4.3 & 3.7 & 8.1 & $+0.6$ [$-0.4$, $+1.6$] & [$-1.9$, $+3.0$] \\
+\midrule
+q4 GPTQ-W3$^s$ & 85$\times$3 & 232 & 9.0 & 10.2 & 19.2 & $-1.2$ [$-7.0$, $+4.7$] & [$-8.6$, $+5.9$] \\
+q4 KV4-rot$^s$ & 85$\times$3 & 233 & 11.8 & 7.1 & 18.8 & $+4.7$ [$-4.1$, $+13.5$] & [$-3.1$, $+12.9$] \\
+q8 GPTQ-W3$^s$ & 85$\times$3 & 242 & 10.2 & 8.2 & 18.4 & $+2.0$ [$-12.5$, $+16.4$] & [$-6.3$, $+11.8$] \\
+q8 KV4-rot$^s$ & 85$\times$3 & 239 & 11.8 & 8.6 & 20.4 & $+3.1$ [$-14.5$, $+20.8$] & [$-5.9$, $+12.9$] \\
+q8 RTN-W3$^s$ & 85$\times$3 & 255 & 3.1 & 3.5 & 6.7 & $-0.4$ [$-3.8$, $+3.0$] & [$-4.7$, $+3.9$] \\
+\bottomrule
+\end{tabular}}
+\caption{Replacing Q's first tool-structure-divergent action while Q continues, \tautwo{} retail/airline panel (pp). Denominator: the full pool of tasks $\times$ complete blocks; units without a Bank P state count as zero. div.\ = Bank P states. $\Gall=r-d$ is a local replacement effect, \emph{not} the end-to-end success difference (Appendix~\ref{app:e2e}). Fixed pool: block bootstrap ($\ge$10 blocks) or $t$ over block means; new tasks: crossed task$\times$block bootstrap. $^s$stress cell, 3 blocks.}
+\label{tab:r1}
+\end{table}
+
+\begin{table*}[t]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+% src: analysis/fork/out/ghf_20261001T211519Z.md (§1 per-cell table and pools; §2 3x3 table columns)
+\resizebox{\textwidth}{!}{\begin{tabular}{@{}lrllllllrrl@{}}
+\toprule
+Cell & states & $G$ (this step) & $H$ (next step on) & $F$ (from here on) & $G-H$ & $F-G$ & $F-H$ ($=\DB$) & off-diag.\ \% & rev.\ \% & mean $I$ \\
+\midrule
+q4 GPTQ-W4 & 1102 & $-2.9$ [$-5.7$, $-0.2$] & $+0.7$ [$-1.6$, $+3.0$] & $-2.5$ [$-5.3$, $+0.2$] & $-3.6$ [$-6.6$, $-0.6$] & $+0.5$ [$-1.2$, $+2.2$] & $-3.2$ [$-6.4$, $+0.2$] & 25.0 & 2.6 & $+0.3$ \\
+q4 AWQ-W4  & 1439 & $-0.3$ [$-2.6$, $+1.9$] & $+0.9$ [$-1.1$, $+2.9$] & $-0.8$ [$-3.3$, $+1.6$] & $-1.3$ [$-3.0$, $+0.6$] & $-0.4$ [$-2.4$, $+1.5$] & $-1.7$ [$-3.6$, $+0.4$] & 29.3 & 3.1 & $+1.3$ \\
+q8 GPTQ-W4 & 1473 & $+3.3$ [$+1.6$, $+5.0$] & $+0.4$ [$-1.2$, $+1.9$] & $+5.4$ [$+3.5$, $+7.2$] & $+2.9$ [$+1.3$, $+4.7$] & $+2.1$ [$+0.2$, $+4.0$] & $+5.0$ [$+3.2$, $+6.8$] & 22.9 & 2.7 & $-1.7$ \\
+q8 AWQ-W4  & 1562 & $+2.1$ [$-0.6$, $+4.7$] & $-1.3$ [$-3.5$, $+0.9$] & $+0.6$ [$-1.5$, $+2.7$] & $+3.4$ [$+1.5$, $+5.2$] & $-1.5$ [$-4.2$, $+0.8$] & $+1.9$ [$-0.1$, $+3.8$] & 30.5 & 4.2 & $+0.3$ \\
+W4 pool    & 5576 & $+0.5$ [$-0.7$, $+1.7$] & $+0.2$ [$-1.3$, $+1.6$] & $+0.7$ [$-0.6$, $+2.1$] & $+0.4$ [$-0.8$, $+1.7$] & $+0.2$ [$-1.0$, $+1.2$] & $+0.5$ [$-1.0$, $+2.1$] & 26.9 & 3.2 & $+0.0$ \\
+\midrule
+q4 KV8 & 593 & $-1.0$ [$-5.3$, $+3.2$] & $-2.5$ [$-4.5$, $-0.5$] & $-1.2$ [$-4.7$, $+2.3$] & $+1.5$ [$-3.1$, $+6.0$] & $-0.2$ [$-3.5$, $+3.7$] & $+1.3$ [$-2.5$, $+4.9$] & 15.7 & 1.2 & $-2.4$ \\
+q8 KV8 & 855 & $+1.3$ [$-0.9$, $+3.4$] & $-0.4$ [$-2.1$, $+1.5$] & $+2.5$ [$+0.0$, $+5.1$] & $+1.6$ [$-0.6$, $+3.9$] & $+1.2$ [$-0.5$, $+3.2$] & $+2.8$ [$+0.3$, $+5.5$] & 14.9 & 1.2 & $-1.5$ \\
+KV8 pool   & 1448 & $+0.1$ [$-2.8$, $+3.0$] & $-1.4$ [$-2.7$, $-0.1$] & $+0.6$ [$-1.8$, $+3.1$] & $+1.6$ [$-1.2$, $+4.1$] & $+0.5$ [$-1.6$, $+2.8$] & $+2.1$ [$-0.2$, $+4.2$] & 15.3 & 1.2 & $-1.9$ \\
+\midrule
+q4 GPTQ-W3$^s$ & 232 & $-1.3$ [$-7.7$, $+5.0$] & $+4.3$ [$-10.7$, $+19.4$] & $+1.3$ [$-1.9$, $+4.4$] & $-5.6$ [$-15.0$, $+3.7$] & $+2.6$ [$-0.6$, $+5.8$] & $-3.0$ [$-15.1$, $+9.1$] & 31.5 & 3.9 & $+1.7$ \\
+q4 KV4-rot$^s$ & 233 & $+5.2$ [$-4.5$, $+14.9$] & $+9.4$ [$+5.1$, $+13.7$] & $+12.4$ [$+11.0$, $+13.9$] & $-4.3$ [$-18.3$, $+9.8$] & $+7.3$ [$-2.0$, $+16.5$] & $+3.0$ [$-1.9$, $+8.0$] & 33.0 & 1.7 & $+2.1$ \\
+q8 GPTQ-W3$^s$ & 242 & $+2.1$ [$-13.3$, $+17.2$] & $+0.4$ [$-7.4$, $+8.2$] & $+2.1$ [$-7.4$, $+11.4$] & $+1.7$ [$-9.1$, $+12.3$] & $+0.0$ [$-11.0$, $+11.1$] & $+1.7$ [$-0.1$, $+3.4$] & 23.1 & 4.5 & $+0.4$ \\
+q8 KV4-rot$^s$ & 239 & $+3.3$ [$-15.4$, $+21.9$] & $-0.8$ [$-18.2$, $+16.3$] & $+4.6$ [$-16.0$, $+25.0$] & $+4.2$ [$+2.5$, $+5.8$] & $+1.3$ [$-1.8$, $+4.3$] & $+5.4$ [$+0.8$, $+10.0$] & 31.0 & 4.6 & $-2.1$ \\
+q8 RTN-W3$^s$ & 255 & $-0.4$ [$-3.8$, $+3.0$] & $+15.3$ [$+0.7$, $+29.9$] & $+18.4$ [$+16.7$, $+20.1$] & $-15.7$ [$-27.5$, $-3.9$] & $+18.8$ [$+13.8$, $+23.9$] & $+3.1$ [$-13.0$, $+19.2$] & 29.0 & 0.4 & $-3.5$ \\
+\bottomrule
+\end{tabular}}
+\caption{Three replacement gains and their paired differences on each cell's Bank P states (pp; same denominator in every column). $G=\YY{BQ}-\YY{QQ}$, $H=\YY{QB}-\YY{QQ}$, $F=\YY{BB}-\YY{QQ}$. Off-diag.: share of states with $\DQ\neq\DB$; rev.: strict reversals. Fixed-pool 95\% intervals (block bootstrap over 20--22 complete blocks; $t$ over 3 blocks for $^s$stress cells, which cannot be pooled). New-task intervals are in Table~\ref{tab:ghf-crossed}. Within a row, contrasts are paired and identified; between rows, descriptive.}
+\label{tab:ghf}
+\end{table*}
+
+\section{All 16 Outcome Patterns and New-Task Intervals} % nocheck: heading
+\label{app:patterns}
+
+Table~\ref{tab:patterns} lists every four-branch pattern per cell; \texttt{0000} (39--58\%) and \texttt{1111} (6--20\%) dominate. % src: docs/RESEARCH_LOG.md W93
+Table~\ref{tab:ghf-crossed} gives the new-task intervals for Table~\ref{tab:ghf}.
+
+\input{sections/gen_patterns}
+\input{sections/gen_ghf_crossed}
+
+\section{Supplementary R2 Analyses}
+\label{app:r2supp}
+
+\begin{figure}[t]
+\centering
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[x=0.8cm,y=0.8cm,font=\scriptsize] % nocheck: TikZ scale
+\newcommand{\heat}[5]{% #1 x-offset, #2 total n, #3 counts (row-major, rows DQ=-1,0,+1; cols DB=-1,0,+1), #4 title, #5 subtitle
+  \foreach \v [count=\k from 0] in {#3} {% nocheck: TikZ
+    \pgfmathtruncatemacro{\rr}{\k/3}\pgfmathtruncatemacro{\cc}{mod(\k,3)}% nocheck: TikZ
+    \pgfmathsetmacro{\s}{min(88,6+92*(\v/#2)^0.45)}% nocheck: TikZ colour scale (power 0.45, as in the W93 figure)
+    \fill[blue!\s!white] (#1+\cc,-\rr) rectangle ++(1,-1);% nocheck: TikZ
+    \pgfmathparse{\s>60?"white":"black"}\edef\tc{\pgfmathresult}% nocheck: TikZ text colour threshold
+    \node[text=\tc] at (#1+\cc+0.5,-\rr-0.5) {\v};% nocheck: TikZ
+  }
+  \foreach \i in {0,1,2} {\draw[thick] (#1+\i,-\i) rectangle ++(1,-1);}% nocheck: TikZ diagonal boxes
+  \node[font=\tiny] at (#1+2.82,-0.15) {R}; \node[font=\tiny] at (#1+0.82,-2.15) {R};% nocheck: TikZ reversal marks
+  \foreach \l [count=\i from 0] in {$-1$,$0$,$+1$} {\node at (#1+\i+0.5,-3.25) {\l};}% nocheck: TikZ
+  \node[align=center] at (#1+1.5,0.55) {#4\\[-1pt]#5};% nocheck: TikZ
+}
+\foreach \l [count=\i from 0] in {$-1$,$0$,$+1$} {\node at (-0.3,-\i-0.5) {\l};}% nocheck: TikZ
+\node[rotate=90] at (-0.85,-1.5) {$\DQ=\YY{BQ}-\YY{QQ}$};% nocheck: TikZ
+% src: analysis/fork/out/ghf_20261001T211519Z.md (§2, rows "pool W4:all" and "pool KV8:all")
+\heat{0}{5576}{208,306,95,327,3637,349,85,349,220}{W4 pool, 5576 states}{off-diag.\ 26.9\% [25.7, 28.1]}
+\def\xoff{3.55}% nocheck: TikZ panel offset
+\heat{\xoff}{1448}{76,48,10,46,1065,64,7,45,87}{KV8 pool, 1448 states}{off-diag.\ 15.3\% [13.2, 17.3]}
+\node at (3.3,-3.75) {$\DB=\YY{BB}-\YY{QB}$ (columns)};% nocheck: TikZ
+\end{tikzpicture}}
+\caption{Does the action swap have the same effect under both controllers? Counts of $(\DQ,\DB)$ over the Bank P states of the W4 cells (left) and the KV8 cells (right). Boxed: diagonal. R: strict reversals. Shading: share of states (power scale). Headers give the off-diagonal share as the equal-weight average over cells, the aggregation used throughout the paper except for the state-weighted menu oracle of Appendix~\ref{app:oracle}, with fixed-pool 95\% intervals.} % src: analysis/fork/out/ghf_20261001T211519Z.md (§2)
+\label{fig:3x3}
+\end{figure}
+
+\subsection{Marginal-preserving pairing agreement control}
+\label{app:agreement}
+
+For each cell, observed agreement is the diagonal share of the $(\DQ,\DB)$ table, $p_o=\sum_k P(\DQ=k,\DB=k)$, so the off-diagonal share is $1-p_o=P(I\neq0)$. The control re-pairs states independently within a cell while keeping both marginals, $p_e=\sum_k p_Q(k)\,p_B(k)$, and Cohen's $\kappa=(p_o-p_e)/(1-p_e)$. Pools use the paper's equal weight per cell over common complete blocks, with the same bootstrap draws as Table~\ref{tab:ghf}. This is a pairing agreement control, not a no-interaction null and not a chance baseline for controller dependence (\S\ref{sec:r2}). % src: analysis/fork/out/agreement_control_20261002T024240Z.md (Definitions; Aggregation)
+In the W4 pool the control expects 38.0\% [36.7, 39.0] off-diagonal against the observed 26.9\%, so $\kappa=0.29$ [0.27, 0.32] (new-task [0.22, 0.36]); in the KV8 pool it expects 33.6\% ($\kappa=0.55$). The effects under the two controllers agree more than random cross-state pairing would. % src: analysis/fork/out/agreement_control_20261002T024240Z.md (§2 equal-weight pools W4:all, KV8:all)
+On BFCL and ALFWorld the observed shares also lie below the control (expected 16.2--32.4\% and 42.9--46.4\% in the W4 cells; $\kappa$ 0.47--0.71 and 0.14--0.24; Table~\ref{tab:extr2}), and on the telecom holdout the pooled 20.7\% compares with 25.7\% expected ($\kappa=0.19$; Table~\ref{tab:holdoutr2}). % src: analysis/fork/out/ext_r2_20261002T024433Z.md (§3, §6); analysis/fork/out/holdout_r2_posthoc_20261002T024414Z.md (§3 pool)
+
+\begin{table}[h]
+\centering\scriptsize\setlength{\tabcolsep}{2.5pt}
+% src: analysis/fork/out/agreement_control_20261002T024240Z.md (§1 per cell; §2 equal-weight pools)
+\resizebox{\columnwidth}{!}{\begin{tabular}{@{}lrlrll@{}}
+\toprule
+Cell & states & off-diag.\ \% & exp.\ \% & $\kappa$ [fixed pool] & $\kappa$ [new tasks] \\
+\midrule
+q4 GPTQ-W4 & 1102 & 25.0 [22.8, 27.3] & 40.5 & 0.381 [0.325, 0.437] & [0.245, 0.520] \\
+q4 AWQ-W4  & 1439 & 29.3 [27.2, 31.2] & 38.5 & 0.238 [0.215, 0.261] & [0.138, 0.343] \\
+q8 GPTQ-W4 & 1473 & 22.9 [21.1, 24.5] & 36.3 & 0.369 [0.324, 0.409] & [0.235, 0.492] \\
+q8 AWQ-W4  & 1562 & 30.5 [28.3, 32.6] & 36.8 & 0.171 [0.128, 0.213] & [0.075, 0.274] \\
+W4 pool    & 5576 & 26.9 [25.7, 28.1] & 38.0 & 0.291 [0.265, 0.318] & [0.223, 0.359] \\
+\midrule
+q4 KV8     & 593 & 15.7 [12.7, 18.6] & 36.2 & 0.567 [0.487, 0.643] & [0.412, 0.705] \\
+q8 KV8     & 855 & 14.9 [12.9, 17.0] & 31.1 & 0.522 [0.462, 0.584] & [0.386, 0.656] \\
+KV8 pool   & 1448 & 15.3 [13.2, 17.3] & 33.6 & 0.546 [0.487, 0.604] & [0.436, 0.652] \\
+\midrule
+q4 GPTQ-W3$^s$ & 232 & 31.5 [10.5, 52.6] & 36.1 & 0.129 [$-0.258$, 0.534] & [$-0.049$, 0.347] \\
+q4 KV4-rot$^s$ & 233 & 33.0 [17.6, 48.3] & 38.0 & 0.131 [$-0.016$, 0.280] & [$-0.034$, 0.298] \\
+q8 GPTQ-W3$^s$ & 242 & 23.1 [6.0, 40.2] & 36.4 & 0.364 [0.190, 0.548] & [0.199, 0.532] \\
+q8 KV4-rot$^s$ & 239 & 31.0 [19.0, 43.0] & 37.7 & 0.179 [0.098, 0.251] & [0.032, 0.327] \\
+q8 RTN-W3$^s$  & 255 & 29.0 [24.6, 33.5] & 28.6 & $-0.016$ [$-0.233$, 0.200] & [$-0.101$, 0.142] \\
+\bottomrule
+\end{tabular}}
+\caption{Pairing agreement control per cell (Bank P divergent states). Off-diag.: observed share with $\DQ\neq\DB$ (fixed-pool 95\%); exp.: share expected under marginal-preserving within-cell re-pairing. Pools: equal weight per cell. $^s$Stress cells (3 blocks; $t$ intervals; flagged, never pooled). In q8 RTN-W3, $\DQ=0$ on 93.3\% of states, so $p_e$ is close to $p_o$ and $\kappa\approx0$.}
+\label{tab:agreement}
+\end{table}
+
+\subsection{Mean squared interaction under the second simulator (exploratory)}
+\label{app:simctrlp}
+
+On the 80 states of the Bank P simulator control (\S\ref{sec:r3}), each arm has $n_a=5$ replicates under Sonnet 5.5. Per state, $\hat I_s=\bar Y_{\mathrm{BQ}}+\bar Y_{\mathrm{QB}}-\bar Y_{\mathrm{BB}}-\bar Y_{\mathrm{QQ}}$ and $U_s=\hat I_s^2-\sum_a \bar Y_a(1-\bar Y_a)/(n_a-1)$, which is unbiased for $I_s^2$ if, given the state, the replicates of each arm are i.i.d.\ Bernoulli and the four arms are independent (no shared cache or seed). Pooled with equal weight over the four W4 cells, mean $\hat I_s^2$ is 0.110, the noise correction 0.060 and mean $U_s$ 0.050, with 95\% intervals [0.004, 0.107] over states and [0.001, 0.111] over task clusters. One cell is negative (q4 AWQ-W4, $-0.025$) and is kept, as are negative per-state values. % src: analysis/fork/out/simctrl_p_interaction_20261002T024357Z.md
+The estimate is the mean squared probability-scale interaction over these 80 frozen states. It is not the share of states with interaction and not a variance, it is not comparable with the deterministic 26.9\% of \S\ref{sec:r2}, and we make no significance claim. % src: analysis/fork/out/simctrl_p_interaction_20261002T024357Z.md
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/f5_simctrl_p.pdf}
+\caption{Bank P simulator control: $G$, $H$, $F$ and $G-H$ on the 80 sampled Bank P states (20 per W4 cell), under the original greedy simulator (single runs; open circles) and with Sonnet 5.5 as the user (five replicates per arm; filled). pp; 95\% intervals over states; pool: equal weight per cell. The sample is too small to test few-pp contrasts (\S\ref{sec:r3}).} % src: analysis/fork/out/simctrl_p_20261002T015200Z.json; analysis/fork/out/simctrl_p_20261002T015200Z.md
+\label{fig:simctrlp}
+\end{figure*}
+
+\subsection{R1 and R2 estimands on BFCL and ALFWorld (supplementary)}
+\label{app:extr2}
+
+Table~\ref{tab:extr2} gives the R1 quantities of \S\ref{sec:r3} ($r$, $d$, $M$ and $\Gall$ over all items, non-divergent items counting as zero) and applies R2 to the external benchmarks, from the raw four-arm outcomes on divergent items (one run per item; item bootstrap within benchmark category). The R2 columns are post hoc and not part of any pre-registered analysis. In the KV4 cells $\YY{QQ}=0$ on every state, so $\DQ$ is almost constant, their off-diagonal mass is $H$ and $\kappa$ is near 0 by construction. In BFCL q4 GPTQ-W3, the base category was dropped whole by the QQ no-op rule, leaving 591 items and 540 states. % src: analysis/fork/out/ext_r2_20261002T024433Z.md (§1, TL;DR)
+Off-diagonal shares are 4.7--17.1\% in BFCL W4 cells (pool 10.3\%) and 32.8--40.0\% in q8 ALFWorld W4 (pool 36.4\%); pairing $\kappa$ is in Appendix~\ref{app:agreement}. The ALFWorld GPTQ-W3 stress cell has $H=+38.5$ and $G-H=-34.6$ [$-43.5$, $-25.4$]\pp{}; KV4 cells reduce to $H$. % src: analysis/fork/out/ext_r2_20261002T024433Z.md (§2, §3, §6)
+
+\begin{table*}[t]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+% src: analysis/fork/out/ext_r2_20261002T024433Z.md (§2, §3, §6)
+% src: analysis/fork/out/ext_20261001T135106Z.md (r, d, M, G_all per cell; pools)
+\resizebox{\textwidth}{!}{\begin{tabular}{@{}lrrrrlrllllrrrr@{}}
+\toprule
+& \multicolumn{5}{c}{R1: all items} & \multicolumn{9}{c}{R2: divergent items} \\
+\cmidrule(lr){2-6}\cmidrule(lr){7-15}
+Cell & items & $r$ & $d$ & $M$ & $\Gall$ & states & $G$ & $H$ & $F$ & $G-H$ & off-diag.\ \% & exp.\ \% & $\kappa$ & rev.\ (n) \\
+\midrule
+BFCL q4 GPTQ-W4 & 788 & 6.3 & 4.3 & 10.7 & $+2.0$ [$-0.3$, $+4.3$] & 573 & $+2.8$ [$-0.4$, $+5.9$] & $+1.4$ [$-0.7$, $+3.5$] & $+4.2$ [$+0.9$, $+7.2$] & $+1.4$ [$-1.8$, $+4.5$] & 11.7 & 27.4 & 0.574 & 3 \\
+BFCL q4 AWQ-W4  & 788 & 5.7 & 9.5 & 15.2 & $-3.8$ [$-6.5$, $-1.3$] & 642 & $-4.7$ [$-7.8$, $-1.5$] & $-1.1$ [$-3.6$, $+1.4$] & $-1.4$ [$-4.8$, $+1.7$] & $-3.6$ [$-6.7$, $-0.2$] & 17.1 & 32.4 & 0.471 & 8 \\
+BFCL q8 GPTQ-W4 & 788 & 2.9 & 2.3 & 5.2 & $+0.6$ [$-0.9$, $+2.3$] & 533 & $+0.9$ [$-1.3$, $+3.3$] & $+1.5$ [$+0.0$, $+3.2$] & $+2.1$ [$-0.4$, $+4.6$] & $-0.6$ [$-3.1$, $+2.0$] & 4.7 & 16.2 & 0.710 & 1 \\
+BFCL q8 AWQ-W4  & 788 & 4.1 & 2.7 & 6.7 & $+1.4$ [$-0.3$, $+3.3$] & 548 & $+2.0$ [$-0.4$, $+4.7$] & $+1.8$ [$+0.0$, $+3.7$] & $+3.6$ [$+0.9$, $+6.5$] & $+0.2$ [$-2.6$, $+3.1$] & 7.8 & 19.9 & 0.607 & 0 \\
+BFCL W4 pool    &  &  &  &  & $+0.1$ [$-1.0$, $+1.2$] &     & $+0.3$ [$-1.2$, $+1.8$] & $+0.9$ [$-0.2$, $+2.0$] & $+2.1$ [$+0.3$, $+3.9$] & $-0.6$ [$-2.3$, $+1.0$] & 10.3 & & & \\
+ALFWorld q8 GPTQ-W4 & 134 & 9.0 & 12.7 & 21.6 & $-3.7$ [$-11.2$, $+4.5$] & 115 & $-4.3$ [$-13.3$, $+5.0$] & $+7.0$ [$-2.6$, $+16.7$] & $+9.6$ [$-0.9$, $+19.7$] & $-11.3$ [$-20.9$, $-1.8$] & 40.0 & 46.4 & 0.137 & 4 \\
+ALFWorld q8 AWQ-W4  & 134 & 10.4 & 14.2 & 24.6 & $-3.7$ [$-11.9$, $+4.5$] & 119 & $-4.2$ [$-13.6$, $+4.9$] & $+5.0$ [$-2.6$, $+12.2$] & $+4.2$ [$-5.9$, $+13.7$] & $-9.2$ [$-18.8$, $+0.0$] & 32.8 & 42.9 & 0.237 & 3 \\
+ALFWorld W4 pool    &  &  &  &  & $-3.7$ [$-9.7$, $+1.9$] &     & $-4.3$ [$-11.1$, $+2.2$] & $+6.0$ [$-0.5$, $+12.6$] & $+6.9$ [$-2.1$, $+15.5$] & $-10.3$ [$-17.7$, $-2.9$] & 36.4 & & & \\
+\midrule
+BFCL q4 GPTQ-W3$^s$ & 591 & 6.1 & 3.6 & 9.6 & $+2.5$ [$+0.2$, $+5.1$] & 540 & $+2.8$ [$+0.2$, $+5.5$] & $+5.2$ [$+2.9$, $+7.7$] & $+8.9$ [$+5.7$, $+12.2$] & $-2.4$ [$-5.7$, $+0.7$] & 13.0 & 23.3 & 0.443 & 1 \\
+BFCL q8 GPTQ-W3$^s$ & 788 & 5.2 & 4.1 & 9.3 & $+1.1$ [$-1.0$, $+3.3$] & 696 & $+1.3$ [$-1.1$, $+3.7$] & $+1.4$ [$-0.1$, $+2.9$] & $+3.4$ [$+0.9$, $+6.0$] & $-0.1$ [$-2.6$, $+2.4$] & 8.3 & 20.4 & 0.592 & 1 \\
+BFCL q4 KV4$^s$ & 788 & 0.3 & 0.0 & 0.3 & $+0.3$ [$+0.0$, $+0.6$] & 787 & $+0.3$ [$+0.0$, $+0.6$] & $+2.9$ [$+1.9$, $+4.1$] & $+20.3$ [$+17.6$, $+23.0$] & $-2.7$ [$-3.9$, $-1.5$] & 20.5 & 20.9 & 0.020 & 0 \\
+BFCL q8 KV4$^s$ & 788 & 0.3 & 0.0 & 0.3 & $+0.3$ [$+0.0$, $+0.6$] & 788 & $+0.3$ [$+0.0$, $+0.6$] & $+1.8$ [$+1.0$, $+2.7$] & $+14.5$ [$+12.1$, $+17.0$] & $-1.5$ [$-2.5$, $-0.6$] & 14.7 & 15.2 & 0.029 & 0 \\
+ALFWorld q8 GPTQ-W3$^s$ & 134 & 6.7 & 3.0 & 9.7 & $+3.7$ [$-1.5$, $+9.7$] & 130 & $+3.8$ [$-1.5$, $+9.8$] & $+38.5$ [$+29.8$, $+46.9$] & $+42.3$ [$+33.6$, $+50.8$] & $-34.6$ [$-43.5$, $-25.4$] & 30.8 & 34.1 & 0.098 & 0 \\
+ALFWorld q8 KV4$^s$ & 134 & 0.0 & 0.0 & 0.0 & $+0.0$ [$+0.0$, $+0.0$] & 134 & $+0.0$ [$+0.0$, $+0.0$] & $+38.1$ [$+30.6$, $+45.5$] & $+53.0$ [$+44.8$, $+61.2$] & $-38.1$ [$-45.5$, $-30.6$] & 26.9 & 26.9 & 0.000 & 0 \\
+\bottomrule
+\end{tabular}}
+\caption{R1 and R2 estimands on BFCL multi-turn and ALFWorld (no LLM user simulator; one run per item; 95\% item-bootstrap intervals). R1: rescue $r$, damage $d$, turnover $M$ (\% of all items) and net $\Gall$ (pp), non-divergent items counting as zero. R2 (supplementary, exploratory, post hoc; pp, divergent items): Off-diag.: share with $\DQ\neq\DB$; exp.\ and $\kappa$: marginal-preserving pairing agreement control; rev.: strict reversals. Pools: equal weight per cell. $^s$Stress and unrotated KV4 cells; in KV4 $\YY{QQ}=0$ on every state, so the table reduces to $H$.}
+\label{tab:extr2}
+\end{table*}
+
+\section{Coverage Matrix}
+\label{app:coverage}
+
+Table~\ref{tab:coverage} lists the completed crossed-intervention coverage behind every result. It counts tasks, states and complete blocks after the strict admission rule.
+
+\begin{table*}[t]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+% src: analysis/fork/out/ghf_20261001T211519Z.md (§5 Coverage matrix, quantization configs)
+\resizebox{\textwidth}{!}{\begin{tabular}{@{}llllll@{}}
+\toprule
+Cell & \tautwo{} retail (Bank P) & \tautwo{} airline (Bank P) & telecom dev (Bank P) & Bank U (retail / airline) & BFCL / ALFWorld \\
+\midrule
+q4 GPTQ-W4 & 58 t $\cdot$ 727 st $\cdot$ 20/20 b & 27 t $\cdot$ 375 st $\cdot$ 20/20 b & holdout only & 3 b $\cdot$ 393 / 177 rows & 788 items $\cdot$ 573 st / -- \\
+q4 AWQ-W4  & 58 t $\cdot$ 986 st $\cdot$ 20/20 b & 27 t $\cdot$ 453 st $\cdot$ 20/20 b & -- & 3 b $\cdot$ 393 / 177 rows & 788 items $\cdot$ 642 st / -- \\
+q4 KV8     & 58 t $\cdot$ 412 st $\cdot$ 22/22 b & 27 t $\cdot$ 181 st $\cdot$ 22/22 b & -- & 3 b $\cdot$ 393 / 177 rows & -- / -- \\
+q8 GPTQ-W4 & 58 t $\cdot$ 1017 st $\cdot$ 20/20 b & 27 t $\cdot$ 456 st $\cdot$ 20/20 b & 80 t $\cdot$ 477 st $\cdot$ 6/6 b; holdout & 3 b $\cdot$ 393 / 177 rows & 788 $\cdot$ 533 st / 134 $\cdot$ 115 st \\
+q8 AWQ-W4  & 58 t $\cdot$ 1087 st $\cdot$ 20/20 b & 27 t $\cdot$ 475 st $\cdot$ 20/20 b & 80 t $\cdot$ 480 st $\cdot$ 6/6 b; holdout & 3 b $\cdot$ 393 / 177 rows & 788 $\cdot$ 548 st / 134 $\cdot$ 119 st \\
+q8 KV8     & 58 t $\cdot$ 585 st $\cdot$ 22/22 b & 27 t $\cdot$ 270 st $\cdot$ 22/22 b & -- & 3 b $\cdot$ 393 / 177 rows & -- / -- \\ % src: analysis/fork/out/ghf_20261001T211519Z.md (§5); analysis/fork/bank_u/q8_kvq_int8/f03/bank_summary.json; analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§1)
+\midrule
+q4 GPTQ-W3 & 58 t $\cdot$ 162 st $\cdot$ 3/3 b & 27 t $\cdot$ 70 st $\cdot$ 3/3 b & -- & -- & 591 $\cdot$ 540 st$^\dagger$ / -- \\ % src: analysis/fork/out/ghf_20261001T211519Z.md (§5); analysis/fork/out/ext_r2_20261002T024433Z.md (§1 inclusion counts)
+q4 KV4-rot & 58 t $\cdot$ 164 st $\cdot$ 3/3 b & 27 t $\cdot$ 69 st $\cdot$ 3/3 b & -- & -- & -- / -- \\
+q8 GPTQ-W3 & 58 t $\cdot$ 166 st $\cdot$ 3/3 b & 27 t $\cdot$ 76 st $\cdot$ 3/3 b & -- & -- & 788 $\cdot$ 696 st / 134 $\cdot$ 130 st \\
+q8 KV4-rot & 58 t $\cdot$ 165 st $\cdot$ 3/3 b & 27 t $\cdot$ 74 st $\cdot$ 3/3 b & -- & -- & -- / -- \\
+q8 RTN-W3  & 58 t $\cdot$ 174 st $\cdot$ 3/3 b & 27 t $\cdot$ 81 st $\cdot$ 3/3 b & -- & -- & -- / -- \\
+q4 / q8 KV4 (unrotated) & -- & -- & -- & -- & 788 $\cdot$ 787 / 788 $\cdot$ 788 st; q8 ALFWorld 134 $\cdot$ 134 st \\
+\midrule
+q14 GPTQ-W4 & -- & -- & -- & -- & 788 $\cdot$ 471 st / -- % src: analysis/fork/out/ext_q14_20261002T085647Z.md
+ \\
+\bottomrule
+\end{tabular}}
+\caption{Completed crossed-intervention coverage (t = tasks, st = states, b = complete/found blocks; BFCL and ALFWorld: items $\cdot$ states, one run). Bank U: blocks completed and state rows per domain; blocks f01--f03 are analysed (Appendix~\ref{app:banku}). ``holdout'': the cell is in the telecom holdout (Appendix~\ref{app:prereg}). Qwen3-32B has end-to-end runs only; Llama-3.1-8B stopped at its fork gate (Limitations); the q14 (Qwen3-14B) BFCL row is a within-family scale check whose counts are pending. q4 RTN-W3 has no complete Bank P block and is omitted. The telecom development results (\S\ref{sec:r3}) use the 6 blocks listed. $^\dagger$The BFCL base category of q4 GPTQ-W3 was dropped by the QQ no-op rule (Appendix~\ref{app:extr2}). The end-to-end q4 AWQ-W3 run is incomplete (two airline episodes hit 600\,s serving timeouts), and so are the q4 RTN-W2 stress runs (context-window overflows of the degenerate model and a truncated result file); neither is reported. % src: analysis/fork/ext_l8_gate/GATE.md; /data/ziyangs/cloq_work/queue/deferred/a6k2_w2p_q4_rtn_w2_q3.json; /data/ziyangs/cloq_work/queue/deferred/a6k2_q4_awq_w3_qx.json; runs/a6k2_q4_awq_w3_q5/airline/infra_causes.json
+}
+\label{tab:coverage}
+\end{table*}
+
+\section{Bank U per Sub-Bank}
+\label{app:banku}
+
+Table~\ref{tab:banku} gives the per-state turnover behind \S\ref{sec:r3}, over blocks f01--f03. Exact action agreement is 0.43--0.83 per cell and sub-bank. % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (column "exact")
+
+\begin{table}[h]
+\centering\scriptsize\setlength{\tabcolsep}{3.5pt}
+% src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§2 Native estimates, task-equal; r and d counts)
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Cell & U1 ($n{=}255$) & U2B ($n{=}255$) & U2Q ($n{=}60$) \\
+\midrule
+q4 GPTQ-W4 & .090 (11/12) & .082 (10/11) & .083 (4/1)$^\ast$ \\
+q4 AWQ-W4  & .082 (7/14) & .078 (7/13) & .083 (3/2) \\
+q4 KV8     & .047 (4/8) & .039 (5/5) & .017 (0/1) \\
+q8 GPTQ-W4 & .047 (8/4) & .067 (9/8) & .050 (3/0)$^\ast$ \\
+q8 AWQ-W4  & .086 (14/8) & .090 (15/8) & .067 (3/1) \\
+q8 KV8     & .035 (5/4) & .031 (6/2) & 0 (0/0) \\
+\bottomrule
+\end{tabular}
+\caption{Bank U, blocks f01--f03: per-state turnover $M$ (rescues/damages), task-equal (one state per task and block; 85/85/20 states per block). $G$ lies within $\pm0.028$ in U1 and U2B and within $\pm0.050$ in U2Q, and every interval includes 0. Intervals are $t$ intervals over the three block means and are wide (e.g.\ q4 GPTQ-W4 U1: .090 [.029, .151]). $^\ast$GPTQ-W4's U2Q states are its own U1 states, with concordant outcomes on 20/20 duplicates per block; they are counted once in cross-sub-bank totals.}
+\label{tab:banku}
+\end{table}
+
+\begin{table}[h]
+\centering\scriptsize\setlength{\tabcolsep}{2.6pt}
+% src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§3 class composition and consequence per sub-bank; per cell; comparator block, unique states)
+\begin{tabular}{@{}lllll@{}}
+\toprule
+& (i) identical & (ii) same tool & (iii) different & (iv) act vs.\ \\
+Model:sub & & structure, text & tool or args & talk \\
+\midrule
+q4:U1  & 399: 0 & 309: 45 (.146) & 19: 1 (.053) & 38: 10 (.263) \\
+q8:U1  & 483: 0 & 202: 28 (.139) & 47: 11 (.234) & 33: 4 (.121) \\
+q4:U2B & 430: 0 & 277: 44 (.159) & 24: 4 (.167) & 34: 3 (.088) \\
+q8:U2B & 470: 0 & 199: 25 (.126) & 40: 9 (.225) & 56: 14 (.250) \\
+q4:U2Q & 108: 0 & 63: 10 (.159)$^\ast$ & 5: 0 & 4: 1 (.250) \\
+q8:U2Q & 129: 0 & 33: 6 (.182)$^\ast$ & 11: 1 (.091) & 7: 0 \\
+\midrule
+unique rows & 1943: 0 & 1045: 150 (.144) & 143: 26 (.182) & 169: 32 (.189) \\ % derived: 1045=309+202+277+199+63+33-24-14; 150=45+28+44+25+10+6-5-3; 143=19+47+24+40+5+11-1-2; 26=1+11+4+9+0+1; 169=38+33+34+56+4+7-1-2; 32=10+4+3+14+1+0; .144=150/1045; .182=26/143; .189=32/169
+\bottomrule
+\end{tabular}
+\caption{Which kind of action difference changes the outcome at ordinary states (Bank U, blocks f01--f03). Entries: ``state rows: outcome-changing rows (flip rate)'', pooled over the three cells of a model within a sub-bank. The last row counts each (cell, state) once: q4/q8 GPTQ-W4's U2Q states repeat their U1 states ($^\ast$ includes 5 and 3 repeated class-(ii) flips), so 216 flipping rows become 208. In block f01 alone the corresponding counts were 39 of 56 flips in class (ii), with rates .126/.109/.200 for (ii)/(iii)/(iv); the 58 f01 flips scored in \S\ref{sec:r4} include the two duplicated U2Q rows. % src: analysis/fork/out/token_mech_20261001T185031Z.md (flips: 58); analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§3); analysis/fork/out/bank_u_f01_20261001T134456Z.md; docs/REPORT_GPT61_20261001_0915.md (correction 1: 39/56 after deduplication); derived: 216=99+99+18; 208=99+99+18-5-3
+}
+\label{tab:taxonomy}
+\end{table}
+
+\paragraph{Text content.} Over f01--f03, an above-median relative length difference between the two texts co-occurs with outcome change in U1 and U2B of both models (flipping pairs among above- vs.\ below-median pairs: q4 U1 30/154 vs.\ 15/155; q8 U1 22/101 vs.\ 6/101; q4 U2B 33/138 vs.\ 11/139; q8 U2B 16/99 vs.\ 9/100). In f01 alone this was visible only for q4. Question, confirmation-request and new-entity flags show no consistent association. The features are regular expressions, and this is descriptive. % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§4)
+
+\input{sections/gen_simctrl_fates}
+
+\paragraph{Bank U simulator control: sensitivity and scope.} Dropping two mechanically flagged replies leaves the reading of \S\ref{sec:r3} unchanged (6, 6 and 25 of 37; Table~\ref{tab:simctrl}). % src: analysis/fork/out/simctrl_relay_flagged_20261001T225847Z.md
+In either direction, 13 of the 39 original flip states flip again, against 11 of 39 new flips at matched non-flip states; this does not show that the two groups are equivalent. % src: analysis/fork/out/simctrl_20261001T212742Z.md; derived: 13=7+6
+The relay's responders may have seen other requests. The control's scope is narrow: fixed histories from the original simulator, a stochastic relay rather than API Sonnet or real users, block f01 only and three replicates.
+
+\paragraph{Shared fragility across quantizers (a lead).} On the 255 shared q4 U2B states of f01--f03, cell pairs co-flip 21 times, against about 3.3 expected under independence, and 16 of the 21 co-flips go in the same direction. They come from 15 distinct states, 3 of which flip under all three cells. On q8 U2B, where every f01 flip was single-cell, 10 states now flip under two or more cells (14 pairwise co-flips against about 2.8 expected; 10 of 14 in the same direction). Joint flips almost never share an identical quantized action across cells (0 of 21 in q4, 2 of 14 in q8). % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§6, q4:U2B, q8:U2B); derived: 21=9+7+5; 3.3=1.65+0.82+0.78; 16=7+6+3; 15=12+3; 10=8+2; 14=7+4+3; 2.8=1.53+0.53+0.72; 10=7+1+2; 2=0+1+1
+We still read this as a lead toward \emph{state-level} fragility, where different actions at the same state flip the outcome, and not yet as a finding: the co-flips are counted on one fixed set of states per block, with no correction.
+
+\paragraph{A common controller (Q0).} On the frozen 25\% subsample of U2 in f01--f03, also continued by a common controller Q0, B's action leads to the identical outcome in every cell on all 146 shared states, which checks determinism. Turnover under Q0 is not consistently above or below the native turnover on the same rows (q4 AWQ-W4 U2B 8/58 vs.\ 5/58; q8 AWQ-W4 U2B 4/52 vs.\ 5/52; q4 KV8 U2B 1/58 vs.\ 2/58), so the f01 observation that Q0 turnover is at least the native one does not hold over three blocks. With 17--58 states per cell and sub-bank, this is too small to say whether the controller changes which actions matter. % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§5); derived: 146=58+17+52+19; 8=3+5; 5=2+3; 4=3+1; 5=4+1; 1=1+0; 2=2+0
+
+\section{Concentration of Turnover in Tasks}
+\label{app:concentration}
+
+This appendix completes the exploratory concentration result of \S\ref{sec:r1} (development data, 85 tasks $\times$ 20 blocks). The per-task dispersion of $M$ is 4.0--8.7 times its binomial null in the W4 and KV8 cells, and the top 20\% of tasks hold 57--71\% of all flips. % src: analysis/fork/out/consequence_v2_20261001T070850Z.json (concentration.dispersion_index, share_of_consequences_in_top20pct_tasks)
+We split the 20 blocks into two disjoint halves of 10 nonces. Task-level $M$ correlates across halves (Spearman 0.52--0.86). Tasks that were net-rescue in one half have a mean net gain in the other half that is 14--51\pp{} higher than that of net-damage tasks, in all 12 cell-directions. % src: analysis/fork/out/w67_audit_v2_20261001T0600Z_20261001T070500Z.md (Concentration and Direction, panel85)
+A Freedman--Lane test conditions on measured baselines: QQ success propensity and BF16 success, plus trajectory length in a post-hoc variant. With them, one half's task rate still predicts the other's in all 6 configurations $\times$ 2 directions for both $M$ and $G$ (Holm-adjusted). This is a \emph{retrospective conditional association} on viewed development data. It is carried by retail. Airline alone gives 8 of 12 for $M$ (5 after Holm), and 3 of 12 under a heteroscedasticity-robust wild bootstrap. % src: analysis/fork/out/w67_audit_v2_20261001T0600Z_20261001T070500Z.md (panel85, airline27 counts)
+Direction persistence beyond flip opportunity holds more often for rescues than for damages, in 11 versus 6 of the 12 cell-directions. Different quantizers flip the same tasks: the task-identity null is rejected in 7 of 8 quantizer pairs. When both flip, however, they agree in direction only 42--81\% of the time. % src: analysis/fork/out/w67_audit_v2_20261001T0600Z_20261001T070500Z.md (Cross-quantizer co-susceptibility)
+This overlaps with the stable failure set of \citet{jang2026flat}; unlike that work, we record the direction of each flip.
+
+\section{Trigger Headroom and a KL Reference Row}
+\label{app:oracle}
+
+Table~\ref{tab:oracle} compares the frozen trigger of \S\ref{sec:r4} (frozen rule, unchanged) with two references on the same 1020 f02/f03 U1 rows, which hold 38 rescues and 31 damages. The \emph{matched action-replacement oracle} selects, per cell, exactly as many rows as the frozen rule did, taking only rows with $G>0$ and filling with $G=0$ rows when a cell has too few rescues; it never selects a damage. It is hindsight selection, not a policy. At the 10\% and 20\% budgets every rescue fits. % src: analysis/fork/out/oracle_trigger_20261002T024423Z.md (§1a)
+The \emph{three-option menu oracle} $E[\max(G,H,F,0)]$ is the share of states where some arm beats QQ. On Bank P divergent states it is 0.202 over the four W4 cells (state-weighted, the one exception to the paper's equal-weight pools) against 0.117 for the action alone (1127 vs.\ 654 of 5576 states), and 0.191 vs.\ 0.113 over the six core cells. It is hindsight selection that also allows different replacement types, with different costs, so it is not a same-cost deployment comparison and not comparable with the action rule. % src: analysis/fork/out/oracle_trigger_20261002T024423Z.md (§1b)
+
+The \emph{KL reference row} is a post-hoc auxiliary baseline. Its score is a truncated KL$(\mathrm{B}\|\mathrm{Q})$ over the union of both models' top-20 next-token sets plus a tail bucket, per $a_{\mathrm{Q}}$ token, teacher-forced on identical prompt ids. It needs a BF16 prefill of the prompt and $a_{\mathrm{Q}}$ at every decision (here 6709.3 prompt and 82.3 action tokens on average), so it is not Q-only. It captures turnover above chance (33 vs.\ 16.7 at 20\%) but no significant net gain (Holm $p=1.0$). Three aggregations over the $a_{\mathrm{Q}}$ tokens were fit on f01 only, with per-cell thresholds and the frozen rule's selection criterion; the maximum was chosen, and all of f02/f03 is reported. The two candidates not chosen on f01 look better on f02/f03 (e.g.\ the mean at 20\%: net $+9$, Holm $p=.0852$), but selecting them now would be selection on validation data. Because the f02/f03 outcomes had been seen, the row is post hoc, and it is not a DMR reproduction, which trains a router. % src: analysis/fork/out/oracle_trigger_20261002T024423Z.md (§2)
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/f4_trigger_oracle.pdf}
+\caption{Frozen Q-only trigger by escalation budget on f02/f03 U1 (1020 rows; 38 rescues, 31 damages), against the matched action-replacement oracle (hindsight; same per-cell selection counts), the matched-count random expectation, and a faint post-hoc KL$(\mathrm{B}\|\mathrm{Q})$ reference (maximum per-token KL, ranked within the same per-cell counts; needs BF16). (a) Net gain, (rescues $-$ damages)/1020, in pp. (b) Share of the 69 turnover states selected; here the black series is the most turnover any selection with the same per-cell counts can capture, $\sum_c\min(m_c,R_c+D_c)$ (derived from the per-cell counts), not the action oracle. Values: Table~\ref{tab:oracle} (its KL row uses the KL rule's own counts).} % src: analysis/fork/out/oracle_trigger_20261002T024423Z.json; analysis/fork/out/oracle_trigger_20261002T024423Z.md; analysis/fork/out/token_mech_20261002T003130Z.json
+\label{fig:oracle}
+\end{figure}
+
+\begin{table*}[t]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+% src: analysis/fork/out/oracle_trigger_20261002T024423Z.md (§1a action oracle; §2 validation table)
+\begin{tabular}{@{}rrlllllll@{}}
+\toprule
+& & \multicolumn{3}{c}{same per-cell selection counts} & \multicolumn{4}{c}{KL reference (max.\ per-token KL; needs BF16; post hoc)} \\
+Budget & sel. & oracle r/d/net (pp) & frozen r/d/net (pp) & captured & sel. & net vs.\ random ($p$; Holm) & r/d & turnover vs.\ random ($p$) \\
+\midrule
+5\%  & 50  & 34/0/$+34$ ($+3.33$) & 6/2/$+4$ ($+0.39$)   & 4/34 & 72  & $-1$ vs.\ $+0.45$ (.8337; 1.0000) & 5/6   & 11 vs.\ 4.58 (.0038) \\
+10\% & 114 & 38/0/$+38$ ($+3.73$) & 7/5/$+2$ ($+0.20$)   & 2/38 & 126 & $+1$ vs.\ $+0.82$ (.5483; 1.0000) & 8/7   & 15 vs.\ 7.54 (.0048) \\
+20\% & 222 & 38/0/$+38$ ($+3.73$) & 16/11/$+5$ ($+0.49$) & 5/38 & 257 & $+3$ vs.\ $+1.59$ (.3984; 1.0000) & 18/15 & 33 vs.\ 16.73 (.0000) \\
+\bottomrule
+\end{tabular}
+\caption{Frozen Q-only trigger against a matched action-replacement oracle (hindsight; same per-cell selection counts) and a post-hoc KL reference row, on f02/f03 U1 (1020 rows). Captured: frozen net over oracle net. Random: matched-count per-cell random-trigger expectation; $p$: exact one-sided hypergeometric, Holm over the three budgets.}
+\label{tab:oracle}
+\end{table*}
+
+\section{Controlled Injection and Process Audit}
+\label{app:injection}
+
+A natural explanation of R1 is a local-defect story: the quantized agent makes a local error, and the task fails unless the continuation recovers. Two analyses constrain this explanation without identifying a mechanism.
+
+\paragraph{Controlled defect injection.} We froze 30 ordinary states from q4 GPTQ-W4 trajectories, all from one development block. At each state we forced one of three actions as the next step: an \textsc{inv}alid action, a matched \textsc{val}id action, or a process-perturbation control (\textsc{pp}) that repeats the last successful read. Either B or Q then continued. The defect categories were wrong\_id, wrong\_tool and premature\_write, with 10 states each. % src: analysis/recovery/inject_q4/summary_v2.md; docs/RESEARCH_LOG.md W71
+Every state passed a replay audit of 22 recorded fields (VAL$\times$Q against the original episode). Three fields were not recorded: the counters right after the restore, the rendered-prompt hash sequence and the tool-schema hash sequence. % src: analysis/recovery/inject_q4/summary_v2.md (Replay audit)
+
+\begin{table}[t]
+\centering\scriptsize\setlength{\tabcolsep}{2.8pt}
+% src: analysis/recovery/inject_q4/summary_v2.md (Outcome turnover, population "all"; Controller dependence D)
+\begin{tabular}{@{}llccl@{}}
+\toprule
+Ctrl & Contrast & resc./dam. & turnover & net [95\% CI] \\
+\midrule
+B & \textsc{inv} vs \textsc{val} & 4/3 & 7/30 & $+0.03$ [$-0.13$, $+0.20$] \\
+B & \textsc{pp} vs \textsc{val} & 3/2 & 5/30 & $+0.03$ [$-0.10$, $+0.20$] \\
+B & \textsc{inv} vs \textsc{pp} & 2/2 & 4/30 & $\phantom{+}0.00$ [$-0.13$, $+0.13$] \\
+Q & \textsc{inv} vs \textsc{val} & 2/2 & 4/30 & $\phantom{+}0.00$ [$-0.13$, $+0.13$] \\
+Q & \textsc{pp} vs \textsc{val} & 3/2 & 5/30 & $+0.03$ [$-0.10$, $+0.17$] \\
+Q & \textsc{inv} vs \textsc{pp} & 2/3 & 5/30 & $-0.03$ [$-0.20$, $+0.10$] \\
+\midrule
+\multicolumn{4}{@{}l}{Controller dependence $D$ ($\neq0$ in 8/30 states)} & $+0.03$ [$-0.17$, $+0.27$] \\
+\bottomrule
+\end{tabular}
+\caption{Defect injection on 30 frozen q4 states (development, one block): per-state rescue/damage of one arm against another, under the BF16 (B) or quantized (Q) continuation controller. $D=[Y(\textsc{inv},B)-Y(\textsc{val},B)]-[Y(\textsc{inv},Q)-Y(\textsc{val},Q)]$. Task-clustered bootstrap intervals; all exact McNemar $p\ge0.25$.}
+\label{tab:recovery}
+\end{table}
+
+\paragraph{Result: two-sided turnover, no clear error-specific difference detected.} Injected defects change the outcome in 7/30 states under B (4 rescues, 3 damages) and 4/30 under Q (2 and 2). The process-perturbation control changes 5/30 under both controllers (Table~\ref{tab:recovery}). The error-specific effect, \textsc{inv} minus \textsc{pp}, is $0.00$ [$-0.13$, $+0.13$] under B and $-0.03$ [$-0.20$, $+0.10$] under Q. The controller dependence $D$ is nonzero in 8 of 30 states, but its mean is $+0.03$ [$-0.17$, $+0.27$]. % src: analysis/recovery/inject_q4/summary_v2.md
+So injected defects cause heterogeneous two-sided turnover, and at $n=30$ states we detect no clear difference from a generic process perturbation and no mean controller difference. The intervals are wide, so this does not show that errors and generic perturbations are equivalent.
+
+\paragraph{Manipulation checks limit the categories.} Two of 30 states failed a manipulation check: an injected write was rejected, and a valid reference itself returned ``not found''. Restricting to the 28 passing states leaves the reading unchanged. The wrong\_tool category mostly produced argument errors: 8 of 10 injected calls failed with an unexpected-keyword error. We therefore call it a \emph{tool-call/schema error perturbation}, not a wrong-tool test. premature\_write is mostly failure$\rightarrow$failure: the valid arm under Q already fails in 7/10 of these states, and turnover is 0/10 under both controllers. % src: analysis/recovery/inject_q4/summary_v2.md (Manipulation checks; Outcome turnover by category); docs/RESEARCH_LOG.md W83
+The event chain error $\rightarrow$ correction $\rightarrow$ related requirement satisfied completes in only 6 (B) and 7 (Q) of 29 injected errors, although 17 are corrected under each controller. Injections add tool errors ($+0.43$ under B, $+0.57$ under Q per branch). % src: analysis/recovery/inject_q4/summary_v2.md (Event chains; Paired differences)
+\paragraph{Replication on q8 GPTQ-W4.} The same design on 30 frozen q8 states (one development block; 10 per category) gives the same reading (Table~\ref{tab:recovery8}). All 30 states pass the replay audit. Injected defects change the outcome in 5/30 states under each controller (3 rescues, 2 damages), the process-perturbation control in 6/30 (B) and 5/30 (Q). The error-specific effect is $-0.03$ [$-0.13$, $+0.07$] under B and $-0.13$ [$-0.30$, $+0.03$] under Q; the latter interval still allows a sizeable error-specific harm, and $D$ is nonzero in 6 of 30 states with mean $0.00$ [$-0.17$, $+0.17$]. Under Q, the process-perturbation control itself rescues 5 states and damages none ($+0.17$ [$+0.03$, $+0.30$], McNemar $p=0.0625$). % src: analysis/recovery/inject_q8/summary_v2.md (Replay audit; Outcome turnover; Controller dependence D)
+Manipulation checks fail more often than in q4: 7 of the 10 premature writes failed the check (6 were rejected by the environment, 1 executed without changing the database), and 2 valid references returned ``not found''. On the 21 passing states, \textsc{inv} vs \textsc{val} turnover is 5 (B) and 4 (Q), and $D\neq0$ in 5. The q8 premature\_write category therefore mostly did not inject a write. % src: analysis/recovery/inject_q8/summary_v2.md (Manipulation checks)
+
+\begin{table}[t]
+\centering\scriptsize\setlength{\tabcolsep}{2.8pt}
+% src: analysis/recovery/inject_q8/summary_v2.md (Outcome turnover, population "all"; Controller dependence D)
+\begin{tabular}{@{}llccl@{}}
+\toprule
+Ctrl & Contrast & resc./dam. & turnover & net [95\% CI] \\
+\midrule
+B & \textsc{inv} vs \textsc{val} & 3/2 & 5/30 & $+0.03$ [$-0.10$, $+0.17$] \\
+B & \textsc{pp} vs \textsc{val} & 4/2 & 6/30 & $+0.07$ [$-0.07$, $+0.23$] \\
+B & \textsc{inv} vs \textsc{pp} & 1/2 & 3/30 & $-0.03$ [$-0.13$, $+0.07$] \\
+Q & \textsc{inv} vs \textsc{val} & 3/2 & 5/30 & $+0.03$ [$-0.10$, $+0.17$] \\
+Q & \textsc{pp} vs \textsc{val} & 5/0 & 5/30 & $+0.17$ [$+0.03$, $+0.30$] \\
+Q & \textsc{inv} vs \textsc{pp} & 2/6 & 8/30 & $-0.13$ [$-0.30$, $+0.03$] \\
+\midrule
+\multicolumn{4}{@{}l}{Controller dependence $D$ ($\neq0$ in 6/30 states)} & $\phantom{+}0.00$ [$-0.17$, $+0.17$] \\
+\bottomrule
+\end{tabular}
+\caption{Defect injection on 30 frozen q8 GPTQ-W4 states (development, one block), as in Table~\ref{tab:recovery}. Task-clustered bootstrap intervals; exact McNemar $p\ge0.0625$.}
+\label{tab:recovery8}
+\end{table}
+
+\paragraph{Process audit (LLM-annotated).} We sampled 80 development fork states, 20 per outcome sign. % src: manifests/annotation/wp5_sample_v1.json; analysis/annotation/wp5/table4_v2.md
+ Two independent Sonnet 5.5 instances annotated them blind, a third instance adjudicated, and rule-based programmatic labels were added. These annotations are a \emph{process description} conditional on outcome-defined groups. They are not causal evidence, not prevalences and not human labels. Three patterns stand out (Table~\ref{tab:table4}). First, local defects and final failure do not correspond one-to-one. In damage states, where Q's action led to success and B's to failure, Q's first-action defect is corrected later in 10 of 20 QQ branches. Second, whether a write executes does not separate the failing from the succeeding continuation of the same state (rescue 17 vs.\ 17; damage 15 vs.\ 14). Third, the failing continuation more often carries the rubric label \texttt{unintended\_or\_unconsented\_change} (rescue: QQ 9 vs.\ BQ 2, paired difference $+0.35$ [$+0.08$, $+0.57$]; damage: 1 vs.\ 9, $-0.40$ [$-0.62$, $-0.11$]). In damage states, 7 of these 20 BQ branches carry the label on writes \emph{with} recorded consent. That is the semantic ``wrong change'' part of the label, and it overlaps with the database-defined outcome by construction. Loops and budget exhaustion also mark failing branches (rescue: QQ 5 vs.\ BQ 0). % src: analysis/annotation/wp5/table4_v2.md
+We make no claim about consent. The programmatic consent field agrees poorly with the annotators, so we use it only as a mechanical row. Re-labelling 30 states with fresh instances of the same model family reproduces the key pattern. % src: docs/RESEARCH_LOG.md W82 (analysis/annotation/wp5/human_check_v1/proxy_compare_v1.json)
+
+\subsection{Process audit table}
+\label{app:table4}
+
+\begin{table*}[t]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+% src: analysis/annotation/wp5/table4_v2.md (core rows and single-branch rows)
+% src: manifests/annotation/wp5_sample_v1.json (n = 80)
+\resizebox{\textwidth}{!}{\begin{tabular}{@{}llllll@{}}
+\toprule
+Label (source) & Comparison & rescue & damage & both succeed & both fail \\
+\midrule
+\texttt{unintended\_or\_unconsented\_change} (LLM) & QQ vs BQ & 9 vs 2, $+0.35$ [$+0.08$, $+0.57$] & 1 vs 9, $-0.40$ [$-0.62$, $-0.11$] & 1 vs 1 & 5 vs 7, $-0.10$ [$-0.35$, $+0.17$] \\
+write executed (programmatic) & QQ vs BQ & 17 vs 17, $0.00$ [$-0.25$, $+0.25$] & 15 vs 14, $+0.05$ [$-0.26$, $+0.35$] & 10 vs 9 & 11 vs 13 \\
+executed write w/o recorded consent (prog.) & QQ vs BQ & 9 vs 5, $+0.20$ [$-0.06$, $+0.43$] & 3 vs 3, $0.00$ [$-0.21$, $+0.21$] & 3 vs 2 & 4 vs 3 \\
+loop or budget exhaustion (LLM) & QQ vs BQ & 5 vs 0, $+0.25$ [$+0.04$, $+0.47$] & 0 vs 2, $-0.10$ [$-0.30$, $+0.08$] & 1 vs 2 & 7 vs 4 \\
+action judged indefensible (LLM) & Q vs B action & 7 vs 8, $-0.05$ [$-0.37$, $+0.28$] & 12 vs 5, $+0.35$ [$-0.05$, $+0.65$] & 10 vs 6 & 12 vs 9 \\
+local defect, core (LLM) & Q vs B action & 4 vs 6, $-0.10$ [$-0.33$, $+0.14$] & 12 vs 7, $+0.25$ [$-0.09$, $+0.53$] & 6 vs 3 & 11 vs 7 \\
+QQ first-action defect corrected later (LLM) & single branch & 4/20 [0.08, 0.42] & 10/20 [0.30, 0.70] & 4/20 & 7/20 \\
+\bottomrule
+\end{tabular}}
+\caption{Process audit of 80 development fork states, 20 per outcome sign (rescue: $\YY{BQ}=1,\YY{QQ}=0$; damage: $\YY{BQ}=0,\YY{QQ}=1$). \textbf{LLM-annotated} by Sonnet 5.5 (two independent blind instances and an adjudicating instance), plus rule-based programmatic labels; no human labels. Counts are first vs.\ second of $n=20$ states. Intervals are within-state paired differences with Newcombe 95\% CIs; single-branch rows use Wilson 95\% intervals. This is a process description conditional on outcome-defined groups: not causal, not prevalence. The label name is the rubric category; we make no claim about consent.}
+\label{tab:table4}
+\end{table*}
+
+The core ``local defect'' combines groundedness, argument validity and permission/consent judgements. The tool-validity field (inter-annotator $\kappa=0.29$) is excluded from it. Mechanical fields agree with the programmatic verifier (write executed vs.\ the rubric's irreversible-change field, $\kappa=0.99$). The consent fields agree only moderately ($\kappa=0.44$ on writes both see). % src: analysis/annotation/wp5/table4_v2.md; docs/RESEARCH_LOG.md W79 (analysis/annotation/wp5/programmatic_agreement_v1.json)
+
+\section{Holdout Pre-Registration}
+\label{app:prereg}
+
+The protocol was frozen before any holdout unit was run, and its hash was recorded in the split manifest. % src: manifests/fork/splits_v1.json; docs/RESEARCH_LOG.md W87
+It fixes the following design:
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+\item tasks, cells, weights and nonce blocks;
+\item two fixed halves of six blocks each;
+\item an outcome-blind repair rule, with reserve blocks used only for infrastructure repair;
+\item the decisional crossed interval (two-way ANOVA moments, normal 90\%);
+\item the readings: positive if $L>0$, above 3\pp{} if $L>3$, small if the interval lies inside $\pm$3\pp{}, otherwise inconclusive;
+\item the secondary families S1 (both $r>0$ and $d>0$) and S2 (persona-stratified permutation, 10{,}000 draws, no outcome screen);
+\item six stratum families, with Holm correction within each.
+\end{itemize}
+% src: docs/insights/PREREG_FORK_CONFIRM.md §0, §3, §6-§9
+The analysis script refuses holdout data unless the hash matches. Two task-cell pairs were excluded as structural, and the complete-case analysis is identical. % src: analysis/fork/out/holdout_confirm_cc_20261002T012358Z.md
+Table~\ref{tab:holdout} gives the confirmatory result. Table~\ref{tab:strata} gives all six stratum families (Holm within family), which are descriptive. Every level estimate is $\le 0$, and the Holm-significant levels are negative: step-budget T2 and T3, mobile-data issues ($-9.09$\pp{}) and the fewest-faults tercile ($-6.37$\pp{}). % src: analysis/fork/out/holdout_confirm_20261002T012353Z.md (Strata)
+\begin{table}[h]
+\centering\scriptsize\setlength{\tabcolsep}{2.5pt}
+% src: analysis/fork/out/holdout_confirm_20261002T012353Z.md
+\resizebox{\columnwidth}{!}{\begin{tabular}{@{}lrrllll@{}}
+\toprule
+Cell (weight) & units & excl. & $G$ & $r$ & $d$ & $\rho_c$ \\
+\midrule
+q4 GPTQ-W4 (1/2) & 396 & 1 & $-3.03$ [$-7.86$, $+1.80$] & $+5.05$ & $+8.08$ & 0.668 \\
+q8 GPTQ-W4 (1/4) & 408 & 0 & $-5.64$ [$-9.33$, $-1.94$] & $+4.41$ & $+10.05$ & 0.374 \\
+q8 AWQ-W4 (1/4) & 396 & 1 & $-6.57$ [$-11.98$, $-1.15$] & $+6.31$ & $+12.88$ & 0.644 \\
+\midrule
+Weighted ($\Gall$) & & & $-4.57$ [$-7.17$, $-1.96$] & $+5.21$ & $+9.77$ & 0.588 \\
+\bottomrule
+\end{tabular}}
+\caption{Telecom holdout, pre-registered analysis (34 tasks $\times$ 12 blocks; pp; crossed 90\% intervals). Per-cell rows are descriptive; the weighted row is decisional ($\Gall$, reading: inconclusive) and S1/S2 (both pass). Excl.: structurally excluded tasks (decision/trajectory count mismatch at search).}
+\label{tab:holdout}
+\end{table}
+
+\begin{table}[h]
+\centering\scriptsize\setlength{\tabcolsep}{2.5pt}
+% src: analysis/fork/out/holdout_confirm_20261002T012353Z.md (Strata)
+\resizebox{\columnwidth}{!}{\begin{tabular}{@{}llrlll@{}}
+\toprule
+Family & Level & $n$ & $G$ [crossed 90\%] & $p$ & Holm $p$ \\
+\midrule
+step budget$^a$ & T1 & 138/129/110 & $-0.32$ [$-1.57$, $+0.94$] & .6771 & .6771 \\
+ & T2 & 124/126/162 & $-2.30$ [$-3.88$, $-0.72$] & .0165 & .0495 \\
+ & T3 & 123/144/124 & $-1.94$ [$-3.35$, $-0.54$] & .0229 & .0495 \\
+\midrule
+persona & Hard & 11 & $-5.99$ [$-12.23$, $+0.26$] & .1147 & .3355 \\
+ & None & 12 & $-3.65$ [$-7.42$, $+0.13$] & .1118 & .3355 \\
+ & Easy & 11 & $-4.36$ [$-9.19$, $+0.48$] & .1385 & .3355 \\
+\midrule
+BF16 difficulty & 0 & 20 & $-2.35$ [$-4.09$, $-0.62$] & .0257 & .0772 \\
+ & low & 11 & $-4.54$ [$-8.90$, $-0.19$] & .0860 & .1720 \\
+ & high & 3 & $-18.75$ [$-38.00$, $+0.50$] & .1091 & .1720 \\
+\midrule
+task length & T1 & 9 & $-5.09$ [$-9.81$, $-0.38$] & .0755 & .1511 \\
+ & T2 & 8 & $-0.78$ [$-4.46$, $+2.90$] & .7270 & .7270 \\
+ & T3 & 17 & $-6.17$ [$-10.49$, $-1.84$] & .0189 & .0567 \\
+\midrule
+issue type & mms & 14 & $-1.15$ [$-3.33$, $+1.04$] & .3880 & .4434 \\
+ & mobile data & 11 & $-9.09$ [$-14.98$, $-3.20$] & .0111 & .0333 \\
+ & service & 9 & $-4.40$ [$-10.32$, $+1.52$] & .2217 & .4434 \\
+\midrule
+faults & T1 & 19 & $-6.37$ [$-9.91$, $-2.83$] & .0030 & .0091 \\
+ & T2 & 10 & $-1.94$ [$-7.58$, $+3.69$] & .5704 & .5704 \\
+ & T3 & 5 & $-2.92$ [$-5.18$, $-0.66$] & .0337 & .0674 \\
+\bottomrule
+\end{tabular}}
+\caption{Telecom holdout strata: the six pre-registered families (descriptive; Holm within each family over its three levels). pp. For task-level families, $n$ is the number of tasks and $G$ is $\Gall$ over the tasks in the level. $^a$Step budget (remaining steps at the divergence) is unit-level: $n$ is the number of divergent units per cell (q4 GPTQ-W4/q8 GPTQ-W4/q8 AWQ-W4), and $G$ is the level's contribution to $\Gall$, so the three levels sum to $\Gall$. Tertile cut points were fixed on telecom development tasks.}
+\label{tab:strata}
+\end{table}
+
+\paragraph{Post-hoc R2 estimands on the holdout.} Table~\ref{tab:holdoutr2} is a supplementary, descriptive output computed after the confirmatory analysis, with the same admission and units. It is not part of the pre-registered confirmation and changes neither the primary endpoint nor its reading. Its $G$ is a ratio over divergent states, whereas $\Gall$ in Table~\ref{tab:holdout} averages over all admitted units with non-divergent units counted as 0. % src: analysis/fork/out/holdout_r2_posthoc_20261002T024414Z.md
+\begin{table*}[t]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+% src: analysis/fork/out/holdout_r2_posthoc_20261002T024414Z.md (§1 crossed 95%; §3 table and control)
+\resizebox{\textwidth}{!}{\begin{tabular}{@{}lrlllllrrrl@{}}
+\toprule
+Cell (weight) & states & $G$ & $H$ & $F$ & $G-H$ & mean $I$ & off-diag.\ \% & exp.\ \% & $\kappa$ & rev.\ \% (n) \\
+\midrule
+q4 GPTQ-W4 (1/2) & 385 & $-3.1$ [$-9.0$, $+2.8$] & $+0.5$ [$-5.4$, $+6.4$] & $+1.8$ [$-4.8$, $+8.4$] & $-3.6$ [$-9.1$, $+1.8$] & $-4.4$ [$-12.5$, $+3.7$] & 19.7 & 27.0 & 0.269 & 3.4 (13) \\
+q8 GPTQ-W4 (1/4) & 399 & $-5.8$ [$-10.2$, $-1.3$] & $-4.0$ [$-10.2$, $+2.2$] & $-5.3$ [$-11.6$, $+1.1$] & $-1.8$ [$-6.4$, $+2.9$] & $-4.5$ [$-10.4$, $+1.4$] & 19.5 & 23.1 & 0.155 & 3.0 (12) \\
+q8 AWQ-W4 (1/4)  & 396 & $-6.6$ [$-13.0$, $-0.1$] & $-8.3$ [$-15.3$, $-1.3$] & $-8.3$ [$-15.5$, $-1.2$] & $+1.8$ [$-3.3$, $+6.8$] & $-6.6$ [$-14.5$, $+1.4$] & 23.7 & 26.0 & 0.088 & 1.0 (4) \\
+\midrule
+Weighted pool & 1180 & $-4.6$ [$-7.8$, $-1.5$] & $-2.8$ [$-6.3$, $+0.6$] & $-2.5$ [$-6.2$, $+1.3$] & $-1.8$ [$-4.8$, $+1.1$] & $-5.0$ [$-9.6$, $-0.4$] & 20.7 & 25.7 & 0.195 & 2.7 \\
+\bottomrule
+\end{tabular}}
+\caption{Telecom holdout, \emph{post-hoc} R2 estimands on divergent states (descriptive; not part of the pre-registered confirmation). pp; crossed task$\times$block 95\% intervals; pool weights as pre-registered. Exp.\ and $\kappa$: marginal-preserving pairing agreement control; rev.: strict reversals.}
+\label{tab:holdoutr2}
+\end{table*}
+
+\section{Withdrawn, Negative and Supplementary Results}
+\label{app:withdrawn}
+
+\paragraph{W$\times$KV interaction (not supported).} A first q4 analysis found a W4$\times$KV4 interaction of $-14.9$ [$-23.8$, $-6.0$]\pp{} ($k=3$). Its KV16 reference lacked the Q/K rotation used for KV4, so rotation and quantization were confounded. % src: analysis/ahook/out/wakv_20261001T054021Z.md (legacy kv16 row); docs/RESEARCH_LOG.md W65
+With a matched rotated reference, the q4 interaction is $-9.0$ [$-30.6$, $+12.5$]. % src: docs/RESEARCH_LOG.md W74 (analysis/ahook/out/wakv_20261001T054021Z.md)
+The pre-registered q8 replication gives $+2.1$ [$-5.8$, $+10.1$] over 6 blocks, crossed [$-8.2$, $+12.4$]. The replication is not supported, and we make no W$\times$KV claim. % src: analysis/ahook/out/wakv_20261001T094405Z.md
+
+\paragraph{Static precision restoration (appendix only).} We tested whether restoring selected modules to higher precision recovers a damaged RTN-W3 model. We report this line as a mechanism stress test, not a method. In RTN-W3 the gains largely tracked the number of restored bits. A random MLP arm also recovered much of the gap, and no arm beat whole-model GPTQ-W4 at matched storage. % src: docs/RESEARCH_LOG.md W67, W64
+A q8 RTN-W3 comparison of restored attention against byte-matched random attention is incomplete, and we report no result from it. The W4 restoration comparison below is a separate, pre-specified design. % src: docs/RESEARCH_LOG.md W67, W74 (restoration line paused); /data/ziyangs/cloq_work/queue/done/pert_q8_rtn_w3_restore_*attn*_q345.json; /data/ziyangs/cloq_work/queue/*/pert_q8_rtn_w3_restore_rand_attn_s*_q345.json
+
+\paragraph{Success equivalence.} Not established (Table~\ref{tab:e2e}).
+
+% Former Appendix "Supplementary Perturbation Analyses" (merged here, W99n). Deletion rule: see the top of this file.
+\paragraph{Supplementary perturbation analyses (exploratory).} These analyses perturb the quantized weights directly instead of forking trajectories, and they enter no claim in the main text. Each derived checkpoint takes every decoder linear from the BF16 model, from Q, or from an interpolation between them; all other tensors come from the BF16 model, and the endpoints reproduce BF16 and Q bit for bit. % src: docs/insights/PERTURBATION_PROTOCOL.md (TL;DR; §1)
+\emph{Restoration location versus random modules.} On the GPTQ-W4 and AWQ-W4 checkpoints, restoring the BF16 weights of one layer third, of attention only or of the MLP only is compared with restoring randomly chosen modules with the same number of BF16 parameter bytes. \pending{[result pending: closed-loop success of located vs.\ byte-matched random restoration, with intervals]}. % src: docs/insights/PERTURBATION_PROTOCOL.md §2.1
+\emph{Error dose.} The residual intervention $W_\alpha=W+\alpha(W_{\mathrm{Q}}-W)$ scales the quantizer's own weight error, with $\alpha\in\{0, 0.25, 0.5, 1, 2\}$; it is not a bit width. \pending{[result pending: action agreement with BF16 and closed-loop success as functions of $\alpha$]}. % src: docs/insights/PERTURBATION_PROTOCOL.md §2.2
+\emph{Low-bit failure modes.} \pending{[result pending: how W3 and lower-bit checkpoints fail in closed loop, by failure category]}.
+
+\section{Provenance}
+\label{app:figsrc}
+
+Every number in the paper is traceable to released analysis outputs. Figures are drawn by a released plotting script from those outputs, with assertions on every value the text quotes, and the TikZ figures are typeset from numbers in the \LaTeX{} source.

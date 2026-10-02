@@ -1,46 +1,57 @@
 \section{Introduction}
 \label{sec:intro}
 
-Quantized LLM agents are usually compared with their full-precision reference by average task success. In closed-loop benchmarks such as \tautwo{} \citep{barres2025tau2}, that comparison cannot distinguish difference from equivalence. On our checkpoints, quantized-minus-BF16 success ranges from $-0.2$ to $+4.2$\pp{} across four W4 cells, and the new-task (crossed) intervals are about $\pm$6--7\pp{} wide, so an equivalence test at $\pm$3\pp{} fails in every cell (Appendix~\ref{app:e2e}). % src: analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md
-Yet the quantized agent (Q) still takes actions that its BF16 reference (B) would not. If B is available as a fallback, as in dynamic precision routing \citep{li2026dynamicmp}, each such state poses a decision: \textbf{upgrade precision for this step only, from the next step on, or both?} The answer depends on the action the upgrade changes and on the execution that follows it.
+A quantized LLM agent is cheaper to serve than its BF16 reference, and a deployment can keep the reference as a fallback, as dynamic precision routing does \citep{li2026dynamicmp}. Suppose the quantized agent (Q) reaches a decision at which the BF16 agent (B) would act differently. There are three ways to spend B here: \textbf{replace only this step, let B take over from the next step, or both}. Average task success does not answer this. On our checkpoints, quantized-minus-BF16 success ranges from $-0.2$ to $+4.2$\pp{} across four W4 cells, and an equivalence test at $\pm$3\pp{} fails in every cell (Appendix~\ref{app:e2e}); even a precise end-to-end number would not say which step an upgrade should touch. % src: analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md
 
-Consider one state from our data (q4 AWQ-W4, \tautwo{} airline task 31, decision 1 of 12). Q looks up a reservation id that does not exist and receives ``not found''; B looks up the user's profile. B's action looks better. We froze this state and ran all four combinations of \{B's or Q's action\} $\times$ \{B or Q continuing\}. Only B's action followed by B succeeds. If B supplies only this step, Q continues, searches for flights, writes a change and fails. If Q's failed lookup stands and B takes over, B fails too. % src: analysis/fork/out/ghf_20261001T211519Z.md (§4 Case 5)
-B's action helps only if B also continues, which no judgement of the action alone can reveal.
+Figure~\ref{fig:case}a shows one such decision from our data. In an airline task, Q looks up a reservation id that does not exist and receives ``not found''; B looks up the user's profile. B's action looks better, and we can check what it is worth. We froze the state and ran all four combinations of \{B's or Q's action\} $\times$ \{B or Q continuing\}. Only B's action followed by B's continuation succeeds. When B supplies only this step, Q continues, searches for flights, writes a change and fails; when Q's failed lookup stands and B takes over, B fails too. % src: analysis/fork/out/ghf_20261001T211519Z.md (§4 Case 5)
+The task value of an action is thus co-determined by the execution that follows it, and judging the action alone, however carefully, cannot reveal it.
 
-\paragraph{A crossed same-state intervention.} At a frozen state whose no-op replay is bit-exact, we cross the source of the current action with the controller of the remaining episode (Figure~\ref{fig:fork}). This turns ``this step'' ($G$), ``from the next step'' ($H$) and ``both'' ($F$) into directly comparable interventions on the same states (\S\ref{sec:method}). We study Qwen3-4B and Qwen3-8B (simulated weight and KV-cache quantization, BF16 compute) in \tautwo{} with one greedy user simulator, and in BFCL multi-turn and ALFWorld. We fork at the first decision where the two models' actions differ in tool structure (text-only differences are skipped) and, separately, at ordinary states drawn independently of any outcome. % nocheck: model sizes
+We turn this observation into an evaluation. At a frozen state that replays bit-exactly, including the environment databases, the user simulator's view and the remaining step and error budget, we cross the source of the current action with the model that executes the rest of the episode (\S\ref{sec:method}). The four branches give, on the same state, the value of upgrading this step, the rest of the episode, or both. To read these values, we add a same-precision reference substitution: the replacement action and continuation come from a second W4 checkpoint of the same model, calibrated on a different sample, instead of from B. We study Qwen3-4B and Qwen3-8B under simulated weight and KV-cache quantization in \tautwo{} \citep{barres2025tau2}, BFCL multi-turn and ALFWorld. % nocheck: model sizes
 
-\paragraph{What we find.}
+\paragraph{Sensitivity is not value.} Two properties of an intervention are easily conflated. \emph{Sensitivity} is its ability to change task outcomes: how many units flip ($M$) and how often the effect of the action depends on the continuation. \emph{Value} is its ability to improve them: the net gain, which units it rescues and which it harms, and whether a selector can find the rescues in advance. Our central finding is that \textbf{the ability to change task outcomes and the ability to choose a beneficial precision intervention have to be measured separately.} The evidence has three links.
 \begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
-\item \textbf{The value of an action depends on the controller that continues} (\S\ref{sec:r2}). In 26.9\% of development W4 divergent states, the same action swap has a different outcome effect under B's continuation than under Q's; strict reversals are rare. A post hoc analysis finds the same dependence on BFCL (4.7--17.1\% per W4 cell) and q8 ALFWorld (32.8--40.0\%), which have no LLM user, and on the telecom holdout (20.7\%). Cross-cell comparisons are descriptive, and we establish no $G-H$ ordering that transfers across cells. % src: analysis/fork/out/ghf_20261001T211519Z.md (§2); analysis/fork/out/ext_r2_20261002T024433Z.md (§3); analysis/fork/out/holdout_r2_posthoc_20261002T024414Z.md (§3 pool)
-\item \textbf{Local precision upgrades redistribute success and failure} (\S\ref{sec:r1}, \S\ref{sec:r3}). Replacing a W4 agent's first tool-structure-divergent action rescues or damages 15.5--20.9\% of task$\times$block units, with a net effect of $-1.9$ to $+2.9$\pp{} on development tasks. On 34 pre-registered unseen telecom tasks, the swap again rescues and damages and task fragility repeats; its estimated effect was $-4.6$\pp{} (90\% CI $-7.2$ to $-2.0$), which the pre-registered readings, having no negative category, classify as inconclusive. A same-precision baseline (a second GPTQ-W4 calibration draw in place of B) tests whether this turnover and the controller dependence above are specific to precision: \pending{[same-precision reading pending]}. % src: analysis/fork/out/dev_all_20261001T070326Z.md; analysis/fork/out/holdout_confirm_20261002T012353Z.md; docs/insights/SAMEPREC_PROTOCOL.md (§5, §6)
-\item \textbf{Finding sensitive decisions and choosing beneficial replacements are different targets} (\S\ref{sec:r4}). A frozen Q-uncertainty trigger captures more outcome-changing decisions than random selection at two of three rates on later nonce blocks, but its net gain over random selection is not significant after correction. % src: analysis/fork/out/token_mech_20261002T003130Z.md (§3)
+\item \textbf{BF16 replacement is sensitive but has small net value} (\S\ref{sec:value}). Replacing a W4 agent's first tool-structure-divergent action with B's changes the outcome in 15.5--20.9\% of task$\times$block units, with rescues and damages of similar size and a net effect of $-1.9$ to $+2.9$\pp{} (Figure~\ref{fig:case}b). In 26.9\% of divergent states the swap has an effect under one continuation and none, or the opposite, under the other. % src: analysis/fork/out/dev_all_20261001T070326Z.md; analysis/fork/out/ghf_20261001T211519Z.md (§2)
+\item \textbf{A same-precision substitution is about as sensitive, partly on different units} (\S\ref{sec:sameprec}). Swapping only the W4 calibration checkpoint also produces two-sided flips and continuation dependence of comparable size, so flips alone do not diagnose a need for precision. The two substitutions share many sensitive episodes (107 units flip under both, against 30 expected by chance), yet 138 of the 245 flipping units flip under only one of them. Equivalence of the two turnovers within $\pm$3\pp{} is not shown. % src: analysis/fork/out/sameprec_20261002T142834Z.md (Amendment A1); analysis/fork/out/sameprec_overlap_20261002T143218Z.md; derived: 138=64+74; 245=107+64+74
+\item \textbf{Detecting sensitivity is not selecting value} (\S\ref{sec:r4}). A frozen Q-only uncertainty trigger captures more outcome-changing decisions than random selection, but they are rescues and damages alike: it captures 2--5 of the 34--38 net units that a hindsight oracle with the same budget shows are available. % src: analysis/fork/out/token_mech_20261002T003130Z.md (§3); analysis/fork/out/oracle_trigger_20261002T024423Z.md (§1a)
 \end{itemize}
 
-\paragraph{Contributions.} (1)~A crossed-intervention framework for evaluating precision upgrades in agents. Forking and single-action replay exist (\S\ref{sec:related}); we add the crossing of the action with the continuation controller ($G$, $H$, $F$ and the $(\DQ,\DB)$ table), bit-exact replay acceptance, explicit denominators, and inference that separates a fixed task pool from new tasks. (2)~A study over weight, KV-cache and stress quantization, two model sizes and three benchmarks, covering two-sided consequences, controller dependence across environments, text actions at ordinary states (whose outcome labels did not reproduce under a second simulator; \S\ref{sec:r3}) and diagnostics for precision selection. Negative and withdrawn results are in Appendix~\ref{app:withdrawn}. % nocheck: list labels (1)-(2)
+\paragraph{What should change in evaluation practice.} A study that reports how often a precision change flips outcomes, or how strongly a model's uncertainty predicts flips, has measured sensitivity. To claim that a precision intervention is worth making, it must also report value, separately: the net gain with its rescue and harm counts and their denominators, under the execution that follows the intervention; and it must report the same quantities for a same-precision reference substitution, so that what higher precision adds can be told apart from what a change of model at the same precision already does.
 
-\begin{figure}[t]
+\paragraph{Contributions.} (1)~\emph{An evaluation methodology} that measures, on the same state, the task value of the current action, of the subsequent execution and of both, with a same-precision reference substitution for reading them. The factorial design is standard; the contribution is making the counterfactuals a precision decision needs executable and auditable in closed-loop agents (exact state restoration, budget accounting, replay acceptance, explicit denominators). (2)~\emph{Empirical findings} that separate sensitivity from value: an action's value varies with the execution that follows; a fixed-precision checkpoint swap produces sensitivity of comparable size; and a sensitivity signal locates outcome changes without yet converting them into net gain. % nocheck: list labels (1)-(2)
+
+\begin{figure*}[t]
+\begin{minipage}[b]{\columnwidth}
 \centering
 \begin{tikzpicture}[ % nocheck: TikZ layout coordinates
-  font=\footnotesize,
-  box/.style={draw, rounded corners=2pt, align=center, inner sep=2.5pt},
-  act/.style={draw, rounded corners=2pt, align=center, inner sep=2pt, fill=gray!12}, % nocheck: TikZ style
-  br/.style={draw, align=center, inner sep=1.5pt, minimum width=1.3cm},
-  arr/.style={-{Stealth[length=4pt]}, thin}]
-\node[box, text width=7.0cm] (h) at (0,0) {frozen state $s_t$: history, environment and device DBs, user-simulator view, used step/error budget}; % nocheck: TikZ
-\node[act] (aB) at (-1.9,-1.0) {current action $a_{\mathrm{B}}$}; % nocheck: TikZ
-\node[act] (aQ) at (1.9,-1.0) {current action $a_{\mathrm{Q}}$}; % nocheck: TikZ
+  font=\scriptsize,
+  box/.style={draw, rounded corners=2pt, align=center, inner sep=2pt},
+  act/.style={draw, rounded corners=2pt, align=center, inner sep=1.8pt, fill=gray!10}, % nocheck: TikZ style
+  ok/.style={draw, align=center, inner sep=1.5pt, minimum width=1.55cm, fill=green!12},
+  no/.style={draw, align=center, inner sep=1.5pt, minimum width=1.55cm},
+  arr/.style={-{Stealth[length=3.5pt]}, thin}]
+\node[box, text width=7.2cm] (h) at (0,0) {frozen state: airline task, first decision; user wants an earlier nonstop flight. History, databases, simulator view and budget restored}; % nocheck: TikZ
+\node[act, text width=3.3cm] (aB) at (-1.95,-1.05) {B's action: look up the user's profile $\rightarrow$ ok}; % nocheck: TikZ
+\node[act, text width=3.3cm] (aQ) at (1.95,-1.05) {Q's action: look up reservation by a wrong id $\rightarrow$ not found}; % nocheck: TikZ
 \draw[arr] (h.south -| aB) -- (aB); \draw[arr] (h.south -| aQ) -- (aQ);
-\node[br] (bb) at (-2.85,-2.0) {BB\\[-1pt]{\scriptsize then B}}; % nocheck: TikZ
-\node[br] (bq) at (-0.95,-2.0) {BQ\\[-1pt]{\scriptsize then Q}}; % nocheck: TikZ
-\node[br] (qb) at (0.95,-2.0) {QB\\[-1pt]{\scriptsize then B}}; % nocheck: TikZ
-\node[br] (qq) at (2.85,-2.0) {QQ\\[-1pt]{\scriptsize then Q}}; % nocheck: TikZ
+\node[ok] (bb) at (-2.85,-2.2) {BB: success\\[-1pt]{\tiny B continues}}; % nocheck: TikZ
+\node[no] (bq) at (-0.95,-2.2) {BQ: fail\\[-1pt]{\tiny Q continues}}; % nocheck: TikZ
+\node[no] (qb) at (0.95,-2.2) {QB: fail\\[-1pt]{\tiny B continues}}; % nocheck: TikZ
+\node[no] (qq) at (2.85,-2.2) {QQ: fail\\[-1pt]{\tiny Q continues}}; % nocheck: TikZ
 \draw[arr] (aB) -- (bb); \draw[arr] (aB) -- (bq);
 \draw[arr] (aQ) -- (qb); \draw[arr] (aQ) -- (qq);
-\foreach \n/\l in {bb/BB,bq/BQ,qb/QB,qq/QQ} {\node[below=0.08cm of \n, font=\scriptsize] (y\n) {$Y_{\mathrm{\l}}$};} % nocheck: TikZ
-\node[box, text width=7.0cm, fill=orange!8, anchor=north] (cat) at (0,-2.8) % nocheck: TikZ
-  {$G=\YY{BQ}-\YY{QQ}$ (this step only),\; $H=\YY{QB}-\YY{QQ}$ (from the next step)\\[1pt]
-   $F=\YY{BB}-\YY{QQ}$ (from here on);\quad $\DQ=G$,\; $\DB=\YY{BB}-\YY{QB}$};
-\end{tikzpicture}
-\caption{Crossed same-state intervention (schematic, not data). B = BF16 agent, Q = quantized agent. In branch XY, the first letter is the source of the current action and the second is the controller from the next step to the end. QQ re-executes Q's original episode, and its bit-exact reproduction is the no-op check. Definitions are in \S\ref{sec:estimands}.}
+\node[box, text width=7.2cm, fill=orange!8, anchor=north] at (0,-2.75) % nocheck: TikZ
+  {action swap under Q's continuation: $\DQ=\YY{BQ}-\YY{QQ}=0$\\ % nocheck: TikZ
+   action swap under B's continuation: $\DB=\YY{BB}-\YY{QB}=+1$}; % nocheck: TikZ
+\end{tikzpicture}\\[1pt]
+{\small (a)}
+\end{minipage}\hfill
+\begin{minipage}[b]{\columnwidth}
+\centering
+\includegraphics[width=\columnwidth]{figures/f3_rescue_damage.pdf}\\[1pt]
+{\small (b)}
+\end{minipage}
+\caption{Four-branch task value. (a)~A real decision (Qwen3-4B, AWQ-W4; airline task 31, decision 1 of 12): B's action is worth a success only if B also continues; neither upgrading this step alone nor handing over the rest of the episode alone helps, so the task value of an action is co-determined by the execution that follows. (b)~Replacing the first tool-structure-divergent action with B's, per cell: rescues $r$ (right) and damages $d$ (left) in \% of all task$\times$block units, and the net $\Gall=r-d$ (diamond, pp). Thick/thin: fixed-pool/new-task 95\% intervals on the \tautwo{} development panel; block-$t$/crossed 90\% on the pre-registered telecom holdout (``weighted'' is its decisional endpoint). All cells: Appendix Table~\ref{tab:r1}.} % src: analysis/fork/out/ghf_20261001T211519Z.md (§4 Case 5); analysis/fork/out/dev_all_20261001T070326Z.json; analysis/fork/out/holdout_confirm_20261002T012353Z.json
+\label{fig:case}
+\label{fig:rd}
 \label{fig:fork}
-\end{figure}
+\end{figure*}

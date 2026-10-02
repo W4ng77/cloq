@@ -38,6 +38,8 @@ SRC = {
     "oracle": "analysis/fork/out/oracle_trigger_20261002T024423Z.json",
     "tok": "analysis/fork/out/token_mech_20261002T003130Z.json",
     "dev": "analysis/fork/out/dev_all_20261001T070326Z.json",
+    "same": "analysis/fork/out/sameprec_20261002T142834Z.json",
+    "ovl": "analysis/fork/out/sameprec_overlap_20261002T143218Z.json",
 }
 _cache = {}
 
@@ -541,8 +543,113 @@ def f5():
     save(fig, "f5_simctrl_p", ["simp"], "SIMCTRL-P G/H/F/G-H, original vs Sonnet user simulator, 95% over states")
 
 
+# ---------------------------------------------------------------------------------------------------------------
+# F6: same-precision reference (BF16 vs GPTQ-W4 d2 as the replacement source; INTERIM K = 6) + unit overlap
+# ---------------------------------------------------------------------------------------------------------------
+def f6():
+    sp, ov = load("same"), load("ovl")
+    K = sp["analysis_set"]["K"]
+    assert K == 6 and sp["analysis_set"]["blocks"] == ["f01", "f02", "f03", "f04", "f05", "f06"]
+    pr, sa, pa = sp["pooled"]["prec"], sp["pooled"]["same"], sp["pooled"]["paired"]
+    mets = [("rescue", "$r$"), ("damage", "$d$"), ("M", "$M$"), ("G", r"$G_{\mathrm{all}}$"),
+            ("cond_offdiag", "off-diag.")]
+    # Asserts: values quoted in the text (pooled q4+q8, K = 6)
+    assert [r1(pr[k]["est"]) for k, _ in mets] == [8.0, 8.7, 16.8, -0.7, 25.0]
+    assert [r1(sa[k]["est"]) for k, _ in mets] == [9.3, 8.4, 17.7, 0.9, 26.2]
+    assert [r1(v) for v in pr["M"]["ci95"]] == [13.9, 19.6] and [r1(v) for v in sa["M"]["ci95"]] == [15.7, 19.8]
+    assert [r1(v) for v in pr["cond_offdiag"]["ci95"]] == [20.6, 29.0]
+    assert [r1(v) for v in sa["cond_offdiag"]["ci95"]] == [20.7, 31.3]
+    for k in ("rescue", "damage", "cond_offdiag"):          # A1.3: every same-precision 95% lower bound > 0
+        assert sa[k]["ci95"][0] > 0 and sa[k]["crossed_ci95"][0] > 0
+    assert r1(pr["divergence_rate_pct"]) == 76.9 and r1(sa["divergence_rate_pct"]) == 76.9
+    t = sp["tost_a1"]["pooled"]
+    assert t["dM"]["est"] == -0.98 and [round(v, 2) for v in t["dM"]["t_ci90"]] == [-3.26, 1.30]
+    assert round(t["dM"]["p_tost"], 3) == 0.067 and t["dM"]["equivalent"] is False and t["dM"]["k"] == K
+    assert round(t["dG"]["est"], 2) == -1.57 and [round(v, 2) for v in t["dG"]["t_ci90"]] == [-5.17, 2.04]
+    assert round(t["d_offdiag"]["est"], 2) == -1.21 and [round(v, 2) for v in t["d_offdiag"]["t_ci90"]] == [-4.09, 1.67]
+    assert round(t["dG"]["p_tost"], 3) == 0.230 and round(t["d_offdiag"]["p_tost"], 3) == 0.133
+    assert [r1(v) for v in pa["dM"]["ci95"]] == [-3.9, 1.9]
+    o = ov["by_K"][str(K)]["pooled"]
+    c = o["overlap"]["counts"]
+    assert (c["both"], c["only_bf16"], c["only_d2"], c["neither"]) == (107, 64, 74, 775) and o["overlap"]["n"] == 1020
+    kp = o["kappa"]
+    assert round(kp["kappa"], 2) == 0.53 and round(kp["both_exp_indep"]) == 30
+    assert [round(v, 2) for v in kp["block_boot_ci95"]] == [0.46, 0.58]
+    nw = kp["null_within_task"]
+    assert round(nw["both_null_mean"]) == 76 and nw["both_null_95"] == [69.0, 84.0]
+    assert round(o["task_level"]["pearson"], 2) == 0.68
+    n_flip = c["both"] + c["only_bf16"] + c["only_d2"]
+    assert n_flip == 245 and c["only_bf16"] + c["only_d2"] == 138
+
+    fig, axs = plt.subplots(1, 3, figsize=(FULL_W, 1.55), layout="constrained",
+                            gridspec_kw={"width_ratios": [2.3, 1.25, 1.75]})
+    a, b, cax = axs
+    # (a) rates under the two replacement sources
+    style_axis(a)
+    for i, (k, lab) in enumerate(mets):
+        for d, (src, col, mk) in enumerate([(pr, BLUE, "o"), (sa, ORANGE, "s")]):
+            interval(a, i + (d - 0.5) * 0.32, src[k]["est"], src[k]["ci95"], src[k]["crossed_ci95"], col, marker=mk)
+    a.axhline(0, color=INK2, lw=0.5, zorder=1)
+    a.set_xticks(range(len(mets)))
+    a.set_xticklabels([m[1] for m in mets])
+    a.tick_params(axis="x", length=0)
+    a.set_ylabel("pp of units (off-diag.: %)")
+    a.set_title("(a) replacement source: BF16 vs. second W4 checkpoint", pad=2)
+    a.legend(handles=[Line2D([], [], color=BLUE, marker="o", lw=0, ms=3.6, label="BF16 action"),
+                      Line2D([], [], color=ORANGE, marker="s", lw=0, ms=3.6, label="W4 checkpoint 2 action")],
+             loc="upper left", frameon=False, fontsize=6.5, handletextpad=0.2, borderaxespad=0.1)
+    a.set_ylim(-7, 34)
+    # (b) paired differences with the +/-3 pp equivalence margin (TOST, 90% t interval)
+    style_axis(b, grid_axis="x")
+    b.axvspan(-3, 3, color=BAND, zorder=0, lw=0)
+    rows = [("dM", "$\\Delta M$"), ("dG", r"$\Delta G_{\mathrm{all}}$"), ("d_offdiag", "$\\Delta$off-diag.")]
+    for j, (k, lab) in enumerate(rows):
+        interval(b, -j, t[k]["est"], t[k]["t_ci90"], None, INK, marker="D", ms=3.2, horizontal=True)
+    b.axvline(0, color=INK2, lw=0.5, zorder=1)
+    for x in (-3, 3):
+        b.axvline(x, color=MUTED, lw=0.5, ls=(0, (2, 2)), zorder=1)
+    b.set_yticks([0, -1, -2])
+    b.set_yticklabels([r[1] for r in rows])
+    b.tick_params(axis="y", length=0)
+    b.set_ylim(-2.6, 0.6)
+    b.set_xlim(-6, 4)
+    b.set_xticks([-6, -3, 0, 3])
+    b.set_xlabel("BF16 $-$ checkpoint 2 (pp; 90%)")
+    b.set_title("(b) difference vs. $\\pm$3 pp margin", pad=2)
+    # (c) which units flip under each replacement
+    style_axis(cax, grid_axis="x")
+    left = 0
+    for n, col, lab in [(c["only_bf16"], BLUE, "only BF16"), (c["both"], AQUA, "both"),
+                        (c["only_d2"], ORANGE, "only ckpt 2")]:
+        cax.barh(0, n, left=left, height=0.5, color=col, alpha=0.85, lw=0, zorder=2)
+        cax.text(left + n / 2, 0, f"{n}", ha="center", va="center", fontsize=6.5, color="white", zorder=3)
+        cax.text(left + n / 2, 0.36, lab, ha="center", va="bottom", fontsize=6.5, color=INK)
+        left += n
+    # 'both' count: observed vs. two nulls, on its own row, measured from the start of the 'both' segment
+    x0, yy = c["only_bf16"], -0.8
+    cax.plot([x0, x0 + c["both"]], [yy, yy], color=GRID, lw=0.8, zorder=1)
+    cax.plot([x0 + kp["both_exp_indep"]], [yy], marker="o", ms=3.4, color=MUTED, mfc="white", zorder=5, ls="none")
+    cax.plot([x0 + nw["both_null_95"][0], x0 + nw["both_null_95"][1]], [yy, yy], color=INK2, lw=1.8, zorder=4)
+    cax.plot([x0 + nw["both_null_mean"]], [yy], marker="s", ms=3.2, color=INK2, zorder=5, ls="none")
+    cax.plot([x0 + c["both"]], [yy], marker="D", ms=3.4, color=AQUA, zorder=5, ls="none")
+    cax.text(x0 + kp["both_exp_indep"], yy - 0.22, f"indep.\n{kp['both_exp_indep']:.0f}", ha="center", va="top",
+             fontsize=6, color=INK2, linespacing=0.9)
+    cax.text(x0 + nw["both_null_mean"], yy + 0.2, f"task shuffle {nw['both_null_mean']:.0f}", ha="center",
+             va="bottom", fontsize=6, color=INK2)
+    cax.text(x0 + c["both"] + 4, yy, f"obs. {c['both']}", ha="left", va="center", fontsize=6, color=INK)
+    cax.set_yticks([0, -0.75])
+    cax.set_yticklabels(["observed", "both: null"])
+    cax.tick_params(axis="y", length=0)
+    cax.set_ylim(-1.45, 0.8)
+    cax.set_xlim(0, n_flip)
+    cax.set_xlabel(f"units (neither flips: {c['neither']} of {o['overlap']['n']})")
+    cax.set_title("(c) units whose outcome flips", pad=2)
+    save(fig, "f6_sameprec", ["same", "ovl"],
+         "same-precision reference: r/d/M/G_all/off-diag for BF16 vs W4 d2 replacement, TOST differences, overlap")
+
+
 PROV_EXTRA = {}
-FIGS = {"f1": f1, "f2": f2, "f3": f3, "f4": f4, "f5": f5}
+FIGS = {"f1": f1, "f2": f2, "f3": f3, "f4": f4, "f5": f5, "f6": f6}
 
 if __name__ == "__main__":
     want = sys.argv[1:] or list(FIGS)

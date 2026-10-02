@@ -1,0 +1,35 @@
+\section{R2: Where to Replace}
+\label{sec:r2}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/f2_ghf_forest.pdf}
+\caption{Replacement gains $G$, $H$, $F$ and $G-H$ per core cell (pp; each cell's Bank P divergent states). Thick: fixed-pool 95\% (block bootstrap, 20--22 blocks); thin: new-task 95\% (crossed task$\times$block). Squares: equal-weight pools. Within a row, contrasts are paired; between rows, descriptive. Stress cells, $F-G$, $F-H$ and $(\DQ,\DB)$ summaries: Table~\ref{tab:ghf}.} % src: analysis/fork/out/ghf_20261001T211519Z.json; analysis/fork/out/ghf_20261001T211519Z.md
+\label{fig:ghf}
+\end{figure*}
+
+\paragraph{On average over W4 cells, no option has a detectable gain.} Pooled over the four W4 cells (Figure~\ref{fig:ghf}), $G=+0.5$, $H=+0.2$ and $F=+0.7$\pp{}, and every interval covers zero, as do their differences. % src: analysis/fork/out/ghf_20261001T211519Z.md (pools)
+
+\paragraph{Within cells, the paired gains differ.} In q8 GPTQ-W4, $G=+3.3$ [$+1.6$, $+5.0$]\pp{} exceeds $H=+0.4$ ($G-H=+2.9$ [$+1.3$, $+4.7$]), and $F=+5.4$ exceeds $G$ ($F-G=+2.1$ [$+0.2$, $+4.0$]). In q8 AWQ-W4, $G-H=+3.4$ [$+1.5$, $+5.2$] and $F-G=-1.5$ [$-4.2$, $+0.8$]. In q4 GPTQ-W4, $G=-2.9$ and $G-H=-3.6$ [$-6.6$, $-0.6$]. In the stress cell q8 RTN-W3 (three blocks), $H=+15.3$ and $F=+18.4$ against $G=-0.4$ ($G-H=-15.7$ [$-27.5$, $-3.9$]). In q4 KV8, B continuing after Q's action lowers success ($H=-2.5$ [$-4.5$, $-0.5$], unadjusted). % src: analysis/fork/out/ghf_20261001T211519Z.md (§1; n_tasks)
+After Holm adjustment over the four core W4 cells, $G-H$ stays below .05 in both q8 cells ($p=.013$, $.012$) but not in q4 GPTQ-W4 ($p=.069$). % src: analysis/fork/out/ghf_multiplicity_20261001T225727Z.md
+These within-cell orderings are exploratory: they hold on the fixed 85 tasks but are not confirmed on new tasks (Table~\ref{tab:ghf-crossed}) or under a second simulator (\S\ref{sec:r3}), and cells select different states. % src: analysis/fork/out/ghf_20261001T211519Z.md (§1; n_tasks)
+
+\paragraph{A BF16 reference action can lower success.} In q4 GPTQ-W4, B's action lowers success under Q's continuation on the fixed task pool ($G=-2.9$ [$-5.7$, $-0.2$]\pp{}, unadjusted; the new-task interval covers zero), with a similar point estimate under B's ($\DB=-3.2$ [$-6.4$, $+0.2$]). % src: analysis/fork/out/ghf_20261001T211519Z.md (§1, F - H)
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/f1_controller_dependence.pdf}
+\caption{Same action, different value: per-cell share of divergent states with $\DQ\neq\DB$. Thick: fixed-pool 95\% (development: block bootstrap; holdout: block $t$); thin: new-task 95\% (crossed; BFCL/ALFWorld: item bootstrap). Pools: equal weight (holdout: pre-registered weights). Shaded groups are post hoc. Cross-cell comparisons are descriptive.} % src: analysis/fork/out/ghf_20261001T211519Z.json; analysis/fork/out/ext_r2_20261002T024433Z.json; analysis/fork/out/holdout_r2_posthoc_20261002T024414Z.json
+\label{fig:ctrl}
+\end{figure}
+
+\paragraph{The action's consequence often depends on who continues.} In 26.9\% [25.7, 28.1] of pooled W4 states, the action swap has a different effect under B's continuation than under Q's (Figure~\ref{fig:ctrl}; pooled $(\DQ,\DB)$ tables in Appendix Figure~\ref{fig:3x3}). Per W4 cell the share is 22.9--30.5\%, and in the KV8 pool it is 15.3\% [13.2, 17.3]. % src: analysis/fork/out/ghf_20261001T211519Z.md (§2)
+Because replay is exact, each such state shows a real interaction on the success scale, not replay noise; whether it is specific to precision is what the same-precision baseline tests (below and \S\ref{sec:r1}). Cohen's $\kappa$ between $\DQ$ and $\DB$, against a marginal-preserving re-pairing of states, is 0.29 in the W4 pool; it measures how well the two effects agree across states, not whether the interaction is significant (Appendix~\ref{app:agreement}). % src: analysis/fork/out/agreement_control_20261002T024240Z.md (§2 equal-weight pools W4:all)
+Strict sign reversals are rare: 3.2\% of pooled W4 states, and 1.2--4.2\% of states in each W4 and KV8 cell, or 8--14\% of the off-diagonal mass. The rest is an effect under one controller and none under the other. % src: analysis/fork/out/ghf_20261001T211519Z.md (TL;DR; §2)
+
+\paragraph{Controller dependence without an LLM user.} In a post hoc analysis of BFCL multi-turn and ALFWorld, which have no simulated user (one run per item; Figure~\ref{fig:ctrl}, Table~\ref{tab:extr2}), the off-diagonal share is 4.7--17.1\% in the four BFCL W4 cells (pool 10.3\%) and 32.8--40.0\% in the two q8 ALFWorld W4 cells (pool 36.4\%). Controller dependence therefore does not require an LLM user simulator, and its size differs by environment. % src: analysis/fork/out/ext_r2_20261002T024433Z.md (§3, §6)
+
+\paragraph{Why the mean interaction is near zero.} $E[I]$ is the difference between the swap's average effects under the two controllers, whereas the off-diagonal share is $P(I\neq0)$. In the W4 pool, states where the swap helps more under Q ($I>0$) and under B ($I<0$) are about equally frequent (13.6\% and 13.4\%), so $E[I]=+0.0$ [$-1.9$, $+2.0$]\pp{} although 26.9\% of states depend on the controller (new-task interval 22.1--32.0\%). % src: analysis/fork/out/ghf_20261001T211519Z.md (§2, pool W4:all; crossed column)
+The value of a fixed replacement policy is $E[G]$, $E[H]$ or $E[F]$, not $E[I]$. All 16 outcome patterns are in Appendix~\ref{app:patterns}.
+
+\paragraph{Same-precision baseline (descriptive).} With Q$'$ in place of B (\S\ref{sec:r1}), the off-diagonal share is \pending{off$'$} against \pending{off} with B on the same blocks. Each design selects its own states, so this comparison is descriptive. On units that diverge in both designs the shares are \pending{(a)}, and \pending{(b)} where both diverge at the same decision. % src: docs/insights/SAMEPREC_PROTOCOL.md (§5 secondary comparison, readings (a) and (b); §6)

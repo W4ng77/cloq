@@ -20,7 +20,10 @@ The external benchmarks use BFCL multi-turn (base, miss\_func, miss\_param and l
 \paragraph{Success endpoints.} For retail and airline we use the final-database match with normal termination. This is not \tautwo{}'s official reward, which additionally scores natural-language or communicate checks. Telecom uses the official deterministic task-basis success. Context overflow and unparseable output count as failures. Infrastructure outages are missing, never failures, and a block with a missing unit leaves the primary analysis.
 
 \paragraph{Fork mechanics.} The forced action is returned by a fork agent for the one step that follows $h_t$. A tool call is executed by the real environment, and text is answered by the real simulator, which never reuses observations from the original trajectory. \tautwo{} resets step and error counters when it starts from a history. The fork restores them to the values used at $t$, so the remaining budget equals the original. Every max\_steps and too\_many\_errors episode on the checked blocks is reproduced by the recount. % src: docs/insights/FORK_PROTOCOL.md §2-§4
-The served user simulator is Qwen3-30B-A3B-Instruct in every episode; a user-model label stored in the fork state files is outdated and should be ignored. % src: /data/ziyangs/cloq_work/sims/*.json (hf_id); docs/RESEARCH_LOG.md (stale user_model_id field)
+\paragraph{Replay acceptance details.} In the engineering gate, one B$\rightarrow$B field, the official reward, was missing from older trajectories and was recomputed from the stored reward information before the verdict. Besides the 924 sampled development states, 328/328 sampled Bank U states passed the QQ no-op, and the Bank U gate passed a further 135/135 no-ops. Serving in separate processes closes the prefix-cache channel \citep{patodiya2026same}. % src: docs/insights/FORK_PROTOCOL.md §8 (analysis/fork/gate/); analysis/fork/out/dev_all_20261001T070326Z.md; analysis/fork/bank_u/*/f0*/bank_summary.json (noop); analysis/fork/bank_u/gate/*/f01/bank_summary.json; derived: 328=18+13+15+31+14+20+16+24+19+16+17+19+25+17+16+15+18+15
+The same-precision run's acceptance counts are in Appendix~\ref{app:sameprec}.
+
+\paragraph{User simulator.} The served user simulator is Qwen3-30B-A3B-Instruct in every episode; a user-model label stored in the fork state files is outdated and should be ignored. % src: /data/ziyangs/cloq_work/sims/*.json (hf_id); docs/RESEARCH_LOG.md (stale user_model_id field)
 
 \section{End-to-End Success Comparison}
 \label{app:e2e}
@@ -46,7 +49,7 @@ pool, all four & & $+1.5$ [$-2.7$, $+5.6$] & pass & fail \\
 \label{tab:e2e}
 \end{table}
 
-\section{Full Tables for R1 and R2}
+\section{Full Tables: Rescue, Damage and the Four Branches}
 \label{app:tables}
 
 Table~\ref{tab:r1} gives every cell of Figure~\ref{fig:rd}, including the stress cells, with new-task intervals. Table~\ref{tab:ghf} gives every cell of Figure~\ref{fig:ghf}, with $F-G$, $F-H$ and the $(\DQ,\DB)$ summaries. % nocheck: cross-reference sentence
@@ -106,6 +109,8 @@ q8 RTN-W3$^s$ & 255 & $-0.4$ [$-3.8$, $+3.0$] & $+15.3$ [$+0.7$, $+29.9$] & $+18
 \label{tab:ghf}
 \end{table*}
 
+\input{sections/appendix_moved}
+
 \section{All 16 Outcome Patterns and New-Task Intervals} % nocheck: heading
 \label{app:patterns}
 
@@ -115,7 +120,7 @@ Table~\ref{tab:ghf-crossed} gives the new-task intervals for Table~\ref{tab:ghf}
 \input{sections/gen_patterns}
 \input{sections/gen_ghf_crossed}
 
-\section{Supplementary R2 Analyses}
+\section{Supplementary Four-Branch Analyses}
 \label{app:r2supp}
 
 \begin{figure}[t]
@@ -185,20 +190,20 @@ q8 RTN-W3$^s$  & 255 & 29.0 [24.6, 33.5] & 28.6 & $-0.016$ [$-0.233$, 0.200] & [
 \subsection{Mean squared interaction under the second simulator (exploratory)}
 \label{app:simctrlp}
 
-On the 80 states of the Bank P simulator control (\S\ref{sec:r3}), each arm has $n_a=5$ replicates under Sonnet 5.5. Per state, $\hat I_s=\bar Y_{\mathrm{BQ}}+\bar Y_{\mathrm{QB}}-\bar Y_{\mathrm{BB}}-\bar Y_{\mathrm{QQ}}$ and $U_s=\hat I_s^2-\sum_a \bar Y_a(1-\bar Y_a)/(n_a-1)$, which is unbiased for $I_s^2$ if, given the state, the replicates of each arm are i.i.d.\ Bernoulli and the four arms are independent (no shared cache or seed). Pooled with equal weight over the four W4 cells, mean $\hat I_s^2$ is 0.110, the noise correction 0.060 and mean $U_s$ 0.050, with 95\% intervals [0.004, 0.107] over states and [0.001, 0.111] over task clusters. One cell is negative (q4 AWQ-W4, $-0.025$) and is kept, as are negative per-state values. % src: analysis/fork/out/simctrl_p_interaction_20261002T024357Z.md
+On the 80 states of the Bank P simulator control (Appendix~\ref{app:simctrlpmain}), each arm has $n_a=5$ replicates under Sonnet 5.5. Per state, $\hat I_s=\bar Y_{\mathrm{BQ}}+\bar Y_{\mathrm{QB}}-\bar Y_{\mathrm{BB}}-\bar Y_{\mathrm{QQ}}$ and $U_s=\hat I_s^2-\sum_a \bar Y_a(1-\bar Y_a)/(n_a-1)$, which is unbiased for $I_s^2$ if, given the state, the replicates of each arm are i.i.d.\ Bernoulli and the four arms are independent (no shared cache or seed). Pooled with equal weight over the four W4 cells, mean $\hat I_s^2$ is 0.110, the noise correction 0.060 and mean $U_s$ 0.050, with 95\% intervals [0.004, 0.107] over states and [0.001, 0.111] over task clusters. One cell is negative (q4 AWQ-W4, $-0.025$) and is kept, as are negative per-state values. % src: analysis/fork/out/simctrl_p_interaction_20261002T024357Z.md
 The estimate is the mean squared probability-scale interaction over these 80 frozen states. It is not the share of states with interaction and not a variance, it is not comparable with the deterministic 26.9\% of \S\ref{sec:r2}, and we make no significance claim. % src: analysis/fork/out/simctrl_p_interaction_20261002T024357Z.md
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/f5_simctrl_p.pdf}
-\caption{Bank P simulator control: $G$, $H$, $F$ and $G-H$ on the 80 sampled Bank P states (20 per W4 cell), under the original greedy simulator (single runs; open circles) and with Sonnet 5.5 as the user (five replicates per arm; filled). pp; 95\% intervals over states; pool: equal weight per cell. The sample is too small to test few-pp contrasts (\S\ref{sec:r3}).} % src: analysis/fork/out/simctrl_p_20261002T015200Z.json; analysis/fork/out/simctrl_p_20261002T015200Z.md
+\caption{Bank P simulator control: $G$, $H$, $F$ and $G-H$ on the 80 sampled Bank P states (20 per W4 cell), under the original greedy simulator (single runs; open circles) and with Sonnet 5.5 as the user (five replicates per arm; filled). pp; 95\% intervals over states; pool: equal weight per cell. The sample is too small to test few-pp contrasts (Appendix~\ref{app:simctrlpmain}).} % src: analysis/fork/out/simctrl_p_20261002T015200Z.json; analysis/fork/out/simctrl_p_20261002T015200Z.md
 \label{fig:simctrlp}
 \end{figure*}
 
-\subsection{R1 and R2 estimands on BFCL and ALFWorld (supplementary)}
+\subsection{Replacement and four-branch estimands on BFCL and ALFWorld (supplementary)}
 \label{app:extr2}
 
-Table~\ref{tab:extr2} gives the R1 quantities of \S\ref{sec:r3} ($r$, $d$, $M$ and $\Gall$ over all items, non-divergent items counting as zero) and applies R2 to the external benchmarks, from the raw four-arm outcomes on divergent items (one run per item; item bootstrap within benchmark category). The R2 columns are post hoc and not part of any pre-registered analysis. In the KV4 cells $\YY{QQ}=0$ on every state, so $\DQ$ is almost constant, their off-diagonal mass is $H$ and $\kappa$ is near 0 by construction. In BFCL q4 GPTQ-W3, the base category was dropped whole by the QQ no-op rule, leaving 591 items and 540 states. % src: analysis/fork/out/ext_r2_20261002T024433Z.md (§1, TL;DR)
+Table~\ref{tab:extr2} gives the replacement quantities of \S\ref{sec:value} ($r$, $d$, $M$ and $\Gall$ over all items, non-divergent items counting as zero) and applies the four-branch analysis to the external benchmarks, from the raw four-arm outcomes on divergent items (one run per item; item bootstrap within benchmark category). The four-branch columns are post hoc and not part of any pre-registered analysis. In the KV4 cells $\YY{QQ}=0$ on every state, so $\DQ$ is almost constant, their off-diagonal mass is $H$ and $\kappa$ is near 0 by construction. In BFCL q4 GPTQ-W3, the base category was dropped whole by the QQ no-op rule, leaving 591 items and 540 states. % src: analysis/fork/out/ext_r2_20261002T024433Z.md (§1, TL;DR)
 Off-diagonal shares are 4.7--17.1\% in BFCL W4 cells (pool 10.3\%) and 32.8--40.0\% in q8 ALFWorld W4 (pool 36.4\%); pairing $\kappa$ is in Appendix~\ref{app:agreement}. The ALFWorld GPTQ-W3 stress cell has $H=+38.5$ and $G-H=-34.6$ [$-43.5$, $-25.4$]\pp{}; KV4 cells reduce to $H$. % src: analysis/fork/out/ext_r2_20261002T024433Z.md (§2, §3, §6)
 
 \begin{table*}[t]
@@ -207,7 +212,7 @@ Off-diagonal shares are 4.7--17.1\% in BFCL W4 cells (pool 10.3\%) and 32.8--40.
 % src: analysis/fork/out/ext_20261001T135106Z.md (r, d, M, G_all per cell; pools)
 \resizebox{\textwidth}{!}{\begin{tabular}{@{}lrrrrlrllllrrrr@{}}
 \toprule
-& \multicolumn{5}{c}{R1: all items} & \multicolumn{9}{c}{R2: divergent items} \\
+& \multicolumn{5}{c}{all items} & \multicolumn{9}{c}{divergent items} \\
 \cmidrule(lr){2-6}\cmidrule(lr){7-15}
 Cell & items & $r$ & $d$ & $M$ & $\Gall$ & states & $G$ & $H$ & $F$ & $G-H$ & off-diag.\ \% & exp.\ \% & $\kappa$ & rev.\ (n) \\
 \midrule
@@ -228,7 +233,7 @@ ALFWorld q8 GPTQ-W3$^s$ & 134 & 6.7 & 3.0 & 9.7 & $+3.7$ [$-1.5$, $+9.7$] & 130 
 ALFWorld q8 KV4$^s$ & 134 & 0.0 & 0.0 & 0.0 & $+0.0$ [$+0.0$, $+0.0$] & 134 & $+0.0$ [$+0.0$, $+0.0$] & $+38.1$ [$+30.6$, $+45.5$] & $+53.0$ [$+44.8$, $+61.2$] & $-38.1$ [$-45.5$, $-30.6$] & 26.9 & 26.9 & 0.000 & 0 \\
 \bottomrule
 \end{tabular}}
-\caption{R1 and R2 estimands on BFCL multi-turn and ALFWorld (no LLM user simulator; one run per item; 95\% item-bootstrap intervals). R1: rescue $r$, damage $d$, turnover $M$ (\% of all items) and net $\Gall$ (pp), non-divergent items counting as zero. R2 (supplementary, exploratory, post hoc; pp, divergent items): Off-diag.: share with $\DQ\neq\DB$; exp.\ and $\kappa$: marginal-preserving pairing agreement control; rev.: strict reversals. Pools: equal weight per cell. $^s$Stress and unrotated KV4 cells; in KV4 $\YY{QQ}=0$ on every state, so the table reduces to $H$.}
+\caption{Replacement and four-branch estimands on BFCL multi-turn and ALFWorld (no LLM user simulator; one run per item; 95\% item-bootstrap intervals). All items: rescue $r$, damage $d$, turnover $M$ (\% of all items) and net $\Gall$ (pp), non-divergent items counting as zero. Divergent items (supplementary, exploratory, post hoc; pp, divergent items): Off-diag.: share with $\DQ\neq\DB$; exp.\ and $\kappa$: marginal-preserving pairing agreement control; rev.: strict reversals. Pools: equal weight per cell. $^s$Stress and unrotated KV4 cells; in KV4 $\YY{QQ}=0$ on every state, so the table reduces to $H$.}
 \label{tab:extr2}
 \end{table*}
 
@@ -262,7 +267,7 @@ q14 GPTQ-W4 & -- & -- & -- & -- & 788 $\cdot$ 471 st / -- % src: analysis/fork/o
  \\
 \bottomrule
 \end{tabular}}
-\caption{Completed crossed-intervention coverage (t = tasks, st = states, b = complete/found blocks; BFCL and ALFWorld: items $\cdot$ states, one run). Bank U: blocks completed and state rows per domain; blocks f01--f03 are analysed (Appendix~\ref{app:banku}). ``holdout'': the cell is in the telecom holdout (Appendix~\ref{app:prereg}). Qwen3-32B has end-to-end runs only; Llama-3.1-8B stopped at its fork gate (Limitations); the q14 (Qwen3-14B) BFCL row is a within-family scale check whose counts are pending. q4 RTN-W3 has no complete Bank P block and is omitted. The telecom development results (\S\ref{sec:r3}) use the 6 blocks listed. $^\dagger$The BFCL base category of q4 GPTQ-W3 was dropped by the QQ no-op rule (Appendix~\ref{app:extr2}). The end-to-end q4 AWQ-W3 run is incomplete (two airline episodes hit 600\,s serving timeouts), and so are the q4 RTN-W2 stress runs (context-window overflows of the degenerate model and a truncated result file); neither is reported. % src: analysis/fork/ext_l8_gate/GATE.md; /data/ziyangs/cloq_work/queue/deferred/a6k2_w2p_q4_rtn_w2_q3.json; /data/ziyangs/cloq_work/queue/deferred/a6k2_q4_awq_w3_qx.json; runs/a6k2_q4_awq_w3_q5/airline/infra_causes.json
+\caption{Completed crossed-intervention coverage (t = tasks, st = states, b = complete/found blocks; BFCL and ALFWorld: items $\cdot$ states, one run). Bank U: blocks completed and state rows per domain; blocks f01--f03 are analysed (Appendix~\ref{app:banku}). ``holdout'': the cell is in the telecom holdout (Appendix~\ref{app:prereg}). Qwen3-32B has end-to-end runs only; Llama-3.1-8B stopped at its fork gate (Limitations); the q14 (Qwen3-14B) BFCL row is a within-family scale check. q4 RTN-W3 has no complete Bank P block and is omitted. The telecom development results (Appendix~\ref{app:holdoutdev}) use the 6 blocks listed. $^\dagger$The BFCL base category of q4 GPTQ-W3 was dropped by the QQ no-op rule (Appendix~\ref{app:extr2}). The end-to-end q4 AWQ-W3 run is incomplete (two airline episodes hit 600\,s serving timeouts), and so are the q4 RTN-W2 stress runs (context-window overflows of the degenerate model and a truncated result file); neither is reported. % src: analysis/fork/ext_l8_gate/GATE.md; /data/ziyangs/cloq_work/queue/deferred/a6k2_w2p_q4_rtn_w2_q3.json; /data/ziyangs/cloq_work/queue/deferred/a6k2_q4_awq_w3_qx.json; runs/a6k2_q4_awq_w3_q5/airline/infra_causes.json
 }
 \label{tab:coverage}
 \end{table*}
@@ -270,7 +275,7 @@ q14 GPTQ-W4 & -- & -- & -- & -- & 788 $\cdot$ 471 st / -- % src: analysis/fork/o
 \section{Bank U per Sub-Bank}
 \label{app:banku}
 
-Table~\ref{tab:banku} gives the per-state turnover behind \S\ref{sec:r3}, over blocks f01--f03. Exact action agreement is 0.43--0.83 per cell and sub-bank. % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (column "exact")
+Table~\ref{tab:banku} gives the per-state turnover behind Appendix~\ref{app:ordinary}, over blocks f01--f03. Exact action agreement is 0.43--0.83 per cell and sub-bank. % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (column "exact")
 
 \begin{table}[h]
 \centering\scriptsize\setlength{\tabcolsep}{3.5pt}
@@ -309,7 +314,7 @@ q8:U2Q & 129: 0 & 33: 6 (.182)$^\ast$ & 11: 1 (.091) & 7: 0 \\
 unique rows & 1943: 0 & 1045: 150 (.144) & 143: 26 (.182) & 169: 32 (.189) \\ % derived: 1045=309+202+277+199+63+33-24-14; 150=45+28+44+25+10+6-5-3; 143=19+47+24+40+5+11-1-2; 26=1+11+4+9+0+1; 169=38+33+34+56+4+7-1-2; 32=10+4+3+14+1+0; .144=150/1045; .182=26/143; .189=32/169
 \bottomrule
 \end{tabular}
-\caption{Which kind of action difference changes the outcome at ordinary states (Bank U, blocks f01--f03). Entries: ``state rows: outcome-changing rows (flip rate)'', pooled over the three cells of a model within a sub-bank. The last row counts each (cell, state) once: q4/q8 GPTQ-W4's U2Q states repeat their U1 states ($^\ast$ includes 5 and 3 repeated class-(ii) flips), so 216 flipping rows become 208. In block f01 alone the corresponding counts were 39 of 56 flips in class (ii), with rates .126/.109/.200 for (ii)/(iii)/(iv); the 58 f01 flips scored in \S\ref{sec:r4} include the two duplicated U2Q rows. % src: analysis/fork/out/token_mech_20261001T185031Z.md (flips: 58); analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§3); analysis/fork/out/bank_u_f01_20261001T134456Z.md; docs/REPORT_GPT61_20261001_0915.md (correction 1: 39/56 after deduplication); derived: 216=99+99+18; 208=99+99+18-5-3
+\caption{Which kind of action difference changes the outcome at ordinary states (Bank U, blocks f01--f03). Entries: ``state rows: outcome-changing rows (flip rate)'', pooled over the three cells of a model within a sub-bank. The last row counts each (cell, state) once: q4/q8 GPTQ-W4's U2Q states repeat their U1 states ($^\ast$ includes 5 and 3 repeated class-(ii) flips), so 216 flipping rows become 208. In block f01 alone the corresponding counts were 39 of 56 flips in class (ii), with rates .126/.109/.200 for (ii)/(iii)/(iv); the 58 f01 flips scored in Appendix~\ref{app:token} include the two duplicated U2Q rows. % src: analysis/fork/out/token_mech_20261001T185031Z.md (flips: 58); analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§3); analysis/fork/out/bank_u_f01_20261001T134456Z.md; docs/REPORT_GPT61_20261001_0915.md (correction 1: 39/56 after deduplication); derived: 216=99+99+18; 208=99+99+18-5-3
 }
 \label{tab:taxonomy}
 \end{table}
@@ -318,7 +323,7 @@ unique rows & 1943: 0 & 1045: 150 (.144) & 143: 26 (.182) & 169: 32 (.189) \\ % 
 
 \input{sections/gen_simctrl_fates}
 
-\paragraph{Bank U simulator control: sensitivity and scope.} Dropping two mechanically flagged replies leaves the reading of \S\ref{sec:r3} unchanged (6, 6 and 25 of 37; Table~\ref{tab:simctrl}). % src: analysis/fork/out/simctrl_relay_flagged_20261001T225847Z.md
+\paragraph{Bank U simulator control: sensitivity and scope.} Dropping two mechanically flagged replies leaves the reading of Appendix~\ref{app:ordinary} unchanged (6, 6 and 25 of 37; Table~\ref{tab:simctrl}). % src: analysis/fork/out/simctrl_relay_flagged_20261001T225847Z.md
 In either direction, 13 of the 39 original flip states flip again, against 11 of 39 new flips at matched non-flip states; this does not show that the two groups are equivalent. % src: analysis/fork/out/simctrl_20261001T212742Z.md; derived: 13=7+6
 The relay's responders may have seen other requests. The control's scope is narrow: fixed histories from the original simulator, a stochastic relay rather than API Sonnet or real users, block f01 only and three replicates.
 
@@ -344,12 +349,6 @@ The \emph{three-option menu oracle} $E[\max(G,H,F,0)]$ is the share of states wh
 
 The \emph{KL reference row} is a post-hoc auxiliary baseline. Its score is a truncated KL$(\mathrm{B}\|\mathrm{Q})$ over the union of both models' top-20 next-token sets plus a tail bucket, per $a_{\mathrm{Q}}$ token, teacher-forced on identical prompt ids. It needs a BF16 prefill of the prompt and $a_{\mathrm{Q}}$ at every decision (here 6709.3 prompt and 82.3 action tokens on average), so it is not Q-only. It captures turnover above chance (33 vs.\ 16.7 at 20\%) but no significant net gain (Holm $p=1.0$). Three aggregations over the $a_{\mathrm{Q}}$ tokens were fit on f01 only, with per-cell thresholds and the frozen rule's selection criterion; the maximum was chosen, and all of f02/f03 is reported. The two candidates not chosen on f01 look better on f02/f03 (e.g.\ the mean at 20\%: net $+9$, Holm $p=.0852$), but selecting them now would be selection on validation data. Because the f02/f03 outcomes had been seen, the row is post hoc, and it is not a DMR reproduction, which trains a router. % src: analysis/fork/out/oracle_trigger_20261002T024423Z.md (§2)
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/f4_trigger_oracle.pdf}
-\caption{Frozen Q-only trigger by escalation budget on f02/f03 U1 (1020 rows; 38 rescues, 31 damages), against the matched action-replacement oracle (hindsight; same per-cell selection counts), the matched-count random expectation, and a faint post-hoc KL$(\mathrm{B}\|\mathrm{Q})$ reference (maximum per-token KL, ranked within the same per-cell counts; needs BF16). (a) Net gain, (rescues $-$ damages)/1020, in pp. (b) Share of the 69 turnover states selected; here the black series is the most turnover any selection with the same per-cell counts can capture, $\sum_c\min(m_c,R_c+D_c)$ (derived from the per-cell counts), not the action oracle. Values: Table~\ref{tab:oracle} (its KL row uses the KL rule's own counts).} % src: analysis/fork/out/oracle_trigger_20261002T024423Z.json; analysis/fork/out/oracle_trigger_20261002T024423Z.md; analysis/fork/out/token_mech_20261002T003130Z.json
-\label{fig:oracle}
-\end{figure}
 
 \begin{table*}[t]
 \centering\scriptsize\setlength{\tabcolsep}{3pt}
@@ -371,7 +370,7 @@ Budget & sel. & oracle r/d/net (pp) & frozen r/d/net (pp) & captured & sel. & ne
 \section{Controlled Injection and Process Audit}
 \label{app:injection}
 
-A natural explanation of R1 is a local-defect story: the quantized agent makes a local error, and the task fails unless the continuation recovers. Two analyses constrain this explanation without identifying a mechanism.
+A natural explanation of the two-sided turnover is a local-defect story: the quantized agent makes a local error, and the task fails unless the continuation recovers. Two analyses constrain this explanation without identifying a mechanism.
 
 \paragraph{Controlled defect injection.} We froze 30 ordinary states from q4 GPTQ-W4 trajectories, all from one development block. At each state we forced one of three actions as the next step: an \textsc{inv}alid action, a matched \textsc{val}id action, or a process-perturbation control (\textsc{pp}) that repeats the last successful read. Either B or Q then continued. The defect categories were wrong\_id, wrong\_tool and premature\_write, with 10 states each. % src: analysis/recovery/inject_q4/summary_v2.md; docs/RESEARCH_LOG.md W71
 Every state passed a replay audit of 22 recorded fields (VAL$\times$Q against the original episode). Three fields were not recorded: the counters right after the restore, the rendered-prompt hash sequence and the tool-schema hash sequence. % src: analysis/recovery/inject_q4/summary_v2.md (Replay audit)
@@ -527,7 +526,7 @@ faults & T1 & 19 & $-6.37$ [$-9.91$, $-2.83$] & .0030 & .0091 \\
 \label{tab:strata}
 \end{table}
 
-\paragraph{Post-hoc R2 estimands on the holdout.} Table~\ref{tab:holdoutr2} is a supplementary, descriptive output computed after the confirmatory analysis, with the same admission and units. It is not part of the pre-registered confirmation and changes neither the primary endpoint nor its reading. Its $G$ is a ratio over divergent states, whereas $\Gall$ in Table~\ref{tab:holdout} averages over all admitted units with non-divergent units counted as 0. % src: analysis/fork/out/holdout_r2_posthoc_20261002T024414Z.md
+\paragraph{Post-hoc four-branch estimands on the holdout.} Table~\ref{tab:holdoutr2} is a supplementary, descriptive output computed after the confirmatory analysis, with the same admission and units. It is not part of the pre-registered confirmation and changes neither the primary endpoint nor its reading. Its $G$ is a ratio over divergent states, whereas $\Gall$ in Table~\ref{tab:holdout} averages over all admitted units with non-divergent units counted as 0. % src: analysis/fork/out/holdout_r2_posthoc_20261002T024414Z.md
 \begin{table*}[t]
 \centering\scriptsize\setlength{\tabcolsep}{3pt}
 % src: analysis/fork/out/holdout_r2_posthoc_20261002T024414Z.md (§1 crossed 95%; §3 table and control)
@@ -542,7 +541,7 @@ q8 AWQ-W4 (1/4)  & 396 & $-6.6$ [$-13.0$, $-0.1$] & $-8.3$ [$-15.3$, $-1.3$] & $
 Weighted pool & 1180 & $-4.6$ [$-7.8$, $-1.5$] & $-2.8$ [$-6.3$, $+0.6$] & $-2.5$ [$-6.2$, $+1.3$] & $-1.8$ [$-4.8$, $+1.1$] & $-5.0$ [$-9.6$, $-0.4$] & 20.7 & 25.7 & 0.195 & 2.7 \\
 \bottomrule
 \end{tabular}}
-\caption{Telecom holdout, \emph{post-hoc} R2 estimands on divergent states (descriptive; not part of the pre-registered confirmation). pp; crossed task$\times$block 95\% intervals; pool weights as pre-registered. Exp.\ and $\kappa$: marginal-preserving pairing agreement control; rev.: strict reversals.}
+\caption{Telecom holdout, \emph{post-hoc} four-branch estimands on divergent states (descriptive; not part of the pre-registered confirmation). pp; crossed task$\times$block 95\% intervals; pool weights as pre-registered. Exp.\ and $\kappa$: marginal-preserving pairing agreement control; rev.: strict reversals.}
 \label{tab:holdoutr2}
 \end{table*}
 
