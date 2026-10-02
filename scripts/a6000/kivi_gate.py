@@ -93,33 +93,16 @@ def run_schedule(seqs, schedule, kb, vb, BS=16, extra=7, seed=0):
     return outs
 
 
-def toy(dev, quick=False):
+def toy(dev, quick=False, dt=None):
     import torch
     from cloq import kivi_ref
     import cloq_kivi
-    res = {"shapes": {"Hq": 32, "Hkv": 8, "D": 128, "BS": 16, "G": 32, "R": 128}}
+    dt = dt or torch.bfloat16
+    res = {"shapes": {"Hq": 32, "Hkv": 8, "D": 128, "BS": 16, "G": 32, "R": 128}, "device": dev, "dtype": str(dt)}
     torch.manual_seed(0)
     Hq, Hkv, D = 32, 8, 128
     # ---------------- T1 quantizer
-    import triton
-    import triton.language as tl
-    _, qdq = cloq_kivi._build()
-
-    @triton.jit
-    def _kq_test(X, Y, LEV: tl.constexpr, T: tl.constexpr, DD: tl.constexpr):  # K: per channel over T tokens
-        pid = tl.program_id(0)
-        o = pid * T * DD + tl.arange(0, T)[:, None] * DD + tl.arange(0, DD)[None, :]
-        x = tl.load(X + o)
-        y = qdq(x, tl.min(x, 0)[None, :], tl.max(x, 0)[None, :], LEV)
-        tl.store(Y + o, y)
-
-    @triton.jit
-    def _vq_test(X, Y, LEV: tl.constexpr, T: tl.constexpr, DD: tl.constexpr, G: tl.constexpr):
-        pid = tl.program_id(0)
-        o = pid * T * DD + tl.arange(0, T)[:, None] * DD + tl.arange(0, DD)[None, :]
-        x = tl.reshape(tl.load(X + o), [T, DD // G, G])
-        y = qdq(x, tl.min(x, 2)[:, :, None], tl.max(x, 2)[:, :, None], LEV)
-        tl.store(Y + o, tl.reshape(y, [T, DD]))
+    from cloq_kivi_kernel import qdq_k_test as _kq_test, qdq_v_test as _vq_test
 
     t1 = {}
     for bits in (2, 4):
@@ -154,9 +137,9 @@ def toy(dev, quick=False):
     t2 = {}
     for name, kb, vb in (("k4v4", 4, 4), ("k2v2", 2, 2), ("k16v16", 16, 16)):
         g = torch.Generator(device="cpu").manual_seed(1)
-        q = torch.randn(L, Hq, D, generator=g).to(dev).bfloat16()
-        k = (torch.randn(L, Hkv, D, generator=g) + torch.randn(1, Hkv, D, generator=g) * 2).to(dev).bfloat16()  # outlier channels
-        v = torch.randn(L, Hkv, D, generator=g).to(dev).bfloat16()
+        q = torch.randn(L, Hq, D, generator=g).to(dev).to(dt)
+        k = (torch.randn(L, Hkv, D, generator=g) + torch.randn(1, Hkv, D, generator=g) * 2).to(dev).to(dt)  # outlier channels
+        v = torch.randn(L, Hkv, D, generator=g).to(dev).to(dt)
         out_dec = run_schedule([(q, k, v)], [[(0, t, t + 1)] for t in range(L)], kb, vb)[0].float()
         exact = kivi_ref.view_attention(q, k, v, 16, 16)  # no quantization
         r = {"quant_effect_max_abs": None}
@@ -210,7 +193,7 @@ def toy(dev, quick=False):
         g = torch.Generator(device="cpu").manual_seed(2)
         seqs = []
         for L_ in Ls:
-            seqs.append(tuple(torch.randn(L_, h, D, generator=g).to(dev).bfloat16() * s
+            seqs.append(tuple(torch.randn(L_, h, D, generator=g).to(dev).to(dt) * s
                               for h, s in ((Hq, 1.0), (Hkv, 1.5), (Hkv, 1.0))))
         base = run_schedule(seqs, [[(i, 0, L_)] for i, L_ in enumerate(Ls)], kb, vb, seed=1)  # one prefill each
         variants = {}

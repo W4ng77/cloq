@@ -127,3 +127,22 @@ def kivi_attn_kernel(Q, Kc, Vc, O, cu_q, seq_lens, block_table, sm_scale, num_se
         out = acc / l_safe[:, None]
         tl.store(O + (q_start + tok)[:, None] * o_s0 + head[:, None] * o_s1 + offs_d[None, :],
                  out.to(O.dtype.element_ty), mask=row_ok[:, None])
+
+
+@triton.jit
+def qdq_k_test(X, Y, LEV: tl.constexpr, T: tl.constexpr, DD: tl.constexpr):
+    """Gate T1: the kernel's K quantizer (per channel over T tokens) on [n, T, DD] fp32."""
+    pid = tl.program_id(0)
+    o = pid * T * DD + tl.arange(0, T)[:, None] * DD + tl.arange(0, DD)[None, :]
+    x = tl.load(X + o)
+    tl.store(Y + o, _qdq(x, tl.min(x, 0)[None, :], tl.max(x, 0)[None, :], LEV))
+
+
+@triton.jit
+def qdq_v_test(X, Y, LEV: tl.constexpr, T: tl.constexpr, DD: tl.constexpr, G: tl.constexpr):
+    """Gate T1: the kernel's V quantizer (per token over G-channel groups) on [n, T, DD] fp32."""
+    pid = tl.program_id(0)
+    o = pid * T * DD + tl.arange(0, T)[:, None] * DD + tl.arange(0, DD)[None, :]
+    x = tl.reshape(tl.load(X + o), [T, DD // G, G])
+    y = _qdq(x, tl.min(x, 2)[:, :, None], tl.max(x, 2)[:, :, None], LEV)
+    tl.store(Y + o, tl.reshape(y, [T, DD]))

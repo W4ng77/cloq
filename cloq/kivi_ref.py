@@ -23,15 +23,19 @@ KIVI_DIR = "/data/ziyangs/cloq_work/kivi_official"  # git clone https://github.c
 def _official():
     if KIVI_DIR not in sys.path:
         sys.path.insert(0, KIVI_DIR)
-    from quant.new_pack import triton_quantize_and_pack_along_last_dim, unpack_tensor
-    return triton_quantize_and_pack_along_last_dim, unpack_tensor
+    from quant.new_pack import quant_and_pack_vcache, triton_quantize_and_pack_along_last_dim, unpack_tensor
+    return triton_quantize_and_pack_along_last_dim, unpack_tensor, quant_and_pack_vcache
 
 
 def official_qdq_lastdim(x: torch.Tensor, group: int, bits: int):
     """Official quantize+pack along the last dim, then official unpack and dequant. x [B, nh, X, T].
     Returns (dequantized, int codes)."""
-    qp, unpack = _official()
-    code, scale, mn = qp(x.contiguous(), group, bits)
+    qp, unpack, qp_torch = _official()
+    if x.is_cuda:
+        code, scale, mn = qp(x.contiguous(), group, bits)
+    else:  # CPU: the official torch twin (same math: min/max over last-dim groups, (x-mn)/s, clamp, round, pack)
+        code, scale, mn = qp_torch(x.contiguous(), group, bits)
+        scale, mn = scale.squeeze(-1), mn.squeeze(-1)
     q = unpack(code, bits, pack_dim=3)
     sh = q.shape
     deq = (q.to(scale.dtype).view(*sh[:-1], sh[-1] // group, group) * scale[..., None] + mn[..., None]).view(sh)
