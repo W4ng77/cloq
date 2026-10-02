@@ -1,4 +1,4 @@
-# A6000 queue snapshot (2026-10-02 04:28:45 PDT)
+# A6000 queue snapshot (2026-10-02 04:34:08 PDT)
 
 ## running (21)
 
@@ -20,7 +20,7 @@
 - `fork_sameprec_q8_g2`
 - `fork_tel_q8_awq_w4_g3`
 - `fork_tel_q8_gptq_w4_d1_g3`
-- `nmp_gate_bank_q8_kivi_k2v2`
+- `kivi_gate_q8`
 - `pert_q4_gptq_w3_resid_a2_q345`
 - `rot_spin_learn_q8`
 
@@ -30,7 +30,7 @@
 - `a6k2_smoke_m24` · RuntimeError('vLLM agent server exited during startup')
 - `ext_l8_gptq_w4_d1_bfcl_smoke_l8g_sc` · RuntimeError("checkpoint build failed ({'kind': 'gptq', 'wbits': 4, 'calib': 'manifests/a6k2/l8/calib_fp_traj_c1.json'}) rc=1")
 
-## done (1036)
+## done (1037)
 
 - `a6k2_det_q14_x1_awq_a` · 11 min · node005
 - `a6k2_det_q14_x1_awq_b` · 54 min · node004
@@ -233,7 +233,7 @@
 - `a6k2_q32_ol_gauss0.1_s1` · 25 min · node007
 - `a6k2_q32_ol_gauss0.1_s2` · 24 min · node005
 
-## todo (114)
+## todo (113)
 
 - `a6k2_q14_tel_gauss0.1_s1`
 - `a6k2_q14_tel_gauss1_s1`
@@ -277,7 +277,6 @@
 - `fork_sameprec_q8_g4`
 - `fork_sameprec_q8_g5`
 - `fork_sameprec_q8_g6`
-- `kivi_gate_q8`
 - `nmp_gate_bank_q8_quarot_w16`
 - `nmp_gate_bank_q8_quarot_w4`
 - `nmp_gate_bank_q8_quarot_w4a4`
