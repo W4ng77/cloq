@@ -60,7 +60,7 @@ def main():
             "\\caption{New-task generalisation: crossed task$\\times$block bootstrap 95\\% intervals for the estimates of "
             "Table~\\ref{tab:ghf} (pp; same Bank P states). These answer whether the effect would hold for new tasks "
             "drawn like the panel; the fixed-pool intervals of Table~\\ref{tab:ghf} treat the 85 tasks as fixed. "
-            "$^s$stress cell, 3 blocks. Source: \\nolinkurl{" + SRC + "} (\\S1).}",
+            "$^s$stress cell, 3 blocks.}",
             "\\label{tab:ghf-crossed}", "\\end{table*}", ""]
     open(os.path.join(OUT, "gen_ghf_crossed.tex"), "w").write("\n".join(out))
 
@@ -85,7 +85,7 @@ def main():
     out += ["\\bottomrule", "\\end{tabular}}",
             "\\caption{All 16 four-branch outcome patterns per cell: count (share of the cell's Bank P states). "
             "Pattern digits are $(\\YY{BB},\\YY{BQ},\\YY{QB},\\YY{QQ})$. KV4r: Q/K-rotated KV4; W3 and KV4r cells are "
-            "stress cells with 3 blocks. Source: \\nolinkurl{" + SRC + "} (\\S3).}",
+            "stress cells with 3 blocks.}",
             "\\label{tab:patterns}", "\\end{table*}", ""]
     open(os.path.join(OUT, "gen_patterns.tex"), "w").write("\n".join(out))
     print("wrote gen_ghf_crossed.tex, gen_patterns.tex")

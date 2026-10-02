@@ -149,6 +149,9 @@ def interval(ax, pos, est, thick, thin, color, marker="o", ms=3.6, horizontal=Fa
 # ---------------------------------------------------------------------------------------------------------------
 # F1: per-cell controller dependence (observed off-diagonal share vs pairing agreement control) across environments
 # ---------------------------------------------------------------------------------------------------------------
+F1_SHOW_CONTROL = False  # W99m: the pairing agreement control is reported in the appendix only (values still asserted)
+
+
 def f1():
     ghf, ag, ext, hr2 = load("ghf"), load("agree"), load("ext"), load("hr2")
     groups = []  # (title, posthoc, rows); row = (label, est, thick, thin, control, is_pool)
@@ -225,7 +228,7 @@ def f1():
         y0 = y
         for lab, est, thick, thin, ctl, is_pool in rows:
             col = INK if is_pool else BLUE
-            if ctl is not None:
+            if F1_SHOW_CONTROL and ctl is not None:
                 ax.plot([ctl], [y], marker="D", ms=3.4, mfc="white", mec=ORANGE, mew=1.0, ls="none", zorder=5)
             interval(ax, y, est, thick, thin, col, marker="s" if is_pool else "o", ms=3.6 if is_pool else 3.4,
                      horizontal=True)
@@ -254,9 +257,8 @@ def f1():
     handles = [
         Line2D([], [], color=BLUE, marker="o", ms=3.4, lw=1.8, label="cell"),
         Line2D([], [], color=INK, marker="s", ms=3.6, lw=1.8, label="pool"),
-        Line2D([], [], color=ORANGE, marker="D", ms=3.4, mfc="white", mew=1.0, lw=0,
-               label="pairing control"),
-    ]
+    ] + ([Line2D([], [], color=ORANGE, marker="D", ms=3.4, mfc="white", mew=1.0, lw=0,
+                 label="pairing control")] if F1_SHOW_CONTROL else [])
     # legend in the empty right part of the BFCL group (x > 34%, no marks there)
     bf_top, bf_bot = spans[2][0], spans[2][1]
     leg = ax.legend(handles=handles, loc="upper right", bbox_to_anchor=(xmax - 0.3, bf_top - 1.9), borderaxespad=0,
@@ -264,7 +266,7 @@ def f1():
                     handletextpad=0.4, fontsize=7, handlelength=1.4, borderpad=0.3, labelspacing=0.25)
     leg.get_frame().set_linewidth(0.4)
     save(fig, "f1_controller_dependence", ["ghf", "agree", "ext", "hr2"],
-         "per-cell off-diagonal share with intervals vs marginal-preserving pairing agreement control, by environment")
+         "per-cell off-diagonal share with intervals, by environment" + (" vs marginal-preserving pairing agreement control" if F1_SHOW_CONTROL else ""))
 
 
 # ---------------------------------------------------------------------------------------------------------------
