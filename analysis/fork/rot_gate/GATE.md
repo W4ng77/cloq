@@ -94,7 +94,7 @@ Transform-path control, q8, served under the batch-invariant vLLM path:
 |---|---|---|---|---|---|
 | BF16 (served, no hooks) | 9.726 | 0.000 | 0 (0) | 0 | 0.000 |
 | QuaRot W16A16 (transform only) | 9.749 (+0.24%) | 0.005 | 0.0026 (1e-5) | 0.0013 | 0.0037 |
-| SpinQuant W16A16 | 9.652 (exported ckpt, below BF16; see the caution above) | pending | pending | pending | pending |
+| SpinQuant W16A16 | 9.652 (exported ckpt, below BF16; see the caution above) | 0.0025 | 0.0020 (5e-6) | 0.0008 | 0.0030 |
 
 HF invariance of the exported W16 checkpoints (`--check`): fp32 compute on the bf16-stored rotated weights vs the original, 4 × 512 WikiText windows (seed 1):
 
@@ -111,6 +111,10 @@ SpinQuant's export is as invariant as QuaRot's: the polar projection moves R by 
   - T1 ppl ≤ 1.01 × BF16, T2 act flip ≤ 0.02 and T3 KL ≤ 0.01 all hold.
   - The rotation alone is not bit-identical to BF16: the bf16-rounded rotated weights give a canary mismatch and 15.8% of decisions with any teacher-forced token flip. It is numerically neutral at the decision level.
   - This is the floor that every rotation cell carries. That is why the panel contrasts each W4 cell against its own W16 control.
+- **SpinQuant transform control (served, 06:22): PASS on T2/T3/T4/D1.**
+  - Act flip 0.0025, first-token KL 0.0020, E3 token flip 0.0030, and 13.3% of decisions with any token flip. All are at or below QuaRot's control values.
+  - Batch, alone and prefix-hit give 8/8. Hadamard-only on 72 linears; Q/K rotation in 36/36 layers.
+  - The learned rotation path is as neutral on agent decisions as the random one.
 - **Published direction (SpinQuant error ≤ QuaRot error at W4A4): pending.** The criteria are P1 ppl(sp W4A4) ≤ 11.290 and P2 ppl(sp W16A4) ≤ 11.072.
 
 ### 2. Deterministic serving (batch-invariant path)
@@ -149,9 +153,9 @@ SpinQuant's export is as invariant as QuaRot's: the polar projection moves R by 
 
 | Check | QuaRot | SpinQuant |
 |---|---|---|
-| Implementation correctness (invariance) | PASS | CPU PASS; learning ran (GPU); served invariance pending |
+| Implementation correctness (invariance) | PASS | PASS (CPU tests; HF export 0.9976; served W16A16 act flip 0.0025, KL 0.0020) |
 | Published direction (ppl ≤ QuaRot at W4A4) | n/a | learner path: 8.76 ≤ 11.04, **but uninformative** (WikiText train→test adaptation); agent-domain KL pending |
-| Deterministic serving (hook level) | PASS | pending |
+| Deterministic serving (hook level) | PASS | W16A16 PASS (8/8); W4A4 det/chunk/causal pending |
 | QQ no-op (gate_same) / BB no-op (bank gate) | queued | queued after the rotation gate |
 | Throughput | PASS | pending |
 | Local fidelity | measured | pending |
