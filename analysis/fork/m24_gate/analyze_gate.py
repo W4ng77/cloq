@@ -18,6 +18,7 @@ import json
 import math
 import statistics as S
 from collections import Counter
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -39,6 +40,42 @@ def wilson(k: int, n: int) -> list:
     c = (p + z * z / (2 * n)) / (1 + z * z / n)
     h = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / (1 + z * z / n)
     return [round(c - h, 4), round(c + h, 4)]
+
+
+NAME_OK = re.compile(r"^[a-zA-Z0-9_-]{1,64}$")  # the function-name rule mistral_common enforces when re-rendering a turn
+
+
+def bad_names(decs: list[dict]) -> int:
+    """Decisions whose parsed tool calls include an invalid function name (empty, prose, ...): mistral_common refuses to
+    render that turn at the next request (HTTP 400), so the episode ends there (agent_parse_error, W27 rule)."""
+    n = 0
+    for d in decs:
+        for c in d.get("tool_calls") or []:
+            nm = c.get("name") if "name" in c else (c.get("function") or {}).get("name")
+            if not NAME_OK.match(nm or ""):
+                n += 1
+                break
+    return n
+
+
+def invalid_name_rates() -> dict:
+    out = {}
+    for rid, doms in (("a6k2_m24_bf16_g1", ("retail", "airline")), ("a6k2_m24_rtn_w4_g1", ("retail", "airline")),
+                      ("a6k2_m24_bf16_cal", ("retail", "airline")), ("ext_m24_bf16_bfcl_gate_m24", DOMS),
+                      ("ext_m24_rtn_w4_bfcl_gate_m24", DOMS)):
+        nd = ne = nb = 0
+        eps = set()
+        for d in doms:
+            decs = jl(ROOT / "runs" / rid / d / "decisions.jsonl")
+            nd += len(decs)
+            eps |= {(d, x["task_id"]) for x in decs}
+            for x in decs:
+                if bad_names([x]):
+                    nb += 1
+                    ne += 0
+            ne = len({(d, x["task_id"]) for d in doms for x in jl(ROOT / "runs" / rid / d / "decisions.jsonl") if bad_names([x])})
+        out[rid] = {"decisions": nd, "decisions_with_invalid_name": nb, "episodes": len(eps), "episodes_with_invalid_name": ne}
+    return out
 
 
 def ok_tau(t: dict) -> int:
@@ -162,13 +199,14 @@ def main():
     ids = {i for c in BF.values() for i in c["gate_m24"]}
     cap["comparison_bfcl_gate_items"] = {"m24_bf16": cap["bf16"]["bfcl"], "qwen_bf16_eval_runs": qwen_bfcl(ids)}
     s["capability"] = cap
+    s["invalid_tool_names"] = invalid_name_rates()
     s["forks"] = {k: fork_verdict(k) for k in ("tau2_rtn_w4", "tau2_same_rtn_w4", "bfcl_rtn_w4", "bfcl_same_rtn_w4")}
     s["queue"] = {t: qrec(t) for t in ("a6k2_m24_bf16_gate", "a6k2_m24_rtn_w4_gate", "ext_m24_bf16_bfcl_gate_m24",
                                        "ext_m24_rtn_w4_bfcl_gate_m24", "fork_gate_m24_rtn_w4", "fork_gate_same_m24_rtn_w4",
                                        "fork_ext_gate_m24_rtn_w4_bfcl", "fork_ext_gate_same_m24_rtn_w4_bfcl", "a6k2_m24_bf16_cal",
                                        "a6k2_m24_calib_c1")}
     (G / "gate_summary.json").write_text(json.dumps(s, indent=1) + "\n")
-    print(json.dumps({"capability": cap, "forks": s["forks"], "queue": s["queue"]}, indent=1))
+    print(json.dumps({"capability": cap, "invalid_tool_names": s["invalid_tool_names"], "forks": s["forks"], "queue": s["queue"]}, indent=1))
 
 
 if __name__ == "__main__":
