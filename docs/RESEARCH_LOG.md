@@ -10,6 +10,13 @@ Newest first.
 
 ---
 
+## W100f — Paper: §5 common-state slots filled from W100b; Figure F8 replaces the placeholder (2026-10-02 PDT)
+**TL;DR** `sections/results_r2.tex` "Common-state action sources" now reports W100b (q8, 255 states, k = 3, 0 excluded): K(c = Q) −0.4 pp (t95 [−9.3, +8.5], boot95 [−3.5, +2.7]) and K(c = B) +2.4 pp ([−3.5, +8.2], [−0.8, +5.5]), both "not resolved"; turnover 5.5–7.5%; action agreement 57.6 / 56.9 / 55.7%; interaction +2.7 pp (t90 [+0.5, +5.0], boot90 [−0.4, +5.9]) as secondary, not resolved. Reading kept modest: no "irrelevant", no "equivalent".
+- **Figure:** `paper/latex/figures/f8_commonstate.pdf` (column width): (a) 3×2 V(source, continuation), (b) K(c) with boot95 (thick) and t95 (thin) against ±3 pp, (c) agreement patterns (130 / 17 / 15 / 12 / 81). Script `paper/latex/tools/figs/make_fig_commonstate.py` imports make_figs.py style only (make_figs.py untouched), asserts the quoted numbers, and merges its entry with source and script sha256 into `figures/provenance.json`.
+- **Discussion:** the "what the reference settles" paragraph is folded into one sentence of the first paragraph (page budget).
+- **Checks:** check_numbers PASS (0 unverified, 0 missing src); tectonic 0 overfull, 0 undefined; 23 pages; main text ends on p. 8, Limitations at the top of p. 9. Abstract and intro had no pending common-state reference and are unchanged.
+- Evidence: `analysis/fork/out/commonstate_20261002T201612Z.{md,json}`; W100b.
+
 ## W100b — Common-state action sources on q8 (BF16 / W4-d1 / W4-d2 actions × BF16 or d1 continuation): K not resolved under either continuation (2026-10-02 13:16 PDT)
 **TL;DR** Prereg `docs/insights/COMMONSTATE_SOURCES_PROTOCOL.md` (sha c73ab2eec…, deviation D1 = logistics unpin only). 255 frozen q8 U2B states, f01–f03, 85 tasks, 0 excluded, every block complete.
 - **Acceptance:** all 6 panel tasks pass idcheck, d2-replay, reference reruns (22/22, 19/19, 15/15, 18/18, 23/23, 19/19) and implicit identities. Canaries and ckpt shas match.
