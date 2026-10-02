@@ -67,7 +67,9 @@ def _get_module(root: nn.Module, name: str) -> nn.Module:
 def source_dir() -> Path:
     from huggingface_hub import snapshot_download
 
-    return Path(snapshot_download(C.MODEL_ID, revision=C.MODEL_REVISION, local_files_only=True))
+    # W99f: meta-llama repos carry original/*.pth (not downloaded); recent huggingface_hub rejects such a snapshot as
+    # incomplete. The HF-format files are all present; Qwen repos have no original/ dir, so nothing changes for them.
+    return Path(snapshot_download(C.MODEL_ID, revision=C.MODEL_REVISION, local_files_only=True, ignore_patterns=["original/*"]))
 
 
 def load_bf16_model(device: str = "cuda", src: str | None = None):

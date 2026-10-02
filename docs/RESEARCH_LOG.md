@@ -10,6 +10,24 @@ Newest first.
 
 ---
 
+## W99f — l8 (Llama-3.1-8B) BFCL four-arm fork gate: FAIL; BFCL is at the capability floor for l8 (2026-10-01 21:40 PDT)
+**TL;DR** The second-family replication gate fails, so this line stops and the formal panel is not queued.
+- **What works on Llama.** A GPTQ-W4 d1 checkpoint was built through the queue: τ² cal run → `manifests/a6k2/l8/calib_fp_traj_c1.json` → GPTQ, 532 s. It serves correctly. Q replay is bit-exact across two builds, and QQ no-op passes 18/18.
+- **Why the gate fails.**
+  - **Capability floor.** l8 BF16 solves 0/20 smoke items and 5/100 items of a disjoint probe, i.e. 4.2% (95% CI 1.8–9.4%). Qwen q4/q8/q14 BF16 solve 19.9/14.3/20.1% of the same pool.
+  - **No outcome variance in the fork.** The four arms are `0000` on 17/18 divergent smoke states; the one exception is `0111`. Arm success: BB 0, BQ 1, QB 1, QQ 1. ΣG 0, ΣI +1.
+  - **Template.** The official Llama-3.1 template refuses multi-call turns: 4/20 items died with HTTP 400. The l8 requests now use `parallel_tool_calls=false`, which changes the tool-call protocol as well as the family.
+  - **Strict gate.** BB no-op and isolation each fail 3/4. Both failures are one item: the per-branch instance name leaks into an observation when the agent passes a call expression as an argument. This affects 1/120 l8 items and 0 Qwen decisions.
+- **Throughput.** Eval ≈ 4.4 s/item amortised on 1 GPU. Search 24 s/item, divergence 90%. Branches 4.0 s wall at concurrency 8.
+- **Formal panel (if overridden).** 200 items, about 4 GPU-h and about 1 h wall. It is staged, not queued, at `/data/ziyangs/cloq_work/staged/w99f_l8_formal/`. It would yield only about 10–20 states where any arm succeeds.
+- **Backup q14 (same family).** Only the 4 fork tasks are missing; they are staged at `/data/ziyangs/cloq_work/staged/w99f_q14_backup/` (about 8–14 GPU-h). This answers scale, not family.
+- **Code changes.**
+  - The ext adapter scores the template error as `agent_parse_error` (W27 rule) instead of an outage.
+  - Per-model `ext_request` in models.json; Qwen requests are unchanged.
+  - `cloq/quantize.py` ignores `original/*` in meta snapshots.
+
+Evidence: `analysis/fork/ext_l8_gate/{GATE.md,gate_summary.json,analyze_gate.py,gate_bfcl_l8_gptq_w4_d1_sc/}`, `manifests/bfcl/{bfcl_mt_l8gate_v1,bfcl_mt_l8probe_v1}.json`, `scripts/ext/{make_manifest_l8gate,make_tasks_l8gate,common}.py`, `scripts/a6000/models.json` (l8 `ext_request`), `cloq/quantize.py::source_dir`, queue `done/{a6k2_l8_bf16_cal,a6k2_l8_calib_c1,ext_l8_*,fork_ext_gate_l8_gptq_w4_d1_bfcl_sc}.json`, runs `runs/ext_l8_*` (cluster only).
+
 ## W99e — Claim-audit fixes applied to the paper (2026-10-01 PDT)
 **TL;DR** The fixes in `docs/insights/CLAIM_AUDIT.md` (P1–P33, P35, P37–P39) are now in `paper/latex/sections/*.tex`. 36 are fixed and P28 is partly applied: the appendix note on later snapshots was not verified, so it was left out. P5's replacement wording was factually wrong: in Case 6 the failed write is made by the continuing controller, not by Q before the handover. The audit's alternative was applied instead (the clause was deleted).
 - **Headline wording changes:**

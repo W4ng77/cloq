@@ -17,7 +17,8 @@ Parse-failure causes per decision (agent side; the chat template / llama3_json p
   empty           no content and no tool call
 Item terminations: completed / force_quit / context_overflow / agent_parse_error / other.
 
-usage: python3 analysis/fork/ext_l8_gate/analyze_gate.py -> analysis/fork/ext_l8_gate/gate_summary.{json,md}
+usage: /data/ziyangs/cloq_work/envs/bfcl/bin/python analysis/fork/ext_l8_gate/analyze_gate.py  (tokenizers for the truncation count)
+       -> analysis/fork/ext_l8_gate/gate_summary.{json,md}
 """
 from __future__ import annotations
 
@@ -66,6 +67,25 @@ def parse_causes(d: dict) -> list[str]:
     return out
 
 
+def _tok():
+    try:
+        from tokenizers import Tokenizer
+        snap = sorted(Path("/data/ziyangs/cloq_work/hf/hub/models--meta-llama--Llama-3.1-8B-Instruct/snapshots").glob("*/tokenizer.json"))
+        return Tokenizer.from_file(str(snap[0])) if snap else None
+    except Exception:
+        return None
+
+
+TOK = _tok()
+
+
+def truncated_multi(d: dict) -> bool | None:
+    """A response whose generated text holds > 1 call although vLLM returned only the first (parallel_tool_calls=false)."""
+    if TOK is None or not d.get("tool_calls"):
+        return None if TOK is None else False
+    return TOK.decode(d["completion_token_ids"], skip_special_tokens=False).count('"name"') > 1
+
+
 def evals() -> dict:
     res = {}
     for arm, rid in {"bf16_r0_parallel": RUN_R0, **RUNS, "bf16_probe100": RUN_PROBE}.items():
@@ -75,6 +95,8 @@ def evals() -> dict:
             tr = jl(ROOT / "runs" / rid / d / "trajectory.jsonl")
             de = jl(ROOT / "runs" / rid / d / "decisions.jsonl")
             causes = Counter(c for x in de for c in parse_causes(x))
+            causes["generated_multi_truncated"] = sum(1 for x in de if truncated_multi(x))
+            causes["decisions_with_tool_call"] = sum(1 for x in de if x.get("tool_calls"))
             term = Counter(t["termination_reason"] for t in tr)
             r["per_category"][d] = {"n": len(tr), "success": sum(bool(t["success"]) for t in tr), "terminations": dict(term),
                                     "decisions": len(de), "parse_causes": dict(causes),
@@ -147,10 +169,20 @@ def main():
                        "c_isolation": g.get("c_isolation"),
                        "servers": {r: {k: (g.get("servers", {}).get(r) or {}).get(k) for k in ("canary", "ckpt_sha256", "effective_config_sha", "canary_ref_ok")}
                                    for r in ("B", "Q")}}
+    if "gate" in res:  # four-arm effects on the gate states (QQ = the live QQ branch, verified equal to the original)
+        R2 = mod("ext_r2", ROOT / "analysis/fork/ext_r2.py")
+        eff = []
+        for st in res["gate"]["states"]:
+            Y = {b: int(o["reward"]) for b, o in st["outcomes"].items()}
+            eff.append({"state_id": st["state_id"], "domain": st["domain"], **R2.r2_effects(Y)})
+        res["gate"]["effects"] = eff
+        res["gate"]["effects_sum"] = {k: sum(e[k] for e in eff) for k in ("Y_BB", "Y_BQ", "Y_QB", "Y_QQ", "G", "H", "F", "I", "offdiag", "strict_reversal")}
+        res["gate"]["patterns_BB_BQ_QB_QQ"] = dict(Counter(e["pattern"] for e in eff))
     res["dev"] = dev_cells()
     (G / "gate_summary.json").write_text(json.dumps(res, indent=1, default=str) + "\n")
     print(json.dumps({"evals": {a: {k: v for k, v in r.items() if k != "per_category"} for a, r in res["evals"].items()},
-                      "gate_verdict": res.get("gate", {}).get("verdict"), "dev_totals": res["dev"]["totals"],
+                      "gate_verdict": res.get("gate", {}).get("verdict"), "gate_effects_sum": res.get("gate", {}).get("effects_sum"),
+                      "gate_patterns": res.get("gate", {}).get("patterns_BB_BQ_QB_QQ"), "dev_totals": res["dev"]["totals"],
                       "dev_dirs": res["dev"]["dirs"], "patterns": res["dev"]["patterns_BB_BQ_QB_QQ"]}, indent=1, default=str))
 
 
