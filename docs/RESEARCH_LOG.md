@@ -10,6 +10,30 @@ Newest first.
 
 ---
 
+## W99l-c — Same-precision correction: equivalence by TOST at ±3 pp (protocol amendment A1), not shown at K = 6; unit/task overlap of the precision and same-precision flips (2026-10-02 07:35 PDT)
+**TL;DR** Advisor GPT-6.1 ruled, and the ruling is binding, that the §6 "similar" reading in W99l and Report 6 was wrong. "The interval includes 0 and |ΔM| ≤ 3 pp" does not show equivalence.
+- **TOST at ±3 pp, K = 6, pooled q4+q8** (t over the 6 pooled block differences, df 5):
+  - ΔM −0.98 pp, 90% CI **[−3.26, +1.30]**, p_lower 0.067, p_upper 0.009, so **equivalence is not shown** (p_TOST 0.067). This matches the advisor's numbers.
+  - ΔG_all −1.57, 90% CI [−5.17, +2.04], p_TOST 0.230.
+  - Δoff-diagonal (descriptive) −1.21, 90% CI [−4.09, +1.67], p_TOST 0.133.
+- **What can be said instead.** A higher bit width is not necessary for two-sided flips and controller dependence; they also appear when only the W4 calibration checkpoint is swapped (d1 → d2): r′ 9.3, d′ 8.4, M′ 17.7 pp, off-diagonal′ 26.2%, every 95% lower bound > 0.
+- **Overlap (new, descriptive).** Of 1020 task×block units:
+  - 107 flip under both replacements, 64 only under BF16, 74 only under d2, 775 under neither.
+  - 107 is far above the 30 expected if the two flip sets were independent within cell×block. Cohen's κ(M, M′) = 0.53, block-bootstrap 95% [0.46, 0.58]; the marginal-preserving null is κ +0.00 [−0.06, +0.07], p < 0.001; κ_max = 0.97.
+  - Direction agrees on 107/107 both-flip units, but this is forced: the Q episode, and hence Y_QQ, is shared.
+  - Task level: the per-task flip rate correlates r = 0.68 (Spearman 0.72) between designs. At matched noise (disjoint block halves), the cross-design r is 0.48, against within-design replication of 0.65 (precision) and 0.60 (same-precision), a ratio of 0.77. q4 0.58, q8 0.89.
+  - Beyond task propensity, the same episodes flip: permuting M′ across blocks within each task gives 76 [69, 84] both-flip units against 107 observed.
+  - **Answer:** similar average M corresponds to substantially overlapping sensitive units and tasks, not to disjoint ones. Still, 138 of the 245 flipping units flip under only one replacement.
+- **Changes.**
+  - `SAMEPREC_PROTOCOL.md` gets amendment A1, appended. The frozen text is a byte-identical prefix. The sha moves from `5c58d1e7d07ef10bd39f841236fccfd1436107c57ad264c62eaf14df94735823` to **`89484d35c77cfc9ba69fbf4fa5de3b90ae0c35cdd8f988d0509ba29c0580131c`**.
+  - The manifest is unchanged and still records the v1 sha. `analyze_sameprec.py` accepts only the amended file and checks the v1 prefix.
+  - The script now outputs the TOSTs, pooled and per cell, and the A1.3 reading automatically. It keeps the frozen §6 reading in the JSON, labelled superseded. The primary estimates are unchanged: ΔM −0.98 [−3.89, +1.93] is reproduced.
+  - New option `--max-k` for earlier-K looks.
+  - Correction notes are appended to W99l and Report 6.
+- **Current K = 6.** The same-precision q8 run has only f01–f06 complete (g3 is missing), so the current prefix still equals K = 6. Everything here is INTERIM. The final analysis freezes on 2026-10-03 on the longest complete prefix.
+
+Evidence: `analysis/fork/out/sameprec_20261002T142834Z.{md,json}` (TOST, K = 6), `analysis/fork/out/sameprec_overlap_20261002T143218Z.{md,json}`, `analysis/fork/analyze_sameprec.py`, `analysis/fork/sameprec_overlap.py`, `docs/insights/SAMEPREC_PROTOCOL.md` §Amendment A1, `docs/REPORT_GPT61_20261002_0730.md` (correction section).
+
 ## W99v-a1 — New-method panel protocol amendment A1 (before any panel outcome): rotation cells QuaRot-W4A16 / QuaRot-W4A4 / SpinQuant-W4A4 (KV16r) + W16 controls; Holm P2 = spinquant_w4a4 − quarot_w4a4; disclosed post-hoc rotation-gate T4 change (2026-10-02 06:30 PDT)
 **TL;DR** The protocol sha moves from `9cd5c97982e62358a20574e4a9ecff923b68c9758742b1d8e74335b79cccc21d` to `28b78509dc1848344406071be2614763d6445eacb267303714d5ef7c884545bb`. The amendment is appended as a dated section (A1); the frozen text is unchanged and remains a byte-identical prefix. `analyze_newmethod.py` accepts only the new sha. The manifest (`7534c690…`) and its states are unchanged.
 - **No panel outcome existed when this was written.** Checked at 06:24 PDT:
@@ -53,6 +77,8 @@ Evidence: `docs/insights/NEWMETHOD_PANEL_PROTOCOL.md` (Amendment A1), `analysis/
 - **Acceptance.** QQ no-op samples 146/146. Q replay 784/784 states. Prefix and env-hash checks 2437/2437 branches. 0 quarantined directories.
 
 Evidence: `analysis/fork/out/sameprec_20261002T125556Z.{md,json}` (protocol sha 5c58d1e7… verified by the script), fork outputs `analysis/fork/sameprec/{q4,q8}_gptq_w4_d1_vs_d2/g*/` (cluster), queue `done/fork_sameprec_*`.
+
+- **Correction (2026-10-02, W99l-c; appended, the entry above is kept as written).** The "similar → generic trajectory sensitivity, not precision-specific" reading above is an incorrect equivalence reading (advisor GPT-6.1, binding): an interval that contains 0 does not show equivalence. By TOST at ±3 pp (protocol amendment A1), ΔM 90% CI [−3.26, +1.30], p_lower 0.067 → equivalence is **not shown**; the same holds for ΔG_all and Δoff. The defensible statement is: "a higher bit width is not necessary for two-sided flips and controller dependence; they also appear when only the W4 calibration checkpoint is swapped (d1 → d2)." See W99l-c.
 
 ## W99q — m24 results: none yet; the formal panel is not queued because the gate is incomplete (2026-10-02 04:10 PDT)
 **TL;DR** No formal m24 results exist, so no G/H/F, rescue/damage, turnover, interaction or interval is reported. The W99p gate's fork checks are blocked on infrastructure (a runner restart onto the multi-pair noderunner), and the protocol queues the panel only after the gate passes.

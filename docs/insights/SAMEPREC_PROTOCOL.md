@@ -137,3 +137,51 @@ secondary. "A few pp" = 3 pp (the project's ε = g_min).
 and pooled estimates for both designs, ΔM and Δoff with intervals, the frozen reading, acceptance counts, and per-block
 numbers (r, d, M, G_all, states, divergence rate per block and cell, for every completed block including blocks outside
 the prefix) so that partial completion can be reported.
+
+---
+
+## Amendment A1 (2026-10-02 PDT, W99l-c): equivalence is judged by TOST; the §6 "similar" wording was wrong
+
+**TL;DR** The "similar" case of §6 (the ΔM interval includes 0 and |ΔM| ≤ 3 pp → "generic trajectory sensitivity rather
+than a precision-specific effect") is an incorrect equivalence reading: an interval that contains zero does not show
+that the difference is small. Ruling of the advisor (GPT-6.1), binding. From this amendment on, equivalence is judged by
+two one-sided tests (TOST) at ±3 pp. Sections 1–7 above are unchanged and remain a byte-identical prefix of this file
+(prefix sha256 5c58d1e7d07ef10bd39f841236fccfd1436107c57ad264c62eaf14df94735823). This amendment was written after the
+interim K = 6 result (`analysis/fork/out/sameprec_20261002T125556Z.md`) had been seen; it makes the reading stricter,
+not looser, and changes no estimate, interval, admission rule, block order or freeze date.
+
+**A1.1 What was wrong.** §6 maps "interval includes 0 and |point estimate| ≤ 3 pp" to "similar, so generic
+sensitivity". A wide interval that contains 0 is compatible with differences beyond ±3 pp, so this case does not show
+equivalence. Report 6 (`docs/REPORT_GPT61_20261002_0730.md`) and RESEARCH_LOG W99l used this wording ("indistinguishable",
+"the paper must say … generic trajectory sensitivity … rather than precision-specific effects"). That statement is
+withdrawn.
+
+**A1.2 Equivalence test (added, labelled; the primary estimates are unchanged).**
+- Margin ε = 3 pp (the same "few pp" = g_min as §6).
+- Units and estimator exactly as the primary analysis (§5): task×block units, pooled q4+q8 with equal weight, per-block
+  mean differences pooled over cells, t over the K block means (df = K − 1). This t-based TOST is used at every K,
+  also when K ≥ 10 (where the block bootstrap becomes the primary 95% interval); the block-bootstrap 90% percentile
+  interval is reported alongside.
+- Reported: the 90% t interval, p_lower (H0: Δ ≤ −ε), p_upper (H0: Δ ≥ ε), p_TOST = max of the two. Equivalence at ±3 pp
+  is shown iff p_TOST < 0.05 (equivalently, the 90% interval lies inside (−3, +3) pp).
+- Applied to: ΔM (primary), ΔG_all, and the off-diagonal difference Δoff (descriptive: different state sets; t over the
+  per-block ratio differences). Per-cell TOSTs are secondary.
+
+**A1.3 Reading (replaces the "similar" case of §6; the other §6 cases stand).**
+- ΔM interval (95%, primary) excludes 0 with ΔM > 0 → precision-specific excess, reported with ΔM / M_prec (unchanged).
+- ΔM < 0 with the interval excluding 0 → "same-precision turnover at least as large" (unchanged).
+- TOST at ±3 pp passes → the paper may say that the precision and same-precision turnover are equivalent within ±3 pp.
+  It still does not say that the turnover "is" generic sensitivity rather than a precision effect beyond that margin.
+- Otherwise → "no precision-specific excess was detected, but equivalence at ±3 pp is not shown"; the paper must not
+  say "similar", "indistinguishable" or "not precision-specific".
+- The same rule applies to Δoff (always labelled descriptive) and ΔG_all.
+- **Defensible statement, independent of the TOST outcome**, provided the same-precision r′, d′ and off-diagonal′ each
+  have a 95% lower bound > 0: "A higher bit width is not necessary for two-sided flips and controller dependence; they
+  also appear when only the W4 calibration checkpoint is swapped (d1 → d2)."
+
+**A1.4 Freeze and outputs.** The final analysis still freezes at the 2026-10-03 evidence freeze on the longest complete
+block prefix (§2). `analysis/fork/analyze_sameprec.py` outputs the TOSTs and the A1.3 reading automatically, keeps the
+frozen §6 reading in its JSON under `reading` (labelled superseded), and accepts only the amended sha of this file; the
+manifest `manifests/fork/sameprec_v1.json` (which records the original sha 5c58d1e7…) is unchanged. A descriptive
+unit-overlap analysis (`analysis/fork/sameprec_overlap.py`: which units and tasks flip under the precision vs the
+same-precision replacement; Cohen's κ on M vs M′) is added; it is exploratory and does not enter the reading.

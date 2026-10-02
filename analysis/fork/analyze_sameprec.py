@@ -11,9 +11,16 @@ blocks else t over block means; crossed task x block alongside); B = 2000, seed 
 Analysis set: longest prefix of the manifest's ordered blocks complete in the same-precision fork of BOTH cells (and in
 the precision fork). Primary: paired Delta M = M_prec - M' on the same units, pooled q4+q8 equal weight. Secondary
 (descriptive): Delta offdiag. Frozen reading (protocol §6). Per-block numbers for every completed block.
-Refuses to run unless sha256(protocol) equals PROTOCOL_SHA256 here and in the manifest.
+Refuses to run unless sha256(protocol) equals PROTOCOL_SHA256 here (amended protocol) and the manifest records the
+original frozen sha (PROTOCOL_SHA256_V1), which must be a byte-identical prefix of the amended file.
 
-usage: python analysis/fork/analyze_sameprec.py [--B 2000]  ->  analysis/fork/out/sameprec_<UTC>.{md,json}
+Amendment A1 (W99l-c, 2026-10-02; protocol §"Amendment A1"): the §6 "similar" case was an incorrect equivalence
+reading. Added, without changing the primary estimates: TOST at +-3 pp (t over the K pooled block means, df = K - 1;
+90% interval, both one-sided p) on Delta M, Delta G_all and Delta offdiag (descriptive), pooled and per cell, and the A1.3
+reading (`reading_a1`). The frozen §6 reading stays in the JSON under `reading` (labelled superseded).
+
+usage: python analysis/fork/analyze_sameprec.py [--B 2000] [--max-k K]  ->  analysis/fork/out/sameprec_<UTC>[_capK<K>].{md,json}
+  --max-k K: restrict the analysis set to the first K prefix blocks (interim look at an earlier K; labelled).
 """
 from __future__ import annotations
 
@@ -35,7 +42,11 @@ import analyze_ghf as GH  # noqa: E402
 
 ROOT, OUT = AD.ROOT, AD.OUT
 MANIFEST = ROOT / "manifests/fork/sameprec_v1.json"
-PROTOCOL_SHA256 = "5c58d1e7d07ef10bd39f841236fccfd1436107c57ad264c62eaf14df94735823"
+# Amendment A1 (W99l-c, 2026-10-02): the frozen sameprec-v1 text (sha below, recorded in the manifest) is a byte-identical
+# prefix of the amended protocol; only the amended file is accepted.
+PROTOCOL_SHA256_V1 = "5c58d1e7d07ef10bd39f841236fccfd1436107c57ad264c62eaf14df94735823"
+PROTOCOL_SHA256 = "89484d35c77cfc9ba69fbf4fa5de3b90ae0c35cdd8f988d0509ba29c0580131c"
+EPS_PP = 3.0  # A1.2 equivalence margin (= few_pp = g_min)
 PANEL = ("retail", "airline")
 CELL = "gptq_w4_d1"
 DESIGNS = ("prec", "same")
@@ -46,10 +57,53 @@ CONDK = ["G", "H", "F", "I", "offdiag", "strict_reversal", "M", "rescue", "damag
 def guard(man: dict) -> str:
     p = ROOT / man["protocol"]
     s = AD.sha256(p)
-    if s != PROTOCOL_SHA256 or s != man["protocol_sha256"]:
-        raise SystemExit(f"analyze_sameprec: refusing: sha256({man['protocol']}) = {s} differs from the pre-registered "
-                         f"{PROTOCOL_SHA256} (script) / {man['protocol_sha256']} (manifest)")
+    if s != PROTOCOL_SHA256 or man["protocol_sha256"] != PROTOCOL_SHA256_V1:
+        raise SystemExit(f"analyze_sameprec: refusing: sha256({man['protocol']}) = {s} (expected amended {PROTOCOL_SHA256}); "
+                         f"manifest records {man['protocol_sha256']} (expected frozen v1 {PROTOCOL_SHA256_V1})")
+    raw = p.read_bytes()
+    cut = raw.find(b"\n\n---\n\n## Amendment A1")
+    if cut < 0 or hashlib.sha256(raw[:cut + 1]).hexdigest() != PROTOCOL_SHA256_V1:
+        raise SystemExit("analyze_sameprec: refusing: the frozen v1 text is not a byte-identical prefix of the amended protocol")
     return s
+
+
+def tost(vals: list[tuple], eps_pp: float = EPS_PP) -> dict:
+    """A1.2: TOST at +-eps on the pooled per-block differences (equal-weight mean over cells of each cell's block means),
+    t over the K blocks (df = K - 1), as the primary fixed-pool analysis; plus the block-bootstrap 90% percentile interval."""
+    from scipy.stats import t as tdist
+    bm = np.nanmean(np.vstack([np.asarray(v[1].block_means, float) for v in vals]), axis=0)
+    x = 100 * bm[np.isfinite(bm)]
+    k = len(x)
+    if k < 2:
+        return {"k": k, "note": "fewer than 2 blocks"}
+    m, se = float(x.mean()), float(x.std(ddof=1) / np.sqrt(k))
+    q90 = tdist.ppf(0.95, k - 1)
+    p_lo = float(tdist.sf((m + eps_pp) / se, k - 1))   # H0: diff <= -eps
+    p_hi = float(tdist.cdf((m - eps_pp) / se, k - 1))  # H0: diff >= +eps
+    dr = 100 * np.mean([np.asarray(v[1], float) for v in vals], axis=0)
+    dr = dr[np.isfinite(dr)]
+    return {"est": round(m, 3), "se": round(se, 4), "k": k, "df": k - 1, "eps_pp": eps_pp,
+            "t_ci90": [round(m - q90 * se, 3), round(m + q90 * se, 3)],
+            "block_boot_ci90": [round(float(np.percentile(dr, 5)), 3), round(float(np.percentile(dr, 95)), 3)] if len(dr) else None,
+            "p_lower": round(p_lo, 4), "p_upper": round(p_hi, 4), "p_tost": round(max(p_lo, p_hi), 4),
+            "equivalent": bool(max(p_lo, p_hi) < 0.05), "block_diffs_pp": [round(float(v), 3) for v in x]}
+
+
+def reading_a1(x95: dict, t: dict, what: str) -> dict:
+    """A1.3: replaces the §6 'similar' case by TOST; the excess / at-least-as-large cases are unchanged."""
+    lo, hi = x95["ci95"]
+    est = x95["est"]
+    if lo > 0:
+        case, text = "precision_excess", f"{what}: precision-specific excess {est:+.1f} pp [{lo:+.1f}, {hi:+.1f}]"
+    elif hi < 0:
+        case, text = "same_larger", f"{what}: same-precision at least as large (95% interval excludes 0, diff < 0)"
+    elif t.get("equivalent"):
+        case, text = "equivalent", (f"{what}: equivalent within ±{t['eps_pp']:.0f} pp (TOST p = {t['p_tost']:.3f}; "
+                                    f"90% CI [{t['t_ci90'][0]:+.2f}, {t['t_ci90'][1]:+.2f}])")
+    else:
+        case, text = "not_shown_equivalent", (f"{what}: no precision-specific excess detected, but equivalence at ±{t['eps_pp']:.0f} pp "
+                                              f"is NOT shown (TOST p = {t['p_tost']:.3f}; 90% CI [{t['t_ci90'][0]:+.2f}, {t['t_ci90'][1]:+.2f}])")
+    return {"case": case, "text": text, "est": est, "ci95": x95["ci95"], "tost": {k: t[k] for k in ("t_ci90", "p_lower", "p_upper", "p_tost", "equivalent")}}
 
 
 def dirs_under(rel: str) -> list[Path]:
@@ -208,6 +262,7 @@ def reading(x: dict, few: float, what: str) -> dict:
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--B", type=int, default=AD.B_BOOT)
+    ap.add_argument("--max-k", type=int, default=None, help="interim look: first K prefix blocks only (labelled)")
     a = ap.parse_args()
     t0 = time.time()
     try:
@@ -231,6 +286,9 @@ def main():
             prefix.append(b)
         else:
             break
+    full_prefix = list(prefix)
+    if a.max_k is not None:
+        prefix = prefix[:a.max_k]
     K = len(prefix)
     res = {"protocol": man["protocol"], "protocol_sha256": psha, "manifest": str(MANIFEST.relative_to(ROOT)),
            "script_sha256": AD.sha256(__file__), "analyze_dev_sha256": AD.sha256(AD.__file__), "analyze_ghf_sha256": AD.sha256(GH.__file__),
@@ -238,7 +296,9 @@ def main():
            "utc": time.strftime("%Y%m%dT%H%M%SZ", time.gmtime()), "snapshot": man["snapshot"], "B": a.B, "seed": AD.SEED,
            "mapping": {"BB": "Q'Q'", "BQ": "Q'Q", "QB": "QQ'", "QQ": "QQ"},
            "admission_meta": M, "complete_blocks": {d: {m: sorted(v) for m, v in x.items()} for d, x in blocks_all.items()},
-           "analysis_set": {"blocks": prefix, "K": K, "rule": "longest prefix of blocks_ordered complete in both cells and both designs"},
+           "analysis_set": {"blocks": prefix, "K": K, "rule": "longest prefix of blocks_ordered complete in both cells and both designs",
+                            "complete_prefix_K": len(full_prefix), "capped_by_max_k": a.max_k,
+                            "status": "INTERIM (before the 2026-10-03 evidence freeze)" if time.gmtime() < time.strptime("2026-10-04T07", "%Y-%m-%dT%H") else "freeze"},
            "per_block": {d: per_block(U[d]) for d in DESIGNS}}
     if K >= 1:
         sel = {d: [u for u in U[d] if "excluded" not in u and u["block"] in prefix] for d in DESIGNS}
@@ -313,6 +373,41 @@ def main():
                                                    if rm["case"] == "precision_excess" else rm["text"])}
         else:
             res["reading"] = {"K": K, "note": f"fewer than {man['min_blocks_reading']} complete prefix blocks: no reading (protocol §2); per-block numbers only"}
+        if "frozen_statement" in res["reading"]:
+            res["reading"]["status"] = "SUPERSEDED by amendment A1 (the 'similar' case was an incorrect equivalence reading); see reading_a1"
+        # ---- Amendment A1 (W99l-c): TOST at +-3 pp; the estimates above are unchanged ----
+        divs_of = lambda d, m: [u for u in sel[d] if u["model"] == m and u["div"]]  # noqa: E731
+        vals = {"dM": {m: full_stat(boot, pairs_by[m], "dM") for m in models},
+                "dG": {m: full_stat(boot, pairs_by[m], "dG") for m in models},
+                "d_offdiag": {m: diff_pair(ratio_stat(boot, divs_of("prec", m), "offdiag"), ratio_stat(boot, divs_of("same", m), "offdiag"))
+                              for m in models if divs_of("prec", m) and divs_of("same", m)}}
+        ta = {"eps_pp": EPS_PP, "method": "TOST, t over the K pooled per-block differences (df = K - 1); 90% CI; p_lower: H0 diff <= -eps; p_upper: H0 diff >= +eps",
+              "pooled": {k: tost(list(v.values())) for k, v in vals.items() if len(v) == len(models)},
+              "per_cell": {m: {k: tost([v[m]]) for k, v in vals.items() if m in v} for m in models}}
+        for k, x in ta["pooled"].items():  # consistency with the frozen primary estimate
+            ref = pool["paired"]["dM" if k == "dM" else "dG" if k == "dG" else "d_offdiag"]["est"]
+            assert abs(x["est"] - ref) < 0.01, (k, x["est"], ref)
+        res["tost_a1"] = ta
+        if K >= int(man["min_blocks_reading"]):
+            P = pool
+            ra = {k: reading_a1(P["paired"][kk], ta["pooled"][kk], lab) for k, kk, lab in
+                  (("M", "dM", "Turnover M (paired, primary)"), ("G_all", "dG", "Net G_all (paired)"),
+                   ("offdiag", "d_offdiag", "Off-diagonal share (DESCRIPTIVE: different state sets)")) if kk in ta["pooled"]}
+            ra["per_cell"] = {m: {k: reading_a1(cells[m]["paired"]["full_pp"]["dM"] if k == "dM" else cells[m]["paired"]["full_pp"]["dG"] if k == "dG"
+                                                else cells[m]["paired"]["d_offdiag_pp"], ta["per_cell"][m][k], f"{m} {k}")
+                                  for k in ta["per_cell"][m]} for m in models}
+            two_sided = all(P["same"][k]["ci95"][0] > 0 for k in ("rescue", "damage", "cond_offdiag"))
+            defensible = ("A higher bit width is not necessary for two-sided flips and controller dependence; they also appear when only the "
+                          f"W4 calibration checkpoint is swapped (d1 → d2): r′ {P['same']['rescue']['est']:.1f}, d′ {P['same']['damage']['est']:.1f}, "
+                          f"M′ {P['same']['M']['est']:.1f} pp of units, off-diagonal′ {P['same']['cond_offdiag']['est']:.1f}% of divergent states.")
+            cm = ra["M"]["case"]
+            st = (defensible + " " if two_sided else "") + (
+                f"Turnover is equivalent between the designs within ±3 pp (TOST p = {ta['pooled']['dM']['p_tost']:.3f})." if cm == "equivalent" else
+                f"No precision-specific excess in turnover was detected (ΔM {ra['M']['est']:+.1f} pp), but equivalence at ±3 pp is not shown "
+                f"(90% CI [{ta['pooled']['dM']['t_ci90'][0]:+.2f}, {ta['pooled']['dM']['t_ci90'][1]:+.2f}], TOST p = {ta['pooled']['dM']['p_tost']:.3f}); "
+                "the paper must not call the designs similar or the turnover not precision-specific." if cm == "not_shown_equivalent" else ra["M"]["text"])
+            ra.update({"K": K, "two_sided_same_precision": two_sided, "defensible_statement": defensible if two_sided else None, "statement": st})
+            res["reading_a1"] = ra
     # context: precision M on all its complete blocks
     res["precision_all_blocks"] = {}
     for m in models:
@@ -325,9 +420,10 @@ def main():
             res["precision_all_blocks"][m] = {"K": len({u["block"] for u in us}), "M_pp": AD.summarise(*full_stat(bt, us, "M"))}
     res["seconds"] = round(time.time() - t0, 1)
     OUT.mkdir(parents=True, exist_ok=True)
-    jp = OUT / f"sameprec_{res['utc']}.json"
+    tag = res["utc"] + (f"_capK{K}" if a.max_k is not None else "")
+    jp = OUT / f"sameprec_{tag}.json"
     jp.write_text(json.dumps(res, indent=1, default=lambda o: o.item() if hasattr(o, "item") else sorted(o) if isinstance(o, set) else str(o)))
-    (OUT / f"sameprec_{res['utc']}.md").write_text(markdown(res, jp))
+    (OUT / f"sameprec_{tag}.md").write_text(markdown(res, jp))
     print(f"analyze_sameprec: wrote {jp.relative_to(ROOT)} (K = {K}, {res['seconds']} s)")
 
 
@@ -350,7 +446,14 @@ def markdown(r: dict, jp: Path) -> str:
               f"same-precision {fr(P['same']['M'])} pp; paired ΔM {f(P['paired']['dM'])} pp ({P['paired']['dM']['primary']}; crossed {cx(P['paired']['dM'])}). "
               f"Off-diagonal share (descriptive): {fr(P['prec']['cond_offdiag'])} vs {fr(P['same']['cond_offdiag'])}%, Δ {f(P['paired']['d_offdiag'])} pp. "
               f"Divergence rate {P['prec']['divergence_rate_pct']:.1f}% vs {P['same']['divergence_rate_pct']:.1f}%. ")
-        tl += ("Frozen reading: " + rd["frozen_statement"]) if "frozen_statement" in rd else rd.get("note", "")
+        ra = r.get("reading_a1")
+        if ra:
+            tm = r["tost_a1"]["pooled"]["dM"]
+            tl += (f"**Amendment A1 (TOST ±3 pp):** ΔM 90% CI [{tm['t_ci90'][0]:+.2f}, {tm['t_ci90'][1]:+.2f}], p_lower {tm['p_lower']:.3f}, "
+                   f"p_upper {tm['p_upper']:.3f} → {'equivalent' if tm['equivalent'] else 'equivalence NOT shown'}. Reading: " + ra["statement"])
+            tl += f" ({r['analysis_set']['status']}; the frozen §6 'similar' reading is superseded.)"
+        else:
+            tl += ("Frozen reading: " + rd["frozen_statement"]) if "frozen_statement" in rd else rd.get("note", "")
         L += [tl, ""]
     else:
         L += [f"**TL;DR** Same-precision control: no complete prefix block yet (K = {K}); per-block numbers below.", ""]
@@ -363,8 +466,24 @@ def markdown(r: dict, jp: Path) -> str:
           + "; ".join(f"{d} {m}: {','.join(v) or '-'}" for d, x in r["complete_blocks"].items() for m, v in x.items()), ""]
     if K and r.get("cells"):
         rd = r["reading"]
+        if r.get("tost_a1"):
+            L += ["## Amendment A1: equivalence by TOST at ±3 pp (W99l-c; added, primary estimates unchanged)", "",
+                  f"Method: {r['tost_a1']['method']}.", "",
+                  "| scope | contrast | est (pp) | 90% CI (t) | 90% CI (block boot) | p_lower (H0 ≤ −3) | p_upper (H0 ≥ +3) | p_TOST | equivalent |",
+                  "|---|---|---|---|---|---|---|---|---|"]
+            for sc, d in [("pool", r["tost_a1"]["pooled"])] + list(r["tost_a1"]["per_cell"].items()):
+                for k, x in d.items():
+                    if "est" in x:
+                        bb = x["block_boot_ci90"]
+                        L.append(f"| {sc} | {k}{' (descriptive)' if k == 'd_offdiag' else ''} | {x['est']:+.2f} | [{x['t_ci90'][0]:+.2f}, {x['t_ci90'][1]:+.2f}] | "
+                                 f"{'[%+.2f, %+.2f]' % tuple(bb) if bb else 'n/a'} | {x['p_lower']:.3f} | {x['p_upper']:.3f} | {x['p_tost']:.3f} | {'yes' if x['equivalent'] else 'no'} |")
+            ra = r.get("reading_a1")
+            if ra:
+                L += ["", "A1.3 reading (pooled):", ""] + [f"- {ra[k]['text']}" for k in ("M", "G_all", "offdiag") if k in ra]
+                L += [f"- per cell (secondary) {m}: " + "; ".join(f"{k} {x['case']}" for k, x in v.items()) for m, v in ra["per_cell"].items()]
+                L += [f"- **Statement (A1):** {ra['statement']}", ""]
         if "M" in rd:
-            L += ["## Frozen reading (protocol §6, pooled q4+q8)", "", f"- {rd['M']['text']} — ΔM {f(rd['M'])} ({rd['M']['primary']})",
+            L += ["## Frozen reading (protocol §6, pooled q4+q8) — SUPERSEDED by amendment A1 (incorrect equivalence reading; kept for the record)", "", f"- {rd['M']['text']} — ΔM {f(rd['M'])} ({rd['M']['primary']})",
                   f"- {rd['offdiag']['text']} — Δoff {f(rd['offdiag'])}", f"- **Statement:** {rd['frozen_statement']}"]
             for m, x in rd["per_cell"].items():
                 L.append(f"- per cell {m} (secondary): {x['M']['case']} (ΔM {f(x['M'])}); off-diagonal {x['offdiag']['case']} ({f(x['offdiag'])})")
