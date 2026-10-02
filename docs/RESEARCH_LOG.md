@@ -10,6 +10,55 @@ Newest first.
 
 ---
 
+## W99s — Rotation cells on the new-method panel: no results yet; QuaRot phase 1 is released automatically once its nmp gates pass, SpinQuant once its rotation gate passes (2026-10-02 04:20 PDT)
+**TL;DR** No panel outcome exists yet, so no G/H/F/rescue/damage/turnover/I or D_cc is reported. Every queued task is effect-blind and gate-conditional.
+- **Cells registered (Q role; B = BF16; KV16 with the online Q/K rotation).** Protocol cells `quarot_w4` (QuaRot-W4A16-KV16), `quarot_w16` and `spinquant_w16` (transform controls). Advisor's A4 configurations: `quarot_w4a4` (QuaRot-W4A4-KV16) and `spinquant_w4a4` (SpinQuant-W4A4-KV16).
+- **Not built: the protocol's `spinquant_w4` (learned rotation at W4A16).** It needs rotations learned with RTN-W4 in the loop. Rotations learned at W16A16 are a stationary point of a rotation-invariant loss.
+- **Needs a protocol amendment (owner: panel agent).**
+  - `analyze_newmethod.py` NEW_CELLS and Holm P2 (spinquant_w4 − quarot_w4) do not include the A4 cells. The advisor's controlled contrast is spinquant_w4a4 − quarot_w4a4.
+  - `make_newmethod_panel.py spec` prints gate_same `q_blocks` as "run:domain" strings, but `fork_driver.load_blocks` unpacks [run, domain] pairs. make_tasks_rotpanel.py uses pairs.
+- **Queued at −25 (q8 forks: 2 GPUs, pinned to node004/005/007).**
+  - Gates: `nmp_gate_{same,bank}_q8_{quarot_w4,quarot_w16,quarot_w4a4}`.
+  - Release: `rot_release_panel_qr_q8`. It checks each cell's gate_same verdict, then queues f01–f03 `nmp_tau2_*`, `nmp_score_*`, `ext_q8_<cell>_bfcl_nmp1` and the four `nmp_bfcl_*` tasks.
+  - SpinQuant chain: `rot_spin_learn_q8` → `rot_gate_sp_q8` → `rot_release_gates_sp_q8` → `rot_release_panel_sp_q8`.
+- **ETA.** It is set by queue capacity, not compute:
+  - Compute per cell: about 3.5–4.5 GPU-h for the two gates plus about 8–10 GPU-h for f01–f03 (from the Bank U q8 task times, about 45 min wall per block task on 2 GPUs, plus the 21 min GPTQ rebuild per task), plus about 4–6 GPU-h for BFCL.
+  - Five cells: about 80–100 GPU-h.
+  - Earliest phase-1 completion is about 2026-10-03 midday if the q8 pairs on node004/005/007 free up. The SpinQuant cells finish about 3 h later than QuaRot (learning plus rotation gate). This is before the protocol's expansion decision at 2026-10-03 20:00.
+
+Evidence: `scripts/a6000/{make_tasks_rotpanel,rot_gate_check}.py`, `/data/ziyangs/cloq_work/queue/todo/{rot_*,nmp_gate_*_quarot_*}.json`, `analysis/fork/rot_gate/GATE.md`.
+
+## W99r — Rotation gate (QuaRot vs SpinQuant, weight + activation axis, q8): QuaRot PASS; SpinQuant implemented and CPU-verified, GPU gate not reached in the 6-hour window (queue capacity) (2026-10-02 04:20 PDT)
+**TL;DR** SpinQuant is added as Cayley-SGD learning of R1/R2 (`cloq/spinquant.py`). It sits in QuaRot's skeleton, so the controlled pair differs only in the rotation: same 128×2048 WikiText-2 windows, same GPTQ-W4 grid and clip, same A4 grid (per-token sym INT4, clip 0.9), same online Hadamards, KV16r.
+- **QuaRot passes the gate on q8.**
+  - Transform control: W16A16 ppl 9.749 vs BF16 9.726; act flip 0.005; first-token KL 0.0026.
+  - Batch, prefix and chunk invariance, and causal prefix identity, all hold.
+  - Throughput is not reduced.
+- **Local fidelity, measured only.** Adding A4 to QuaRot-W4 raises the act flip from 0.075 to 0.198 and the first-token KL from 0.31 to 1.15. W16A4 alone (0.125 / 0.66) is worse than W4A16 alone.
+- **SpinQuant.** CPU tests pass: the QuaRot point is reproduced exactly, learned-rotation invariance holds to 3e-7, and the learner path equals the serving path at A4. The GPU learning task was not claimed within the window: 1-GPU slots were starved by priority and the runners' pair reservation. The gate stays queued with frozen pass criteria.
+
+| q8, KV16r | ppl | act flip | 1st-token KL | E3 token flip |
+|---|---|---|---|---|
+| BF16 | 9.726 | 0 | 0 | 0 |
+| QuaRot W16A16 | 9.749 | 0.005 | 0.003 | 0.004 |
+| QuaRot W16A4 | 11.072 | 0.125 | 0.660 | 0.053 |
+| QuaRot W4A16 | 9.914 | 0.075 | 0.307 | 0.030 |
+| QuaRot W4A4 | 11.290 | 0.198 | 1.155 | 0.063 |
+
+- **Learning recipe (official `10_optimize_rotation.sh` / README).**
+  - lr 1.5 cosine, 100 steps × 8 × 2048, momentum 0, STE.
+  - W16A4 objective, per the README rule for GPTQ + A4.
+  - Init at the QuaRot point, so the learned-vs-random contrast is pure optimisation.
+  - Official-pipeline deviations (calibration set, sym/clip grid, the kept across-head H_32, R2 init) are listed in GATE.md. The official default is reserved as `spinqoff_w4` and is not built.
+- **Code.**
+  - `cloq/quarot.py --rotations`: polar projection, sha pin.
+  - Worker ckpt kind `spinquant`.
+  - `aq_validate.py --suite spin`, which now adds a WikiText-2 test ppl probe, top-k KL and a throughput probe.
+  - Frozen criteria and automatic release: `rot_gate_check.py`.
+- **Engineering note.** The serving Hadamard's broadcast K-block mix would materialise (tokens, 12, 12, 1024) fp32, about 10 GB at 16k tokens, during learning. The learner uses a GEMM form, `had_light`, and the tests show it is identical to the serving form.
+
+Evidence: `analysis/fork/rot_gate/{GATE.md,validate_qr_q8.json,validate_qr_q8_ppl.json,ckpt_q8_qr16.quantization.json,ckpt_q8_qr4.quantization.json,unit_tests.json,verdict.json,openloop/}`, `cloq/{spinquant,quarot}.py`, `tests/test_spinquant.py`, `scripts/a6000/{aq_validate,rot_gate_check,make_tasks_rotpanel}.py`, `scripts/a6000/worker.py` (spinquant kind), queue `done/rot_gate_qr_q8.json`, logs `/data/ziyangs/cloq_work/logs/{tasks/rot_*,ahook/{validate_q8_*,build_q8_*,ppl_*}}`.
+
 ## W99q — m24 results: none yet; the formal panel is not queued because the gate is incomplete (2026-10-02 04:10 PDT)
 **TL;DR** No formal m24 results exist, so no G/H/F, rescue/damage, turnover, interaction or interval is reported. The W99p gate's fork checks are blocked on infrastructure (a runner restart onto the multi-pair noderunner), and the protocol queues the panel only after the gate passes.
 - **Once the four fork gates pass:**

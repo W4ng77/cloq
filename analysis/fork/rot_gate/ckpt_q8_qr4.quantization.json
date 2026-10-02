@@ -1,0 +1,101 @@
+{
+ "method": "QuaRot",
+ "wbits": 4,
+ "rotation": {
+  "residual": "random Hadamard diag(s) H_d / sqrt(d) (cloq.rotate.random_hadamard)",
+  "seed": 0,
+  "norms_fused": true,
+  "embedding_mean_subtraction": false,
+  "v_proj_out": "per-head Hadamard H_hd",
+  "o_proj_in": "full Hadamard H_{nh*hd} (offline) + H_nh across heads (online)",
+  "down_proj_in": "H_12 kron H_1024 (offline + online)",
+  "qk": "per-head Hadamard after RoPE (online, cloq_kvq CLOQ_KVQ_ROT=qk)",
+  "d": 4096,
+  "num_heads": 32,
+  "head_dim": 128,
+  "num_kv_heads": 8,
+  "intermediate": 12288,
+  "down_had_K": 12,
+  "tied_untied": false,
+  "rotated_tensors": 254,
+  "rtn_quantized": 0
+ },
+ "weight_quant": {
+  "bits": 4,
+  "method": "GPTQ",
+  "granularity": "per output channel",
+  "sym": true,
+  "maxq": 7,
+  "clip": "MSE grid search (norm 2.4, grid 100, maxshrink 0.8) = --w_clip",
+  "gptq": {
+   "percdamp": 0.01,
+   "blocksize": 128,
+   "act_order": false,
+   "groupsize": -1,
+   "sequential": [
+    [
+     "self_attn.k_proj",
+     "self_attn.v_proj",
+     "self_attn.q_proj"
+    ],
+    [
+     "self_attn.o_proj"
+    ],
+    [
+     "mlp.up_proj",
+     "mlp.gate_proj"
+    ],
+    [
+     "mlp.down_proj"
+    ]
+   ]
+  },
+  "modules": [
+   "self_attn.q_proj",
+   "self_attn.k_proj",
+   "self_attn.v_proj",
+   "self_attn.o_proj",
+   "mlp.gate_proj",
+   "mlp.up_proj",
+   "mlp.down_proj"
+  ],
+  "storage": "dequantized bf16",
+  "mean_rel_weight_err": 0.017938815109017823
+ },
+ "calibration": {
+  "source": "WikiText-2 raw v1 train (Salesforce/wikitext arrow)",
+  "source_sha256": "57947bc7b58df4b19662c0609cc30651bc84328dab5fd588860b752072911789",
+  "rule": "'\\n\\n'.join(text) tokenized; random.seed(seed); randint windows",
+  "seed": 0,
+  "n_samples": 128,
+  "seq_len": 2048,
+  "n_tokens": 262144,
+  "token_ids_sha256": "ec0a043b2c48080ebb5cce82773928c13562007527fc443b1fd8f651a02820d8"
+ },
+ "requires_serve_env": {
+  "CLOQ_PYHOOKS": "1",
+  "CLOQ_AQ_HAD": "quarot"
+ },
+ "forbids_serve_env": {
+  "CLOQ_KVQ_ROT": "1"
+ },
+ "reference_serve_env_W4A4KV4": {
+  "CLOQ_PYHOOKS": "1",
+  "CLOQ_AQ_BITS": "4",
+  "CLOQ_AQ_FMT": "sym_quarot",
+  "CLOQ_AQ_CLIP": "0.9",
+  "CLOQ_AQ_HAD": "quarot",
+  "CLOQ_KVQ_BITS": "4",
+  "CLOQ_KVQ_ROT": "qk",
+  "CLOQ_KVQ_FMT": "quarot",
+  "CLOQ_KVQ_KCLIP": "0.95",
+  "CLOQ_KVQ_VCLIP": "0.95"
+ },
+ "invariance_check_hf": null,
+ "source_model": "Qwen/Qwen3-8B",
+ "source_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+ "source_dir": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+ "storage": "fake-quant bf16",
+ "seconds": 1273.8393998146057,
+ "build_seconds": 1276
+}
