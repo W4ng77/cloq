@@ -1,4 +1,4 @@
-# A6000 queue snapshot (2026-10-02 06:34:19 PDT)
+# A6000 queue snapshot (2026-10-02 07:04:21 PDT)
 
 ## running (24)
 
@@ -237,7 +237,7 @@
 - `a6k2_q32_ol_gauss0.1_s1` · 25 min · node007
 - `a6k2_q32_ol_gauss0.1_s2` · 24 min · node005
 
-## todo (97)
+## todo (99)
 
 - `a6k2_q14_tel_gauss0.1_s1`
 - `a6k2_q14_tel_gauss1_s1`
@@ -275,6 +275,8 @@
 - `fork_gate_same_m24_rtn_w4`
 - `fork_sameprec_q8_g3`
 - `fork_sameprec_q8_g6`
+- `kivi_diag_q8`
+- `kivi_gate_q8_r2`
 - `nmp_gate_bank_q8_quarot_w16`
 - `nmp_gate_bank_q8_quarot_w4`
 - `nmp_gate_bank_q8_quarot_w4a4`
