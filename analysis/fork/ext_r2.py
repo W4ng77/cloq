@@ -16,6 +16,8 @@ Inclusion (identical to analysis/fork/analyze_ext.py, whose load_dir and StratBo
   directories under analysis/fork/ext/dev; a directory whose QQ no-op sample mismatched (QUARANTINE file or
   dev_summary.qq_noop_ok) is dropped whole; excluded items (search exclusion, branch error/missing, state/original mismatch)
   leave the denominator; a divergent state enters only with all three B-involving branches present (four arms).
+  Replay-consistency guard (W99o, analyze_ext.replay_guard): the analysis FAILS if an admitted directory has a divergent
+  state with effects.jsonl replay != true. Models: --models (default q4,q8); q14 is analysed by ext_q14.py.
 Unit = item (ALFWorld game, BFCL entry; one run per item and cell). Denominator = the cell's divergent states (ratio).
 Intervals: percentile bootstrap, B = 2000, seed 20261001, items resampled with replacement within stratum (environment x
   category: alfworld; bfcl_base / bfcl_miss_param / bfcl_miss_func / bfcl_long_context), draws shared by all cells; ratio
@@ -95,11 +97,14 @@ def patterns16(div: list[dict]) -> dict:
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--B", type=int, default=AD.B_BOOT)
+    ap.add_argument("--models", default="q4,q8", help="model panel (default q4,q8; q14 is analysed by ext_q14.py)")
     a = ap.parse_args()
     t0 = time.time()
-    dirs = sorted(p for p in AE.DEV.glob("*") if p.is_dir())
+    models = a.models.split(",")
+    dirs = AE.select_dirs(AE.DEV, None, models)
     loaded = [AE.load_dir(d) for d in dirs]
     done = [L for L in loaded if not L["incomplete"]]
+    replay_counts = AE.replay_guard(done, "ext_r2")
     quarantined = [L["dir"] for L in done if L["quarantined"]]
     q_units = [u for L in done if L["quarantined"] for u in L["units"]]
     units = [u for L in done if not L["quarantined"] for u in L["units"]]
@@ -160,7 +165,10 @@ def main():
            "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "scale": "success (Y=1 success); recomputed from raw Y",
            "bootstrap": {"B": a.B, "seed": AD.SEED, "scheme": "items with replacement within stratum (env x category); ratio over divergent items; draws shared by all cells", "level": "95% percentile"},
            "input_dirs": [L["dir"] for L in done], "incomplete_dirs": [L["dir"] for L in loaded if L["incomplete"]],
-           "quarantined_dirs": quarantined, "noop_sample": {L["dir"]: L.get("noop") for L in done},
+           "quarantined_dirs": quarantined, "models": models,
+           "replay_guard": {"rule": "every divergent state of an admitted directory has effects.jsonl replay=true (W99o)", "pass": True,
+                            "per_dir": replay_counts},
+           "noop_sample": {L["dir"]: L.get("noop") for L in done},
            "excluded_by_reason": dict(sorted(defaultdict(int, {k: sum(1 for u in excluded if (u["excluded"].split(":")[0] if u["excluded"].startswith("search") else u["excluded"]) == k)
                                                                for k in {(u["excluded"].split(":")[0] if u["excluded"].startswith("search") else u["excluded"]) for u in excluded}}).items())),
            "cells": cells, "pooled": pools,

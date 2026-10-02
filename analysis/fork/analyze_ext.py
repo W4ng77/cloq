@@ -20,6 +20,14 @@ Pools (pre-declared, equal weight per cell, families never mixed): W4 = gptq_w4_
 kvq_int4; per environment (cells = model x arm) and across environments (cells = env x model x arm).
 Quarantine: a fork task directory whose QQ no-op sample mismatched (QUARANTINE file or dev_summary.qq_noop_ok) is
 dropped whole and listed. Incomplete directories (no branches.json yet) are skipped and listed.
+Replay-consistency guard (W99o): every divergent state of an admitted directory must carry effects.jsonl "replay": true
+(fork_ext.replay_consistency: backend-state hash before every replayed step identical across branches and equal to the
+search replay, prefix observations/messages equal to the recorded episode). A state with "replay" false or missing, or
+an admitted directory without effects.jsonl, makes the analysis FAIL (exit 3, nothing written) unless its directory is
+quarantined. W99g found the process-shared BFCL long-context backend state through this flag; the affected q4
+long-context forks were moved to analysis/fork/ext/quarantine/w99o/ and rerun with the fixed code (W99o).
+Models: --models (default q4,q8, the pre-declared ext panel). q14 (W99h scale check) is analysed by ext_q14.py and is never
+pooled here.
 Idempotent: the input fingerprint (script sha + every input file sha) is compared with existing outputs.
 
 usage: python analysis/fork/analyze_ext.py [--B 2000] -> analysis/fork/out/ext_<UTC>.{json,md}
@@ -83,6 +91,9 @@ def load_dir(d: Path) -> dict:
     for f in [d / "search.json", d / "branches.json"] + [d / n for n in ("effects.jsonl", "dev_summary.json") if (d / n).exists()]:
         res["files"][str(f.relative_to(ROOT))] = sha256(f)
     summ = json.loads((d / "dev_summary.json").read_text()) if (d / "dev_summary.json").exists() else {}
+    ef = d / "effects.jsonl"
+    replay = {json.loads(x)["state_id"]: json.loads(x).get("replay") for x in ef.read_text().splitlines() if x.strip()} if ef.exists() else None
+    res["has_effects"] = replay is not None
     qq = summ.get("qq_noop_ok") or [0, 0]
     res["noop"] = {"n": qq[1], "n_pass": qq[0]}
     if (d / "QUARANTINE").exists() or qq[0] != qq[1]:
@@ -113,11 +124,36 @@ def load_dir(d: Path) -> dict:
             else:
                 u["Y"] = {**{b: int(v) for b, v in y.items()}, "QQ": int(st["orig"]["reward"])}
                 u.update(div=True, t=st["decision_idx"], state_id=row["state_id"], type=dtype(st["divergence"]["category"]),
-                         category=st["divergence"]["category"], n_decisions=st["n_decisions_orig"])
+                         category=st["divergence"]["category"], n_decisions=st["n_decisions_orig"],
+                         replay_ok=(replay or {}).get(row["state_id"]) is True)
                 if int(st["orig"]["reward"]) != y0:
                     u["excluded"] = "state/original outcome mismatch"
         res["units"].append(u)
     return res
+
+
+def replay_guard(done: list[dict], who: str = "analyze_ext") -> dict:
+    """W99o: FAIL if any admitted (non-quarantined) directory has a divergent state whose backend state was not
+    replay-consistent, or has no effects.jsonl to verify it. Returns the per-directory counts when it passes."""
+    bad, counts = {}, {}
+    for L in done:
+        if L["quarantined"]:
+            continue
+        div = [u for u in L["units"] if u.get("div")]
+        nbad = sum(1 for u in div if not u.get("replay_ok"))
+        counts[L["dir"]] = {"states": len(div), "replay_inconsistent": nbad, "has_effects": L.get("has_effects", False)}
+        if nbad or not L.get("has_effects", False):
+            bad[L["dir"]] = counts[L["dir"]]
+    if bad:
+        msg = "; ".join(f"{k}: {v['replay_inconsistent']}/{v['states']} states replay-inconsistent"
+                        + ("" if v["has_effects"] else " (no effects.jsonl)") for k, v in bad.items())
+        raise SystemExit(f"{who}: FAIL replay-consistency guard (W99o): {msg}. Quarantine or rerun these directories.")
+    return counts
+
+
+def select_dirs(dev: Path, dirs_arg, models: list[str]) -> list[Path]:
+    return sorted(p for p in dev.glob("*") if p.is_dir() and (not dirs_arg or p.name in dirs_arg)
+                  and parse_dir(p.name)[1] in models)
 
 
 class StratBoot:
@@ -200,19 +236,22 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--B", type=int, default=B_BOOT)
     ap.add_argument("--dirs", nargs="*", default=None, help="only these task dirs under analysis/fork/ext/dev (testing)")
+    ap.add_argument("--models", default="q4,q8", help="model panel (default q4,q8; q14 is analysed by ext_q14.py)")
     a = ap.parse_args()
     t0 = time.time()
-    dirs = sorted(p for p in DEV.glob("*") if p.is_dir() and (not a.dirs or p.name in a.dirs))
+    models = a.models.split(",")
+    dirs = select_dirs(DEV, a.dirs, models)
     loaded = [load_dir(d) for d in dirs]
     done = [L for L in loaded if not L["incomplete"]]
     if not done:
         print("analyze_ext: no complete fork_ext dev directories yet; nothing to do.")
         return
+    replay_counts = replay_guard(done)
     script_sha = sha256(__file__)
     files = {k: v for L in done for k, v in L["files"].items()}
     tau_src = sorted((ROOT / "analysis/fork/out").glob("dev_all_*.json"))
     fp = hashlib.sha256(json.dumps({"script": script_sha, "analyze_dev": sha256(ROOT / "analysis/fork/analyze_dev.py"), "files": files,
-                                    "B": a.B, "dirs": a.dirs, "tau2": sha256(tau_src[-1]) if tau_src else None},
+                                    "B": a.B, "dirs": a.dirs, "models": models, "tau2": sha256(tau_src[-1]) if tau_src else None},
                                    sort_keys=True).encode()).hexdigest()[:16]
     OUT.mkdir(parents=True, exist_ok=True)
     for p in sorted(OUT.glob("ext_*.json")):
@@ -271,7 +310,9 @@ def main():
         "thresholds": {"g_min_pp": 100 * G_MIN},
         "success_definition": {"alfworld": "TextWorld infos['won']", "bfcl": "official multi_turn_checker valid"},
         "input_dirs": [L["dir"] for L in done], "incomplete_dirs": [L["dir"] for L in loaded if L["incomplete"]],
-        "quarantined_dirs": quarantined,
+        "quarantined_dirs": quarantined, "models": models,
+        "replay_guard": {"rule": "every divergent state of an admitted directory has effects.jsonl replay=true (W99o)", "pass": True,
+                         "per_dir": replay_counts},
         "excluded_by_reason": {k: sum(1 for u in excluded if (u["excluded"].split(":")[0] if u["excluded"].startswith("search") else u["excluded"]) == k)
                                for k in sorted({(u["excluded"].split(":")[0] if u["excluded"].startswith("search") else u["excluded"]) for u in excluded})},
         "noop_sample": {L["dir"]: L.get("noop") for L in done},
