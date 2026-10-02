@@ -10,6 +10,24 @@ Newest first.
 
 ---
 
+## W99k — Same-precision 2×2 fork (Q vs Q′): protocol pre-registered, gate PASS (q4, q8), 12 formal tasks queued (2026-10-02 00:55 PDT)
+**TL;DR** This adds the same-precision control asked for by the reviewer. The BF16 role is replaced by Q′ = GPTQ-W4 d2 (calibration c2), and Q = GPTQ-W4 d1 is unchanged. The fork pipeline is otherwise identical. The protocol was committed before any outcome: `docs/insights/SAMEPREC_PROTOCOL.md`, **sha256 5c58d1e7d07ef10bd39f841236fccfd1436107c57ad264c62eaf14df94735823** (commit 0d2f1ee). The gate passes for both cells. Blocks f01–f17 are queued at −28.
+- **Design.** Driver role B = Q′, so BB = Q′Q′, BQ = Q′Q, QB = QQ′ and QQ = QQ. The Q episodes are the same `a6k2_<m>_gptq_w4_d1_<blk>` runs as in the precision dev forks, so units pair task×block one to one. Cells: q4 (1 GPU) and q8 (2 GPUs, pinned to node004/005/007).
+- **Blocks.** The analysis set is the longest prefix of f01…f17 that is complete in both cells at the 2026-10-03 freeze, with a minimum target of f01–f06.
+- **Primary.** Paired ΔM = M_prec − M′ on the same units, pooled q4+q8. Intervals: fixed pool (t over block means if K < 10, block bootstrap if K ≥ 10) plus crossed.
+- **Secondary (descriptive).** Δ off-diagonal share, (a) on units that diverge in both designs and (b) on units that diverge at the same t*.
+- **Frozen rule (§6).** The "similar" case is an interval containing 0 with |Δ| ≤ 3 pp; in that case the paper says the effect is generic trajectory sensitivity. If the interval excludes 0 with Δ > 0, the paper reports a precision-specific excess. Any other result is reported as is.
+- **Gate.** Both cells pass every check:
+  - idcheck 16/16 for Q and for Q′, with distinct canaries.
+  - The Q′ prompt-id check excludes 0/12 search rows.
+  - The search finds states in 9/12 (q4) and 11/12 (q8) tasks.
+  - QQ no-op 6/6; Q′Q′ no-op on Q′'s own d2_n1 trajectory 4/4.
+  - Q replay, isolation 2/2, save/load, budget and re-prefill all pass.
+- **Queued.** `fork_sameprec_{q4,q8}_g1…g6` (3 blocks each; g6 = f16–f17), priority −28. Expected wall time: about 2.5 h per q4 task and 3.5 h per q8 task once a GPU is free. On the current busy cluster, f01–f06 should finish in about 4–8 h and f01–f17 in about 12–24 h.
+- **Analysis.** `analysis/fork/analyze_sameprec.py` imports the analyze_dev and analyze_ghf code and refuses to run on a protocol sha mismatch. It was dry-run with the precision directories standing in for both designs: ΔM = 0 exactly, and the precision cells reproduce dev_all (q4 M 15.6 on f01–f17 vs 15.5 on 20 blocks).
+
+Evidence: `docs/insights/SAMEPREC_PROTOCOL.md`, `manifests/fork/sameprec_v1.json`, `scripts/a6000/make_tasks_sameprec.py`, `analysis/fork/analyze_sameprec.py`, `analysis/fork/sameprec/GATE.md`, `analysis/fork/sameprec/gate/{q4,q8}/gate.json`, queue `done/fork_sameprec_gate_{q4,q8}.json`, `todo/fork_sameprec_{q4,q8}_g*.json`, logs `/data/ziyangs/cloq_work/logs/tasks/fork_sameprec_*.log`.
+
 ## W99v — New-method common panels frozen: τ² U2B ordinary-state bank (q8, 6 blocks) + 200-item BFCL panel; protocol, manifest, builder, analysis skeleton (2026-10-02 PDT)
 **TL;DR** This entry freezes the common panels that the QuaRot/SpinQuant (q8 W4) and KIVI (q8 KV) agents and the Mistral agent run against. CPU only; nothing was queued and no outcome was read.
 - **Panel A (τ²).** Sub-bank **U2B**: one ordinary state per task × block on the BF16 trajectory `a6k2_q8_bfpair_<blk>`, using the Bank U rule.
