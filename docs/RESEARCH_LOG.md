@@ -10,6 +10,24 @@ Newest first.
 
 ---
 
+## W100c-b — Paper: §5 direction split filled from W100d (shared action-side core; continuation-side and controller-dependent flips largely substitution-specific); F7 in the appendix (2026-10-02 PDT)
+**TL;DR** The §5 direction-split `\pending{}` slot is filled from `analysis/fork/out/sameprec_split_20261002T145148Z.{md,json}` (INTERIM, K = 6, descriptive). The main points:
+- The action side (G) shares a core above the within-task shuffle: rescue κ 0.60, harm κ 0.54; 56% of flipping units are design-specific, against 72% under the shuffle.
+- H and F overlap at or near the shuffle level: H rescue κ 0.20; F κ 0.34/0.35, at chance under the task×Y_QQ null.
+- Off-diagonal κ is 0.29, against a null of 0.23. 70% of off-diagonal units are off-diagonal under one design only.
+- F flip volume differs: 193 vs 149, +4.3 [+0.4, +8.3] pp.
+- Net ΔG −1.6 [−6.2, +3.0] pp comes only from the design-specific units and is not resolved.
+- Cross-direction counts are 0 by construction. They are stated as such, not as evidence.
+
+Other changes:
+- The abstract and intro bullet now carry the shared-core nuance; 138/245 is kept.
+- F7 (`make_fig_sameprec_split.py`) is Appendix Fig. `fig:split` and is added to `figures/provenance.json`.
+- The common-state paragraph now names the test: does the continuation-side difference hold on identical states?
+- The Discussion's "Bank P and Bank U" paragraph moved to Appendix "Ordinary states" to keep the page budget. Limitations starts at the top of p. 9.
+- Build: 0 undefined references, 0 overfull boxes. `check_numbers.py` PASS (3071 numbers).
+
+Evidence: `paper/latex/sections/{abstract,introduction,results_r2,appendix_moved,discussion}.tex`, `paper/latex/figures/f7_sameprec_split.pdf`, `paper/latex/figures/provenance.json`.
+
 ## W100d — Same-precision split: which units BF16 vs GPTQ-W4 d2 rescue and harm (INTERIM, descriptive, K = 6) (2026-10-02 07:55 PDT)
 **TL;DR** This analysis asks whether the two substitutions have similar flip volume but rescue and harm different units. It uses the same 1020 task×block units as `sameprec_overlap.py` (q4+q8, f01–f06). It is INTERIM and descriptive (A1.4) and does not enter the reading. Re-run it on the frozen prefix after 10-03.
 - **Action side (G, BQ vs QQ): the volume is similar and the units share a large core.**

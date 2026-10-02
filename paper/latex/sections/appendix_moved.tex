@@ -65,6 +65,8 @@ Per-state arm outcomes track the original single runs (correlation 0.63--0.68). 
 With 20 states per cell, this control cannot resolve the few-pp contrasts of Table~\ref{tab:ghf} (on this sample even the original simulator gives $G-H=0.0$ in both q8 W4 cells), so it neither confirms nor reverses the within-cell orderings. % src: analysis/fork/out/simctrl_p_20261002T015200Z.md (q8 cells)
 Per-cell estimates under both simulators are in Figure~\ref{fig:simctrlp}, and an exploratory mean squared interaction under Sonnet is in Appendix~\ref{app:simctrlp}.
 
+\paragraph{Bank P and Bank U measure different quantities.} Bank P skips text-only differences by design, yet these make up 150 of the 208 outcome-changing rows at ordinary states, and their labels did not reproduce under a second simulator (Appendix~\ref{app:banku}; \S\ref{sec:value}). Including text actions requires a simulator control before their consequences are reported as a property of the action. % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§3); analysis/fork/out/simctrl_20261001T212742Z.md; derived: 150=45+28+44+25+10+6-5-3; 208=99+99+18-5-3
+
 \subsection{Token-level analysis}
 \label{app:token}
 
@@ -80,3 +82,10 @@ On development data, uncertainty is associated with \emph{where} quantization ch
 
 Per model (interim, \pending{$K=6$}), the turnover difference is $\Delta M=+0.6$ [$-3.1$, $+4.3$]\pp{} in q4 and $-2.5$ [$-5.6$, $+0.5$] in q8 (fixed pool, 95\%), with crossed intervals [$-5.5$, $+6.9$] and [$-7.3$, $+2.7$]. Within $\pm$3\pp{}, equivalence is shown for no per-model $\Delta M$ or $\Delta\Gall$; the q8 off-diagonal difference ($+0.40$, 90\% [$-2.12$, $+2.92$]) is the only per-model contrast inside the margin. The protocol originally mapped ``interval includes 0 and $|\Delta M|\le3$\pp{}'' to ``similar''; after the interim result had been seen, an amendment replaced that reading by two one-sided tests, which are stricter, and changed no estimate. % src: analysis/fork/out/sameprec_20261002T142834Z.md (Paired differences; Amendment A1 table; analysis set K = 6); docs/insights/SAMEPREC_PROTOCOL.md (Amendment A1)
 Acceptance: every state in both designs passed Q replay and every branch passed the prefix and environment checks; QQ no-op samples passed 265/265 (precision) and 162/162 (same precision), and no directory was quarantined. At the unit level, $\kappa$ is 0.43 in q4 and 0.61 in q8; at the task level, cross-design agreement at matched noise is 0.765 of within-design replication. % src: analysis/fork/out/sameprec_20261002T142834Z.md (Acceptance); analysis/fork/out/sameprec_overlap_20261002T143218Z.md (Agreement; Task-level, pooled cross/within)
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/f7_sameprec_split.pdf}
+\caption{Which units the two substitutions rescue and harm (q4 and q8 GPTQ-W4 pooled; 1020 units; interim, \pending{$K=6$}; descriptive). (a)~Per contrast ($G$: action side, BQ vs.\ QQ; $H$: continuation side, QB vs.\ QQ; $F$: full substitution, BB vs.\ QQ) and substitution (B, or the second W4 checkpoint in the B role): rescues above zero and harms below, split into units shared by both substitutions and substitution-specific units; the bar-top number is the flip count and the diamond the net. (b)~Cohen's $\kappa$ of each set between the two substitutions (block-bootstrap 95\%) against a shuffle null (grey: within task and QQ outcome for rescue and harm sets, within task for the off-diagonal set). Rescue under one substitution and harm under the other cannot co-occur, because the QQ episode is shared.} % src: analysis/fork/out/sameprec_split_20261002T145148Z.json; analysis/fork/out/sameprec_split_20261002T145148Z.md
+\label{fig:split}
+\end{figure*}
