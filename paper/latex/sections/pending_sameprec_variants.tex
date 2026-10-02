@@ -1,0 +1,64 @@
+% ===========================================================================================================
+% Same-precision baseline: pre-written outcome variants (NOT \input anywhere; nothing here is rendered).
+% Protocol: docs/insights/SAMEPREC_PROTOCOL.md (sameprec-v1; §5 estimands, §6 frozen interpretation rule).
+% Rule (§6), on the pooled q4+q8 estimate with its primary fixed-pool interval; "a few pp" = 3 pp:
+%   * Variant A (precision-specific excess): the Delta M interval excludes 0 with Delta M > 0.
+%       Report Delta M with its interval and its share Delta M / M_prec.
+%   * Variant B (largely generic sensitivity): the Delta M interval includes 0 and |Delta M| <= 3 pp.
+%       If Delta off is ALSO in the "similar" case, the paper must say that turnover AND controller dependence
+%       largely reflect generic trajectory sensitivity (sentences B below). If only M is "similar", use the
+%       turnover sentences of B and report Delta off as is (descriptive).
+%   * Any other result (interval includes 0 but |Delta M| > 3 pp; or Delta M < 0 with the interval excluding 0):
+%       report as is, "not resolved by this control" / "same-precision turnover at least as large", with numbers.
+% Delta off is always labelled descriptive (different state sets) and stated with readings (a) and (b).
+% To switch in: copy the chosen variant's sentence over the \pending{} slot named in its header, fill every
+% \pending{} with numbers from analysis/fork/out/sameprec_<UTC>.md (with a "% src:" comment), and delete the
+% other variant. Slots: abstract.tex (clause after finding ii), introduction.tex (bullet 2, last sentence),
+% results_r1.tex (Same-precision baseline), results_r2.tex (Same-precision baseline (descriptive)),
+% discussion.tex (When to escalate), limitations.tex (One user simulator; two small controls, last sentence),
+% introduction.tex (Contributions (2), variant B only).
+% ===========================================================================================================
+\iffalse
+
+% ---------------------------------------------------------------- VARIANT A: precision-specific excess
+% [abstract, replaces the \pending{} reading]
+A same-precision baseline, with a second GPTQ-W4 calibration draw in place of BF16, tests whether turnover and controller dependence are specific to precision: BF16 turns over \pending{$\Delta M$} more task-block units than the second draw does (\pending{share} of its turnover). % src: docs/insights/SAMEPREC_PROTOCOL.md (§6)
+
+% [introduction, bullet 2, last sentence]
+A same-precision baseline (a second GPTQ-W4 calibration draw in place of B) shows that part of this turnover is specific to precision: $\Delta M=$~\pending{$\Delta M$ [CI]}\pp{}, \pending{share} of $M$; the controller-dependence comparison is descriptive (\pending{off$'$} vs.\ \pending{off}). % src: docs/insights/SAMEPREC_PROTOCOL.md (§6)
+
+% [R1, Same-precision baseline, last sentence]
+By the frozen rule, turnover exceeds the same-precision level: the precision-specific excess is $\Delta M=$~\pending{$\Delta M$ [CI]}\pp{}, \pending{share} of $M$. % src: docs/insights/SAMEPREC_PROTOCOL.md (§6)
+
+% [R2, Same-precision baseline (descriptive)]
+With Q$'$ in place of B (\S\ref{sec:r1}), the off-diagonal share is \pending{off$'$} against \pending{off} with B on the same blocks. Each design selects its own states, so this comparison is descriptive. On units that diverge in both designs the shares are \pending{(a)}, and \pending{(b)} where both diverge at the same decision. % src: docs/insights/SAMEPREC_PROTOCOL.md (§5)
+
+% [Discussion, When to escalate]
+Part of the turnover is specific to precision: a second calibration draw of the same quantizer turns over \pending{$\Delta M$}\pp{} fewer units than BF16 does.
+
+% [Limitations, last sentence of "One user simulator; two small controls"]
+The same-precision baseline (\S\ref{sec:r1}) is our only reference for how much turnover and controller dependence a non-precision perturbation produces; it covers GPTQ-W4 on the development panel only, so the precision-specific excess is not established for AWQ, KV8 or the stress cells.
+
+% ---------------------------------------------------------------- VARIANT B: largely generic sensitivity
+% [abstract, replaces the \pending{} reading]
+A same-precision baseline, with a second GPTQ-W4 calibration draw in place of BF16, tests whether turnover and controller dependence are specific to precision: they are not; both largely reflect generic trajectory sensitivity of the closed loop ($\Delta M=$~\pending{$\Delta M$ [CI]}\pp{}). % src: docs/insights/SAMEPREC_PROTOCOL.md (§6)
+
+% [introduction, bullet 2, last sentence]
+A same-precision baseline (a second GPTQ-W4 calibration draw in place of B) gives similar turnover ($\Delta M=$~\pending{$\Delta M$ [CI]}\pp{}) and, descriptively, similar controller dependence (\pending{off$'$} vs.\ \pending{off}), so both largely reflect generic trajectory sensitivity of the closed loop rather than precision-specific effects. % src: docs/insights/SAMEPREC_PROTOCOL.md (§6)
+
+% [introduction, Contributions (2): append]
+A same-precision baseline shows that turnover and controller dependence are largely properties of the closed loop, not of precision.
+
+% [R1, Same-precision baseline, last sentence]
+By the frozen rule, the turnover largely reflects generic trajectory sensitivity of the closed loop rather than a precision-specific effect ($\Delta M=$~\pending{$\Delta M$ [CI]}\pp{}, within $\pm3$\pp{}). % src: docs/insights/SAMEPREC_PROTOCOL.md (§6)
+
+% [R2, Same-precision baseline (descriptive)]
+With Q$'$ in place of B (\S\ref{sec:r1}), the off-diagonal share is \pending{off$'$} against \pending{off} with B on the same blocks (descriptive; each design selects its own states), \pending{(a)} on units that diverge in both designs and \pending{(b)} where both diverge at the same decision. Controller dependence therefore largely reflects generic trajectory sensitivity rather than a precision-specific effect. % src: docs/insights/SAMEPREC_PROTOCOL.md (§5, §6)
+
+% [Discussion, When to escalate]
+Because a second calibration draw of the same quantizer produces similar turnover and controller dependence, these are largely properties of the closed loop that any change of action exposes, not of precision.
+
+% [Limitations, last sentence of "One user simulator; two small controls"]
+The same-precision baseline (\S\ref{sec:r1}) is our only reference for how much turnover and controller dependence a non-precision perturbation produces; it covers GPTQ-W4 on the development panel only, so the "generic sensitivity" reading is not established for AWQ, KV8 or the stress cells.
+
+\fi

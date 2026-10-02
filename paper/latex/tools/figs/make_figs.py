@@ -471,7 +471,7 @@ def f4():
         ax.set_xlim(3, 22)
         ax.set_xlabel("escalation budget (%)")
     kw = dict(lw=1.2, ms=3.4)
-    a.plot(xs, net_or, color=INK, marker="^", label="matched oracle", **kw)
+    a.plot(xs, net_or, color=INK, marker="^", label="matched oracle (a); max. capturable (b)", **kw)
     a.plot(xs, net_fr, color=BLUE, marker="o", label="frozen Q-only trigger", **kw)
     a.plot(xs, net_rd, color=MUTED, marker="s", mfc="white", label="random (expected)", **kw)
     a.plot(xs, net_kl, color=AQUA, marker="x", lw=0.8, ms=3.4, alpha=0.6, label="KL ref. (post hoc)")
