@@ -24,7 +24,12 @@ Weights (w_bits < 16): per output channel, symmetric, clip ratio from the MSE gr
                   true-sequential groups k,v,q -> o -> up,gate -> down, inputs propagated through quantized layers).
 lm_head, embeddings, norms stay BF16 (lm_head quantization is skipped in the reference too).
 
+SpinQuant (W99r): --rotations R.pt (cloq.spinquant learn) replaces the random Hadamard R1 and the per-head H_hd by the
+learned R1 / per-layer R2 and keeps everything else (online Hadamards, GPTQ, calibration), so SpinQuant and QuaRot
+differ only in the rotation (tests/test_spinquant.py; analysis/fork/rot_gate/GATE.md).
+
 usage: python -m cloq.quarot --src <hf snapshot> --out <dir> [--wbits 4 --wmethod rtn|gptq] [--seed 0]
+                             [--rotations R.pt --rotations-sha256 <sha>]
 """
 
 from __future__ import annotations
@@ -60,9 +65,42 @@ def _sha256(p: Path) -> str:
     return h.hexdigest()
 
 
+def load_rotations(path: Path, d: int, hd: int, n_layers: int, sha256: str | None = None) -> tuple[torch.Tensor, list, dict]:
+    """Learned rotations (cloq.spinquant learn -> R.pt: {"R1": [d, d], "R2": [n_layers x [hd, hd]]}), fp64 and
+    projected onto the orthogonal group (polar factor U V^T of the SVD; the fp32 Cayley iterates drift ~1e-6 from it).
+    Returns (R1, [R2_l], provenance)."""
+    raw = Path(path).read_bytes()
+    got = hashlib.sha256(raw).hexdigest()
+    if sha256 and got != sha256:
+        raise SystemExit(f"rotations {path}: sha256 {got} != expected {sha256}")
+    R = torch.load(path, map_location="cpu")
+    R1 = R["R1"].to(torch.float64)
+    R2 = [r.to(torch.float64) for r in R["R2"]]
+    assert R1.shape == (d, d) and len(R2) == n_layers and all(r.shape == (hd, hd) for r in R2), "rotation shapes"
+
+    def polar(M):
+        U, _, Vh = torch.linalg.svd(M)
+        return U @ Vh
+
+    I_d, I_h = torch.eye(d, dtype=torch.float64), torch.eye(hd, dtype=torch.float64)
+    pre = {"R1": float((R1 @ R1.T - I_d).abs().max()), "R2_max": max(float((r @ r.T - I_h).abs().max()) for r in R2)}
+    R1p, R2p = polar(R1), [polar(r) for r in R2]
+    prov = {"path": str(path), "sha256": got, "orth_err_stored": pre,
+            "polar_shift_max": {"R1": float((R1p - R1).abs().max()), "R2": max(float((a - b).abs().max()) for a, b in zip(R2p, R2))},
+            "orth_err_used": {"R1": float((R1p @ R1p.T - I_d).abs().max()),
+                              "R2_max": max(float((r @ r.T - I_h).abs().max()) for r in R2p)},
+            "learn_meta": R.get("meta")}
+    return R1p, R2p, prov
+
+
 @torch.no_grad()
-def transform(src: Path, out: Path, seed: int, dev: str, wbits: int | None, log) -> dict:
-    """Streamed offline QuaRot transforms (+ optional QuaRot-RTN). Writes bf16 shards to out."""
+def transform(src: Path, out: Path, seed: int, dev: str, wbits: int | None, log, rotations: tuple | None = None) -> dict:
+    """Streamed offline QuaRot transforms (+ optional QuaRot-RTN). Writes bf16 shards to out.
+    rotations = (R1, [R2_l]) (load_rotations): SpinQuant's learned R1 replaces the random Hadamard Q, and the per-layer
+    learned R2 replaces QuaRot's per-head H_hd on the v_proj output and on the o_proj input, keeping the rest of the
+    QuaRot skeleton (across-head H_nh on the o_proj input, offline + online; H_K kron H_{n/K} on the down_proj input).
+    With R1 = random_hadamard(d, seed) and R2 = H_hd / sqrt(hd) this is exactly the QuaRot transform
+    (tests/test_spinquant.py)."""
     cfg = json.load(open(src / "config.json"))
     tc = _text_cfg(cfg)
     d, nh, n_kv = int(tc["hidden_size"]), int(tc["num_attention_heads"]), int(tc["num_key_value_heads"])
@@ -72,7 +110,8 @@ def transform(src: Path, out: Path, seed: int, dev: str, wbits: int | None, log)
     assert hd & (hd - 1) == 0 and nh & (nh - 1) == 0, "QuaRot's per-head / across-head Hadamards need powers of 2"
     K, HK = had_factor(inter)
     HKl = hadK_list(K, HK)
-    Q = random_hadamard(d, seed).to(dev, torch.float64)
+    Q = (rotations[0] if rotations else random_hadamard(d, seed)).to(dev, torch.float64)
+    R2s = [r.to(dev, torch.float64) for r in rotations[1]] if rotations else None
     shards = sorted(src.glob("*.safetensors"))
     norms, embed_shard, has_head = {}, None, False
     for sh in shards:
@@ -110,12 +149,17 @@ def transform(src: Path, out: Path, seed: int, dev: str, wbits: int | None, log)
                 elif sub in READ_IN:
                     w = norms[f"model.layers.{m.group(1)}.{READ_IN[sub]}.weight"]
                     W = (t.to(dev, torch.float64) * w[None, :]) @ Q
-                    if sub == "self_attn.v_proj.weight":  # rotate_ov_proj: H_hd on each kv head's output rows
+                    if sub == "self_attn.v_proj.weight" and R2s is not None:  # SpinQuant R2: v_h <- v_h R2
+                        W = (R2s[int(m.group(1))].T @ W.reshape(n_kv, hd, d)).reshape(n_kv * hd, d)
+                    elif sub == "self_attn.v_proj.weight":  # rotate_ov_proj: H_hd on each kv head's output rows
                         Wv = W.reshape(n_kv, hd, d).transpose(1, 2)  # (kv, d, hd)
                         W = had_transform(Wv, 1, None).transpose(1, 2).reshape(n_kv * hd, d)
                 elif sub in WRITE_OUT:
                     W = Q.T @ t.to(dev, torch.float64)
-                    if sub == "self_attn.o_proj.weight":  # rotate_ov_proj: full Hadamard on the input dim
+                    if sub == "self_attn.o_proj.weight" and R2s is not None:  # W (H_nh kron R2): R2 per head, H_nh across
+                        assert W.shape[1] == nh * hd
+                        W = had_heads((W.reshape(-1, nh, hd) @ R2s[int(m.group(1))]).reshape(-1, nh * hd), nh)
+                    elif sub == "self_attn.o_proj.weight":  # rotate_ov_proj: full Hadamard on the input dim
                         assert W.shape[1] == nh * hd
                         W = had_transform(W, 1, None)
                     else:  # rotate_mlp_output: exact Hadamard on the down_proj input dim
@@ -318,6 +362,8 @@ def main(argv=None):
     ap.add_argument("--seqlen", type=int, default=2048)
     ap.add_argument("--calib-seed", type=int, default=0)
     ap.add_argument("--check", action="store_true", help="HF invariance check of the transforms (16-bit weights)")
+    ap.add_argument("--rotations", default=None, help="SpinQuant learned R1/R2 (cloq.spinquant learn -> R.pt)")
+    ap.add_argument("--rotations-sha256", default=None)
     ap.add_argument("--source-model", default=None)
     ap.add_argument("--source-revision", default=None)
     ap.add_argument("--no-sha", action="store_true")
@@ -335,7 +381,15 @@ def main(argv=None):
     gptq = a.wbits < 16 and a.wmethod == "gptq"
     stage = out.parent / (out.name + "_rot16") if gptq else out
     stage.mkdir(parents=True, exist_ok=True)
-    info = transform(src, stage, a.seed, dev, a.wbits if rtn else None, log)
+    rots, rot_prov = None, None
+    if a.rotations:
+        tc = _text_cfg(json.load(open(src / "config.json")))
+        hd = int(tc.get("head_dim") or int(tc["hidden_size"]) // int(tc["num_attention_heads"]))
+        R1, R2, rot_prov = load_rotations(Path(a.rotations), int(tc["hidden_size"]), hd, int(tc["num_hidden_layers"]),
+                                          a.rotations_sha256)
+        rots = (R1, R2)
+        log(f"learned rotations {a.rotations} sha {rot_prov['sha256'][:12]} orth {rot_prov['orth_err_stored']}")
+    info = transform(src, stage, a.seed, dev, a.wbits if rtn else None, log, rots)
     check = invariance_check(src, stage, info, dev) if (a.check and not rtn) else None
     calib, wstats = None, info.pop("per_tensor")
     if gptq:
@@ -351,14 +405,18 @@ def main(argv=None):
         "gptq": {"percdamp": 0.01, "blocksize": 128, "act_order": False, "groupsize": -1,
                  "sequential": SEQUENTIAL} if gptq else None,
         "modules": list(LIN), "storage": "dequantized bf16", "mean_rel_weight_err": float(np.mean(rels)) if rels else None}
+    base = "SpinQuant" if rots else "QuaRot"
     meta = {
-        "method": ("QuaRot" if gptq else "QuaRot-RTN") if a.wbits < 16 else "QuaRot-rotation (W16)",
+        "method": (base if gptq else base + "-RTN") if a.wbits < 16 else base + "-rotation (W16)",
         "wbits": a.wbits if a.wbits < 16 else None,
         "rotation": {"residual": "random Hadamard diag(s) H_d / sqrt(d) (cloq.rotate.random_hadamard)", "seed": a.seed,
                      "norms_fused": True, "embedding_mean_subtraction": False,
                      "v_proj_out": "per-head Hadamard H_hd", "o_proj_in": "full Hadamard H_{nh*hd} (offline) + H_nh across heads (online)",
                      "down_proj_in": f"H_{info['down_had_K']} kron H_{info['intermediate'] // info['down_had_K']} (offline + online)",
-                     "qk": "per-head Hadamard after RoPE (online, cloq_kvq CLOQ_KVQ_ROT=qk)", **info},
+                     "qk": "per-head Hadamard after RoPE (online, cloq_kvq CLOQ_KVQ_ROT=qk)", **info,
+                     **({"learned": {"R1": "learned (cloq.spinquant, replaces the random Hadamard; seed unused)",
+                                     "R2": "learned per layer; replaces H_hd on v_proj out / o_proj in (H_nh across heads kept)",
+                                     **rot_prov}} if rots else {})},
         "weight_quant": wq, "calibration": calib,
         "requires_serve_env": {"CLOQ_PYHOOKS": "1", "CLOQ_AQ_HAD": "quarot"},
         "forbids_serve_env": {"CLOQ_KVQ_ROT": "1"},

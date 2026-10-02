@@ -44,6 +44,7 @@ H = {"CLOQ_PYHOOKS": "1"}
 QR_KV4 = {"CLOQ_KVQ_BITS": "4", "CLOQ_KVQ_ROT": "qk", "CLOQ_KVQ_FMT": "quarot", "CLOQ_KVQ_KCLIP": "0.95", "CLOQ_KVQ_VCLIP": "0.95"}
 QR_A4 = {"CLOQ_AQ_BITS": "4", "CLOQ_AQ_FMT": "sym_quarot", "CLOQ_AQ_CLIP": "0.9", "CLOQ_AQ_HAD": "quarot"}
 QR_A16 = {"CLOQ_AQ_BITS": "16", "CLOQ_AQ_HAD": "quarot"}
+KV16R = {**QR_KV4, "CLOQ_KVQ_BITS": "16"}
 FULL = dict(det=True, chunk=True, causal=True, openloop=150)
 SUITES = {
     "a8": {
@@ -73,14 +74,51 @@ SUITES = {
         "qr_w4a4kv16": ({**H, **QR_A4}, "qr4", dict(openloop=150)),
         "qr_w4a4kv16r": ({**H, **QR_A4, **QR_KV4, "CLOQ_KVQ_BITS": "16"}, "qr4", dict(det=True, openloop=150)),
     },
+    "spin": {  # W99r gate (analysis/fork/rot_gate/GATE.md): SpinQuant (learned R1/R2) vs QuaRot (random); KV16 with the
+        # online Q/K rotation on (kv16r = the panel's serving config, NEWMETHOD_PANEL_PROTOCOL §8)
+        "bf16": ({}, None, dict(det=True, tput=True, openloop=400, topk=400)),
+        "qr_w16a16": ({**H, **QR_A16, **KV16R}, "qr16", dict(det=True, openloop=400, topk=400)),
+        "sp_w16a16": ({**H, **QR_A16, **KV16R}, "sp16", dict(det=True, openloop=400, topk=400)),
+        "qr_w16a4": ({**H, **QR_A4, **KV16R}, "qr16", dict(openloop=400, topk=400)),
+        "sp_w16a4": ({**H, **QR_A4, **KV16R}, "sp16", dict(openloop=400, topk=400)),
+        "qr_w4a16": ({**H, **QR_A16, **KV16R}, "qr4", dict(det=True, tput=True, openloop=400, topk=400)),
+        "qr_w4a4": ({**H, **QR_A4, **KV16R}, "qr4", dict(det=True, chunk=True, causal=True, tput=True, openloop=400, topk=400)),
+        "sp_w4a4": ({**H, **QR_A4, **KV16R}, "sp4", dict(det=True, chunk=True, causal=True, tput=True, openloop=400, topk=400)),
+    },
 }
 PAIRS = {"kvr": [("qr_w16a16kv16r", "qr_w16a16"), ("qr_w4a4kv16r", "qr_w4a4kv16")]}
+SPIN_R = Path(os.environ.get("CLOQ_SPIN_R", "/data/ziyangs/cloq_work/rot/spinquant_q8_a4_s0/R.pt"))
+OUT_DIR_TOPK = "analysis/fork/rot_gate/openloop"
 CKPTS = {  # name -> cloq builder argv (after --src/--out)
     "sq": ["-m", "cloq.smoothquant", "--alpha", "auto"],
     "sq0": None,  # SmoothQuant's W8 per-channel without smoothing: built by cloq.smoothquant --alpha none
     "qr16": ["-m", "cloq.quarot", "--wbits", "16", "--check"],
     "qr4": ["-m", "cloq.quarot", "--wbits", "4", "--wmethod", "gptq"],
+    "sp16": ["-m", "cloq.quarot", "--wbits", "16", "--check", "--rotations", str(SPIN_R)],
+    "sp4": ["-m", "cloq.quarot", "--wbits", "4", "--wmethod", "gptq", "--rotations", str(SPIN_R)],
 }
+SPIN_PPL = "analysis/fork/rot_gate/ppl_q8.json"
+
+
+def ppl_probe(name: str, path: str, env: dict, logdir: Path, abits: str, had: str = "quarot") -> None:
+    """WikiText-2 test perplexity of a built checkpoint in HF (cloq.spinquant ppl), before any server holds the GPU."""
+    with open(logdir / f"ppl_{name}.log", "w") as lf:
+        r = subprocess.run([sys.executable, "-m", "cloq.spinquant", "ppl", "--ckpt", path, "--name", name, "--had", had,
+                            "--abits", abits, "--out", str(ROOT / SPIN_PPL)], cwd=ROOT, env=env, stdout=lf, stderr=subprocess.STDOUT)
+    if r.returncode != 0:
+        raise RuntimeError(f"ppl {name} failed; see {logdir}/ppl_{name}.log")
+
+
+def throughput(port: int, ps: list, n: int = 16, max_tokens: int = 256) -> dict:
+    """Decode throughput: n concurrent agent prompts, greedy, max_tokens each (EOS may stop earlier)."""
+    from concurrent.futures import ThreadPoolExecutor
+    t0 = time.time()
+    with ThreadPoolExecutor(n) as ex:
+        outs = list(ex.map(lambda x: complete(port, x, max_tokens), ps[:n]))
+    dt = time.time() - t0
+    gen = sum(len(o["ids"] or []) for o in outs)
+    return {"n_requests": n, "max_tokens": max_tokens, "generated_tokens": gen, "prompt_tokens": sum(len(x) for x in ps[:n]),
+            "wall_s": round(dt, 2), "gen_tok_per_s": round(gen / dt, 1)}
 
 
 def build(name: str, model: dict, env: dict, logdir: Path, a) -> tuple[str, dict]:
@@ -90,6 +128,8 @@ def build(name: str, model: dict, env: dict, logdir: Path, a) -> tuple[str, dict
         return str(out), json.load(open(out / "quantization.json"))
     shutil.rmtree(out, ignore_errors=True)
     argv = CKPTS[name] if name != "sq0" else ["-m", "cloq.smoothquant", "--alpha", "none"]
+    if name in ("sp16", "sp4"):  # pin the learned rotations by the sha recorded by cloq.spinquant learn
+        argv = argv + ["--rotations-sha256", json.load(open(SPIN_R.parent / "learn.json"))["R_sha256"]]
     cmd = [sys.executable, *argv, "--src", src, "--out", str(out), "--no-sha",
            "--source-model", model["hf_id"], "--source-revision", model["revision"]]
     t0 = time.time()
@@ -100,7 +140,8 @@ def build(name: str, model: dict, env: dict, logdir: Path, a) -> tuple[str, dict
     q = json.load(open(out / "quantization.json"))
     q["build_seconds"] = round(time.time() - t0)
     rec = {k: v for k, v in q.items() if k not in ("per_tensor", "weight_files")}
-    (ROOT / f"analysis/ahook/ckpt_{a.model}_{name}.quantization.json").write_text(json.dumps(rec, indent=1))
+    rdir = "analysis/fork/rot_gate" if a.suite == "spin" else "analysis/ahook"
+    (ROOT / f"{rdir}/ckpt_{a.model}_{name}.quantization.json").write_text(json.dumps(rec, indent=1))
     return str(out), q
 
 
@@ -172,6 +213,8 @@ def main():
     ap.add_argument("--n-det", type=int, default=8)
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
+    global SPIN_PPL
+    SPIN_PPL = a.out[:-5] + "_ppl.json" if a.out.endswith(".json") else a.out + "_ppl.json"  # one file per task (parallel tasks)
     m = MODELS[a.model]
     port = int(os.environ["CLOQ_TASK_PORT"])
     gpus = os.environ["CUDA_VISIBLE_DEVICES"]
@@ -196,9 +239,13 @@ def main():
         procs = []
         try:
             path = snapshot(m["hf_id"], m["revision"])
+            if a.suite == "spin" and name == "bf16" and not (ROOT / SPIN_PPL).exists():
+                ppl_probe("bf16", path, base_env, logdir, "16", had="0")
             if ck:
                 if ck not in built:
                     built[ck] = build(ck, m, base_env, logdir, a)
+                    if a.suite == "spin":
+                        ppl_probe(ck, built[ck][0], base_env, logdir, "16,4")
                 path, q = built[ck]
                 r["ckpt_method"] = q.get("method")
                 for k, v in (q.get("requires_serve_env") or {}).items():
@@ -218,13 +265,23 @@ def main():
                 r["causal"] = [causal_test(port, lp) for lp in longp]
             if tests.get("chunk"):
                 cold = [complete(port, x) for x in ps]
+            if tests.get("tput"):
+                r["throughput"] = [throughput(port, fill + ps), throughput(port, fill + ps)]  # 2nd = warm
             if tests.get("openloop"):
-                ol = f"analysis/ahook/openloop_{a.model}_{name}"
+                ol = f"analysis/ahook/openloop_{a.model}_{name}" if a.suite != "spin" else f"{OUT_DIR_TOPK}/{a.model}_{name}_d"
                 subprocess.run([sys.executable, str(ROOT / "scripts/a6000/openloop_d.py"), "--port", str(port), "--n",
                                 str(tests["openloop"]), "--ref-run", ref_run, "--out", ol], cwd=ROOT, env=env, check=True)
                 s = json.load(open(ROOT / (ol + ".json")))
                 r["openloop"] = {k: s.get(k) for k in ("n_decisions", "n_tokens", "abs_d_mean", "abs_d_quantiles",
                                                         "frac_tokens_shifted", "flip_rate", "decision_any_flip")}
+            if tests.get("topk"):  # first-token / tool-name top-k vs the BF16 top-k cell: act flip, KL (openloop_topk.py)
+                tk = f"{OUT_DIR_TOPK}/{a.model}_{name}"
+                ref_tk = f"analysis/openloop/a6k2/{a.model}/topk/bf16"
+                subprocess.run([sys.executable, str(ROOT / "scripts/a6000/openloop_topk.py"), "--port", str(port), "--n",
+                                str(tests["topk"]), "--ref-run", ref_run, "--topk", "20", "--positions", "first,tool",
+                                "--first-all", "--ref", ref_tk, "--model", a.model, "--out", tk], cwd=ROOT, env=env, check=True)
+                r["topk"] = {"out": tk, **{k: v for k, v in json.load(open(ROOT / (tk + ".json"))).items()
+                                         if k in ("n_decisions", "act", "vs_ref", "tool")}}
             stop_server(p, gpus.split(","))
             procs = []
             if tests.get("chunk"):

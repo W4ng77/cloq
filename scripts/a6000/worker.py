@@ -244,9 +244,11 @@ def build_ckpt(task, env, gpus, scratch: Path, log) -> tuple[str, dict | None]:
     elif ck["kind"] == "smoothquant":  # SmoothQuant W8 + smoothing (cloq.smoothquant); A8 via serve_env (pyhooks/cloq_aq.py)
         cmd = [sys.executable, "-m", "cloq.smoothquant", "--src", src, "--out", str(out), "--no-sha",
                "--alpha", str(ck.get("alpha", "auto"))] + prov
-    elif ck["kind"] == "quarot":  # QuaRot offline transforms (+ W4 RTN/GPTQ) (cloq.quarot); online half via serve_env
+    elif ck["kind"] in ("quarot", "spinquant"):  # QuaRot offline transforms (+ W4 RTN/GPTQ) (cloq.quarot); online half via serve_env
         cmd = [sys.executable, "-m", "cloq.quarot", "--src", src, "--out", str(out), "--no-sha", "--seed", str(ck.get("seed", 0)),
                "--wbits", str(ck.get("wbits", 16)), "--wmethod", ck.get("wmethod", "gptq")] + prov + (["--check"] if ck.get("check") else [])
+        if ck["kind"] == "spinquant":  # W99r: learned R1/R2 (cloq.spinquant learn) in the same skeleton, sha-pinned
+            cmd += ["--rotations", ck["rotations"], "--rotations-sha256", ck["rotations_sha256"]]
     elif ck["kind"] == "rot_gptq":  # rotate to scratch, then GPTQ on the rotated BF16 model
         rot = scratch / f"ckpt_{task['id']}_rot"
         if rot.exists():
