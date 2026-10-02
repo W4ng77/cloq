@@ -22,7 +22,7 @@ from pathlib import Path
 
 ROOT = Path("/data/ziyangs/cloq")
 QUEUE = Path("/data/ziyangs/cloq_work/queue")
-BITS = {"kivi_k4v4": 4, "kivi_k2v2": 2}
+BITS = {"kivi_k4v4": 4, "kivi_k2v2": 2, "kivi_k16v16": 16}  # k16v16: kernel-path control (protocol A4.1)
 NOTE = "W99u KIVI on the nmp-v1 panel (make_tasks_kivi.py; NEWMETHOD_PANEL_PROTOCOL.md)"
 
 
@@ -38,17 +38,19 @@ def spec(cell):
     return json.loads(out)
 
 
-def tasks(cell, prio):
+def tasks(cell, prio, gate_suffix="", gate_prio=None):
     s = spec(cell)
     get = lambda pre: next(v for k, v in s.items() if k.startswith(pre))  # noqa: E731
     Q, B = role(cell), {"ckpt": {"kind": "bf16"}}
     clean = lambda d: {k: v for k, v in d.items() if not k.startswith("_")}  # noqa: E731
-    g1, g2 = f"nmp_gate_same_q8_{cell}", f"nmp_gate_bank_q8_{cell}"
+    g1, g2 = f"nmp_gate_same_q8_{cell}{gate_suffix}", f"nmp_gate_bank_q8_{cell}{gate_suffix}"
+    gp = prio if gate_prio is None else gate_prio
+    gout = lambda f: dict(f, out=f["out"].replace(f"/q8_{cell}/", f"/q8_{cell}{gate_suffix}/"))  # noqa: E731  (A4.2)
     T = [
-        {"id": g1, "kind": "fork", "model": "q8", "gpus": 2, "priority": prio, "deps": [], "B": Q, "Q": Q,
-         "fork": clean(get("gate_same")), "note": NOTE},
-        {"id": g2, "kind": "fork", "model": "q8", "gpus": 2, "priority": prio, "deps": [], "B": B, "Q": Q,
-         "fork": clean(get("bank gate")), "note": NOTE},
+        {"id": g1, "kind": "fork", "model": "q8", "gpus": 2, "priority": gp, "deps": [], "B": Q, "Q": Q,
+         "fork": gout(clean(get("gate_same"))), "note": NOTE},
+        {"id": g2, "kind": "fork", "model": "q8", "gpus": 2, "priority": gp, "deps": [], "B": B, "Q": Q,
+         "fork": gout(clean(get("bank gate"))), "note": NOTE},
     ]
     for f in get("panel tasks"):
         blk = f["blocks"][0]
@@ -75,16 +77,23 @@ def main():
     ap.add_argument("--cells", default="kivi_k4v4,kivi_k2v2")
     ap.add_argument("--priority", type=int, default=-24)
     ap.add_argument("--only", default=None, help="comma list of task-id prefixes to write (default: all)")
+    ap.add_argument("--gate-suffix", default="", help="gate task-id / output-dir suffix, e.g. _fx (protocol A4.2)")
+    ap.add_argument("--gate-priority", type=int, default=None)
+    ap.add_argument("--no-bfcl", action="store_true", help="tau2 panel only (A4.1: kivi_k16v16)")
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args()
     for cell in a.cells.split(","):
-        for t in tasks(cell, a.priority):
+        for t in tasks(cell, a.priority, a.gate_suffix, a.gate_priority):
+            if a.no_bfcl and "bfcl" in t["id"]:
+                continue
             if a.only and not any(t["id"].startswith(p) for p in a.only.split(",")):
                 continue
             exists = [d for d in ("todo", "running", "done", "failed", "deferred") if (QUEUE / d / f"{t['id']}.json").exists()]
             print(("SKIP (exists in %s) " % exists if exists else "") + t["id"], t.get("deps"))
             if a.write and not exists:
-                (QUEUE / "todo" / f"{t['id']}.json").write_text(json.dumps(t, indent=1))
+                tmp = QUEUE / "todo" / f".tmp_{t['id']}"  # atomic: never a partial *.json in todo
+                tmp.write_text(json.dumps(t, indent=1))
+                tmp.replace(QUEUE / "todo" / f"{t['id']}.json")
 
 
 if __name__ == "__main__":

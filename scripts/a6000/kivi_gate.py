@@ -132,6 +132,58 @@ def toy(dev, quick=False, dt=None):
     t1_ok = all(v["K_kernel_eq_official_bitwise"] == v["K_n"] and v["V_kernel_eq_official_bitwise"] == v["V_n"]
                 and v["K_kernel_eq_torchref_bitwise_all"] for v in t1.values())
 
+    # ---------------- T1 strict (W99t-b): integer codes, scale, mn and dequantized values, bitwise, vs official KIVI.
+    # The kernel's code is recovered exactly: with the kernel's scale s = (mx-mn)*fl32(1/L) (same fp32 ops in torch),
+    # exactly one q in 0..L must reproduce the kernel output bit for bit as fl(fl(q*s)+mn). Data: fp32 and BF16-rounded
+    # (exact ties), each with one constant group (s = 0; official divides by 0 there, so it is excluded from the
+    # comparison and must dequantize to its value in the kernel).
+    import numpy as np
+
+    def _strict(xl, yl, bits, G):
+        sh = xl.shape
+        xg, yg = xl.reshape(*sh[:-1], sh[-1] // G, G), yl.reshape(*sh[:-1], sh[-1] // G, G)
+        mn, mx = xg.amin(-1), xg.amax(-1)
+        L = 2 ** bits - 1
+        sc = (mx - mn) * float(np.float32(1.0) / np.float32(L))
+        cand = torch.stack([torch.full_like(yg, float(q)) * sc[..., None] + mn[..., None] for q in range(L + 1)])
+        match = cand == yg[None]
+        const = (sc == 0)[..., None].expand_as(yg)
+        kcode = match.to(torch.int8).argmax(0)
+        od, oq, os_, om = kivi_ref.official_quant_lastdim(xl.unsqueeze(0).contiguous(), G, bits)
+        od, oq, os_, om = od.squeeze(0).reshape(yg.shape), oq.squeeze(0).reshape(yg.shape), os_.squeeze(0), om.squeeze(0)
+        ok, gk = ~const, sc > 0
+        bits32 = lambda t: t.contiguous().view(torch.int32)  # noqa: E731
+        return {
+            "n": int(ok.sum()), "n_groups": int(gk.numel()), "n_const_groups": int((~gk).sum()),
+            "kernel_code_decode_unique": bool(((match.sum(0) == 1) | const).all()),
+            "codes_eq": int((kcode[ok].long() == oq[ok].long()).sum()),
+            "deq_bitwise_eq": int((bits32(yg[ok]) == bits32(od[ok])).sum()),
+            "scale_bitwise_eq_groups": int((bits32(sc[gk]) == bits32(os_.float()[gk])).sum()),
+            "mn_bitwise_eq_groups": int((bits32(mn[gk]) == bits32(om.float()[gk])).sum()),
+            "const_group_returns_value": bool((yg[const] == xg[const]).all()),
+        }
+
+    t1s = {}
+    for kind in ("fp32", "bf16"):
+        for bits in (2, 4):
+            g = torch.Generator(device="cpu").manual_seed(10 + bits)
+            x = (torch.randn(64, 32, D, generator=g) * torch.rand(1, 1, D, generator=g) * 3).float()
+            x[0, :, 5] = 0.7  # constant K group (channel 5 of token-group 0)
+            x[1, 3, 64:96] = -1.25  # constant V group (token 3 of group 1, channels 64..95)
+            if kind == "bf16":
+                x = x.bfloat16().float()
+            x = x.to(dev)
+            yk, yv = torch.empty_like(x), torch.empty_like(x)
+            _kq_test[(64,)](x, yk, LEV=2 ** bits - 1, T=32, DD=D, enable_fp_fusion=False)
+            _vq_test[(64,)](x, yv, LEV=2 ** bits - 1, T=32, DD=D, G=32, enable_fp_fusion=False)
+            t1s[f"{kind}_int{bits}"] = {"K": _strict(x.permute(0, 2, 1), yk.permute(0, 2, 1), bits, 32),
+                                        "V": _strict(x, yv, bits, 32)}
+    res["T1_strict"] = t1s
+    t1_strict_ok = all(r["kernel_code_decode_unique"] and r["codes_eq"] == r["n"] and r["deq_bitwise_eq"] == r["n"]
+                       and r["scale_bitwise_eq_groups"] == r["mn_bitwise_eq_groups"] == r["n_groups"] - r["n_const_groups"]
+                       and r["const_group_returns_value"] and r["n"] > 0
+                       for d in t1s.values() for r in d.values())
+
     # ---------------- T2 semantics vs official stateful decode
     L = 300 if quick else 700
     t2 = {}
@@ -249,6 +301,7 @@ def toy(dev, quick=False, dt=None):
     res["verdict_amended"] = {"T1_codes_identical_1ulp": t1a, "T2_servingprec": t2a}
     t3_ok = all(x["bitwise_equal_seqs"] == x["n_seqs"] and not x["any_nan"] for d in t3.values() for x in d.values())
     res["verdict"] = {"T1_quantizer": t1_ok, "T2_semantics": t2_ok, "T3_invariance": t3_ok}
+    res["verdict_strict"] = {"T1_strict_codes_scale_mn_deq_bitwise": t1_strict_ok}
     return res
 
 
@@ -556,7 +609,7 @@ def main():
         t0 = time.time()
         res["toy"] = toy(dev, quick=a.quick)
         res["toy"]["seconds"] = round(time.time() - t0, 1)
-        print(json.dumps(res["toy"]["verdict"]), flush=True)
+        print(json.dumps(res["toy"]["verdict"]), json.dumps(res["toy"]["verdict_strict"]), flush=True)
         outpath.write_text(json.dumps(res, indent=1))
     if "server" in a.phases:
         server_phase(a.model, a.configs.split(","), res, outpath, a.n_fid, a.n_chains, a.turns)

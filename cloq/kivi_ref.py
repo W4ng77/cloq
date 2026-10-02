@@ -43,6 +43,21 @@ def official_qdq_lastdim(x: torch.Tensor, group: int, bits: int):
     return deq, q
 
 
+def official_quant_lastdim(x: torch.Tensor, group: int, bits: int):
+    """As official_qdq_lastdim, also returning the official scale and mn, shaped [*x.shape[:-1], T // group]
+    (W99t-b strict T1). Returns (dequantized, int codes, scale, mn)."""
+    qp, unpack, qp_torch = _official()
+    if x.is_cuda:
+        code, scale, mn = qp(x.contiguous(), group, bits)
+    else:
+        code, scale, mn = qp_torch(x.contiguous(), group, bits)
+        scale, mn = scale.squeeze(-1), mn.squeeze(-1)
+    q = unpack(code, bits, pack_dim=3)
+    sh = q.shape
+    deq = (q.to(scale.dtype).view(*sh[:-1], sh[-1] // group, group) * scale[..., None] + mn[..., None]).view(sh)
+    return deq, q, scale.reshape(*sh[:-1], sh[-1] // group), mn.reshape(*sh[:-1], sh[-1] // group)
+
+
 def repeat_kv(x, n_rep):
     return x if n_rep == 1 else x.repeat_interleave(n_rep, dim=1)
 

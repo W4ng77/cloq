@@ -54,7 +54,8 @@ PROTOCOL = ROOT / "docs/insights/NEWMETHOD_PANEL_PROTOCOL.md"
 # Amendment A1 (W99v-a1, 2026-10-02): was 9cd5c979... (frozen nmp-v1); only the amended protocol is accepted.
 # Amendment A2 (W100e, 2026-10-02): was 28b78509... (A1); m24 manifest registered.
 # Amendment A3 (W100e-b, 2026-10-02): was c6603f90... (A2); m24 83-task analysis mask, M1 contrast.
-PROTOCOL_SHA256 = "da8b69baaff0f47fc6d4ff0674d73c8890896d7a997a7dfa44062448ea27ca77"
+# Amendment A4 (W99t-b, 2026-10-02): was da8b69ba... (A3); kivi_k16v16 kernel-path control, KIVI _fx gates, k4v4 secondary.
+PROTOCOL_SHA256 = "0dc3143eb0bc184bf19c8275f59f5e0c5db83ae0eeab101838f225a32eaadd83"
 # Amendment A3 (W100e-b): per-model tau2 analysis mask (frozen file + sha); the population is the manifest tasks minus the mask's
 # excluded tasks, uniformly for all cells and blocks.
 MASKS = {"m24": ("manifests/fork/newmethod_panel_v1_m24_mask_v1.json", "b03a8a918959e3568315b1ae134f2902580e6af822d80beccb692729c2f82c81")}
@@ -66,7 +67,7 @@ REF_TAU2 = {"q8": ("gptq_w4_d1", "awq_w4", "kvq_int8")}
 REF_BFCL = {"q8": ("gptq_w4_d1", "awq_w4_d1", "kvq_int4", "gptq_w3")}
 # Amendment A1.1: rotation cells (all KV16r). spinquant_w4 retired (rotation does not move under a rotation-invariant
 # W16A16 loss); spinqoff_w4 not built (reported "not run").
-NEW_CELLS = ("quarot_w4", "quarot_w4a4", "quarot_w16", "spinquant_w4a4", "spinquant_w16", "kivi_k2v2", "kivi_k4v4")
+NEW_CELLS = ("quarot_w4", "quarot_w4a4", "quarot_w16", "spinquant_w4a4", "spinquant_w16", "kivi_k2v2", "kivi_k4v4", "kivi_k16v16")  # A4.1: kivi_k16v16
 NOT_RUN = {"spinquant_w4": "retired (amendment A1.1)", "spinqoff_w4": "not built (amendment A1.1)"}
 # Primary contrast family (protocol §7 as amended by A1.2). P3's KIVI cell falls back to kivi_k4v4 only if kivi_k2v2 is not
 # admitted (gate). P1 confound (named): calibration data differ (WikiText-2 vs calib_fp_traj_c1).

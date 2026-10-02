@@ -10,6 +10,20 @@ Newest first.
 
 ---
 
+## W99t-b — KIVI follow-up (GPT-6.1 decisions): kivi_k16v16 kernel-path control + protocol amendment A4, all KIVI gates re-run on the fixed kernel (_fx), strict T1, k4v4 secondary pending its gates (2026-10-02 14:30 PDT)
+**TL;DR** Amendment A4 was written before any KIVI outcome was read. Protocol sha `da8b69ba…` becomes `0dc3143e…`; `analyze_newmethod.py` has the new constant and `NEW_CELLS += kivi_k16v16`.
+- **Control cell.** A4 registers `kivi_k16v16`: the KIVI kernel with no quantization, the same-kernel-path control. It runs τ² f01–f03 with four arms. Its BFCL run is not registered.
+- **Gates.** All three KIVI cells' §2.4 gates are re-run on the fixed kernel f585ae3. They use new ids `nmp_gate_{same,bank}_q8_<cell>_fx` and new directories `gate/q8_<cell>_fx/` (−25). The old gates stay as the pre-fix record.
+- **Strict T1.** The toy gate gained a strict T1 (`verdict_strict`): integer codes, scale, mn and dequantized values must be bitwise equal to official KIVI, on fp32 and BF16-rounded data.
+  - The kernel's code is recovered exactly as the unique q with fl(fl(q·s)+mn) equal to the kernel output.
+  - A CPU sanity run (CPU official twin, which divides exactly) shows the check detects the tie flips on BF16 data: 56–168 code mismatches per 262k.
+  - The GPU result comes from `kivi_gate_q8_toy4` (−25).
+- **k4v4 is secondary, with disclosure.** Its toy T2 bound was revised after the failing value had been seen: fp32 reference 0.0547, serving-precision reference 0.0467, official KIVI's own BF16 vs fp32 gap 0.0496. Its phase 1 is released only after its `_fx` gates and the strict T1 pass.
+- **BFCL run unblocked.** The main session patched `worker.run_eval` (5c2f207: no BF16 canary for KIVI), and `ext_q8_kivi_k2v2_bfcl_nmp1` was requeued.
+- **Paper text.** GATE.md §6 has a paragraph for the paper on the replay-compatible decode-view prefill variant.
+
+Evidence: `docs/insights/NEWMETHOD_PANEL_PROTOCOL.md` (Amendment A4), `analysis/fork/analyze_newmethod.py`, `analysis/fork/kivi_gate/GATE.md` §6, `scripts/a6000/{kivi_gate,make_tasks_kivi}.py`, `cloq/kivi_ref.py` (`official_quant_lastdim`), W99t.
+
 ## W100e-b — m24 analysis population fixed at 83 tasks (airline 13 and 44 excluded uniformly): mask v1 + protocol amendment A3, done before any m24 panel output existed; analyze_newmethod gains the m24 mask, M1 contrast and available-rows sensitivity (2026-10-02 14:10 PDT)
 **TL;DR** This resolves W100e's open strict-block question as the advisor (GPT-6.1) decided, a corrected option (b).
 - **Population.** For both m24 cells and all six blocks, airline tasks 13 and 44 are excluded. The analysis population is fixed at 83 tasks: 249 states per cell in phase 1, 498 if expanded.

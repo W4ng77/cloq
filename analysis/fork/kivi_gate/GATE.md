@@ -126,3 +126,21 @@ Notes:
 - **kivi_k2v2: PASS.** It meets the toy verdict criteria per cell (original and amended), chain 32/32 and 32/32, det 8/8 and 8/8, and gate_same and bank pass. Phase 1 is queued (`make_tasks_kivi.py --cells kivi_k2v2 --write`, 11 tasks, −24).
 - **kivi_k4v4: HELD.** It fails the original toy T2 on mean ratio only (0.0547 > 0.05, at the BF16 floor) and passes everything else, including the amended T2. Queue it with `make_tasks_kivi.py --cells kivi_k4v4 --write` if the amended serving-precision criterion is accepted for the secondary cell.
 
+## 6. Prefill strategy: the replay-compatible decode-view variant (paper text)
+
+Official KIVI behaves differently in prefill and in decode:
+- **Prefill.** It attends over the prompt in full precision and only then quantizes the cache it leaves behind. Keys are quantized per channel in groups of G = 32 tokens, up to the last multiple of the residual length R = 128. Values are quantized per token, except for the last R.
+- **Decode.** Each new token attends with the mixed state: quantized keys up to R·⌊n/R⌋ and quantized values before n − R, with the rest held in full precision.
+
+Under that rule, a token's output depends on whether it arrived in a prompt or was generated. Re-prefilling a stored multi-turn history therefore does not reproduce the computation that originally produced it. Fork replay, prefix caching and cross-server re-prefill all rely on that reproduction, so they would be inexact.
+
+Our implementation uses a replay-compatible variant instead:
+- **What each token sees.** Every token, prompt or generated, attends with the state official KIVI's incremental decode holds at its absolute position t:
+  - key groups wholly below R·⌊t/R⌋ are quantized;
+  - value rows below t − R are quantized;
+  - its own key and value are in full precision.
+- **What this equals.** This is exactly official KIVI with a one-token prefill followed by token-by-token decode. The decode steps match official KIVI's (gate T2), and only official KIVI's multi-token prefill rows differ.
+- **Where the state lives.** The quantized view is recomputed on the fly from the full-precision paged cache by a per-query Triton attention kernel. The kernel's quantizer is bit-identical to official KIVI's CUDA arithmetic: same integer codes, scale, zero-point and dequantized values (strict T1). It holds no side state, so a token's output is a function of its position and the cached history only. Re-prefill, chunked prefill, prefix-cache hits and batch composition all give bit-identical outputs (T3; server checks det 8/8, replay 32/32).
+- **Cost.** The quantization is simulated: memory is not reduced, and decode throughput is about 9× below FlashAttention-2.
+- **Effect on the comparison.** The variant quantizes slightly more of the context than official KIVI does for long prompts: prompt tokens see quantized history as decode tokens do. The same rule applies to every compared state. The kernel path alone, without quantization, is controlled by `kivi_k16v16` (protocol A4.1).
+
