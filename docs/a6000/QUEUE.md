@@ -1,4 +1,4 @@
-# A6000 queue snapshot (2026-10-02 09:34:46 PDT)
+# A6000 queue snapshot (2026-10-02 10:04:49 PDT)
 
 ## running (24)
 
@@ -11,12 +11,12 @@
 - `a6k2_q32_tel_gptq_w4`
 - `a6k2_q32_tel_rtn_w3`
 - `a6k2_q32_tel_rtn_w4`
+- `cs_gate_q8_d2_bf16`
 - `fork_repair_q4_rtn_w3`
 - `fork_sameprec_q8_g3`
 - `fork_sameprec_q8_g4`
 - `fork_sameprec_q8_g5`
 - `fork_sameprec_q8_g6`
-- `kivi_gate_q8_r2`
 - `pert_q4_gptq_w3_resid_a2_q345`
 - `pert_q4_rtn_w3_resid_a2_q345`
 - `pert_q4_rtn_w3_restore_early_q345`
@@ -25,19 +25,20 @@
 - `pert_q4_rtn_w3_restore_rand_third_s1_q345`
 - `pert_q4_rtn_w3_restore_rand_third_s2_q345`
 - `pert_q4_rtn_w3_restore_rand_third_s3_q345`
-- `pert_q8_awq_w4_resid_a0.25_fdev`
+- `pert_q8_awq_w4_resid_a0.5_fdev`
 
-## failed (7)
+## failed (8)
 
 - `a6k2_q32_gauss3_s1` · RuntimeError('run a6k2_q32_gauss3_s1/airline: 2 infrastructure_error episodes (outage)')
 - `a6k2_q32_rtn_w3` · RuntimeError('run a6k2_q32_rtn_w3_q2/airline: 12 infrastructure_error episodes (outage)')
 - `a6k2_smoke_l8` · RuntimeError('run a6k2_smoke_l8/retail: 5 infrastructure_error episodes')
 - `a6k2_smoke_m24` · RuntimeError('vLLM agent server exited during startup')
 - `ext_l8_gptq_w4_d1_bfcl_smoke_l8g_sc` · RuntimeError("checkpoint build failed ({'kind': 'gptq', 'wbits': 4, 'calib': 'manifests/a6k2/l8/calib_fp_traj_c1.json'}) rc=1")
+- `ext_q8_kivi_k2v2_bfcl_nmp1` · RuntimeError('numerics canary mismatch for agent q8 on node001: 60cac990145b1cca != e340c7991fa5bc08')
 - `kivi_gate_q8` · RuntimeError('cmd failed rc=-9')
 - `pert_q4_rtn_w3_restore_rand_mlp_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_mlp_s3_q3/retail: 1 infrastructure_error episodes (outage)')
 
-## done (1068)
+## done (1070)
 
 - `a6k2_det_q14_x1_awq_a` · 11 min · node005
 - `a6k2_det_q14_x1_awq_b` · 54 min · node004
@@ -240,7 +241,7 @@
 - `a6k2_q32_ol_gauss0.1_s1` · 25 min · node007
 - `a6k2_q32_ol_gauss0.1_s2` · 24 min · node005
 
-## todo (113)
+## todo (110)
 
 - `a6k2_m24_bfpair_f03_f04`
 - `a6k2_m24_bfpair_f05_f06`
@@ -274,7 +275,6 @@
 - `a6k2_q8_tel_rtn_w4`
 - `a6k2_q8_x1_awq`
 - `a6k2_q8_x1_fp8`
-- `cs_gate_q8_d2_bf16`
 - `cs_q8_d2_bf16_f01`
 - `cs_q8_d2_bf16_f02`
 - `cs_q8_d2_bf16_f03`
@@ -283,7 +283,6 @@
 - `cs_q8_d2_d1_f03`
 - `ext_m24_bf16_bfcl_nmp1`
 - `ext_m24_rtn_w4_bfcl_nmp1`
-- `ext_q8_kivi_k2v2_bfcl_nmp1`
 - `fork_sameprec_w3_gate_q8`
 - `nmp_bfcl_q8_kivi_k2v2_base`
 - `nmp_bfcl_q8_kivi_k2v2_long_context`
@@ -305,7 +304,6 @@
 - `nmp_tau2_q8_kivi_k2v2_f01`
 - `nmp_tau2_q8_kivi_k2v2_f02`
 - `nmp_tau2_q8_kivi_k2v2_f03`
-- `pert_q8_awq_w4_resid_a0.5_fdev`
 - `pert_q8_awq_w4_resid_a2_fdev`
 - `pert_q8_awq_w4_restore_middle_fdev`
 - `pert_q8_awq_w4_restore_mlp_fdev`
