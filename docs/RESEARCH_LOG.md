@@ -10,6 +10,28 @@ Newest first.
 
 ---
 
+## W99 — SIMCTRL-P analysis script (`analyze_simctrl_p.py`) and an INTERIM batch-1 look (3 of 4 cells) (2026-10-01 17:35 PDT)
+**TL;DR** This entry is the analysis script for the W97 Bank P simulator control, plus an interim look at the batch-1 data that was finished at the time. The design is from GPT-6.1 review 7. The interim output covers 30 states (q4 AWQ-W4, q8 GPTQ-W4, q8 AWQ-W4; q4 GPTQ-W4 batch 1 had not finished; batch 2 just queued). It is labelled INTERIM, is a robustness check only, and is not interpreted here. The final analysis runs once both batches are in.
+- **Estimands.** Per state and arm, Ȳ = the mean over the valid R = 5 Sonnet replicates. G = BQ−QQ, H = QB−QQ, F = BB−QQ, G−H, F−G, F−H come from these per-state means and are averaged over states. They are given per cell, as an equal-weight pool over the cells present, for all batches and for batch 1 alone (pre-planned).
+- **Original simulator, same states.** The original single-run BB/BQ/QB/QQ outcomes come from the dev fork. QQ is the recorded original continuation. They are loaded with the exact admission that froze the manifest: `make_tasks_simctrl_p.admitted_units`, which imports analyze_ghf/analyze_dev. The script checks the units digests against `dev_all_20261001T070326Z` and the dev state and branch file shas against the manifest. Per estimand it reports the paired change (new − original).
+- **Intervals.**
+  - A bootstrap over states, stratified by cell (B = 2000, seed 20261001).
+  - A task-cluster bootstrap: tasks are resampled within a cell, and across cells for the pool. Tasks do repeat: 6 tasks have 2–3 states within a cell, and 21 of 49 tasks appear in more than one cell.
+  - Exact Clopper–Pearson intervals for shares of states.
+- **Variability.** Per arm, the share of states whose 5 replicates disagree. Per arm, also the Pearson correlation between the original outcome and the Sonnet arm mean. There is no off-diagonal share and no comparison with 26.9%.
+- **Unexposed branches.** Y is kept and counts are given per arm. Two sensitivity analyses: S1 drops states with any unexposed branch; S2 uses exposed replicates only.
+- **Missing or errored replicates** (including a failed protocol check) are counted and never imputed.
+- **Also reported.** Relay integrity: every v2 check over the exposed branches, request-id uniqueness, and a row-level re-verification of the summaries. Termination reasons, user-call counts and cost.
+- **Gate.** A manifest sha mismatch is always fatal. Any missing, failed or not-passed cell × batch summary refuses to run unless `--allow-partial` is given; the output is then named `simctrl_p_interim_*` and labelled INTERIM. `--batches 1` makes batch 1 alone the final scope if batch 2 is never run.
+- **Interim data status** (protocol, not outcomes).
+  - The 3 finished cells pass: 30/30 state checks, 600 branches, 0 arm errors, 0 protocol failures, and v2 checks 600/600 on each check.
+  - 3,091 request ids, all unique.
+  - 0 unexposed branches and 0 context overflows.
+  - Cost: $24.90 for 3,091 calls ($0.0081 per call).
+  - q4 GPTQ-W4 batch 1 had 8/10 state branch files written and no summary yet, so it is excluded from the interim look.
+- **Evidence:** `analysis/fork/analyze_simctrl_p.py`; `analysis/fork/out/simctrl_p_interim_20261002T003506Z.{md,json}` (inputs with sha256 in the json). Inputs: `analysis/fork/simctrl_p/{q4_awq_w4,q8_gptq_w4_d1,q8_awq_w4}/b1/simctrl_p_{rows.jsonl,summary.json}` (cluster data, not committed). Protocol: `docs/insights/SIMCTRL_P_PROTOCOL.md`, `manifests/fork/simctrl_p_v1.json`.
+- **Usage:** `python analysis/fork/analyze_simctrl_p.py` (final, batches 1+2); `--allow-partial` (interim); `--batches 1` (batch 1 only).
+
 ## W97 — Bank P simulator control (GPT-6.1 review 7): 80 states frozen outcome-blind, simrelay-v2 with integrity hashes, one clean `claude -p` call per user turn; dry run and relay test PASS; NOT queued (2026-10-01 PDT)
 **TL;DR** The four-arm Bank P control approved in W96 is built, frozen and validated, and is not yet queued.
 - **Manifest.** `manifests/fork/simctrl_p_v1.json` (sha `fa3dbf36…a48a3`) freezes 80 first-tool-structure-divergence states, 20 per core W4 cell. The selection is outcome-blind: admitted, re-checkable dev units; two-level Hamilton allocation over domain and block; sha256 order. There are two batches of 40. Batch 2 is gated on throughput or time only.
