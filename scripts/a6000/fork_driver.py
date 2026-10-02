@@ -14,6 +14,8 @@ modes (task["fork"]["mode"]):
              by a user_llm override (Sonnet 5.5 via cloq/user_llm.py).
   simctrl_p  W97 Bank P simulator control: BB/BQ/QB/QQ x R on manifests/fork/simctrl_p_v1.json units with the user
              simulator replaced by the simrelay-v2 relay (scripts/a6000/simrelay_cli.py); unexposed branches kept.
+  commonstate W100a: a new action source (e.g. GPTQ-W4 d2) at the frozen Bank U states, forced and continued by the
+             other handle; reference re-runs against the existing Bank U arms (COMMONSTATE_SOURCES_PROTOCOL.md).
 usage:
   python scripts/a6000/fork_driver.py --task <task.json> --b-base URL --q-base URL --user-base URL --servers <json>
   python scripts/a6000/fork_driver.py --cpucheck --block RUN:DOMAIN [--block ...] --out analysis/fork/gate/cpucheck_x.json
@@ -1191,6 +1193,181 @@ def bank_u_q0(spec, bases, user_base, servers, out):
     log(f"bank_u_q0 {spec['model']}:{spec['cell']}: ok {res['n_ok']}/{res['n_rows']}, branches {res['n_branches_run']}, {res['seconds']:.0f} s")
     return res
 
+def commonstate(spec, bases, user_base, servers, out):
+    """W100a common-state action-source comparison (docs/insights/COMMONSTATE_SOURCES_PROTOCOL.md). Additive mode; no other
+    mode changes. On the frozen Bank U rows (manifest, model, blocks, subs; the q8 U2B states), a NEW action source
+    (served by handle spec["action_handle"], e.g. GPTQ-W4 d2) generates its own greedy action at the frozen state from
+    the identical prompt; it is replayed once more on the same server (Q-replay acceptance: completion ids and canonical
+    message bit-exact), then forced and continued by handle spec["cont_handle"] to the end (one arm per row).
+    Reference re-run (spec["ref_rerun"]) on a hash sample (gate: every row), against the existing Bank U run in
+    spec["ref_dir"]/<block>/ that the analysis reuses:
+      "bf16_orig": the recorded (BF16 source) action continued by the BF16 handle must reproduce the original suffix
+                   (noop_check), run on the handle spec["ref_handle"];
+      "d1_native": the d1 handle regenerates a_Q of the reference row (canonical message equal) and its QQ continuation
+                   must reproduce the reference QQ branch (branch_signature equal).
+    Implicit identity: when the new action equals the continuation's own reference action (BF16 recorded / d1 a_Q), the
+    new arm must reproduce that reference arm the same way. Every row also checks that state_id, history_sha, the
+    recorded prompt ids, the budget and the initial env hash equal the reference row (same state, same budget)."""
+    import hashlib as _h
+    man_path = ROOT / spec["manifest"]
+    man_sha = _h.sha256(man_path.read_bytes()).hexdigest()
+    if spec.get("manifest_sha256") and spec["manifest_sha256"] != man_sha:
+        raise SystemExit(f"commonstate: manifest sha {man_sha} != frozen {spec['manifest_sha256']}")
+    man = json.loads(man_path.read_text())
+    m, ah, ch, kind = spec["model"], spec["action_handle"], spec["cont_handle"], spec["ref_rerun"]
+    if {ah, ch} != {"B", "Q"} or kind not in ("bf16_orig", "d1_native"):
+        raise SystemExit("commonstate: action_handle/cont_handle must be B and Q (either order); ref_rerun bf16_orig|d1_native")
+    rh = spec.get("ref_handle", ch)
+    arm = ah + ch
+    gate_mode = bool(spec.get("gate"))
+    noop_frac = 1.0 if gate_mode else spec.get("noop_frac", 0.2)
+    rows = [r for r in man["rows"] if r["model"] == m and r["block"] in spec["blocks"] and r["sub"] in spec.get("subs", ["U2B"])]
+    rows.sort(key=lambda r: (r["block"], r["state_key"]))
+    if spec.get("limit"):
+        rows = sorted(rows, key=lambda r: hsel(f"commonstate-gate|{r['state_key']}"))[: spec["limit"]]
+    ref = {}
+    for b in spec["blocks"]:
+        p = ROOT / spec["ref_dir"] / b / "bank_rows.jsonl"
+        for line in p.read_text().splitlines():
+            if line.strip():
+                x = json.loads(line)
+                ref[x["state_key"]] = x
+    res = {"protocol": "commonstate-v1 (COMMONSTATE_SOURCES_PROTOCOL.md)", "manifest_sha256": man_sha, "spec": spec,
+           "servers": servers, "user_base": user_base, "arm": arm, "source": spec.get("source_label"),
+           "continuation": spec.get("cont_label")}
+    for h, pairs in (spec.get("idcheck") or {}).items():
+        res[f"idcheck_{h}"] = idcheck(bases[h], load_blocks(pairs), spec.get("idcheck_n", 16), h)
+    blocks: dict = {}
+    rdir = out / "rows"
+
+    def ref_arm_file(r):
+        p = ROOT / spec["ref_dir"] / r["block"] / "branches" / f"{r['state_key']}.json"
+        return json.loads(p.read_text()) if p.exists() else {}
+
+    def ref_qq(rr, rf):
+        src = (rr.get("arm_source") or {}).get("QQ", "")
+        a = "QQ" if src == "run" else (src[len("reuse="):] if src.startswith("reuse=") else None)
+        return rf.get(a) if a else None
+
+    def one(r):
+        rec = {k: r[k] for k in ("state_key", "sub", "model", "block", "domain", "task_id", "t", "n_decisions", "selection_probability", "source_run")}
+        rec.update(arm=arm, source=spec.get("source_label"), continuation=spec.get("cont_label"))
+        p_done = rdir / f"{r['state_key']}.json"
+        if spec.get("resume") and p_done.exists():
+            try:
+                old = json.loads(p_done.read_text())
+                if "Y" in old and old["Y"] is not None:
+                    return old
+            except Exception:
+                pass
+        if r.get("missing_reason"):
+            return {**rec, "missing_reason": r["missing_reason"]}
+        rr = ref.get(r["state_key"])
+        if rr is None or "Y" not in rr:
+            return {**rec, "missing_reason": "no reference bank row with outcomes"}
+        k = (r["source_run"], r["domain"])
+        with LOCK:
+            if k not in blocks:
+                blocks[k] = F.Block(ROOT, *k)
+        st = F.make_state(blocks[k], r["task_id"], r["t"])
+        recorded = st["a_Q"]["message"]  # the source run's own (BF16) action at t
+        rf = ref_arm_file(r)
+        env0 = next((v.get("env_hash_init") for v in rf.values() if isinstance(v, dict) and v.get("env_hash_init")), None)
+        same = {"state_id": st["state_id"] == rr.get("state_id"), "history_sha": st["history_sha"] == rr.get("history_sha"),
+                "prompt_ids_sha": st["q_decision"]["prompt_ids_sha"] == rr.get("prompt_ids_sha"),
+                "steps_left": st["budget"]["steps_left"] == rr.get("steps_left"),
+                "env_hash_init": env0 is None or env0 == st["env_hash"], "recorded_action": F.canon_msg(recorded) == F.canon_msg(rr["a_B"])}
+        rec.update(state_id=st["state_id"], history_sha=st["history_sha"], prompt_ids_sha=st["q_decision"]["prompt_ids_sha"],
+                   steps_left=st["budget"]["steps_left"], env_hash=st["env_hash"], ref_same=same, ref_env_hash_available=env0 is not None)
+        if not all(same.values()):
+            return {**rec, "missing_reason": f"state differs from reference row {same}"}
+        tag = f"cs-{arm}-{r['state_key']}"
+        a_s, rs = F.shadow(st, bases[ah], tag + "-s1")
+        a_s2, rs2 = F.shadow(st, bases[ah], tag + "-s2")
+        chk = {"prompt_ok": F.ids_sha(rs.get("prompt_token_ids")) == st["q_decision"]["prompt_ids_sha"],
+               "replay_prompt_ok": F.ids_sha(rs2.get("prompt_token_ids")) == st["q_decision"]["prompt_ids_sha"],
+               "replay_completion_ok": F.ids_sha(rs2.get("completion_token_ids")) == F.ids_sha(rs.get("completion_token_ids")),
+               "replay_action_ok": F.canon_msg(a_s2) == F.canon_msg(a_s)}
+        sch = F.tool_schemas(_tools_schema(st))
+        agree = {"vs_bf16": {"exact": F.canon_msg(a_s) == F.canon_msg(recorded),
+                             "completion_ids_equal": F.ids_sha(rs.get("completion_token_ids")) == st["q_decision"]["completion_ids_sha"],
+                             "category": F.compare_actions(recorded, a_s, sch)["category"]},
+                 "vs_d1": {"exact": F.canon_msg(a_s) == F.canon_msg(rr["a_Q"]), "category": F.compare_actions(rr["a_Q"], a_s, sch)["category"]},
+                 "bf16_vs_d1": {"exact": bool(rr.get("exact_agreement")), "category": rr.get("agreement_category")}}
+        rec.update(a_src=a_s, a_src_completion_ids_sha=F.ids_sha(rs.get("completion_token_ids")),
+                   a_src_finish_reason=rs.get("finish_reason"), a_src_parser_error=rs.get("parser_error"), checks=chk, agreement=agree)
+        if not (chk["prompt_ok"] and chk["replay_prompt_ok"]):
+            return {**rec, "missing_reason": f"prompt id mismatch {chk}"}
+        if not (chk["replay_completion_ok"] and chk["replay_action_ok"]):
+            return {**rec, "missing_reason": f"action source not deterministic at the state {chk}"}
+        st["a_" + ah] = {"message": a_s, "source": f"shadow {spec.get('source_label')} at identical prompt ids"}
+        br = {arm: F.run_branch(st, ah, ch, bases, user_base, f"{tag}-{arm}")}
+        Y = None if "error" in br[arm] else _y(r["domain"], br[arm])
+        noop = int(_h.sha256(f"commonstate-noop-v1|{r['state_key']}|{kind}".encode()).hexdigest()[:8], 16) / 16 ** 8 < noop_frac
+        ident = {}
+        if kind == "bf16_orig":
+            oh = orig_final_hash(st, blocks[k])
+            if agree["vs_bf16"]["exact"] and "error" not in br[arm]:
+                ident["implicit_vs_orig"] = noop_check(st, br[arm], oh)
+            if noop:
+                st2 = {**st, "a_B": {"message": recorded}, "a_Q": {"message": recorded}}
+                br["ref"] = F.run_branch(st2, rh, rh, bases, user_base, f"{tag}-refBB")
+                ident["ref_noop_BB"] = noop_check(st, br["ref"], oh)
+        else:
+            qq = ref_qq(rr, rf)
+            if agree["vs_d1"]["exact"] and "error" not in br[arm]:
+                ident["implicit_vs_refQQ"] = {"ok": qq is not None and F.branch_signature(br[arm]) == F.branch_signature(qq),
+                                              "ref_available": qq is not None,
+                                              "Y_ref": rr["Y"].get("QQ"), "Y_new": Y}
+            if noop:
+                a_d1, rd1 = F.shadow(st, bases[rh], tag + "-sd1")
+                d1_ok = F.canon_msg(a_d1) == F.canon_msg(rr["a_Q"]) and F.ids_sha(rd1.get("prompt_token_ids")) == st["q_decision"]["prompt_ids_sha"]
+                st2 = {**st, "a_" + rh: {"message": a_d1}}
+                br["ref"] = F.run_branch(st2, rh, rh, bases, user_base, f"{tag}-refQQ")
+                ident["ref_rerun_QQ"] = {"ok": d1_ok and qq is not None and "error" not in br["ref"]
+                                         and F.branch_signature(br["ref"]) == F.branch_signature(qq),
+                                         "d1_action_equal": d1_ok, "ref_available": qq is not None,
+                                         "Y_ref": rr["Y"].get("QQ"), "Y_rerun": None if "error" in br["ref"] else _y(r["domain"], br["ref"])}
+        dump(out / "branches" / f"{r['state_key']}.json", br)
+        rec.update(Y=Y, arm_error=br[arm].get("error"), noop_sample=noop, identity=ident,
+                   identity_ok=all(v.get("ok") for v in ident.values()),
+                   budget_ok={a: budget_check(st, b)["ok"] for a, b in br.items() if "error" not in b},
+                   context_overflow=br[arm].get("infra_cause") == "context_overflow", duration=br[arm].get("duration"),
+                   Y_ref=rr["Y"])
+        dump(p_done, rec)
+        return rec
+
+    t0 = time.time()
+    with ThreadPoolExecutor(spec.get("concurrency", 8)) as ex:
+        recs = list(ex.map(lambda r: _safe(one, r), rows))
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "cs_rows.jsonl").write_text("".join(json.dumps(x, ensure_ascii=False, default=str) + "\n" for x in recs))
+    ok = [x for x in recs if x.get("Y") is not None]
+    ids = [x for x in recs if x.get("identity")]
+    res.update({"n_rows": len(rows), "n_ok": len(ok), "n_missing": sum(1 for x in recs if "missing_reason" in x),
+                "n_errors": sum(1 for x in recs if "error" in x or (("Y" in x) and x["Y"] is None)),
+                "n_ref_rerun": sum(1 for x in recs if any(k.startswith("ref_") for k in x.get("identity", {}))),
+                "n_ref_rerun_pass": sum(1 for x in recs if any(k.startswith("ref_") for k in x.get("identity", {}))
+                                        and all(v["ok"] for kk, v in x["identity"].items() if kk.startswith("ref_"))),
+                "n_implicit": sum(1 for x in recs if any(k.startswith("implicit_") for k in x.get("identity", {}))),
+                "n_identity_fail": sum(1 for x in ids if not x["identity_ok"]),
+                "n_exact_vs_bf16": sum(1 for x in ok if x["agreement"]["vs_bf16"]["exact"]),
+                "n_exact_vs_d1": sum(1 for x in ok if x["agreement"]["vs_d1"]["exact"]),
+                "budget_ok": all(all(x["budget_ok"].values()) for x in ok),
+                "branch_seconds": [x["duration"] for x in ok if x.get("duration")], "seconds": time.time() - t0})
+    idc = [v.get("ok") for kk, v in res.items() if kk.startswith("idcheck_")]
+    res["verdict"] = {"idcheck": all(idc), "rows_complete": res["n_ok"] == res["n_rows"] and res["n_missing"] == 0 and res["n_errors"] == 0,
+                      "ref_rerun": res["n_ref_rerun"] > 0 and res["n_ref_rerun_pass"] == res["n_ref_rerun"],
+                      "identity": res["n_identity_fail"] == 0, "budget": res["budget_ok"]}
+    res["verdict"]["pass"] = all(res["verdict"].values())
+    dump(out / "cs_summary.json", res)
+    log(f"commonstate {m} {arm} ({spec.get('source_label')} -> {spec.get('cont_label')}) {spec['blocks']}: ok {res['n_ok']}/{res['n_rows']}, "
+        f"ref rerun {res['n_ref_rerun_pass']}/{res['n_ref_rerun']}, identity fails {res['n_identity_fail']}, verdict {res['verdict']}")
+    if gate_mode and not res["verdict"]["pass"]:  # gate: fail loudly so the queue never releases the panel (W76)
+        raise RuntimeError(f"commonstate gate failed: see {out / 'cs_summary.json'}")
+    return res
+
+
 def rerun_episode(block: F.Block, task_id: str, bases: dict, user_base: str, tag: str) -> dict:
     """W70: deterministically re-execute Q's original episode from the start (same task dump, simulation seed, nonce, tau2
     config, Q server) when its saved trajectory was lost (tau2 stores no messages for an episode that raised). An
@@ -1412,7 +1589,7 @@ def main():
     out = ROOT / spec["out"]
     out.mkdir(parents=True, exist_ok=True)
     fn = {"gate": gate, "gate_same": gate_same, "search": search_mode, "branches": branches_mode, "dev": dev_mode, "pivot_arms": pivot_arms, "bank_u": bank_u, "bank_u_q0": bank_u_q0, "repair": repair_mode, "simctrl": simctrl,
-          "simctrl_p": simctrl_p}[spec["mode"]]
+          "simctrl_p": simctrl_p, "commonstate": commonstate}[spec["mode"]]
     r = fn(spec, bases, a.user_base, servers, out)
     v = r.get("verdict")
     print(json.dumps({"verdict": v}, default=str))
