@@ -147,3 +147,14 @@ Primary target as Bank U: equal weight per task within a block, then the mean ov
 admission and acceptance counts (gate, reference re-runs, implicit identities, cross-task a_d2 identity, canaries), the
 3 × 2 table V(s, c), all contrasts with r/d/M and both intervals, interactions, K(c) with the frozen reading and TOST,
 the agreement tables, and per-block numbers. The script refuses to run unless the protocol sha256 equals the manifest's.
+
+---
+
+## Deviation D1 (2026-10-02 09:35 PDT, logistics only; no outcome-dependent change)
+
+The node pins of §2/§3 (gate A on node005; panel tasks on node004/005/007 in rotation) were removed from the queued
+tasks, because the pinned nodes were occupied for hours by priority −28 tasks. Gate B had already passed on node007:
+12/12 reference d1 QQ re-runs were bit-exact against the node004 Bank U branches, and the canaries matched. No panel
+outcome existed. Nothing else changes. Cross-node identity is still checked on every task by the reference re-runs and
+the implicit identities (§2), and on every unit by the cross-task a_d2 identity (§4). The text above this section is
+unchanged and is a byte-identical prefix (sha256 d76a8e3ee0bd607e7362ac629c3f458691cf44f4f59b26f1f061671bae92ecff).
