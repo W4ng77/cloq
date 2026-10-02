@@ -346,6 +346,7 @@ def run_eval(task, args, st: Status):
                                               "asymmetric; last R tokens full precision (decode-step view per query)",
                                "hook": "pyhooks/cloq_kivi.py"})
     aq = senv.get("CLOQ_PYHOOKS") == "1" and bool(senv.get("CLOQ_AQ_BITS") or senv.get("CLOQ_AQ_HAD", "0") != "0")
+    kivi = senv.get("CLOQ_PYHOOKS") == "1" and bool(senv.get("CLOQ_KIVI_KBITS"))  # W99t: KIVI attention path = own flavour (own fingerprint, hook coverage, det gates)
     for k, v in ((qmeta or {}).get("requires_serve_env") or {}).items():  # SmoothQuant / QuaRot ckpts need their online half
         if str(senv.get(k)) != str(v):
             raise RuntimeError(f"checkpoint {task['ckpt']['kind']} requires serve_env {k}={v}, task has {senv.get(k)}")
@@ -372,10 +373,10 @@ def run_eval(task, args, st: Status):
                 raise RuntimeError(f"vLLM agent server did not come up in {SERVER_UP_S // 60} min")
             time.sleep(5)
         # BF16 servers of a model must be bit-identical on every node (quantized ckpts differ by design)
-        if task["ckpt"]["kind"] == "bf16" and not task.get("serve_extra") and not kvq and not aq:  # eager/KVQ/AQ = different flavour by design
+        if task["ckpt"]["kind"] == "bf16" and not task.get("serve_extra") and not kvq and not aq and not kivi:  # eager/KVQ/AQ/KIVI = different flavour by design
             st.set("check", "numerics canary")
             check_canary(args.port, task["model"], "agent")
-        if (qmeta or {}).get("protocol") == derived.PROTOCOL and not task.get("serve_extra") and not kvq and not aq:
+        if (qmeta or {}).get("protocol") == derived.PROTOCOL and not task.get("serve_extra") and not kvq and not aq and not kivi:
             st.set("check", "numerics canary (derived ckpt)")
             qmeta["canary"] = derived.canary_checks(args.port, task["model"], qmeta, check_canary)
         if path.startswith(str(scratch)):  # weights are on the GPU now; free the RAM disk
