@@ -10,6 +10,38 @@ Newest first.
 
 ---
 
+## W100d — Same-precision split: which units BF16 vs GPTQ-W4 d2 rescue and harm (INTERIM, descriptive, K = 6) (2026-10-02 07:55 PDT)
+**TL;DR** This analysis asks whether the two substitutions have similar flip volume but rescue and harm different units. It uses the same 1020 task×block units as `sameprec_overlap.py` (q4+q8, f01–f06). It is INTERIM and descriptive (A1.4) and does not enter the reading. Re-run it on the frozen prefix after 10-03.
+- **Action side (G, BQ vs QQ): the volume is similar and the units share a large core.**
+  - Flips: 171 under BF16, 181 under d2 (Δ −1.0 [−3.9, +1.9] pp).
+  - Rescues: 82 vs 95, with 56 shared (κ 0.60 [0.54, 0.65]).
+  - Harms: 89 vs 86, with 51 shared (κ 0.54 [0.45, 0.61]).
+  - Both overlaps are above the within-task×Y_QQ shuffle (46 and 43 expected; p < 0.001).
+  - Still, 56% of the flipping units flip under one design only. The within-task shuffle would give 72%.
+- **Continuation side and full substitution: the units differ.**
+  - H (QB vs QQ): κ rescue 0.20, harm 0.45. F (BB vs QQ): κ rescue 0.34, harm 0.35.
+  - Except for H harm, the overlap is not above the within-task×Y_QQ shuffle. Here different units flip.
+  - F volume also differs: 193 vs 149 flips, Δ +4.3 [+0.4, +8.3] pp (t over 6 blocks, one of several contrasts).
+- **Controller dependence (off-diagonal) is mostly design-specific.**
+  - On the 697 units that diverge in both designs: 170 vs 177 off-diagonal, 81 shared, κ 0.29 [0.20, 0.40].
+  - The within-task null expects 73 shared (κ 0.23, p 0.02).
+  - 26.5% of the states are off-diagonal under one design only; that is 70% of the off-diagonal set.
+  - The same-decision subset (n 404) gives κ 0.33.
+- **Net decomposition.**
+  - G under BF16: −7 = shared (56 rescues − 51 harms) + specific (26 − 38).
+  - G under d2: +9 = the same shared part + specific (39 − 35).
+  - ΔG = −1.6 [−6.2, +3.0] pp comes only from the design-specific units. Similar net and flip totals hide about 138 design-specific units.
+- **Cross-direction counts are 0 for every contrast pair.** A unit rescued under one design and harmed under the other cannot exist, because Y_QQ is shared. This is forced, not evidence.
+- **Trigger link: not assessable.**
+  - Only 20 BF16 and 30 d2 fork states coincide with a scored Bank U U1 state (blocks f01–f03; f01 is in-sample for the rule).
+  - Net among triggered states is −1 at every rate in both designs. This is uninformative at this n.
+  - Bank U Y matches the precision-fork Y on 20/20 linked states.
+- **Figure.** F7 is drawn by a separate script, so `make_figs.py`, which another session is editing, is untouched. It is not referenced from any section .tex file.
+
+Evidence: `analysis/fork/sameprec_split.py`, `analysis/fork/out/sameprec_split_20261002T145148Z.{md,json}` (seed 20261002, 10000 permutations, B = 2000; units digest 45672ed6c997; reproduces ΔM −0.98 and ΔG −1.57 of `sameprec_20261002T142834Z`, and 107/64/74/775 of `sameprec_overlap_20261002T143218Z`), `paper/latex/tools/figs/make_fig_sameprec_split.py`, `paper/latex/figures/f7_sameprec_split.pdf`.
+
+---
+
 ## W100c — Paper rewritten around the advisor's final framing: *Measuring the Task Value of Precision in Closed-Loop Agents*; central insight "sensitivity and value must be measured separately"; same-precision figure F6 (2026-10-02 PDT)
 **TL;DR** The paper now opens with the deployment decision (replace this step / let BF16 take over / both), shows the verified four-branch airline case as Fig. 1a next to rescue/damage/net (Fig. 1b), and argues one insight: the ability to change task outcomes (sensitivity: M, off-diagonal) and the ability to choose a beneficial precision intervention (value: net, rescue/harm sets, trigger vs oracle) have to be measured separately. Evidence chain: BF16 replacement is sensitive with small net (§4); a same-precision substitution (GPTQ-W4 d1→d2) is about as sensitive, partly on different units (§5, new Fig. 2 = F6; TOST wording per SAMEPREC A1, INTERIM K = 6); the frozen trigger enriches flips but captures 2–5 of 34–38 oracle net units (§6, Fig. 3 = F4 moved to main text). Build: 22 pp, Limitations starts p. 8, 0 undefined refs, 0 overfull boxes; `check_numbers.py` PASS (3045 numbers, 0 unverified).
 - **Same-precision text (binding wording):** "a higher bit width is not necessary for two-sided flips and controller dependence; they also appear when only the W4 calibration checkpoint is swapped". ΔM −0.98, 90% CI [−3.26, +1.30], p_TOST 0.067, equivalence not shown; ΔG_all −1.57 [−5.17, +2.04]; Δoff −1.21 [−4.09, +1.67]. Overlap: 107 both vs 30 expected, κ 0.53 [0.46, 0.58], task r 0.68, within-task shuffle 76 [69, 84], 138/245 flip under only one design. BF16's measured net values are kept (§5 "The measured value of the BF16 replacement stands"). K is marked `\pending{}` for the 10-03 freeze.
