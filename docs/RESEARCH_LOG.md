@@ -10,6 +10,17 @@ Newest first.
 
 ---
 
+## W99g — q14 (Qwen3-14B) BFCL four-arm fork gate: PASS; call-rewriter instance-name leak fixed; process-shared BFCL long-context state found and fixed (2026-10-01 23:05 PDT)
+**TL;DR** This is the short gate for the q14 BFCL fork, a within-Qwen-family scale sensitivity check (GPTQ-W4 d1 only; exploratory). Every check passes, so the 4 staged q14 fork tasks are queued (W99h).
+- **(a) Acceptance.** BB no-op passes 4/4 and QQ no-op 8/8. Q replay at t is bit-exact, and replay fidelity, re-prefill, save/load and isolation (4/4) all pass, with 0 branch errors. The 8 divergent states come from 12 items.
+- **(b) Same-checkpoint control.** With B and Q on the same GPTQ checkpoint, 0/12 items diverge, and the four arms are identical at all 4 forced states.
+- **(c) Leak fix.** In fork branches, `bfcl_run` maps the per-branch instance name inside rewritten string arguments, and in the observations, back to the canonical `cloq_agent`. A regression test reproduces the W99f base_126 failure with the fix off and passes with it on (9/9 tests).
+- **(c) Qwen unchanged.** Replaying all 45,035 recorded q4/q8/q14 BFCL decisions gives byte-identical observations and prompts.
+- **New finding.** BFCL's TravelAPI aliases module-level long-context card dicts into instance state, so a booking in one episode changes later episodes in the same process. This is fixed by unaliasing after `_load_scenario`.
+- **Open issue (historical, not touched).** The q4 long-context dev forks show replay-inconsistent backend state on 38/133 (GPTQ-W4), 21/151 (AWQ), 43/165 (GPTQ-W3) and 50/197 (KV4) states. `analyze_ext`/`ext_r2` admit them. q8 is clean.
+
+Evidence: `analysis/fork/ext_q14_gate/{GATE.md,gate_bfcl_q14_gptq_w4_d1/,gate_same_bfcl_q14_gptq_w4_d1/,replay_obs_check.{py,json},test_bfcl_instance_leak.out}`, `tests/test_bfcl_instance_leak.py`, `scripts/ext/bfcl_run.py` (W99g blocks), queue `done/fork_ext_gate{,_same}_q14_gptq_w4_d1_bfcl.json`, logs `/data/ziyangs/cloq_work/logs/tasks/fork_ext_gate{,_same}_q14_gptq_w4_d1_bfcl.log`.
+
 ## W99f — l8 (Llama-3.1-8B) BFCL four-arm fork gate: FAIL; BFCL is at the capability floor for l8 (2026-10-01 21:40 PDT)
 **TL;DR** The second-family replication gate fails, so this line stops and the formal panel is not queued.
 - **What works on Llama.** A GPTQ-W4 d1 checkpoint was built through the queue: τ² cal run → `manifests/a6k2/l8/calib_fp_traj_c1.json` → GPTQ, 532 s. It serves correctly. Q replay is bit-exact across two builds, and QQ no-op passes 18/18.

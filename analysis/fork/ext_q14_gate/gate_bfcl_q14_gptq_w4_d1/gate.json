@@ -1,0 +1,966 @@
+{
+ "protocol": "fork-ext-v1",
+ "env": "bfcl",
+ "spec": {
+  "mode": "gate",
+  "q_blocks": [
+   "ext_q14_gptq_w4_d1_bfcl_eval:bfcl_base",
+   "ext_q14_gptq_w4_d1_bfcl_eval:bfcl_miss_param",
+   "ext_q14_gptq_w4_d1_bfcl_eval:bfcl_miss_func",
+   "ext_q14_gptq_w4_d1_bfcl_eval:bfcl_long_context"
+  ],
+  "b_blocks": [
+   "ext_q14_bf16_bfcl_eval:bfcl_base",
+   "ext_q14_bf16_bfcl_eval:bfcl_miss_param",
+   "ext_q14_bf16_bfcl_eval:bfcl_miss_func",
+   "ext_q14_bf16_bfcl_eval:bfcl_long_context"
+  ],
+  "n_items": 3,
+  "n_bb": 4,
+  "max_states": 12,
+  "n_iso": 4,
+  "concurrency": 8,
+  "out": "analysis/fork/ext_q14_gate/gate_bfcl_q14_gptq_w4_d1"
+ },
+ "servers": {
+  "B": {
+   "gpu": "2",
+   "port": 8103,
+   "pid": 1299434,
+   "ckpt": {
+    "kind": "bf16"
+   },
+   "path": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-14B/snapshots/40c069824f4251a91eefaf281ebe4c544efd3e18",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "2",
+    "8103",
+    "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-14B/snapshots/40c069824f4251a91eefaf281ebe4c544efd3e18",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.90",
+   "hook_coverage": null,
+   "canary": "80a6244fbc48e071",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-14B",
+     "revision": "40c069824f4251a91eefaf281ebe4c544efd3e18",
+     "chat_template_kwargs": {
+      "enable_thinking": false
+     }
+    },
+    "weights": "Qwen/Qwen3-14B@40c069824f4251a91eefaf281ebe4c544efd3e18",
+    "ckpt": {
+     "kind": "bf16"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 16,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "c345f557748f9435",
+   "canary_ref_ok": true
+  },
+  "Q": {
+   "gpu": "3",
+   "port": 8203,
+   "pid": 1300606,
+   "ckpt": {
+    "kind": "gptq",
+    "wbits": 4,
+    "calib": "manifests/a6k2/q14/calib_fp_traj_c1.json"
+   },
+   "path": "/tmp/cloq_49731/ckpt_fork_ext_gate_q14_gptq_w4_d1_bfcl_Q",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "3",
+    "8203",
+    "/tmp/cloq_49731/ckpt_fork_ext_gate_q14_gptq_w4_d1_bfcl_Q",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.90",
+   "hook_coverage": null,
+   "canary": "dfc2dd0a3a14a324",
+   "ckpt_sha256": "120c6929e0dc14befbf930adb6243b52b9b95c4aa1a21d4e4824c1a4f0a48dc9",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-14B",
+     "revision": "40c069824f4251a91eefaf281ebe4c544efd3e18",
+     "chat_template_kwargs": {
+      "enable_thinking": false
+     }
+    },
+    "weights": "sha256:120c6929e0dc14befbf930adb6243b52b9b95c4aa1a21d4e4824c1a4f0a48dc9",
+    "ckpt": {
+     "kind": "gptq",
+     "wbits": 4,
+     "calib": "manifests/a6k2/q14/calib_fp_traj_c1.json"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 4,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "89fb65f6eac88fce"
+  },
+  "same_effective_config": false,
+  "q_quantization": {
+   "method": "GPTQ",
+   "wbits": 4,
+   "group_size": 128,
+   "sym": false,
+   "percdamp": 0.01,
+   "blocksize": 128,
+   "act_order": true,
+   "true_sequential": true,
+   "source_model": "Qwen/Qwen3-14B",
+   "source_revision": "40c069824f4251a91eefaf281ebe4c544efd3e18",
+   "storage": "fake-quant bf16",
+   "calibration_manifest": "/data/ziyangs/cloq/manifests/a6k2/q14/calib_fp_traj_c1.json",
+   "moe_experts": null,
+   "calibration": {
+    "protocol": "v1",
+    "arm": "fp_traj",
+    "draw": "c1",
+    "draw_seed": 20260729,
+    "budget_rows": 64000,
+    "total_rows": 64000,
+    "rows_within_budget": true,
+    "n_states": 57,
+    "n_tasks": 57,
+    "rows_per_state_min": 1122,
+    "rows_per_state_max": 1123,
+    "median_context_tokens": 6011.0,
+    "total_context_tokens": 370234,
+    "states_by_source": {
+     "fp": 57
+    },
+    "states_by_depth_quartile": {
+     "0": 17,
+     "1": 12,
+     "2": 14,
+     "3": 14
+    },
+    "states_by_domain": {
+     "retail": 39,
+     "airline": 18
+    },
+    "fp_run": "a6k2_q14_bf16_cal",
+    "q_run": null,
+    "novelty": null,
+    "notes": [],
+    "split_file_sha256": "7d1671154c37375990fd01999df2257e1bef916ee8201158b850846876315a79",
+    "manifest_sha256": "9236447e413b009e45d989227d2a3ff8c557fc0a7f11aa55c9050630d7a39629"
+   },
+   "seconds_quantize": 976.2657577991486,
+   "n_expert_tensors_rtn": 0
+  },
+  "user_base": null,
+  "host": "node006",
+  "job": "49731"
+ },
+ "bases": {
+  "B": "http://127.0.0.1:8103/v1",
+  "Q": "http://127.0.0.1:8203/v1"
+ },
+ "search": {
+  "n": 12,
+  "n_states": 8,
+  "n_no_divergence": 4,
+  "excluded": [],
+  "categories": [
+   "class:talk->act",
+   "tool_args",
+   "tool_count",
+   "tool_name"
+  ]
+ },
+ "fwd_seconds": 183.31789708137512,
+ "states": [
+  {
+   "state_id": "3f7298ab0e223dc0",
+   "domain": "bfcl_base",
+   "task_id": "multi_turn_base_97",
+   "t": 4,
+   "category": "tool_name",
+   "budget": {
+    "decisions_used": 4,
+    "turn_idx": 1,
+    "step_in_turn": 2,
+    "max_steps_per_turn": 20
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "tools_sha_ok": true,
+    "a_B_ok": true
+   },
+   "a_noop_QQ": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   },
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 5
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "BQ_first_prompt_eq_BB_first": true,
+    "ok": true
+   },
+   "outcomes": {
+    "QQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 21,
+     "duration": 51.95139479637146,
+     "error": null
+    },
+    "BB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 14,
+     "duration": 34.618956565856934,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 14,
+     "duration": 31.98231863975525,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 18,
+     "duration": 51.48305797576904,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "1e42da27e75eb1d4",
+   "domain": "bfcl_miss_param",
+   "task_id": "multi_turn_miss_param_164",
+   "t": 0,
+   "category": "tool_count",
+   "budget": {
+    "decisions_used": 0,
+    "turn_idx": 0,
+    "step_in_turn": 0,
+    "max_steps_per_turn": 20
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "tools_sha_ok": true,
+    "a_B_ok": true
+   },
+   "a_noop_QQ": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   },
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 1
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "BQ_first_prompt_eq_BB_first": true,
+    "ok": true
+   },
+   "outcomes": {
+    "QQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 9,
+     "duration": 50.22483682632446,
+     "error": null
+    },
+    "BB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 10,
+     "duration": 55.379698276519775,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "official_reward": 1.0,
+     "termination_reason": "completed",
+     "n_decisions": 11,
+     "duration": 68.9278872013092,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 9,
+     "duration": 55.951648235321045,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "b939cbb88e5089f2",
+   "domain": "bfcl_miss_param",
+   "task_id": "multi_turn_miss_param_128",
+   "t": 2,
+   "category": "tool_args",
+   "budget": {
+    "decisions_used": 2,
+    "turn_idx": 1,
+    "step_in_turn": 0,
+    "max_steps_per_turn": 20
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "tools_sha_ok": true,
+    "a_B_ok": true
+   },
+   "a_noop_QQ": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   },
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 3
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "BQ_first_prompt_eq_BB_first": true,
+    "ok": true
+   },
+   "outcomes": {
+    "QQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 10,
+     "duration": 35.99399161338806,
+     "error": null
+    },
+    "BB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 9,
+     "duration": 36.93804717063904,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 9,
+     "duration": 32.579888105392456,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 10,
+     "duration": 34.19646382331848,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "3ac958fbac8658ad",
+   "domain": "bfcl_miss_param",
+   "task_id": "multi_turn_miss_param_151",
+   "t": 8,
+   "category": "tool_args",
+   "budget": {
+    "decisions_used": 8,
+    "turn_idx": 3,
+    "step_in_turn": 1,
+    "max_steps_per_turn": 20
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "tools_sha_ok": true,
+    "a_B_ok": true
+   },
+   "a_noop_QQ": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   },
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 9
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "BQ_first_prompt_eq_BB_first": true,
+    "ok": true
+   },
+   "outcomes": {
+    "QQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 10,
+     "duration": 4.101719379425049,
+     "error": null
+    },
+    "BB": {
+     "reward": 1.0,
+     "official_reward": 1.0,
+     "termination_reason": "completed",
+     "n_decisions": 10,
+     "duration": 4.81487774848938,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "official_reward": 1.0,
+     "termination_reason": "completed",
+     "n_decisions": 10,
+     "duration": 4.862863779067993,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 10,
+     "duration": 4.252326488494873,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "b7a1b5edc3c413e4",
+   "domain": "bfcl_miss_func",
+   "task_id": "multi_turn_miss_func_32",
+   "t": 2,
+   "category": "tool_count",
+   "budget": {
+    "decisions_used": 2,
+    "turn_idx": 1,
+    "step_in_turn": 0,
+    "max_steps_per_turn": 20
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "tools_sha_ok": true,
+    "a_B_ok": true
+   },
+   "a_noop_QQ": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   },
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 3
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "BQ_first_prompt_eq_BB_first": true,
+    "ok": true
+   },
+   "outcomes": {
+    "QQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 5,
+     "duration": 7.764781951904297,
+     "error": null
+    },
+    "BB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 7,
+     "duration": 19.452308654785156,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 5,
+     "duration": 14.087782382965088,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 5,
+     "duration": 7.68210768699646,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "a012008d36c6da23",
+   "domain": "bfcl_miss_func",
+   "task_id": "multi_turn_miss_func_85",
+   "t": 0,
+   "category": "tool_count",
+   "budget": {
+    "decisions_used": 0,
+    "turn_idx": 0,
+    "step_in_turn": 0,
+    "max_steps_per_turn": 20
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "tools_sha_ok": true,
+    "a_B_ok": true
+   },
+   "a_noop_QQ": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   },
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 1
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "BQ_first_prompt_eq_BB_first": true,
+    "ok": true
+   },
+   "outcomes": {
+    "QQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 9,
+     "duration": 24.68565607070923,
+     "error": null
+    },
+    "BB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 9,
+     "duration": 25.074212312698364,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 9,
+     "duration": 25.605588912963867,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 9,
+     "duration": 27.444082021713257,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "2ca6090078ec239e",
+   "domain": "bfcl_miss_func",
+   "task_id": "multi_turn_miss_func_0",
+   "t": 1,
+   "category": "tool_count",
+   "budget": {
+    "decisions_used": 1,
+    "turn_idx": 0,
+    "step_in_turn": 1,
+    "max_steps_per_turn": 20
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "tools_sha_ok": true,
+    "a_B_ok": true
+   },
+   "a_noop_QQ": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   },
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 2
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "BQ_first_prompt_eq_BB_first": true,
+    "ok": true
+   },
+   "outcomes": {
+    "QQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 12,
+     "duration": 56.36311960220337,
+     "error": null
+    },
+    "BB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 26,
+     "duration": 103.51223349571228,
+     "error": null
+    },
+    "BQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 14,
+     "duration": 64.73632979393005,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 12,
+     "duration": 54.29181170463562,
+     "error": null
+    }
+   }
+  },
+  {
+   "state_id": "9458dcb1c8ab8814",
+   "domain": "bfcl_long_context",
+   "task_id": "multi_turn_long_context_51",
+   "t": 7,
+   "category": "class:talk->act",
+   "budget": {
+    "decisions_used": 7,
+    "turn_idx": 2,
+    "step_in_turn": 1,
+    "max_steps_per_turn": 20
+   },
+   "q_replay": {
+    "completion_ids_ok": true,
+    "prompt_ids_ok": true,
+    "action_ok": true
+   },
+   "io_check": {
+    "history_sha_ok": true,
+    "tools_sha_ok": true,
+    "a_B_ok": true
+   },
+   "a_noop_QQ": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   },
+   "replay": {
+    "ok": true,
+    "state_hash_equal_across_branches": true,
+    "state_at_t_eq_search": true,
+    "prefix_obs_messages_ok": true,
+    "n_steps_checked": 8
+   },
+   "e_reprefill": {
+    "QB_first_prompt_eq_orig_Q_t+1": true,
+    "BQ_first_prompt_eq_BB_first": true,
+    "ok": true
+   },
+   "outcomes": {
+    "QQ": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 12,
+     "duration": 16.016502618789673,
+     "error": null
+    },
+    "BB": {
+     "reward": 1.0,
+     "official_reward": 1.0,
+     "termination_reason": "completed",
+     "n_decisions": 13,
+     "duration": 21.43562078475952,
+     "error": null
+    },
+    "BQ": {
+     "reward": 1.0,
+     "official_reward": 1.0,
+     "termination_reason": "completed",
+     "n_decisions": 13,
+     "duration": 21.026299476623535,
+     "error": null
+    },
+    "QB": {
+     "reward": 0.0,
+     "official_reward": 0.0,
+     "termination_reason": "completed",
+     "n_decisions": 12,
+     "duration": 15.855818033218384,
+     "error": null
+    }
+   }
+  }
+ ],
+ "c_isolation": [
+  {
+   "state_id": "3f7298ab0e223dc0",
+   "rev_equal": true,
+   "conc_equal": true
+  },
+  {
+   "state_id": "1e42da27e75eb1d4",
+   "rev_equal": true,
+   "conc_equal": true
+  },
+  {
+   "state_id": "b939cbb88e5089f2",
+   "rev_equal": true,
+   "conc_equal": true
+  },
+  {
+   "state_id": "3ac958fbac8658ad",
+   "rev_equal": true,
+   "conc_equal": true
+  }
+ ],
+ "a_noop_BB": [
+  {
+   "state_id": "12eed156ff4290f6",
+   "run_id": "ext_q14_bf16_bfcl_eval",
+   "domain": "bfcl_base",
+   "task_id": "multi_turn_base_105",
+   "t": 2,
+   "noop": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   }
+  },
+  {
+   "state_id": "c46f38ea681fb2bf",
+   "run_id": "ext_q14_bf16_bfcl_eval",
+   "domain": "bfcl_base",
+   "task_id": "multi_turn_base_162",
+   "t": 6,
+   "noop": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   }
+  },
+  {
+   "state_id": "32f3c088c0fa8310",
+   "run_id": "ext_q14_bf16_bfcl_eval",
+   "domain": "bfcl_base",
+   "task_id": "multi_turn_base_38",
+   "t": 2,
+   "noop": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   }
+  },
+  {
+   "state_id": "a82f06088d5e6e94",
+   "run_id": "ext_q14_bf16_bfcl_eval",
+   "domain": "bfcl_base",
+   "task_id": "multi_turn_base_116",
+   "t": 6,
+   "noop": {
+    "n_decisions": true,
+    "prompt_token_ids": true,
+    "completion_token_ids": true,
+    "observations": true,
+    "outcome": true,
+    "prefix": true,
+    "ok": true
+   }
+  }
+ ],
+ "seconds_total": 955.811530828476,
+ "verdict": {
+  "q_replay_at_state": true,
+  "a_QQ": true,
+  "a_BB": true,
+  "replay_fidelity": true,
+  "c_isolation": true,
+  "c_saveload": true,
+  "e_reprefill": true,
+  "n_states": 8,
+  "n_bb_noop": 4,
+  "n_isolation": 4,
+  "n_search_excluded": 0,
+  "categories": [
+   "class:talk->act",
+   "tool_args",
+   "tool_count",
+   "tool_name"
+  ],
+  "n_branch_errors": 0,
+  "pass": true
+ },
+ "throughput": {
+  "n_items_searched": 12,
+  "n_states": 8,
+  "divergence_rate": 0.6666666666666666,
+  "t_star": [
+   0,
+   0,
+   1,
+   2,
+   2,
+   4,
+   7,
+   8
+  ],
+  "shadow_seconds_median": 4.780977725982666,
+  "search_wall_per_item": 49.29889768362045,
+  "branch_duration_median": 29.713200330734253,
+  "branch_duration_p90": 55.951648235321045,
+  "fwd_wall_per_branch": 5.728684283792973,
+  "n_fwd_branches": 32
+ }
+}

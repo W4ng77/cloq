@@ -45,6 +45,102 @@ from bfcl_eval.utils import load_dataset_entry, load_ground_truth_entry, make_js
 
 MODEL_NAME = "cloq_agent"  # BFCL uses it only to name the per-entry backend instances
 
+# W99g: per-branch instance-name leak. Fork branches (scripts/ext/fork_ext.py run_env) run under model names
+# "cf_<12 hex>" so that concurrent branches of one entry get separate backend instances. BFCL's call rewriter
+# (multi_turn_utils._process_method_calls) prefixes every `name(` with the instance name, including inside string
+# arguments: order_id='get_order_history()[0]' becomes '<model>_<entry>_TradingBot_instance.get_order_history()[0]',
+# and that text reaches the error message the agent sees (W99f, l8 base_126) or can be stored in backend state.
+# Fix: the instance-name prefix of a registered branch name is mapped back to the canonical MODEL_NAME (a) inside the
+# string literals of rewritten calls and (b) in the execution results the agent sees. Live runs (MODEL_NAME) never
+# register a name, so both steps are the identity there; fork branches then see exactly what MODEL_NAME would show.
+BRANCH_NAME_RE = re.compile(r"cf_[0-9a-f]{12}")
+_BRANCH_NAMES: set[str] = set()
+CANON_BRANCH_NAMES = True  # tests/test_bfcl_instance_leak.py switches it off to reproduce the leak
+_INST_RE = re.compile(r"(?<![A-Za-z0-9_])(cf_[0-9a-f]{12})_(?=\w*_instance\b)")
+
+
+def canon_instance_names(s):
+    """Replace a registered fork-branch model-name prefix of BFCL instance names by MODEL_NAME (identity otherwise)."""
+    if not CANON_BRANCH_NAMES or not isinstance(s, str) or "_instance" not in s:
+        return s
+    return _INST_RE.sub(lambda m: MODEL_NAME + "_" if m.group(1) in _BRANCH_NAMES else m.group(0), s)
+
+
+def _canon_string_literals(code: str) -> str:
+    """canon_instance_names applied only inside the string literals of a rewritten call (the call targets keep the
+    branch's own instance). Unparsable code is returned unchanged (eval then fails with a SyntaxError that quotes no
+    source text)."""
+    import io
+    import tokenize
+    try:
+        toks = list(tokenize.generate_tokens(io.StringIO(code).readline))
+    except (tokenize.TokenError, SyntaxError, IndentationError):
+        return code
+    starts, pos = [], 0
+    for line in io.StringIO(code).readlines():
+        starts.append(pos)
+        pos += len(line)
+    kinds = {tokenize.STRING} | ({tokenize.FSTRING_MIDDLE} if hasattr(tokenize, "FSTRING_MIDDLE") else set())
+    out, last = [], 0
+    for tk in toks:
+        if tk.type in kinds and "_instance" in tk.string:
+            a = starts[tk.start[0] - 1] + tk.start[1]
+            b = starts[tk.end[0] - 1] + tk.end[1]
+            out += [code[last:a], canon_instance_names(code[a:b])]
+            last = b
+    return "".join(out) + code[last:] if out else code
+
+
+def _install_rewriter_patch():
+    import bfcl_eval.eval_checker.multi_turn_eval.multi_turn_utils as MU
+    if getattr(MU._process_method_calls, "_cloq_canon", False):
+        return
+    orig = MU._process_method_calls
+
+    def _process_method_calls(function_call_string, instance_mapping):
+        out = orig(function_call_string, instance_mapping)
+        return _canon_string_literals(out) if CANON_BRANCH_NAMES and _BRANCH_NAMES else out
+
+    _process_method_calls._cloq_canon = True
+    MU._process_method_calls = _process_method_calls
+
+
+_install_rewriter_patch()
+
+# W99g: shared-state restoration fix. Some BFCL backends alias module-level constants into instance state when they load
+# a scenario: TravelAPI._load_scenario(long_context=True) inserts the CREDIT_CARD_EXTENSION / BOOKING_RECORD_EXTENSION
+# dicts by reference, and book_flight then decrements `balance` inside the shared constant. Every later TravelAPI
+# instance in the process (another item of a concurrent eval, another fork branch, the evaluator's instances) then
+# starts from a mutated card list, so a restored state depends on what ran before in the process. Fix: right after
+# _load_scenario each backend instance gets a private deep copy of its own attributes (one deepcopy call, so internal
+# sharing such as GorillaFileSystem's root/_current_dir is kept). The loaded values are unchanged; only the aliasing of
+# module constants is cut. Episodes that never mutate an aliased constant behave byte-identically.
+MULTI_TURN_CLASSES = ("GorillaFileSystem", "MathAPI", "MessageAPI", "TicketAPI", "TradingBot", "TravelAPI", "TwitterAPI",
+                      "VehicleControlAPI")  # every involved_classes value of the four multi_turn categories
+_UNALIAS = True  # tests/test_bfcl_instance_leak.py switches it off to reproduce the contamination
+
+
+def _install_unalias_patch():
+    import importlib
+    from bfcl_eval.constants.executable_backend_config import CLASS_FILE_PATH_MAPPING
+    for cname in MULTI_TURN_CLASSES:  # never import the memory/web backends (memory_vector loads an encoder at import)
+        cls = getattr(importlib.import_module(CLASS_FILE_PATH_MAPPING[cname]), cname)
+        orig = cls.__dict__.get("_load_scenario")
+        if orig is None or getattr(orig, "_cloq_unalias", False):
+            continue
+
+        def _load_scenario(self, *a, _orig=orig, **k):
+            r = _orig(self, *a, **k)
+            if _UNALIAS:
+                self.__dict__.update(copy.deepcopy(self.__dict__))
+            return r
+
+        _load_scenario._cloq_unalias = True
+        cls._load_scenario = _load_scenario
+
+
+_install_unalias_patch()
+
 
 def state_sha(model_name_u: str, test_entry_id: str) -> str:
     """Hash of the live backend instances of one entry (fork replay fidelity; scripts/ext/fork_ext.py)."""
@@ -146,6 +242,7 @@ class CloqFCHandler(OpenAICompletionsHandler):
         return inference_data
 
     def _add_execution_results_FC(self, inference_data, execution_results, model_response_data):
+        execution_results = [canon_instance_names(x) for x in execution_results]  # W99g; identity for MODEL_NAME
         if self.pending is not None:
             self.pending["observations"] = list(execution_results)
         return super()._add_execution_results_FC(inference_data, execution_results, model_response_data)
@@ -153,6 +250,10 @@ class CloqFCHandler(OpenAICompletionsHandler):
 
 def run_item(entry: dict, prompt_entry: dict, gt: list, category: str, base: str, meta: dict, policy=None,
              model_name: str = MODEL_NAME, track_state: bool = False) -> tuple[dict, list[dict]]:
+    if model_name != MODEL_NAME:  # fork branch: register its name for the instance-name canonicalisation (W99g)
+        if not BRANCH_NAME_RE.fullmatch(model_name):
+            raise ValueError(f"fork branch model name {model_name!r} must match {BRANCH_NAME_RE.pattern}")
+        _BRANCH_NAMES.add(model_name)
     h = CloqFCHandler(base, meta, entry["id"], policy=policy, model_name=model_name, track_state=track_state)
     t0 = time.time()
     term, err = "completed", None
