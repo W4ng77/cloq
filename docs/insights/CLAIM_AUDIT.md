@@ -369,3 +369,48 @@ Severity: **S1** = must fix before the evidence freeze (misstatement, internal c
 - **Holdout post hoc R2**, **ext/ext_r2**, the **R4 trigger, oracle and KL-row numbers** and the **Bank U** composition derivations (150, 208, 26, 1045, 1357, 14.4/18.2/18.9) also match.
 - **Intro case study** = ghf §4 Case 5.
 - **The advisor's two governing statements are respected**: (1) the abstract and intro do not claim an ordering that transfers; (2) the pairing control is never called a null in R2.
+
+---
+
+## 6. Resolution (W99e, 2026-10-01)
+
+Fixes applied to `paper/latex/sections/*.tex`. Each was checked against the source named above before it was applied. 36 of 37 fixed; P28 partly applied; one replacement wording (P5) was wrong, so the audit's alternative fix was used instead.
+
+- **P1** fixed: R3 holdout summary rewritten as proposed. It now says S1/S2 are confirmed, the primary endpoint is inconclusive and the estimate is descriptively negative.
+- **P2** fixed: R1 now describes S2 as a repeatability test against persona-preserving random pairing, and says it does not test concentration or direction.
+- **P3** fixed: R3 now reports the length-difference association (untested regex features), as in the appendix.
+- **P4** fixed: the discussion now says task×block units (full pool), with the W4 pool net +0.7 [−0.3, +1.6].
+- **P5** fixed, but not with the proposed wording. That wording is factually wrong. In ghf §4 Case 6 (q4 AWQ retail 61, pattern 1101), Q's pivot action is *text*, and the failed `modify_pending_order_items` write is made by whichever controller continues. B, continuing, makes the failed write itself and fails; Q, continuing, makes the same failed write, recovers and succeeds. There is no "Q's failed write" before B takes over. The audit's alternative was applied instead: the clause and its dangling §discussion pointer were deleted.
+- **P6** fixed, with one change. "in which Q rarely succeeds" became "whose own success is low": q8 RTN-W3 Q success is 9–26% per block-domain (queue/done/a6k2_q8_rtn_w3_qx.json), which is low but not rare.
+- **P7** fixed as proposed: all AUCs were re-checked in token_mech_20261001T185031Z.md §1a/§1b and per-cell rows.
+- **P8** fixed: the abstract and method src now point to bank_u_f01_f02_f03_20261002T003037Z.md. The f01 file stays cited in the appendix, where it is a required source.
+- **P9** fixed: 924/924 production, then 328/328 Bank U production no-ops over f01–f03 (summed from analysis/fork/bank_u/*/f0*/bank_summary.json; f01 alone 121), then 135/135 gate.
+- **P10** fixed: the abstract uses "the first decision where the two models' actions differ in tool structure (text-only differences are skipped)". The intro R1 bullet uses the same phrase, and R1/the discussion use "first tool-structure-divergent action".
+- **P11** fixed: discussion and limitations, as proposed.
+- **P12** fixed: discussion and R2.
+- **P13** fixed, with one scope change. "a second simulator neither confirms nor reverses them" became "a second simulator (W4 cells only) neither confirms nor reverses the q8 orderings", because SIMCTRL-P has no RTN-W3 states.
+- **P14** fixed: abstract and R3.
+- **P15** fixed: the abstract is as proposed. The intro bullet now says "captures more outcome-changing decisions than random selection at two of three rates", and R4 no longer says "enriched".
+- **P16** fixed: intro and limitations. The success_ni snapshot was not re-run.
+- **P17** fixed: there is a short caveat in the abstract, and Limitations has the proposed sentence plus the deterministic-setting clause.
+- **P18** fixed. 21/9 flips were verified.
+- **P19** fixed.
+- **P20** fixed.
+- **P21** fixed. The optional holdout sentence was not added (it is already in R3).
+- **P22** fixed.
+- **P23** fixed: abstract, R4 heading ("Uncertainty is associated with divergence") and R4 closing sentence. The intro bullet was softened the same way.
+- **P24** fixed: merged into the BFCL/ALFWorld sentence ("one run per item"; "ALFWorld: q8 only").
+- **P25** fixed.
+- **P26** fixed.
+- **P27** fixed. The re-verdict was verified in FORK_PROTOCOL §8.
+- **P28** partly applied: "snapshot 20261001T0600Z" was added next to 924/924 in the method. The proposed appendix note ("later snapshots reproduce the estimates") was **not applied**, because I could not verify the later dev_all outputs in this session.
+- **P29** fixed: the method src now points to /data/ziyangs/cloq_work/sims/*.json (hf_id) and the RESEARCH_LOG. One sentence was added to Appendix "Fork mechanics".
+- **P30** fixed: the menu oracle moved to Appendix H (page fit), labelled "state-weighted".
+- **P31** fixed: src added.
+- **P32** fixed.
+- **P33** fixed: abstract and R3. R3 adds "1200 of the 1224 units ... 2 structural task×cell exclusions".
+- **P35** fixed.
+- **P37** fixed: Bank U M and net gain in R3 are now in % and pp.
+- **P38** fixed: KV8 pool row added to Table 2 from ghf §1 KV8:all and §2.
+- **P39** fixed: the 3×3 caption gives summed off-diagonal 27.1% / 15.2% (derived from the figure counts) and equal-weight headers.
+- **§4 `\todo{RESTORE}`** (appendix.tex): replaced with a plain statement. The q8 RTN-W3 restored-attention vs byte-matched random-attention comparison was not completed. The attention arm and random-attention seed 1 ran (queue/done); seeds 2 and 3 are in queue/deferred (restoration line paused, W67/W74). The restoration output was never checked, and no result is reported.

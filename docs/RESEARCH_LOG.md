@@ -10,6 +10,41 @@ Newest first.
 
 ---
 
+## W99e — Claim-audit fixes applied to the paper (2026-10-01 PDT)
+**TL;DR** The fixes in `docs/insights/CLAIM_AUDIT.md` (P1–P33, P35, P37–P39) are now in `paper/latex/sections/*.tex`. 36 are fixed and P28 is partly applied: the appendix note on later snapshots was not verified, so it was left out. P5's replacement wording was factually wrong: in Case 6 the failed write is made by the continuing controller, not by Q before the handover. The audit's alternative was applied instead (the clause was deleted).
+- **Headline wording changes:**
+  - "First divergent decision" is now "first decision where the two models' actions differ in tool structure (text-only differences are skipped)".
+  - The holdout is "inconclusive; descriptively negative" and no longer "confirms no benefit".
+  - S2 is described only as a repeatability test.
+  - The off-diagonal share now carries a caveat in the abstract and Limitations: no same-precision perturbation control.
+  - The mean interaction is "near zero" only for the development W4 pool.
+  - The trigger "captured more than random at two of three rates" and no longer "enriches".
+  - Uncertainty is "associated with" divergence.
+- **Numbers that were corrected or added:**
+  - Bank U production no-ops 328/328, with the 135/135 gate listed separately.
+  - Stress turnover is 18.4–20.4%, except q8 RTN-W3 at 6.7%.
+  - The R4 q4 U2Q and per-cell AUC exceptions are reported.
+  - Table 2 has a KV8 pool row.
+  - The 3×3 caption gives summed off-diagonal shares of 27.1% / 15.2%.
+  - The holdout analysed 1200 of 1224 units.
+- **RESTORE todo:** replaced with a plain statement that the q8 RTN-W3 attention vs byte-matched random-attention comparison was not completed. The attention arm and seed s1 ran; s2 and s3 are deferred. No result is reported.
+- **Page fit:** these items moved to the appendix:
+  - R4 menu oracle and KL-row details (Appendix H)
+  - ext-R2 ranges (Appendix extr2)
+  - the SIMCTRL-P E[I²] sentence (already in Appendix simctrlp)
+  - the Q0 subsample detail (Appendix banku)
+
+  Wording was tightened elsewhere, and no result was deleted. The main text ends on p. 8 and Limitations starts at the top of p. 9. 0 overfull boxes, 0 undefined references, `check_numbers.py` PASS.
+- **Evidence:**
+  - `docs/insights/CLAIM_AUDIT.md` §6 Resolution
+  - `paper/latex/sections/*.tex`
+  - `analysis/fork/out/ghf_20261001T211519Z.md` (§4 Case 6)
+  - `analysis/fork/out/token_mech_20261001T185031Z.md`
+  - `analysis/fork/bank_u/*/f0*/bank_summary.json`
+  - `/data/ziyangs/cloq_work/queue/{done,deferred}/pert_q8_rtn_w3_restore_*attn*_q345.json`
+
+---
+
 ## W99d — Paper integration of the review-9 CPU analyses (pairing control, SIMCTRL-P E[I²], ext R2, holdout R2 post hoc, trigger oracles/KL) (2026-10-01 20:30 PDT)
 **TL;DR** Five committed CPU analyses are now in the paper, with the advisor's wording. R2: W4 equal-weight off-diagonal 26.9% vs 38.0% expected under the *marginal-preserving pairing agreement control* (κ 0.29 [0.27, 0.32], crossed [0.22, 0.36]); KV8 15.3% vs 33.6% (κ 0.55). It is not a no-interaction null; same-state I ≠ 0 is identified regardless. R3: SIMCTRL-P noise-corrected E[I_s²] = 0.050 [0.004, 0.107] (exploratory). BFCL/ALFWorld show controller dependence without an LLM user. Holdout R2 is labelled post hoc (G −4.6 conditional on divergence ≈ G_all −4.57 because 1180/1200 units diverge). R4: a matched oracle shows large headroom (the rule captures 4/34, 2/38, 5/38 of the oracle net), and a post-hoc KL row is not significant on net. The coverage table is fixed (BFCL q4 GPTQ-W3: 591 items · 540 st). Wording: no sentence says the simulator reverses the G/H/F ordering, and none says the holdout shows "no effect".
 - **Main-text edits:**
