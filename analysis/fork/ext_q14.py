@@ -3,7 +3,9 @@
 WITHIN-QWEN-FAMILY SCALE SENSITIVITY CHECK; SINGLE CONFIGURATION (GPTQ-W4 d1); NOT SECOND-FAMILY EVIDENCE; EXPLORATORY.
 
 Pipeline = the existing ext pipeline, imported, not copied:
-  admission  analysis/fork/analyze_ext.py load_dir (quarantine of a task directory whose QQ no-op sample mismatched; items
+  admission  analysis/fork/analyze_ext.py load_dir, replay_guard and superseded_pending (W99o: every admitted divergent
+             state must be replay-consistent; nothing is written while a quarantined directory's rerun is pending or a
+             directory is incomplete); quarantine of a task directory whose QQ no-op sample mismatched; items
              excluded by search exclusion / branch error / branch missing / state-original mismatch leave the denominator;
              non-divergent items enter with four equal arms); G_all, r/d/M via analyze_ext.analyse (analyze_dev.effects);
   R2         analysis/fork/ext_r2.py r2_effects / table3 / patterns16 on divergent states: G, H, F, the paired differences
@@ -13,8 +15,7 @@ Bootstrap: analyze_ext.StratBoot, B = 2000, seed 20261001, items within stratum 
 Cells: bfcl:{q4,q8,q14}:gptq_w4_d1 (only these directories are read; nothing is pooled with the paper's W4 pool here).
 Common task panel: the items analysed (not excluded) in all three cells. Each model selects its own divergent states on
 it, so the cross-model comparison is DESCRIPTIVE (different state sets, different t*, different base rates).
-Also reported (not used for admission, as in the existing pipeline): the per-state replay-consistency flag of the dev
-forks (effects.jsonl "replay"), divergence types, and failure types (termination reason / official error type of
+Also reported: divergence types, and failure types (termination reason / official error type of
 failing arms on divergent states).
 
 usage: python analysis/fork/ext_q14.py [--B 2000] -> analysis/fork/out/ext_q14_<UTC>.{json,md}
@@ -82,7 +83,15 @@ def main():
     a = ap.parse_args()
     t0 = time.time()
     dirs = {m: [AE.DEV / f"bfcl_{m}_gptq_w4_d1_{c}" for c in CATS] for m in MODELS}
+    names = [d.name for ds in dirs.values() for d in ds]
+    pending = AE.superseded_pending(list(MODELS), names)  # W99o: a fixed-code rerun of a quarantined directory is not done
+    if pending:
+        raise SystemExit(f"ext_q14: superseded directories still rerunning (W99o): {pending}; nothing written")
     loaded = {m: [AE.load_dir(d) for d in ds if d.is_dir()] for m, ds in dirs.items()}
+    incomplete = [L["dir"] for m in MODELS for L in loaded[m] if L["incomplete"]]
+    if incomplete:
+        raise SystemExit(f"ext_q14: incomplete directories {incomplete}; nothing written")
+    guard = AE.replay_guard([L for m in MODELS for L in loaded[m]], "ext_q14")  # W99o replay-consistency guard
     task_status = {}
     for m in MODELS:
         for c, d in zip(CATS, dirs[m]):
@@ -168,7 +177,7 @@ def main():
                       "git_head": subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()},
            "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
            "bootstrap": {"B": a.B, "seed": AD.SEED, "scheme": "items with replacement within bfcl category; draws shared by all cells", "level": "95% percentile"},
-           "tasks": task_status, "cells": cells, "common_panel": common_res,
+           "replay_consistency_guard_W99o": guard, "tasks": task_status, "cells": cells, "common_panel": common_res,
            "n_input_files": len(files), "input_files_digest_sha256": hashlib.sha256(json.dumps(files, sort_keys=True).encode()).hexdigest(),
            "complete": bool(q14.get("present")) and q14["coverage"]["tasks"] == 4}
     res["seconds"] = round(time.time() - t0, 1)

@@ -10,6 +10,33 @@ Newest first.
 
 ---
 
+## W99h — q14 (Qwen3-14B) BFCL GPTQ-W4 d1 four-arm fork: results (within-Qwen-family scale sensitivity check) (2026-10-02 02:00 PDT)
+**TL;DR** This is a within-Qwen-family scale sensitivity check with a single configuration (GPTQ-W4 d1). It is not second-family evidence, and it is exploratory.
+- **Run.** The fixed panel is complete: 4/4 tasks and 788 items, with 0 excluded and 0 quarantined. 471 states diverge (60%): base 99, miss_param 127, miss_func 144, long_context 101. QQ no-op passes 58/58, and 471/471 states are replay-consistent under the W99o guard.
+- **Effects on divergent states** (pp, 95% item bootstrap):
+  - G +5.7 [+2.9, +8.7], H +0.4 [−1.1, +1.9], F +9.1 [+5.8, +12.5]
+  - G−H +5.3 [+2.3, +8.4], F−G +3.4 [+1.3, +5.6], F−H +8.7 [+5.5, +11.9], I −3.0 [−5.4, −0.7]
+  - G_all +3.4 [+1.8, +5.2]
+  - arm success BB 16.6%, BQ 13.2%, QB 7.9%, QQ 7.4%
+- **3×3 and patterns.** The 3×3 diagonal holds 441/471 states. The off-diagonal share is 6.4% [4.2, 8.7], against 21.4% expected under independent pairing (κ 0.703), with 0 strict reversals. Top patterns: 0000 376, 1100 31, 1111 20, 1000 17, 0011 10.
+- **Divergence types:** tool_args 149, other/tool_count 119, tool_name 91, talk→act 77, act→talk 35.
+- **Failing arms:** instance-state mismatch dominates, followed by execution-response mismatch and empty-turn responses. A few context overflows and force-quits occur.
+- **Common panel** (all 788 items; DESCRIPTIVE, because each model selects its own divergent states):
+
+  | model | states | G | H | off-diagonal | κ |
+  |---|---|---|---|---|---|
+  | q4 | 573 | +2.8 | +1.4 | 11.7% | 0.574 |
+  | q8 | 533 | +0.9 | +1.5 | 4.7% | 0.710 |
+  | q14 | 471 | +5.7 | +0.4 | 6.4% | 0.703 |
+
+  G is not monotone in scale.
+- **Infrastructure.**
+  - No task failed and none was requeued.
+  - The miss_param fork process started after W99p's `bfcl_run` change, which is a no-op without `CLOQ_TOKENIZER_MODE=mistral`.
+  - The q4 GPTQ-W4 long-context cell used here is the W99o fixed-code rerun. Its four-arm numbers are identical to the pre-W99o cell.
+
+Evidence: `analysis/fork/out/ext_q14_20261002T085647Z.{md,json}` (script `analysis/fork/ext_q14.py`: analyze_ext admission with the W99o guard plus ext_r2 estimands; q14 is never pooled into the W4 pool), dev outputs (cluster only) `analysis/fork/ext/dev/bfcl_q14_gptq_w4_d1_{base,miss_param,miss_func,long_context}/`, queue `done/fork_ext_dev_q14_gptq_w4_d1_bfcl_*.json`, logs `/data/ziyangs/cloq_work/logs/tasks/fork_ext_dev_q14_gptq_w4_d1_bfcl_*.log`, gate W99g.
+
 ## W99k — Same-precision 2×2 fork (Q vs Q′): protocol pre-registered, gate PASS (q4, q8), 12 formal tasks queued (2026-10-02 00:55 PDT)
 **TL;DR** This adds the same-precision control asked for by the reviewer. The BF16 role is replaced by Q′ = GPTQ-W4 d2 (calibration c2), and Q = GPTQ-W4 d1 is unchanged. The fork pipeline is otherwise identical. The protocol was committed before any outcome: `docs/insights/SAMEPREC_PROTOCOL.md`, **sha256 5c58d1e7d07ef10bd39f841236fccfd1436107c57ad264c62eaf14df94735823** (commit 0d2f1ee). The gate passes for both cells. Blocks f01–f17 are queued at −28.
 - **Design.** Driver role B = Q′, so BB = Q′Q′, BQ = Q′Q, QB = QQ′ and QQ = QQ. The Q episodes are the same `a6k2_<m>_gptq_w4_d1_<blk>` runs as in the precision dev forks, so units pair task×block one to one. Cells: q4 (1 GPU) and q8 (2 GPUs, pinned to node004/005/007).
