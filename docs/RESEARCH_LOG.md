@@ -10,6 +10,49 @@ Newest first.
 
 ---
 
+## W98 — Bank U f01–f03, frozen token-trigger validation (f02/f03) and recovery q8 analysed; paper placeholders BANKU-F023, TOKEN-VALIDATION, RECOVERY-Q8 filled (2026-10-01 PDT)
+**TL;DR** All expected GPU tasks were complete (18/18 Bank U native blocks, 12/12 Q0 blocks, 18/18 score blocks, inject_q8 30/30 states); nothing is missing.
+- **Bank U f01–f03** (task-equal, t over 3 block means): M stays below Bank P and every G interval covers 0. The q4 > q8 contrast seen in f01 weakens: q8 AWQ-W4 is now at the q4 level. Text (class ii) is still the main composition share (150/208 = 72.1% deduplicated), but per instance it flips no more often than tool or act/talk differences (14.4% vs 18.2% / 18.9%). These labels come from one simulator (W95/W96 caveat unchanged; the simulator control covers f01 flips only).
+- **Token trigger (frozen rule sha 335e737d…, unchanged):** on f02/f03 U1 the net gain beats a matched-count random trigger only at the 5% rate (+4 vs +0.21, exact one-sided p = .0345). At 10% and 20% it does not (p = .417, .262). The rule fixed no α or multiplicity rule, and the 5% result does not survive Holm over the three rates. Turnover capture is above chance (p = .0182 / .0613 / .0002). Reading: it finds divergence or turnover, not reliable net gain.
+- **Recovery q8:** same reading as q4. INV vs VAL turnover is 5/30 under each controller and PP vs VAL is 6/30 (B) and 5/30 (Q). The error-specific effect INV − PP is −0.03 [−0.13, +0.07] under B and −0.13 [−0.30, +0.03] under Q. D_INV ≠ 0 in 6/30, mean 0.00. 7/10 premature writes were rejected by the environment, so that category mostly did not inject a write.
+
+- **Bank U, native M (U1 / U2B / U2Q; n = 255 / 255 / 60 rows; r/d counts in the md):**
+  - q4 GPTQ-W4 .090 [.029, .151] / .082 / .083
+  - q4 AWQ-W4 .082 / .078 / .083
+  - q4 KV8 .047 / .039 / .017
+  - q8 GPTQ-W4 .047 / .067 / .050
+  - q8 AWQ-W4 .086 [.002, .171] / .090 / .067
+  - q8 KV8 .035 / .031 / 0
+  - G: U1/U2B within ±.028; U2Q up to +.050. All intervals cover 0.
+  - Superseded f01 statements: q8 "at most .047" (q8 AWQ is now .086/.090); the text rate range .020–.176 is now .126–.182; the per-instance text rate (.126) was below act/talk (.200) and is now 14.4% vs 18.9% (iii 10.9% is now 18.2%); Q0 turnover "≥ native" no longer holds (q8 AWQ U2B 4/52 vs 5/52; q4 KV8 U2B 1/58 vs 2/58); length-difference co-occurrence, seen only in q4 in f01, now appears in U1 and U2B of both models.
+  - Transfer: q4 U2B has 21 pairwise co-flips vs 3.3 expected (16/21 same direction) from 15 distinct states. q8 U2B has 14 vs 2.8 from 10 states; in f01, q8 had none. Q0 determinism holds: Y(a_B→Q0) is identical across cells on 146/146 shared states.
+- **Token validation detail** (U1, S_mm, f02/f03, 1020 rows, 69 turnover states):
+
+  | rate | escalated | net vs random (p) | r/d | turnover vs random (p) |
+  |---|---|---|---|---|
+  | 5% | 50 | +4 vs +0.21 (.0345) | 6/2 | 8 vs 3.48 (.0182) |
+  | 10% | 114 | +2 vs +0.98 (.417) | 7/5 | 12 vs 7.52 (.0613) |
+  | 20% | 222 | +5 vs +2.38 (.262) | 16/11 | 27 vs 14.30 (.0002) |
+
+  - Secondary candidates (S_H0, S_lp) also capture turnover above chance at 10–20%, with no net-gain signal.
+  - The 20% thresholds of q8 GPTQ/KV8 are −0.25 (frozen as is).
+  - Script checks: 3420/3420 rows scored; every a_Q token is Q's argmax; 0 flips with identical ids.
+  - Note: sections 1a/1b/2 of the new token_mech output now pool f01–f03, so they mix development and validation blocks. The paper's mechanism numbers stay on f01 (`token_mech_20261001T185031Z`).
+- **Paper:**
+  - R3 Bank U paragraph updated to f01–f03 (it says so).
+  - R4 validation filled; the "validated" heading became "tested", and the in-sample f01 numbers were dropped from the main text for space.
+  - Appendix: tab:banku and tab:taxonomy extended to f01–f03 (f01 counts in the caption); new text-length paragraph; transfer and Q0 paragraphs updated; new tab:recovery8; the coverage table's q8 KV8 Bank U is 3 b.
+  - method/limitations: "one block" became "three blocks".
+  - check_numbers PASS (1962 occurrences). tectonic: 15 pp, 0 overfull, 0 undefined; Limitations starts on p. 8. The abstract is unchanged (not contradicted).
+- **Caveats:**
+  - k = 3 blocks, so the t intervals have 2 df and are wide.
+  - The analyze_bank_u.py md footer still says "descriptive for f01 (k = 1)". This is stale template text and does not affect the numbers.
+  - inject_q8 summaries reproduced byte-identically on rerun.
+- **Evidence:**
+  - `analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.{md,json}`; `analysis/fork/out/token_mech_20261002T003130Z.{md,json}`; `analysis/recovery/inject_q8/summary_v2.{md,json}`;
+  - inputs `analysis/fork/bank_u/<m>_<cell>/f0{1,2,3}/bank_{rows.jsonl,summary.json}`, `analysis/fork/bank_u/q0/*/f0*/q0_{rows.jsonl,summary.json}`, `analysis/fork/token_scores/*/f0{2,3}/score_summary.json`;
+  - `paper/latex/sections/{results_r3,results_r4,appendix,method,limitations}.tex`.
+
 ## W99 — SIMCTRL-P analysis script (`analyze_simctrl_p.py`) and an INTERIM batch-1 look (3 of 4 cells) (2026-10-01 17:35 PDT)
 **TL;DR** This entry is the analysis script for the W97 Bank P simulator control, plus an interim look at the batch-1 data that was finished at the time. The design is from GPT-6.1 review 7. The interim output covers 30 states (q4 AWQ-W4, q8 GPTQ-W4, q8 AWQ-W4; q4 GPTQ-W4 batch 1 had not finished; batch 2 just queued). It is labelled INTERIM, is a robustness check only, and is not interpreted here. The final analysis runs once both batches are in.
 - **Estimands.** Per state and arm, Ȳ = the mean over the valid R = 5 Sonnet replicates. G = BQ−QQ, H = QB−QQ, F = BB−QQ, G−H, F−G, F−H come from these per-state means and are averaged over states. They are given per cell, as an equal-weight pool over the cells present, for all batches and for batch 1 alone (pre-planned).

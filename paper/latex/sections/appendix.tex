@@ -59,7 +59,7 @@ q4 AWQ-W4  & 58 t $\cdot$ 986 st $\cdot$ 20/20 b & 27 t $\cdot$ 453 st $\cdot$ 2
 q4 KV8     & 58 t $\cdot$ 412 st $\cdot$ 22/22 b & 27 t $\cdot$ 181 st $\cdot$ 22/22 b & -- & 3 b $\cdot$ 393 / 177 rows & -- / -- \\
 q8 GPTQ-W4 & 58 t $\cdot$ 1017 st $\cdot$ 20/20 b & 27 t $\cdot$ 456 st $\cdot$ 20/20 b & 80 t $\cdot$ 477 st $\cdot$ 6/6 b; holdout dirs & 3 b $\cdot$ 393 / 177 rows & 788 $\cdot$ 533 st / 134 $\cdot$ 115 st \\
 q8 AWQ-W4  & 58 t $\cdot$ 1087 st $\cdot$ 20/20 b & 27 t $\cdot$ 475 st $\cdot$ 20/20 b & 80 t $\cdot$ 480 st $\cdot$ 6/6 b; holdout dirs & 3 b $\cdot$ 393 / 177 rows & 788 $\cdot$ 548 st / 134 $\cdot$ 119 st \\
-q8 KV8     & 58 t $\cdot$ 585 st $\cdot$ 22/22 b & 27 t $\cdot$ 270 st $\cdot$ 22/22 b & -- & 2 b $\cdot$ 262 / 118 rows & -- / -- \\
+q8 KV8     & 58 t $\cdot$ 585 st $\cdot$ 22/22 b & 27 t $\cdot$ 270 st $\cdot$ 22/22 b & -- & 3 b $\cdot$ 393 / 177 rows & -- / -- \\ % src: analysis/fork/out/ghf_20261001T211519Z.md (§5); analysis/fork/bank_u/q8_kvq_int8/f03/bank_summary.json; analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§1)
 \midrule
 q4 GPTQ-W3 & 58 t $\cdot$ 162 st $\cdot$ 3/3 b & 27 t $\cdot$ 70 st $\cdot$ 3/3 b & -- & -- & 788 $\cdot$ 720 st / -- \\
 q4 KV4-rot & 58 t $\cdot$ 164 st $\cdot$ 3/3 b & 27 t $\cdot$ 69 st $\cdot$ 3/3 b & -- & -- & -- / -- \\
@@ -70,7 +70,7 @@ q8 RTN-W3  & 58 t $\cdot$ 174 st $\cdot$ 3/3 b & 27 t $\cdot$ 81 st $\cdot$ 3/3 
 q4 / q8 KV4 (unrotated) & -- & -- & -- & -- & 788 $\cdot$ 787 / 788 $\cdot$ 788 st; q8 ALFWorld 134 $\cdot$ 134 st \\
 \bottomrule
 \end{tabular}}
-\caption{Completed crossed-intervention coverage (t = tasks, st = states, b = complete/found blocks; BFCL and ALFWorld: items $\cdot$ states, one run). Bank U: blocks completed and state rows per domain; only block f01 is analysed in this paper. ``holdout dirs'': telecom holdout fork directories exist and were not opened. The q14, q32 and l8 checkpoints of the source matrix have end-to-end runs only, and q4 RTN-W3 has no complete Bank P block. The telecom development analysis of \S\ref{sec:r3} uses the planning fit over these 6 blocks. Source: \nolinkurl{analysis/fork/out/ghf_20261001T211519Z.md} (\S5). The end-to-end q4 AWQ-W3 run is incomplete: two airline episodes hit 600\,s serving timeouts (infrastructure), so it is not reported; its completed episodes and failure logs are kept. % src: /data/ziyangs/cloq_work/queue/deferred/a6k2_q4_awq_w3_qx.json; runs/a6k2_q4_awq_w3_q5/airline/infra_causes.json
+\caption{Completed crossed-intervention coverage (t = tasks, st = states, b = complete/found blocks; BFCL and ALFWorld: items $\cdot$ states, one run). Bank U: blocks completed and state rows per domain; blocks f01--f03 are analysed (q8 KV8 f03 finished after the coverage snapshot; Appendix~\ref{app:banku}). ``holdout dirs'': telecom holdout fork directories exist and were not opened. The q14, q32 and l8 checkpoints of the source matrix have end-to-end runs only, and q4 RTN-W3 has no complete Bank P block. The telecom development analysis of \S\ref{sec:r3} uses the planning fit over these 6 blocks. Source: \nolinkurl{analysis/fork/out/ghf_20261001T211519Z.md} (\S5). The end-to-end q4 AWQ-W3 run is incomplete: two airline episodes hit 600\,s serving timeouts (infrastructure), so it is not reported; its completed episodes and failure logs are kept. % src: /data/ziyangs/cloq_work/queue/deferred/a6k2_q4_awq_w3_qx.json; runs/a6k2_q4_awq_w3_q5/airline/infra_causes.json
 }
 \label{tab:coverage}
 \end{table*}
@@ -78,56 +78,58 @@ q4 / q8 KV4 (unrotated) & -- & -- & -- & -- & 788 $\cdot$ 787 / 788 $\cdot$ 788 
 \section{Bank U per Sub-Bank}
 \label{app:banku}
 
-Table~\ref{tab:banku} gives the per-state turnover behind \S\ref{sec:r3}. Exact action agreement is 0.44--0.85 per cell and sub-bank. % src: analysis/fork/out/bank_u_f01_20261001T134456Z.md (column "exact")
+Table~\ref{tab:banku} gives the per-state turnover behind \S\ref{sec:r3}, over blocks f01--f03; it supersedes the single-block f01 table of an earlier draft. Exact action agreement is 0.43--0.83 per cell and sub-bank. % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (column "exact")
 
 \begin{table}[h]
 \centering\scriptsize\setlength{\tabcolsep}{3.5pt}
-% src: analysis/fork/out/bank_u_f01_20261001T134456Z.md (§2 Native estimates, task-equal; r and d counts)
+% src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§2 Native estimates, task-equal; r and d counts)
 \begin{tabular}{@{}lccc@{}}
 \toprule
-Cell & U1 ($n{=}85$) & U2B ($n{=}85$) & U2Q ($n{=}20$) \\
+Cell & U1 ($n{=}255$) & U2B ($n{=}255$) & U2Q ($n{=}60$) \\
 \midrule
-q4 GPTQ-W4 & .118 (5/5) & .094 (5/3) & .100 (1/1)$^\ast$ \\
-q4 AWQ-W4  & .106 (3/6) & .082 (3/4) & .100 (1/1) \\
-q4 KV8     & .024 (0/2) & .047 (1/3) & 0 (0/0) \\
-q8 GPTQ-W4 & .012 (0/1) & .024 (0/2) & 0 (0/0)$^\ast$ \\
-q8 AWQ-W4  & .047 (2/2) & .024 (1/1) & 0 (0/0) \\
-q8 KV8     & .047 (1/3) & .012 (1/0) & 0 (0/0) \\
+q4 GPTQ-W4 & .090 (11/12) & .082 (10/11) & .083 (4/1)$^\ast$ \\
+q4 AWQ-W4  & .082 (7/14) & .078 (7/13) & .083 (3/2) \\
+q4 KV8     & .047 (4/8) & .039 (5/5) & .017 (0/1) \\
+q8 GPTQ-W4 & .047 (8/4) & .067 (9/8) & .050 (3/0)$^\ast$ \\
+q8 AWQ-W4  & .086 (14/8) & .090 (15/8) & .067 (3/1) \\
+q8 KV8     & .035 (5/4) & .031 (6/2) & 0 (0/0) \\
 \bottomrule
 \end{tabular}
-\caption{Bank U, block f01: per-state turnover $M$ (rescues/damages), task-equal, one state per task. $G$ lies within $\pm0.035$ in every cell, and every interval includes 0. $^\ast$GPTQ-W4's U2Q states are its own U1 states, with concordant outcomes on 20/20 duplicates; they are counted once in cross-sub-bank totals. One block, so the intervals reflect task resampling only. Source: \nolinkurl{analysis/fork/out/bank_u_f01_20261001T134456Z.md}.}
+\caption{Bank U, blocks f01--f03: per-state turnover $M$ (rescues/damages), task-equal (one state per task and block; 85/85/20 states per block). $G$ lies within $\pm0.028$ in U1 and U2B and within $\pm0.050$ in U2Q, and every interval includes 0. Intervals are $t$ intervals over the three block means and are wide (e.g.\ q4 GPTQ-W4 U1: .090 [.029, .151]); all are in the source. $^\ast$GPTQ-W4's U2Q states are its own U1 states, with concordant outcomes on 20/20 duplicates per block; they are counted once in cross-sub-bank totals. Source: \nolinkurl{analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md}.}
 \label{tab:banku}
 \end{table}
 
 \begin{table}[h]
 \centering\scriptsize\setlength{\tabcolsep}{2.6pt}
-% src: analysis/fork/out/bank_u_f01_20261001T134456Z.md (§3 class composition and consequence per sub-bank; comparator block, unique states)
-% src: docs/REPORT_GPT61_20261001_0915.md (correction 1: 39/56 after deduplication)
+% src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§3 class composition and consequence per sub-bank; per cell; comparator block, unique states)
 \begin{tabular}{@{}lllll@{}}
 \toprule
 & (i) identical & (ii) same tool & (iii) different & (iv) act vs.\ \\
 Model:sub & & structure, text & tool or args & talk \\
 \midrule
-q4:U1  & 141: 0 & 93: 14 (.151) & 8: 0 & 13: 7 (.538) \\
-q8:U1  & 173: 0 & 59: 7 (.119) & 13: 2 (.154) & 10: 0 \\
-q4:U2B & 141: 0 & 91: 16 (.176) & 11: 2 (.182) & 12: 1 (.083) \\
-q8:U2B & 172: 0 & 51: 1 (.020) & 11: 1 (.091) & 21: 3 (.143) \\
-q4:U2Q & 34: 0 & 21: 3 (.143)$^\ast$ & 2: 0 & 3: 1 (.333) \\
-q8:U2Q & 50: 0 & 5: 0 & 2: 0 & 3: 0 \\
+q4:U1  & 399: 0 & 309: 45 (.146) & 19: 1 (.053) & 38: 10 (.263) \\
+q8:U1  & 483: 0 & 202: 28 (.139) & 47: 11 (.234) & 33: 4 (.121) \\
+q4:U2B & 430: 0 & 277: 44 (.159) & 24: 4 (.167) & 34: 3 (.088) \\
+q8:U2B & 470: 0 & 199: 25 (.126) & 40: 9 (.225) & 56: 14 (.250) \\
+q4:U2Q & 108: 0 & 63: 10 (.159)$^\ast$ & 5: 0 & 4: 1 (.250) \\
+q8:U2Q & 129: 0 & 33: 6 (.182)$^\ast$ & 11: 1 (.091) & 7: 0 \\
 \midrule
-unique rows & 684: 0 & 310: 39 (.126) & 46: 5 (.109) & 60: 12 (.200) \\ % derived: 310=296+13+1; 46=1+19+26; 60=14+46; .126=39/(296+13+1); .109=5/(1+19+26); .200=12/(14+46)
+unique rows & 1943: 0 & 1045: 150 (.144) & 143: 26 (.182) & 169: 32 (.189) \\ % derived: 1045=309+202+277+199+63+33-24-14; 150=45+28+44+25+10+6-5-3; 143=19+47+24+40+5+11-1-2; 26=1+11+4+9+0+1; 169=38+33+34+56+4+7-1-2; 32=10+4+3+14+1+0; .144=150/1045; .182=26/143; .189=32/169
 \bottomrule
 \end{tabular}
-\caption{Which kind of action difference changes the outcome at ordinary states (Bank U, block f01). Entries: ``state rows: outcome-changing rows (flip rate)'', pooled over the three cells of a model within a sub-bank. The last row counts each (cell, state) once: q4/q8 GPTQ-W4's U2Q states repeat their U1 states ($^\ast$ includes the two repeated class-(ii) flips), so 58 flipping rows become 56. Source: \nolinkurl{analysis/fork/out/bank_u_f01_20261001T134456Z.md}.}
+\caption{Which kind of action difference changes the outcome at ordinary states (Bank U, blocks f01--f03). Entries: ``state rows: outcome-changing rows (flip rate)'', pooled over the three cells of a model within a sub-bank. The last row counts each (cell, state) once: q4/q8 GPTQ-W4's U2Q states repeat their U1 states ($^\ast$ includes 5 and 3 repeated class-(ii) flips), so 216 flipping rows become 208. In block f01 alone the corresponding counts were 39 of 56 flips in class (ii), with rates .126/.109/.200 for (ii)/(iii)/(iv). Source: \nolinkurl{analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md}; f01: \nolinkurl{analysis/fork/out/bank_u_f01_20261001T134456Z.md}. % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§3); analysis/fork/out/bank_u_f01_20261001T134456Z.md; docs/REPORT_GPT61_20261001_0915.md (correction 1: 39/56 after deduplication); derived: 216=99+99+18; 208=99+99+18-5-3
+}
 \label{tab:taxonomy}
 \end{table}
 
+\paragraph{Text content.} Over f01--f03, an above-median relative length difference between the two texts co-occurs with outcome change in U1 and U2B of both models (flipping pairs among above- vs.\ below-median pairs: q4 U1 30/154 vs.\ 15/155; q8 U1 22/101 vs.\ 6/101; q4 U2B 33/138 vs.\ 11/139; q8 U2B 16/99 vs.\ 9/100). In f01 alone this was visible only for q4. Question, confirmation-request and new-entity flags show no consistent association. The features are regular expressions, and this is descriptive. % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§4)
+
 \input{sections/gen_simctrl_fates}
 
-\paragraph{Shared fragility across quantizers (a lead).} On the 85 shared q4 U2B states, cell pairs co-flip 7 times, against about 1.4 expected under independence, and 6 of the 7 co-flips go in the same direction. None of the joint flips has an identical quantized action across cells. These 7 co-flips come from only \textbf{5 distinct states} in one block. % src: analysis/fork/out/bank_u_f01_20261001T134456Z.md (§6, q4:U2B); docs/REPORT_GPT61_20261001_0915.md (correction 2)
-On q8 U2B, the 5 flipping states each flip under a single cell. We therefore read this as a lead toward \emph{state-level} fragility, where different actions at the same state flip the outcome, and not yet as a finding.
+\paragraph{Shared fragility across quantizers (a lead).} On the 255 shared q4 U2B states of f01--f03, cell pairs co-flip 21 times, against about 3.3 expected under independence, and 16 of the 21 co-flips go in the same direction. They come from 15 distinct states, 3 of which flip under all three cells. On q8 U2B, where every f01 flip was single-cell, 10 states now flip under two or more cells (14 pairwise co-flips against about 2.8 expected; 10 of 14 in the same direction). Joint flips almost never share an identical quantized action across cells (0 of 21 in q4, 2 of 14 in q8). % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§6, q4:U2B, q8:U2B); derived: 21=9+7+5; 3.3=1.65+0.82+0.78; 16=7+6+3; 15=12+3; 10=8+2; 14=7+4+3; 2.8=1.53+0.53+0.72; 10=7+1+2; 2=0+1+1
+We still read this as a lead toward \emph{state-level} fragility, where different actions at the same state flip the outcome, and not yet as a finding: the co-flips are counted on one fixed set of states per block, with no correction.
 
-\paragraph{A common controller (Q0).} On the U2 subsample continued by the common controller Q0, B's action leads to the identical outcome in every cell on all 46 shared states, which checks determinism. Turnover under Q0 is at least the native turnover on the same rows (for q4 AWQ-W4 U2B, 3/21 vs.\ 1/21). With 6--21 states per cell and sub-bank, this is too small to say whether the controller changes which actions matter. % src: analysis/fork/out/bank_u_f01_20261001T134456Z.md (§5)
+\paragraph{A common controller (Q0).} On the U2 subsample of f01--f03 continued by the common controller Q0, B's action leads to the identical outcome in every cell on all 146 shared states, which checks determinism. Turnover under Q0 is not consistently above or below the native turnover on the same rows (q4 AWQ-W4 U2B 8/58 vs.\ 5/58; q8 AWQ-W4 U2B 4/52 vs.\ 5/52; q4 KV8 U2B 1/58 vs.\ 2/58), so the f01 observation that Q0 turnover is at least the native one does not hold over three blocks. With 17--58 states per cell and sub-bank, this is too small to say whether the controller changes which actions matter. % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§5); derived: 146=58+17+52+19; 8=3+5; 5=2+3; 4=3+1; 5=4+1; 1=1+0; 2=2+0
 
 \section{Concentration of Turnover in Tasks}
 \label{app:concentration}
@@ -172,7 +174,29 @@ So injected defects cause heterogeneous two-sided turnover of the size a generic
 
 \paragraph{Manipulation checks limit the categories.} Two of 30 states failed a manipulation check: an injected write was rejected, and a valid reference itself returned ``not found''. Restricting to the 28 passing states leaves the reading unchanged. The wrong\_tool category mostly produced argument errors: 8 of 10 injected calls failed with an unexpected-keyword error. We therefore call it a \emph{tool-call/schema error perturbation}, not a wrong-tool test. premature\_write is mostly failure$\rightarrow$failure: the valid arm under Q already fails in 7/10 of these states, and turnover is 0/10 under both controllers. % src: analysis/recovery/inject_q4/summary_v2.md (Manipulation checks; Outcome turnover by category); docs/RESEARCH_LOG.md W83
 The event chain error $\rightarrow$ correction $\rightarrow$ related requirement satisfied completes in only 6 (B) and 7 (Q) of 29 injected errors, although 17 are corrected under each controller. Injections add tool errors ($+0.43$ under B, $+0.57$ under Q per branch). % src: analysis/recovery/inject_q4/summary_v2.md (Event chains; Paired differences)
-\todo{RECOVERY-Q8: the same table for q8 GPTQ-W4 (30 states, block q3), from \nolinkurl{analysis/recovery/analyze_inject.py} on \nolinkurl{analysis/recovery/inject_q8}}
+\paragraph{Replication on q8 GPTQ-W4.} The same design on 30 frozen q8 states (block q3 of the GPTQ-W4 run; 10 per category) gives the same reading (Table~\ref{tab:recovery8}). All 30 states pass the replay audit. Injected defects change the outcome in 5/30 states under each controller (3 rescues, 2 damages), the process-perturbation control in 6/30 (B) and 5/30 (Q). The error-specific effect is $-0.03$ [$-0.13$, $+0.07$] under B and $-0.13$ [$-0.30$, $+0.03$] under Q, and $D$ is nonzero in 6 of 30 states with mean $0.00$ [$-0.17$, $+0.17$]. Under Q, the process-perturbation control itself rescues 5 states and damages none ($+0.17$ [$+0.03$, $+0.30$], McNemar $p=0.0625$). % src: analysis/recovery/inject_q8/summary_v2.md (Replay audit; Outcome turnover; Controller dependence D)
+Manipulation checks fail more often than in q4: 7 of the 10 premature writes were rejected by the environment, and 2 valid references returned ``not found''. On the 21 passing states, \textsc{inv} vs \textsc{val} turnover is 5 (B) and 4 (Q), and $D\neq0$ in 5. The q8 premature\_write category therefore mostly did not inject a write. % src: analysis/recovery/inject_q8/summary_v2.md (Manipulation checks)
+
+\begin{table}[t]
+\centering\scriptsize\setlength{\tabcolsep}{2.8pt}
+% src: analysis/recovery/inject_q8/summary_v2.md (Outcome turnover, population "all"; Controller dependence D)
+\begin{tabular}{@{}llccl@{}}
+\toprule
+Ctrl & Contrast & resc./dam. & turnover & net [95\% CI] \\
+\midrule
+B & \textsc{inv} vs \textsc{val} & 3/2 & 5/30 & $+0.03$ [$-0.10$, $+0.17$] \\
+B & \textsc{pp} vs \textsc{val} & 4/2 & 6/30 & $+0.07$ [$-0.07$, $+0.23$] \\
+B & \textsc{inv} vs \textsc{pp} & 1/2 & 3/30 & $-0.03$ [$-0.13$, $+0.07$] \\
+Q & \textsc{inv} vs \textsc{val} & 3/2 & 5/30 & $+0.03$ [$-0.10$, $+0.17$] \\
+Q & \textsc{pp} vs \textsc{val} & 5/0 & 5/30 & $+0.17$ [$+0.03$, $+0.30$] \\
+Q & \textsc{inv} vs \textsc{pp} & 2/6 & 8/30 & $-0.13$ [$-0.30$, $+0.03$] \\
+\midrule
+\multicolumn{4}{@{}l}{Controller dependence $D$ ($\neq0$ in 6/30 states)} & $\phantom{+}0.00$ [$-0.17$, $+0.17$] \\
+\bottomrule
+\end{tabular}
+\caption{Defect injection on 30 frozen q8 GPTQ-W4 states (development, block q3), as in Table~\ref{tab:recovery}. Task-clustered bootstrap intervals; exact McNemar $p\ge0.0625$. Source: \nolinkurl{analysis/recovery/inject_q8/summary_v2.md}.}
+\label{tab:recovery8}
+\end{table}
 
 \paragraph{Process audit (LLM-annotated).} We sampled 80 development fork states, 20 per outcome sign. % src: manifests/annotation/wp5_sample_v1.json; analysis/annotation/wp5/table4_v2.md
  Two independent Sonnet 5.5 instances annotated them blind, a third instance adjudicated, and rule-based programmatic labels were added. These annotations are a \emph{process description} conditional on outcome-defined groups. They are not causal evidence, not prevalences and not human labels. Three patterns stand out (Table~\ref{tab:table4}). First, local defects and final failure do not correspond one-to-one. In damage states, where Q's action led to success and B's to failure, Q's first-action defect is corrected later in 10 of 20 QQ branches. Second, whether a write executes does not separate the failing from the succeeding continuation of the same state (rescue 17 vs.\ 17; damage 15 vs.\ 14). Third, the failing continuation more often carries the rubric label \texttt{unintended\_or\_unconsented\_change} (rescue: QQ 9 vs.\ BQ 2, paired difference $+0.35$ [$+0.08$, $+0.57$]; damage: 1 vs.\ 9, $-0.40$ [$-0.62$, $-0.11$]). In damage states, 7 of these 20 BQ branches carry the label on writes \emph{with} recorded consent. That is the semantic ``wrong change'' part of the label, and it overlaps with the database-defined outcome by construction. Loops and budget exhaustion also mark failing branches (rescue: QQ 5 vs.\ BQ 0). % src: analysis/annotation/wp5/table4_v2.md
