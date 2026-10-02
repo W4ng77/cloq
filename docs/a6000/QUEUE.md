@@ -1,4 +1,4 @@
-# A6000 queue snapshot (2026-10-02 06:04:16 PDT)
+# A6000 queue snapshot (2026-10-02 06:34:19 PDT)
 
 ## running (24)
 
@@ -10,7 +10,7 @@
 - `a6k2_q32_gauss3_s2`
 - `a6k2_q32_rtn_w3`
 - `a6k2_q32_tel_gptq_w3`
-- `fork_gate_m24_rtn_w4`
+- `fork_gate_m24_rtn_w4_r2`
 - `fork_repair_q4_rtn_w3`
 - `fork_sameprec_q4_g5`
 - `fork_sameprec_q8_g4`
@@ -34,7 +34,7 @@
 - `ext_l8_gptq_w4_d1_bfcl_smoke_l8g_sc` · RuntimeError("checkpoint build failed ({'kind': 'gptq', 'wbits': 4, 'calib': 'manifests/a6k2/l8/calib_fp_traj_c1.json'}) rc=1")
 - `kivi_gate_q8` · RuntimeError('cmd failed rc=-9')
 
-## done (1050)
+## done (1051)
 
 - `a6k2_det_q14_x1_awq_a` · 11 min · node005
 - `a6k2_det_q14_x1_awq_b` · 54 min · node004
