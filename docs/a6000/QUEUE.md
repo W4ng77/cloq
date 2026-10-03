@@ -1,13 +1,13 @@
-# A6000 queue snapshot (2026-10-02 18:36:11 PDT)
+# A6000 queue snapshot (2026-10-02 19:06:14 PDT)
 
 ## running (20)
 
 - `a6k2_q32_tel_rtn_w3`
 - `a6k2_q32_tel_rtn_w4`
 - `fork_repair_q4_rtn_w3`
-- `fork_sameprec_q8_g3`
-- `fork_sameprec_q8_g6`
-- `nmp_tau2_q8_kivi_k16v16_f01`
+- `nmp_gate_bank_q8_quarot_w16`
+- `nmp_gate_bank_q8_spinquant_w4a4`
+- `nmp_score_q8_kivi_k16v16_f01`
 - `nmp_tau2_q8_kivi_k16v16_f02`
 - `nmp_tau2_q8_kivi_k16v16_f03`
 - `nmp_tau2_q8_kivi_k2v2_f03`
@@ -36,7 +36,7 @@
 - `kivi_gate_q8` · RuntimeError('cmd failed rc=-9')
 - `pert_q4_rtn_w3_restore_rand_mlp_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_mlp_s3_q3/retail: 1 infrastructure_error episodes (outage)')
 
-## done (1121)
+## done (1124)
 
 - `a6k2_det_q14_x1_awq_a` · 11 min · node005
 - `a6k2_det_q14_x1_awq_b` · 54 min · node004
@@ -239,7 +239,7 @@
 - `a6k2_q32_ol_gauss0.03_s2` · 26 min · node007
 - `a6k2_q32_ol_gauss0.03_s3` · 24 min · node005
 
-## todo (105)
+## todo (102)
 
 - `a6k2_q14_tel_gauss0.1_s1`
 - `a6k2_q14_tel_gauss1_s1`
@@ -286,8 +286,6 @@
 - `nmp_bfcl_q8_kivi_k2v2_miss_param`
 - `nmp_gate_bank_m24_gptq_w4_d1`
 - `nmp_gate_bank_m24_rtn_w4`
-- `nmp_gate_bank_q8_quarot_w16`
-- `nmp_gate_bank_q8_spinquant_w4a4`
 - `nmp_gate_same_m24_gptq_w4_d1`
 - `nmp_gate_same_m24_rtn_w4`
 - `nmp_gate_same_q8_quarot_w4a4`
@@ -298,7 +296,6 @@
 - `nmp_score_m24_rtn_w4_f01`
 - `nmp_score_m24_rtn_w4_f02`
 - `nmp_score_m24_rtn_w4_f03`
-- `nmp_score_q8_kivi_k16v16_f01`
 - `nmp_score_q8_kivi_k16v16_f02`
 - `nmp_score_q8_kivi_k16v16_f03`
 - `nmp_score_q8_kivi_k2v2_f01`
