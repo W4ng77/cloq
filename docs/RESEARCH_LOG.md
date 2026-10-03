@@ -10,6 +10,44 @@ Newest first.
 
 ---
 
+## W100r-b - exppilot review fixes: fill only from a user allowlist, per-node demand, q8 phase 2 all or none with one tier and no reference-cell gates, q8 analysis held for F1a, run-window report; not started (2026-10-03 07:35 PDT)
+
+**TL;DR** Independent reviewers sent 18 findings on the W100r pilot. The 13 distinct defects were all confirmed in the code and fixed; the other 5 duplicate them. The pilot is still **not started**.
+- **Fill.** It now releases only ids listed in `queue/EXPPILOT_FILL_ALLOW`, which is written after the user's OK. Two of the three tasks it listed before were main-session deferrals; one of them is a deterministic re-fail.
+- **Demand per node.** The node001/005/007 runners predate W99p and never claim 4-GPU tasks, so the old "demand 50" hid their idle cards.
+- **q8 phase 2.** It is now all or none (a preflight of every generator), with one tau2 tier (−29) and no blocking gates on the reference cells, as §5.5 and the §5.3 cost state.
+- **q8 newmethod analysis.** It waits for `queue/EXPPILOT_GO_newmethod_q8` (W100q F1a).
+- **Window.** The default stays 12 h, as the user asked. The start line now lists the duties after the end: the q8 record at T_decide 20:00 PDT, the SAMEPREC freeze and T_deadline. `--until` covers them.
+
+- **Fixed (mechanism → change):**
+  - Fill used a denylist ("stopped" in a note). `a6k2_q4_awq_w3_qx` (completed airline run-domain with 2 outages, W100q §1.1) and `a6k2_w2p_q4_rtn_w2_q3` (main-session deferral) were releasable, with an autopilot retry on top.
+    - Change: an allowlist, plus `refails()` (a completed run-domain with outage causes is never released), plus `nmp_*` excluded.
+    - Every released task carries `autopilot_retry`.
+  - Demand was a cluster-wide sum. It is now per node, with a W99p capability check: the runner's start time against 44527e1. Only nodes on which no runnable todo task fits are filled.
+  - `starved` required todo/ to be empty. 12 dependency-blocked pivot tasks kept it silent. It now fires on "nothing runnable".
+  - `release()` was replace-then-remove (two copies after a crash), and `index()` let deferred/ win over done/; `a6k2_l8_bf16_cal` and `a6k2_l8_calib_c1` are in both today.
+    - Change: a rewrite in deferred/ then one `os.rename`, and precedence done > failed > running > todo > deferred.
+  - The analysis committed any new file with a matching prefix. It now takes only the paths the script prints as `wrote ...`. SAMEPREC is skipped when a post-freeze output exists (main session owns F0).
+  - Reference cells: the blocking `gate_same` with `fail_loud` was the implementer's own reading.
+    - It is not in §5.5 or the §5.3 cost, and the autopilot `rc=` regex would have retried it anyway.
+    - It could break all or none (P1/P3 partners) and F1a.
+    - Now: no gates; `--ref-gates` adds them only as non-blocking recorded checks with `autopilot_retry`.
+    - `Pilot.expected` agrees with the generator.
+  - Per-cell writes could leave a partial expansion. Now every generator runs without `--write` first and must list every expected id.
+  - Tiers differed by family (KIVI −29, rotation/reference −27), a de facto ranking under the deadline. Now every q8 tau2 task is at −29.
+- **Tests.**
+  - Scratch queue: allowlist, precedence, `place` with an old runner, single-rename `release` refused twice, per-node demand.
+  - Scratch root + queue copy with a fake `expansion_q8.json` (the real one was never created): 66 tasks, all tau2 at −29, no gates, idempotent. With one generator failing, 0 tasks were written.
+  - Scratch git repo + bare remote: only the printed outputs are committed, and another session's concurrent file stays untracked.
+  - q8 hold logged.
+  - Dry run 07:29: fillable 0 (idle 1 on node006, which has 47 GPUs of hostable demand); 2 tasks need user OK; 1 re-fail held.
+- **Open (user / main session).**
+  1. Approve fill ids: candidates `a6k2_det_q4_kvq_int4_rot_b`, `a6k2_w2p_q4_rtn_w2_q3`.
+  2. Rule on reference-cell gates.
+  3. Write `EXPPILOT_GO_newmethod_q8` once F1a is settled.
+  4. Launch with 12 h or `--until 2026-10-04T13:00-07:00`.
+- **Evidence.** `scripts/a6000/{exppilot.py,exppilot_fill.py,exppilot_analysis.py,exppilot.sh,EXPPILOT.md,make_tasks_bank_u.py}`. Commits a8fc137, 40db792, 75e27d2. Related: `docs/insights/GPU_FILL_PROPOSAL_20261003.md` §1.1, §3.1, §4.
+
 ## W100s - m24 (Mistral-24B) phase-1 INTERIM analysis (f01-f03; phase 2 running): strict A3.3 admits rtn {f03}, gptq {f02, f03}; M1 not estimable; G-H unresolved in the second family, while the turnover structure matches q8 (2026-10-03 07:15 PDT)
 **TL;DR** INTERIM, not the protocol's final m24 analysis, and no paper claim. The run is `analyze_newmethod.py --model m24 --blocks f01,f02,f03` as protocol §7/A3 define it (83-task mask, strict completeness). The budget audit (`m24_budget_audit_20261003T1354Z.md`, two skeptics) and the frozen loader agree on what is admitted.
 - **Admission.**
@@ -69,6 +107,8 @@ Evidence: `analysis/fork/out/m24_interim_20261003T141416Z.{md,json}`, `analysis/
 Evidence: `docs/insights/GPU_FILL_PROPOSAL_20261003.md`, `analysis/status/gpu_fill_20261003/{triage_outages.py,triage_outages.json,gpu_forecast.py,forecast_20261003T0705.txt}`, `/data/ziyangs/cloq_work/logs/{autopilot.log,node_node00*_49*.out,sim_balancer.log,tasks/*.vllm.log}`, `cloq/run_arm.py` l. 180, `scripts/a6000/worker.py` l. 440-483, queue `failed/`, `running/`, `todo/pivot_*_rtn_w3_*`, `deferred/`.
 
 ## W100r — Experiment pilot `exppilot` (12 h, unattended): effect-blind phase-2 release, once-only frozen analyses, GPU fill from deferred; built and dry-run, not started (2026-10-03 07:10 PDT)
+
+> **Superseded in part by W100r-b (above).** Design decisions 1 (reference-cell gates) and 3 (tiers) and the fill rules (5) are replaced. A 12 h run does not reach T_decide, the SAMEPREC freeze or T_deadline. The q8 analysis is held for F1a.
 
 **TL;DR** `scripts/a6000/exppilot.sh [hours]` runs `exppilot.py` on the login node, default 12 h, one pass every 10 min. It is built, unit-tested and dry-run, but **not started**. Each pass does five things:
 - **(A) Phase-2 release.** Once an `expansion_<m>.json` says `expand: true`, it queues the missing f04–f06 panel and score tasks of `phase2_cells` through each cell family's own generator. It reads only `expand`, `phase2_cells` and `eligible` from the record, never an outcome.
