@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""F8 (W100f; pre-registered, k = 3): common-state action sources on q8, from analysis/fork/analyze_commonstate.py.
+"""F8 (W100f; pre-registered; k = 6 confirmatory look since 10-03, A1 + D2): common-state action sources on q8, from analysis/fork/analyze_commonstate.py.
 
 Separate from make_figs.py on purpose (another session edits that file); it imports make_figs only for the shared style,
 palette, widths, load(), interval() and save(). PDF metadata carries the source JSON sha256 and THIS script's sha256; this
@@ -7,10 +7,11 @@ script also merges its entry into figures/provenance.json (other entries untouch
 
     /data/ziyangs/cloq_work/envs/cloq/bin/python paper/latex/tools/figs/make_fig_commonstate.py [path/to/commonstate_<UTC>.json]
 
-(a) V(source, continuation), success % on the same 255 states (B = BF16, Q = GPTQ-W4 d1, Q' = GPTQ-W4 d2).
-(b) K(c) = V(B, c) - V(Q', c) under each continuation: thick = task-cluster bootstrap 95%, thin = t95 over block means;
+(a) V(source, continuation), success % on the same 510 states (B = BF16, Q = GPTQ-W4 d1, Q' = GPTQ-W4 d2).
+(b) K(c) = V(B, c) - V(Q', c) under each continuation: thick = task-cluster bootstrap, thin = t over block means, both at
+    the Pocock two-look level (97%, A1.3 + D2.2), the binding confirmatory reading;
     shaded = the +-3 pp equivalence margin of the frozen rule.
-(c) Exact action agreement among the three sources: the five patterns of the 255 states.
+(c) Exact action agreement among the three sources: the five patterns of the 510 states.
 """
 import hashlib
 import json
@@ -23,10 +24,10 @@ import make_figs as MF  # noqa: E402
 from make_figs import AQUA, BAND, BLUE, COL_W, GRID, INK, INK2, MUTED, ORANGE, plt, style_axis  # noqa: E402,F401
 from matplotlib.colors import LinearSegmentedColormap  # noqa: E402
 
-DEFAULT = "analysis/fork/out/commonstate_20261002T201612Z.json"
+DEFAULT = "analysis/fork/out/commonstate_q8ext_20261003T231159Z.json"
 NAME = "f8_commonstate"
-SHOWS = ("W100b common states (q8, k = 3): V(source, continuation) grid, K(c) = V(B,c) - V(Q',c) with t95 and "
-         "boot95 under each continuation, and exact action-agreement patterns among B, Q, Q'")
+SHOWS = ("W100u common states (q8, k = 6, confirmatory two-look): V(source, continuation) grid, K(c) = V(B,c) - V(Q',c) "
+         "with t97 and boot97 (Pocock) under each continuation, and exact action-agreement patterns among B, Q, Q'")
 
 
 def script_sha():
@@ -45,19 +46,20 @@ def f8(src: str = DEFAULT):
     S = E["stats"]
     n = E["n"]
     # numbers the paper text quotes (sections/results_r2.tex); fail loudly if the source changes
-    assert (n, E["k"], E["n_tasks"], len(r["notes"]["excluded"])) == (255, 3, 85, 0)
+    assert (n, E["k"], E["n_tasks"]) == (510, 6, 85)
     V = {(s, c): pp(S[f"V[{s},{c}]"]["point"]) for s in ("bf16", "d1", "d2") for c in ("bf16", "d1")}
-    want = {("bf16", "bf16"): 31.4, ("bf16", "d1"): 28.2, ("d1", "bf16"): 28.6, ("d1", "d1"): 27.8,
-            ("d2", "bf16"): 29.0, ("d2", "d1"): 28.6}
+    want = {("bf16", "bf16"): 30.6, ("bf16", "d1"): 30.0, ("d1", "bf16"): 29.0, ("d1", "d1"): 28.8,
+            ("d2", "bf16"): 29.8, ("d2", "d1"): 29.0}
     for k, v in want.items():
         MF.near(MF.r1(V[k]), v)
     K = {c: S[f"K[{c}]"] for c in ("bf16", "d1")}
-    MF.near(MF.r1(pp(K["d1"]["point"])), -0.4)
-    MF.near(MF.r1(pp(K["bf16"]["point"])), 2.4)
-    assert r["readings"]["K[bf16]"]["reading"] == r["readings"]["K[d1]"]["reading"] == "not resolved"
-    MF.near(MF.r1(pp(A["exact_bf16_d1"])), 57.6)
-    MF.near(MF.r1(pp(A["exact_bf16_d2"])), 56.9)
-    MF.near(MF.r1(pp(A["exact_d1_d2"])), 55.7)
+    MF.near(MF.r1(pp(K["d1"]["point"])), 1.0)
+    MF.near(MF.r1(pp(K["bf16"]["point"])), 0.8)
+    R2 = r["readings_two_look"]
+    assert R2["K[bf16]"]["reading"] == R2["K[d1]"]["reading"] == "not resolved"
+    MF.near(MF.r1(pp(A["exact_bf16_d1"])), 55.7)
+    MF.near(MF.r1(pp(A["exact_bf16_d2"])), 57.3)
+    MF.near(MF.r1(pp(A["exact_d1_d2"])), 53.9)
     P = A["patterns"]
     assert sum(P.values()) == n
 
@@ -94,7 +96,7 @@ def f8(src: str = DEFAULT):
     b.axvline(0, color=INK2, lw=0.5, zorder=1)
     for y, cc, col, mk in ((1, "bf16", INK, "o"), (0, "d1", INK, "s")):
         k = K[cc]
-        MF.interval(b, y, pp(k["point"]), [pp(x) for x in k["boot95"]], [pp(x) for x in k["t95"]], col, marker=mk,
+        MF.interval(b, y, pp(k["point"]), [pp(x) for x in k["boot97"]], [pp(x) for x in k["t97"]], col, marker=mk,
                     ms=3.4, horizontal=True)
     b.set_yticks([1, 0])
     b.set_yticklabels(["cont. B", "cont. Q"])
