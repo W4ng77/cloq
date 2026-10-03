@@ -30,7 +30,7 @@ Never opens analysis/fork/holdout/.
 
 usage: /data/ziyangs/cloq_work/envs/cloq/bin/python analysis/fork/analyze_newmethod.py [--model q8] [--B 2000] [--dry] [--selftest]  (needs scipy)
   --dry       load and admit everything, print counts only (no estimates), write nothing
-  --selftest  synthetic units only (reads no fork output): mask, strict blocks, sensitivity, m24 contrasts; writes nothing
+  --selftest  synthetic units only (reads no fork output): mask, strict blocks, sensitivity, m24 contrasts, A6; writes nothing
 -> analysis/fork/out/newmethod_<model>_<UTC>.{json,md}
 """
 from __future__ import annotations
@@ -40,6 +40,7 @@ import gzip
 import hashlib
 import importlib.util
 import json
+import re
 import subprocess
 import sys
 import time
@@ -57,6 +58,12 @@ PROTOCOL = ROOT / "docs/insights/NEWMETHOD_PANEL_PROTOCOL.md"
 # Amendment A4 (W99t-b, 2026-10-02): was da8b69ba... (A3); kivi_k16v16 kernel-path control, KIVI _fx gates, k4v4 secondary.
 # Amendment A5 (W100g, 2026-10-02): was 0dc3143e... (A4); expansion decision: registered cells, KIVI _fx gates, fixed population, KIVI pairing, frozen snapshot.
 PROTOCOL_SHA256 = "f9f8b3a5cfbbf9c068425d7dc2adbd69ae26b7229f3eb2b387d6bdcca7a0bf22"
+# Amendment A6.2 (W100v; inert until main() passes a6=True): exception signatures raised only by validating an AGENT message (repr as cloq/fork.py::run_branch records
+# it); S1 = mistral_common's check of an assistant tool call's function name (W99p), S3 = tau2's agent_msg.validate() on an
+# empty agent message (W92). Either quote style (repr switches to " when the message contains ').
+A6_SIGNATURES = (("invalid_function_name", re.compile(r"""^InvalidFunctionCallException\(['"]Function name was """)),
+                 ("empty_agent_message", re.compile(r"""^ValueError\(['"]AssistantMessage must have either content or tool_calls""")))
+ARMS4 = ("BB", "BQ", "QB", "QQ")
 # Amendment A3 (W100e-b): per-model tau2 analysis mask (frozen file + sha); the population is the manifest tasks minus the mask's
 # excluded tasks, uniformly for all cells and blocks.
 MASKS = {"m24": ("manifests/fork/newmethod_panel_v1_m24_mask_v1.json", "b03a8a918959e3568315b1ae134f2902580e6af822d80beccb692729c2f82c81")}
@@ -147,6 +154,67 @@ def no_holdout(p: Path) -> Path:
     return p
 
 
+# ---------------------------------------------------------------------------- amendment A6
+def a6_class(br: dict | None) -> tuple[str, str]:
+    """A6.2: ('agent_output', signature) iff the arm's branch error record matches A6_SIGNATURES and the branch logged >= 1
+    agent decision before the error (so the offending message was produced in the branch); else ('missing', reason)."""
+    if not isinstance(br, dict) or "error" not in br:
+        return "missing", "no branch error record"
+    if br.get("infra_cause"):
+        return "missing", f"infra_cause {br['infra_cause']}"
+    e = str(br["error"])
+    for name, rx in A6_SIGNATURES:
+        if rx.search(e):
+            return ("agent_output", name) if int(br.get("n_decisions") or 0) >= 1 else ("missing", f"{name} before any branch decision")
+    return "missing", (re.match(r"[\w.]+", e) or [e[:40]])[0]
+
+
+def a6_resolve(x: dict, branches: dict) -> tuple[dict | None, dict]:
+    """A6.2/A6.3 on one bank row with an undefined arm: run arms with an error -> a6_class on their branch record; a reused
+    arm ('reuse=XX', §2.3 identity under protocol A) takes XX's value. (four defined arms or None, per-arm classes)."""
+    Y, src, cls = dict(x.get("Y") or {}), x.get("arm_source") or {}, {}
+    for a in ARMS4:
+        if Y.get(a) is None and str(src.get(a, "")).startswith("error"):
+            cls[a] = a6_class(branches.get(a))
+            Y[a] = 0 if cls[a][0] == "agent_output" else None
+    for a in ARMS4:
+        s = str(src.get(a, ""))
+        if Y.get(a) is None and s.startswith("reuse=") and Y.get(s[6:]) is not None:
+            Y[a], cls[a] = Y[s[6:]], ("reuse", s)
+    return (Y if all(Y.get(a) in (0, 1) for a in ARMS4) else None), cls
+
+
+def strict_prereg(raw: dict) -> dict:
+    """A6.3 sensitivity 'strict as preregistered': every unit that A6 completed is excluded again, exactly as without A6."""
+    drop = ("Y", "E", "exact", "category", "a6")
+    return {c: [{**{k: v for k, v in u.items() if k not in drop}, "excluded": "arm missing"} if "a6" in u else u for u in us]
+            for c, us in raw.items()}
+
+
+def a6_report(raw: dict, pop: set) -> dict:
+    """A6.3 reporting: per cell and block, states / arms scored Y = 0 under A6 (by signature, with tasks) and the arm errors
+    that stayed missing (by reason)."""
+    rep: dict = {}
+    for c, us in sorted(raw.items()):
+        for u in us:
+            k6 = "a6" if "a6" in u else "a6_missing" if "a6_missing" in u else None
+            if not k6:
+                continue
+            r = rep.setdefault(c, {}).setdefault(u["block"], {"states_reclassified": 0, "arms_reclassified": 0, "arms_reused": 0,
+                                                               "by_signature": {}, "states_still_missing": 0, "missing_reasons": {}, "states": []})
+            r["states_reclassified" if k6 == "a6" else "states_still_missing"] += 1
+            for a, (kind, s) in sorted(u[k6].items()):
+                if kind == "agent_output":
+                    r["arms_reclassified"] += 1
+                    r["by_signature"][s] = r["by_signature"].get(s, 0) + 1
+                elif kind == "reuse":
+                    r["arms_reused"] += 1
+                else:
+                    r["missing_reasons"][s] = r["missing_reasons"].get(s, 0) + 1
+            r["states"].append(f"{u['task'].replace('|', ':')} {'Y=0' if k6 == 'a6' else 'missing'} {','.join(sorted(u[k6]))}" + ("" if u["task"] in pop else " (outside population)"))
+    return rep
+
+
 # ---------------------------------------------------------------------------- effects
 def unit_effects(Y: dict, exact: bool) -> dict:
     E = AD.effects(Y, True)
@@ -163,8 +231,10 @@ def expansion_ok(model: str) -> bool:
     return p.exists() and json.loads(p.read_text()).get("expand") is True
 
 
-def load_tau2(model: str, man: dict, blocks: set | None = None, only: set | None = None) -> tuple[dict, dict]:
-    """blocks / only (--blocks / --cells): restrict what is loaded; a cell outside `only` is never opened. Default: all."""
+def load_tau2(model: str, man: dict, blocks: set | None = None, only: set | None = None, a6: bool = False) -> tuple[dict, dict]:
+    """blocks / only (--blocks / --cells): restrict what is loaded; a cell outside `only` is never opened. Default: all.
+    a6 (amendment A6; main() passes True for the primary): a row whose only gap is arm errors is completed by a6_resolve
+    from its branch records; default False = the loader exactly as before A6 (strict as preregistered)."""
     rows = {r["state_key"]: r for r in man["rows"]}
     allow2 = expansion_ok(model)
     cells: dict = defaultdict(list)
@@ -196,10 +266,21 @@ def load_tau2(model: str, man: dict, blocks: set | None = None, only: set | None
                  "domain": r["domain"], "div": True, "source": src}
             Y = x.get("Y") or {}
             if "missing_reason" in x or "error" in x or any(Y.get(a) is None for a in ("BB", "BQ", "QB", "QQ")):
-                u["excluded"] = str(x.get("missing_reason") or x.get("error") or "arm missing")[:160]
+                Y6, cls = (a6_resolve(x, _branches(d, x["state_key"])) if a6 and "missing_reason" not in x and "error" not in x
+                           else (None, {}))
+                if Y6 is not None:
+                    u.update(Y=Y6, E=unit_effects(Y6, x["exact_agreement"]), exact=x["exact_agreement"], category=x.get("agreement_category"), a6=cls)
+                else:
+                    u["excluded"] = str(x.get("missing_reason") or x.get("error") or "arm missing")[:160]
+                    if cls:
+                        u["a6_missing"] = cls
             else:
                 u.update(Y=Y, E=unit_effects(Y, x["exact_agreement"]), exact=x["exact_agreement"], category=x.get("agreement_category"))
             cells[cell].append(u)
+
+    def _branches(d: Path, sk: str) -> dict:
+        p = no_holdout(d) / "branches" / f"{sk}.json"
+        return json.loads(p.read_text()) if p.exists() else {}
 
     base = NM / "tau2"
     for d in sorted(base.glob(f"{model}_*/*")) if base.exists() else []:
@@ -234,6 +315,8 @@ def strict_blocks(units: list[dict], n_tasks: int, pop: set | None = None) -> tu
         ok = [u for u in us if "excluded" not in u]
         full = len(ok) == n_tasks and len({u["task"] for u in ok}) == n_tasks and (pop is None or {u["task"] for u in ok} == pop)
         info[blk] = {"rows": len(us), "complete": len(ok), "population": n_tasks, "admitted": full}
+        if any("a6" in u for u in ok):
+            info[blk]["complete_via_a6"] = sum(1 for u in ok if "a6" in u)  # amendment A6: states completed by Y = 0 arms
         if not full:
             info[blk]["incomplete_tasks"] = sorted((pop or {u["task"] for u in us}) - {u["task"] for u in ok})[:20]
         if full:
@@ -324,6 +407,17 @@ def tau2_contrast(a: list[dict], b: list[dict], B: int, match_tasks: bool = Fals
         out[k] = AD.summarise(pt, dr, boot=boot)
         out[k]["t_p_two_sided"] = t_pvalue(np.asarray(boot.last["block_means"], float))
     return out
+
+
+def tau2_contrasts(cells: dict, CT: dict, B: int) -> tuple[dict, dict]:
+    """Primary + secondary contrasts on admitted units and the Holm-adjusted primary family (t p on D_cc)."""
+    con = {}
+    for lab, x, y in CT["primary"] + CT["secondary"]:
+        if lab == "P3" and not cells.get("kivi_k2v2") and cells.get("kivi_k4v4"):
+            x = "kivi_k4v4"  # protocol §1: gate fallback
+        con[lab] = tau2_contrast(cells[x], cells[y], B) if cells.get(x) and cells.get(y) else {"not_estimable": "cell not admitted", "cells": [x, y]}
+        con[lab]["cells"] = [x, y]
+    return con, holm({lab: con[lab].get("D_cc", {}).get("t_p_two_sided") for lab, _, _ in CT["primary"] if "D_cc" in con[lab]})
 
 
 def holm(ps: dict) -> dict:
@@ -556,7 +650,8 @@ def selftest(B: int) -> None:
     """Synthetic m24-shaped units; reads only the frozen manifest + mask (no fork output). Checks: the population is 83 tasks;
     blocks complete on the 83 are admitted even though airline 13/44 rows are missing; a newly missing branch fails its
     block; masked tasks never enter the primary; the sensitivity keeps every available row; M1 uses blocks complete in
-    both cells; no arm is imputed."""
+    both cells; no arm is imputed; A6: a state completed by an agent-output arm error enters the primary, not the
+    strict-as-preregistered sensitivity."""
     rng = np.random.default_rng(0)
     g = guard("m24")
     man = json.loads((ROOT / g["manifest"]).read_text())
@@ -583,7 +678,18 @@ def selftest(B: int) -> None:
     # newly missing branch: gptq f03 loses one in-population state -> that block must fail for gptq only
     victim = next(u for u in raw["gptq_w4_d1"] if u["block"] == "f03" and u["task"] in pop and "excluded" not in u)
     victim.pop("Y"); victim.pop("E"); victim["excluded"] = "arm missing"
+    # amendment A6: rtn f02 has one state completed by an agent-output arm error (Y_QQ = 0): admitted in the primary only
+    v6 = next(u for u in raw["rtn_w4"] if u["block"] == "f02" and u["task"] in pop and "excluded" not in u)
+    v6["Y"]["QQ"] = 0
+    v6.update(E=unit_effects(v6["Y"], v6["exact"]), a6={"QQ": ("agent_output", "invalid_function_name")})
+    a6_selftest()
+    pc, pinfo, _, _ = apply_population(strict_prereg(raw), pop, len(pop))
+    assert pinfo["rtn_w4"]["f02"]["admitted"] is False and len(pc["rtn_w4"]) == 166 and len(pc["gptq_w4_d1"]) == 166, pinfo["rtn_w4"]
+    assert "not_estimable" in tau2_contrasts(pc, CONTRASTS["m24"], B)[0]["M1"]  # prereg: common blocks {f01} only
+    rep = a6_report(raw, pop)["rtn_w4"]["f02"]
+    assert (rep["states_reclassified"], rep["arms_reclassified"], rep["by_signature"]) == (1, 1, {"invalid_function_name": 1}), rep
     cells, info, cc, avail = apply_population(raw, pop, len(pop))
+    assert info["rtn_w4"]["f02"]["complete_via_a6"] == 1
     assert all(info["rtn_w4"][b]["admitted"] for b in ("f01", "f02", "f03")), info["rtn_w4"]
     assert info["gptq_w4_d1"]["f03"]["admitted"] is False and info["gptq_w4_d1"]["f01"]["admitted"], info["gptq_w4_d1"]
     assert len(cells["rtn_w4"]) == 249 and len(cells["gptq_w4_d1"]) == 166
@@ -598,7 +704,36 @@ def selftest(B: int) -> None:
     assert sens["common_blocks"] == ["f01", "f02", "f03"]
     print(json.dumps({"selftest": "PASS", "population": len(pop), "excluded": exc, "blocks": info,
                       "rtn_w4_states": r1["n_states"], "M1_common_blocks": con["common_blocks"], "M1_n_states": con["n_states"],
-                      "sensitivity_n_states": sens["n_states"]}, indent=1, default=str))
+                      "sensitivity_n_states": sens["n_states"], "a6": "PASS", "strict_prereg_blocks": pinfo}, indent=1, default=str))
+
+
+def a6_selftest() -> None:
+    """A6.2 on synthetic branch error records (repr strings as cloq/fork.py::run_branch writes them) and row resolution."""
+    s1 = {"error": "InvalidFunctionCallException('Function name was  but must be a-z, A-Z, 0-9, or contain underscores and dashes, "
+                   "with a maximum length of 64.')", "n_decisions": 7}
+    s1q = {"error": 'InvalidFunctionCallException("Function name was I\'m transferring you but must be a-z")', "n_decisions": 1}
+    s3 = {"error": "ValueError(\"AssistantMessage must have either content or tool_calls. Got AssistantMessage(role='assistant')\")", "n_decisions": 2}
+    assert a6_class(s1) == ("agent_output", "invalid_function_name") and a6_class(s1q)[0] == "agent_output"
+    assert a6_class(s3) == ("agent_output", "empty_agent_message")
+    for br in ({**s1, "n_decisions": 0}, {**s1, "infra_cause": "context_overflow"}, None, {"n_decisions": 3},
+               {"error": "JSONDecodeError('Unterminated string starting at: line 1 column 7 (char 6)')", "n_decisions": 2},
+               {"error": "litellm.APIConnectionError: Connection error.", "n_decisions": 3},
+               {"error": "litellm.BadRequestError: Hosted_vllmException - This model only supports single tool-calls at once!", "n_decisions": 2},
+               {"error": "InvalidToolException('Function name was x y but must be a-z')", "n_decisions": 3},
+               {"error": "ValueError(\"UserMessage must have either content or tool_calls. Got UserMessage(role='user')\")", "n_decisions": 3},
+               {"error": "KeyError('QQ')", "n_decisions": 4}):
+        assert a6_class(br)[0] == "missing", br
+    assert a6_class({"error": "JSONDecodeError('x')", "n_decisions": 2}) == ("missing", "JSONDecodeError")
+    # exact state: BB orig, QB = BB, QQ run (S1), BQ = QQ -> both Q-controller arms 0; any other error keeps the row missing
+    x = {"Y": {"BB": 1, "BQ": None, "QB": 1, "QQ": None},
+         "arm_source": {"BB": "orig", "QB": "reuse=BB", "QQ": "error: InvalidFunctionCallException('Function name was", "BQ": "reuse=QQ"}}
+    Y6, cls = a6_resolve(x, {"QQ": s1})
+    assert Y6 == {"BB": 1, "BQ": 0, "QB": 1, "QQ": 0} and cls == {"QQ": ("agent_output", "invalid_function_name"), "BQ": ("reuse", "reuse=QQ")}
+    assert x["Y"]["QQ"] is None  # the bank row itself is not modified
+    assert a6_resolve(x, {"QQ": {"error": "JSONDecodeError('x')", "n_decisions": 2}})[0] is None and a6_resolve(x, {})[0] is None
+    two = {"Y": {"BB": 0, "BQ": None, "QB": None, "QQ": 1}, "arm_source": {"BB": "run", "BQ": "error: a", "QB": "error: b", "QQ": "run"}}
+    assert a6_resolve(two, {"BQ": s3, "QB": {"error": "litellm.Timeout: x", "n_decisions": 1}})[0] is None  # one arm still missing
+    assert a6_resolve(two, {"BQ": s3, "QB": s1})[0] == {"BB": 0, "BQ": 0, "QB": 0, "QQ": 1}
 
 
 if __name__ == "__main__":
