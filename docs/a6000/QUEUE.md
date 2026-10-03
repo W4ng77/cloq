@@ -1,9 +1,10 @@
-# A6000 queue snapshot (2026-10-03 08:38:33 PDT)
+# A6000 queue snapshot (2026-10-03 09:08:44 PDT)
 
 ## running (28)
 
 - `a6k2_q14_gauss3_s1_rro`
 - `a6k2_q14_gauss3_s2_rro`
+- `a6k2_q14_kvq_int3_rro`
 - `a6k2_q4_gauss2_s1_redo`
 - `a6k2_q4_gauss3_s1_redo`
 - `a6k2_q4_gauss3_s2_redo`
@@ -29,7 +30,6 @@
 - `pert_q4_rtn_w3_resid_a2_q345`
 - `pert_q8_gptq_w3_resid_a2_q345`
 - `pert_q8_rtn_w3_resid_a2_q345`
-- `pert_q8_tel_awq_w4_restore_rand_mlp_s1_f456`
 
 ## failed (13)
 
@@ -47,7 +47,7 @@
 - `pert_q4_rtn_w3_restore_rand_attn_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_attn_s3_q3/airline: 1 infrastructure_error episodes (outage)')
 - `pert_q4_rtn_w3_restore_rand_mlp_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_mlp_s3_q3/retail: 1 infrastructure_error episodes (outage)')
 
-## done (1283)
+## done (1284)
 
 - `a6k2_det_q14_x1_awq_a` · 11 min · node005
 - `a6k2_det_q14_x1_awq_b` · 54 min · node004
@@ -250,9 +250,8 @@
 - `a6k2_q32_gauss0.1_s2` · 25 min · node007
 - `a6k2_q32_gauss0.3_s1` · 35 min · node007
 
-## todo (43)
+## todo (42)
 
-- `a6k2_q14_kvq_int3_rro`
 - `a6k2_q32_gauss3_s1_rro`
 - `a6k2_q32_gauss3_s2_rro`
 - `a6k2_q32_rtn_w3_rro`
