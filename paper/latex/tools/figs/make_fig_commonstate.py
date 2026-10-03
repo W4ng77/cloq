@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""F8 (W100f; pre-registered; k = 6 confirmatory look since 10-03, A1 + D2): common-state action sources on q8, from analysis/fork/analyze_commonstate.py.
+"""F8 (W100f; pre-registered; k = 6 after the fixed extension since 10-03, A1 + D2): common-state action sources on q8, from analysis/fork/analyze_commonstate.py.
 
 Separate from make_figs.py on purpose (another session edits that file); it imports make_figs only for the shared style,
 palette, widths, load(), interval() and save(). PDF metadata carries the source JSON sha256 and THIS script's sha256; this
@@ -8,8 +8,8 @@ script also merges its entry into figures/provenance.json (other entries untouch
     /data/ziyangs/cloq_work/envs/cloq/bin/python paper/latex/tools/figs/make_fig_commonstate.py [path/to/commonstate_<UTC>.json]
 
 (a) V(source, continuation), success % on the same 510 states (B = BF16, Q = GPTQ-W4 d1, Q' = GPTQ-W4 d2).
-(b) K(c) = V(B, c) - V(Q', c) under each continuation: thick = task-cluster bootstrap, thin = t over block means, both at
-    the Pocock two-look level (97%, A1.3 + D2.2), the binding confirmatory reading;
+(b) K(c) = V(B, c) - V(Q', c) under each continuation: thick = task-cluster bootstrap 95%, thin = t95 over block means
+    (ordinary intervals after the fixed extension; the two-look sensitivity intervals are in the appendix text);
     shaded = the +-3 pp equivalence margin of the frozen rule.
 (c) Exact action agreement among the three sources: the five patterns of the 510 states.
 """
@@ -26,8 +26,8 @@ from matplotlib.colors import LinearSegmentedColormap  # noqa: E402
 
 DEFAULT = "analysis/fork/out/commonstate_q8ext_20261003T231159Z.json"
 NAME = "f8_commonstate"
-SHOWS = ("W100u common states (q8, k = 6, confirmatory two-look): V(source, continuation) grid, K(c) = V(B,c) - V(Q',c) "
-         "with t97 and boot97 (Pocock) under each continuation, and exact action-agreement patterns among B, Q, Q'")
+SHOWS = ("W100u common states (q8, k = 6, after the fixed extension): V(source, continuation) grid, K(c) = V(B,c) - V(Q',c) "
+         "with t95 and boot95 under each continuation, and exact action-agreement patterns among B, Q, Q'")
 
 
 def script_sha():
@@ -96,7 +96,7 @@ def f8(src: str = DEFAULT):
     b.axvline(0, color=INK2, lw=0.5, zorder=1)
     for y, cc, col, mk in ((1, "bf16", INK, "o"), (0, "d1", INK, "s")):
         k = K[cc]
-        MF.interval(b, y, pp(k["point"]), [pp(x) for x in k["boot97"]], [pp(x) for x in k["t97"]], col, marker=mk,
+        MF.interval(b, y, pp(k["point"]), [pp(x) for x in k["boot95"]], [pp(x) for x in k["t95"]], col, marker=mk,
                     ms=3.4, horizontal=True)
     b.set_yticks([1, 0])
     b.set_yticklabels(["cont. B", "cont. Q"])
