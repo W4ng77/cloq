@@ -10,6 +10,51 @@ Newest first.
 
 ---
 
+## W100i — Same-precision acceptance check (773/774 is a context-overflow sentinel, no number changes); W3 same-precision stress check moved into paper §5 (2026-10-02 20:00 PDT)
+**TL;DR**
+- **Task A.** The single `prefix_and_env_ok` failure, 773/774, is in the **W3** analysis (`sameprec_w3_20261003T023933Z`, q8 same). The W4 analysis has none: `sameprec_20261003T023857Z` is 1405/1405.
+- **Where.** Block q4, task retail:111, state `01a4b3fe2dc5b158`, arm BB (Q′Q′). The failing sub-check is the prefix check: `prefix_ok` is `None`, while `env_hash_init_ok` is `True`.
+- **Cause: a recording sentinel, not a mismatch.** The branch ended in an agent-side context overflow. On that path `cloq/fork.py` hard-codes `prefix_ok: None`, because tau2 keeps no messages.
+- **The replay was correct.** The first replayed prompt-ids sha equals the state's `q_decision.prompt_ids_sha` and that of the other 3 arms, and the env hash matches.
+- **Rule.** SAMEPREC §4 (inherited by W3 §4; A1 changes no admission rule) says acceptance counts "exclude units only through quarantine", and W10/W70 count context overflow as a valid failure (Y = 0). `analyze_sameprec.py` already does both.
+- **Result: no script change, no re-run, no number changed.** Open question (display only): count the sentinel separately as "not computable".
+- **Task B.** W3 same-precision is now a stress-check paragraph in §5, after the W4 unit-split paragraphs and before "The measured value…". It uses GPT-6.1's required wording and is never pooled with W4.
+  - The W4 off-diagonal difference now labels both conventions: −1.210 is the mean of per-block ratios (interval/TOST), −1.216 the ratio of block sums. The F6(b) caption says which one is plotted.
+  - Method, Limitations, §7 and Discussion are updated where they had become inaccurate.
+  - Build: 23 pp; main text pp. 1–8, Limitations at the top of p. 9; 0 overfull, 0 undefined. `check_numbers.py` PASS (3131 numbers, 0 unverified).
+
+- **Task A note:** `analysis/fork/out/sameprec_prefix_check_20261003T030004Z.md`. Evidence:
+  - `analysis/fork/sameprec_w3/q8_gptq_w3_d1_vs_d2/q4/branches/01a4b3fe2dc5b158.json` (BB: `infra_cause: context_overflow`, 85 decisions, `suffix: None`);
+  - `cloq/fork.py` (ContextWindowExceeded return, `"prefix_ok": None`);
+  - `analysis/fork/analyze_dev.py` `load_dir` (excludes only branches with an `error` key; quarantine only on a QQ no-op mismatch).
+  - No-op samples 31/31 and 39/39; 0 quarantined directories.
+- **Task B paper changes** (`paper/latex/sections/`):
+  - `results_r2.tex`: new `\paragraph{Stress check at W3.}`. Its content, with sources `sameprec_w3_20261003T023933Z.{md,json}` and `sameprec_w3_split_20261003T024007Z.md`:
+    - the protocol's complete panel, K = 3, q3–q5, 510 units;
+    - "the same-precision substitution produces 17.3 pp of turnover, the BF16 substitution 18.8 pp"; off-diagonal 27.6 / 27.3%;
+    - ΔM +1.6, 95% [−0.66, +3.80], unresolved: TOST p 0.055 fails, and the 90% interval lying just above 0 does not change the reading;
+    - ΔG_all equivalent only in the preregistered pooled population (+1.2, p 0.017); q4 +3.1, q8 −0.8;
+    - Δoff −0.288 (ratio of block sums) or −0.307 (mean of per-block ratios; 90% [−11.0, +10.4], p 0.27);
+    - G κ 0.60 / 0.68, described as overlap of task×block units, explicitly not a same-state replication;
+    - 62 both / 34 BF16-only / 26 other-W3-only of 122 flipping units, so 49% respond to only one substitution, hence flip volume, affected units and net upgrade value are measured separately.
+  - The phrase "explains 92%" is not used anywhere.
+  - W4 Δoff sentence and F6 caption: both conventions labelled (`sameprec_20261003T023857Z.json` `tost_a1.consistency`).
+  - Compressed to stay within 8 pp, mostly by removing redundancy:
+    - §5 intro;
+    - the "longest prefix at freeze" aside;
+    - the per-task r = 0.68 clause;
+    - the forced cross-direction sentence (already in the F7 caption);
+    - the value paragraph;
+    - the common-state 5.5–7.5% clause;
+    - §7 opener and Qwen3-14B close;
+    - Discussion (now says "at W4 and at W3"; "neither reference shows equivalent turnovers").
+  - `method.tex`: "GPTQ-W3 as a stress check". `limitations.tex`: now covers GPTQ-W3 on three blocks, and "nothing about AWQ, KV8, RTN or rotated KV4". `results_r4.tex`: pointer from "Lower bit widths" to §5. `appendix_moved.tex`: W3 acceptance, including the explained 773/774.
+  - Abstract and intro are unchanged; their W4-only statements remain accurate.
+- **No W3 same-precision `\pending{}` slot existed in §7.** The only W3 text there was the precision stress paragraph, which stays.
+- **Remaining `\pending{}` slots:**
+  - main text: §7 SpinQuant vs QuaRot, §7 KIVI-2 vs KV8, §7 Mistral-Small second family; §5 W4 interim `K=6` markers (F6 caption and text);
+  - appendix: restoration location vs random, error dose α, low-bit failure modes, and two `K=6` markers (app:sameprec text, F7 caption).
+
 ## W100h — W3 same-precision pair (GPTQ-W3 d1 vs d2, K = 3, q3–q5): ΔM +1.6 pp, 90% CI [+0.05, +3.08], TOST p 0.055 — not resolved; cross-check bug fixed (2026-10-02 19:45 PDT)
 **TL;DR** All 6 formal tasks `fork_sameprec_w3_{q4,q8}_q{3,4,5}` are done. The W3 analysis first failed on an internal assert (`d_offdiag` −0.307 vs −0.288). The assert compared two different estimators of the same share; the protocol estimands are unchanged. The fix keeps the W4 analysis output identical to `sameprec_20261003T023735Z.json`.
 
