@@ -8,9 +8,11 @@ session. Docs: scripts/a6000/EXPPILOT.md. Stop: touch /data/ziyangs/cloq_work/qu
   B  analyses (login node, timeout 30 min, once each): analyze_newmethod.py --model <m> when its record exists and every
      panel + score task of the admitted cells is done (or T_deadline 2026-10-04 12:00 PDT passed); analyze_sameprec.py and
      analyze_sameprec_w3.py after the 2026-10-04 00:00 PDT freeze. Outputs + a ledger line are committed (explicit paths).
-  C  GPU fill: if idle agent GPUs > runnable todo demand for 2 consecutive loops, release deferred tasks (exppilot_fill.py
-     rules) into todo at priority -19, at most (idle - demand) GPUs per loop.
-  D  health: 'starved' once per hour when nothing is runnable or releasable; a family with > 3 failures in 2 h is held.
+  C  GPU fill: idle cards that no runnable todo task can use on their node (per-node demand, pre-W99p runners never take
+     > 2-GPU tasks) for 2 consecutive loops -> release deferred tasks listed in queue/EXPPILOT_FILL_ALLOW (user OK) into todo
+     at priority -19 with autopilot_retry set; unlisted ones that pass every check are only logged for approval.
+  D  health: 'starved' once per hour when nothing in todo is runnable and nothing is releasable; > 3 failures in 2 h of a
+     family hold it.
   E  a status paragraph every 30 min.
 Never: sbatch / scancel / kill, touch queue/running/, open analysis/fork/holdout/, edit frozen configs, manifests or protocols.
 
@@ -139,40 +141,51 @@ class Pilot:
     # ------------------------------------------------------------------ C + D: GPU fill, health
     def fill(self, idx: dict):
         M, live = F.models(), F.live_runners()
-        gs = F.gpu_state(live)
+        gs, big = F.gpu_state(live), F.big_ok(live)
         cap = {n: len(v["agent"]) for n, v in gs.items()}
+        per, run_ids, dep_blocked = F.demand(idx, cap, big, M)
         idle = sum(len(v["idle"]) for v in gs.values())
-        dem, _ = F.demand(idx, cap, M)
+        # fillable = idle cards on a node that no runnable todo task can use (its runner keeps the others for that work)
+        fg = {n: {"idle": list(v["idle"])} for n, v in gs.items() if v["idle"] and not per.get(n)}
+        nfill = sum(len(v["idle"]) for v in fg.values())
         blocked = F.failing_families()
         for fam, n in blocked.items():
             self.once_per(f"blk_{fam}", 7200, f"health: family {fam} has {n} failures within 2 h; not releasing it")
-        cands, skip = F.candidates(idx, cap, M, set(blocked))
-        self.st["fill_streak"] = self.st["fill_streak"] + 1 if idle > dem else 0
-        self.snap = {"idle": idle, "demand": dem, "runner_nodes": len(live), "releasable": len(cands)}
+        cands, skip = F.candidates(idx, cap, big, M, set(blocked))
+        ask = sorted(t for t, why in skip.items() if why == "needs user OK")
+        self.st["fill_streak"] = self.st["fill_streak"] + 1 if nfill else 0
+        self.snap = {"idle": idle, "fillable": nfill, "demand_by_node": {n: d for n, d in per.items() if d},
+                     "runner_nodes": len(live), "releasable": len(cands), "needs_ok": len(ask)}
         if self.dry:
-            self.log(f"fill: idle agent GPUs {idle} {dict((n, v['idle']) for n, v in gs.items() if v['idle'])}, runnable demand {dem} "
-                     f"GPUs; releasable deferred {[t for t, _ in cands]}; held {dict(Counter(skip.values()))}")
-        if idle > dem and (self.st["fill_streak"] >= 2 or self.dry):
-            budget, stamp = idle - dem, time.strftime("%F %T")
-            if self.dry and self.st["fill_streak"] < 2:
-                self.log(f"fill: idle {idle} > demand {dem}, streak {self.st['fill_streak']}/2; if it holds next loop:")
+            self.log(f"fill: idle agent GPUs {idle} {dict((n, v['idle']) for n, v in gs.items() if v['idle'])}; fillable "
+                     f"{dict((n, v['idle']) for n, v in fg.items())}; demand by node {self.snap['demand_by_node']}; pre-W99p "
+                     f"runners (no >2-GPU claims) {sorted(set(live) - big)}; releasable {[t for t, _ in cands]}; "
+                     f"held {dict(Counter(skip.values()))}")
+        if nfill and ask:
+            self.once_per("fill_ask", 3600, f"fill: {nfill} fillable idle GPUs; deferred tasks passing every check but not "
+                                             f"approved (add ids to {F.ALLOW} after the user's OK): {ask}")
+        if nfill and (self.st["fill_streak"] >= 2 or self.dry):
+            budget, stamp = nfill, time.strftime("%F %T")
             for tid, t in cands:
                 need = max(1, F.gpus_needed(t, M))
-                if need > budget or not F.place(t, need, gs):  # only onto idle cards that can actually host it
+                if need > budget or not F.place(t, need, fg, big):  # only onto fillable cards that can host it
                     continue
-                desc = f"fill: release {tid} ({need} GPU, prio {t.get('priority')} -> {F.FILL_PRIORITY}); idle {idle} demand {dem}"
+                desc = f"fill: release {tid} ({need} GPU, prio {t.get('priority')} -> {F.FILL_PRIORITY}); fillable {nfill}"
                 if self.dry:
                     self.act(desc)
                 else:
                     try:
                         F.release(tid, t, stamp)
                         self.act(desc)
-                    except (OSError, FileExistsError) as e:
-                        self.log(f"fill: {tid} not released: {e!r}")
+                    except OSError as e:
+                        self.once_per(f"rel_{tid}", 3600, f"fill: {tid} not released: {e!r}")
                         continue
                 budget -= need
-        if dem == 0 and not any(v == "todo" for v in idx.values()) and not cands:
-            self.once_per("starved", 3600, f"starved: nothing runnable in todo, deferred exhausted; idle GPUs {idle}")
+        if idle and not run_ids and not cands:
+            outside = Counter(idx.get(d, "missing") for k in dep_blocked for d in (F.load("todo", k) or {}).get("deps") or []
+                              if idx.get(d) != "done")
+            self.once_per("starved", 3600, f"starved: no runnable todo task, nothing releasable; idle GPUs {idle}; "
+                                           f"{len(dep_blocked)} todo tasks blocked on deps not done (dep dirs {dict(outside)})")
 
     # ------------------------------------------------------------------ E: status paragraph
     def summary(self, idx: dict):
