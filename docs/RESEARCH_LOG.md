@@ -10,6 +10,33 @@ Newest first.
 
 ---
 
+## W100q - GPU fill proposal and failure triage: the "airline outages" are agent-server queue timeouts on damaged models (not simulator instability), retries of them are futile; cluster idles from ~19:00-22:00 10-03 (~950-1080 idle GPU-h to the freeze); ranked fill options (2026-10-03 07:20 PDT)
+**TL;DR**
+1. **No failed task qualifies for a plain infra requeue; none was requeued.** The m24 score failures were a code bug, now fixed and requeued by W100o. The other eval failures were all already retried once.
+2. **Outages.** Every agent-side outage episode in the six failed a6k2 tasks (52) and in 3 still-running tasks (34) is the same event: a 600 s litellm timeout on the agent's own vLLM server. The server's KV cache is saturated (median 90-92%) and 6-21 requests wait, because 4 run-domains × concurrency 8 share it while the damaged models generate long contexts. Retries re-fail: `run_arm` skips a `completed` run-domain, and the worker re-raises on its recorded outages.
+3. **GPU forecast.** About 3-13 GPUs idle at 08:00-11:00, near full at about 12:00-19:00 if q8 phase 2 is queued promptly, then about 36-38 of 40 idle until the freeze. The ranked fill (common-state extension, the pivot dependency fix, low-load completion of the timed-out episodes) is about 100-150 GPU-h.
+- **Triage table and mechanism.** `docs/insights/GPU_FILL_PROPOSAL_20261003.md` §1.
+  - Simulator evidence: `sim_interruptions.jsonl` was never written, no simulator death is logged, the failures span 4 nodes, and only 5 user-side episodes exist (3 pert_q4 tasks).
+  - Retry futility is verified on `a6k2_q14_gauss3_s1`: the log shows "airline already completed; skipping", and the outage episodes are older than the retry.
+- **Doomed running tasks** (not stopped):
+  - `a6k2_q32_tel_rtn_w3`: 7 outages; 28/80 sims in 22.75 h, so it ends after the freeze;
+  - `pert_q8_{gptq,rtn}_w3_resid_a2_q345`: 16 and 11 outages.
+- **Forecast.** Supply is 40 agent GPUs: node002 has 4 because GPUs 0,1 fail the probe, and node003 is down. Claim cutoffs are node005/007 at 20:06 on 10-04 and node001 at 21:08. The 12 `pivot_*_rtn_w3` todo tasks depend on the deferred unsharded `fork_stress_*_rtn_w3` and can never be claimed.
+- **Options, ranked** (proposal §3):
+  - F0: SAMEPREC K = 17 final-prefix analysis, 0 GPU-h;
+  - F1a: common-state q8 f04-f06, about 15-20 GPU-h, reusing the q8 phase-2 `gptq_w4_d1` reference arms. Needs a dated amendment and GPT approval before the f04-f06 reference outputs are read;
+  - F1b: common-state q4 f01-f03, about 8-10 GPU-h;
+  - F2: pivot dependency fix, about 10-20 GPU-h;
+  - F3: low-load completion of about 93 timed-out episodes, about 30-50 GPU-h. Under batch invariance, load changes latency, not tokens;
+  - F4: 3 named deferred tasks, about 31 GPU-h;
+  - F5: replay audit, about 10-20 GPU-h;
+  - F6: confirmation blocks, about 100-200 GPU-h; needs its own preregistration, so not before this freeze.
+- **Flags.**
+  - The binding freeze may be 00:00 Toronto (21:00 PDT on 10-04) per NEWMETHOD §5.4 and TODO_v2, not 00:00 PDT.
+  - The W100r exppilot fill step would release `a6k2_q4_awq_w3_qx`, which is a deterministic re-fail (`runs/a6k2_q4_awq_w3_q5/airline` is completed with 2 outages).
+
+Evidence: `docs/insights/GPU_FILL_PROPOSAL_20261003.md`, `analysis/status/gpu_fill_20261003/{triage_outages.py,triage_outages.json,gpu_forecast.py,forecast_20261003T0705.txt}`, `/data/ziyangs/cloq_work/logs/{autopilot.log,node_node00*_49*.out,sim_balancer.log,tasks/*.vllm.log}`, `cloq/run_arm.py` l. 180, `scripts/a6000/worker.py` l. 440-483, queue `failed/`, `running/`, `todo/pivot_*_rtn_w3_*`, `deferred/`.
+
 ## W100r — Experiment pilot `exppilot` (12 h, unattended): effect-blind phase-2 release, once-only frozen analyses, GPU fill from deferred; built and dry-run, not started (2026-10-03 07:10 PDT)
 
 **TL;DR** `scripts/a6000/exppilot.sh [hours]` runs `exppilot.py` on the login node, default 12 h, one pass every 10 min. It is built, unit-tested and dry-run, but **not started**. Each pass does five things:
