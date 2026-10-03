@@ -17,11 +17,16 @@ session. Docs: scripts/a6000/EXPPILOT.md. Stop: touch /data/ziyangs/cloq_work/qu
   E  a status paragraph every 30 min.
 Never: sbatch / scancel / kill, touch queue/running/, open analysis/fork/holdout/, edit frozen configs, manifests or protocols.
 
-usage: python3 scripts/a6000/exppilot.py [--hours 12] [--dry-run] [--once]
+The run ends after --hours (default 12, the user's request) or at --until. Scheduled duties after the end (q8 record at
+T_decide 2026-10-03 20:00 PDT, SAMEPREC freeze 2026-10-04 00:00, T_deadline 2026-10-04 12:00) are logged as NOT covered
+at start and at exit; they need a relaunch (e.g. --until 2026-10-04T13:00-07:00) or a human.
+
+usage: python3 scripts/a6000/exppilot.py [--hours 12 | --until ISO] [--dry-run] [--once]
 """
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import fcntl
 import json
 import os
@@ -212,6 +217,18 @@ class Pilot:
         if not self.dry:
             self.st["last_summary"], self.st["acts"] = time.time(), []
 
+    def uncovered(self, end: float) -> list:
+        """Scheduled duties that fall after this run's end."""
+        out = []
+        if self.record("q8") is None and end < A.T_DECIDE.timestamp() + 1800:
+            out.append("q8 phase-2 release if expansion_q8.json is written at T_decide 2026-10-03 20:00 PDT (15-min poll)")
+        if end < A.T_FREEZE.timestamp():
+            out.append("sameprec + sameprec_w3 final analyses (freeze 2026-10-04 00:00 PDT; main session owns F0)")
+        pend = [m for m in ("m24", "q8") if not self.st["analyses"].get(f"newmethod_{m}", {}).get("ok")]
+        if pend and end < A.T_DEADLINE.timestamp():
+            out.append(f"newmethod analyses {pend} that are not due before the end, incl. the T_deadline 2026-10-04 12:00 PDT fallback")
+        return out
+
     def cycle(self):
         for name, fn in (("phase2", self.phase2), ("fill", self.fill), ("analyses", lambda i: A.step(self, i)),
                          ("summary", self.summary)):
@@ -225,6 +242,7 @@ class Pilot:
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--hours", type=float, default=12)
+    ap.add_argument("--until", help="absolute end, ISO 8601, e.g. 2026-10-04T13:00-07:00 (overrides --hours)")
     ap.add_argument("--dry-run", action="store_true", help="print every action it would take; write nothing")
     ap.add_argument("--once", action="store_true")
     a = ap.parse_args()
@@ -235,8 +253,10 @@ def main():
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except OSError:
             sys.exit("another exppilot holds /data/ziyangs/cloq_work/exppilot.lock")
-    end = time.time() + a.hours * 3600
-    P.log(f"exppilot start: {'dry run, ' if a.dry_run else ''}{a.hours} h, pid {os.getpid()}; stop: touch {STOP}")
+    end = dt.datetime.fromisoformat(a.until).timestamp() if a.until else time.time() + a.hours * 3600
+    gap = P.uncovered(end)
+    P.log(f"exppilot start: {'dry run, ' if a.dry_run else ''}until {time.strftime('%F %T', time.localtime(end))}, pid {os.getpid()}; "
+          f"stop: touch {STOP}" + (f"; NOT covered after the end (relaunch with --until or do by hand): {gap}" if gap else ""))
     while True:
         if STOP.exists():
             P.log(f"exppilot stop: {STOP} present (remove it before restarting)")
@@ -248,7 +268,9 @@ def main():
             if STOP.exists():
                 break
             time.sleep(30)
-    P.log("exppilot end")
+    gap = P.uncovered(time.time())
+    P.log("exppilot end" + (f"; still NOT covered (relaunch with --until or do by hand): {gap}" if gap else ""))
+    P.save()
 
 
 if __name__ == "__main__":

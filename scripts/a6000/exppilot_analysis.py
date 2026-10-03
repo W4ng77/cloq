@@ -5,18 +5,26 @@ succeeds at most once (state file), outputs + one ledger line committed with exp
                  and when every panel + score task of the record's admitted cells is done: phase 1 (f01-f03 tau2 + score and
                  the queued BFCL forks) of the eligible cells, phase 2 (f04-f06, q8 reference cells with their gates) of
                  phase2_cells if expand = true. After T_deadline 2026-10-04 12:00 PDT it runs on whatever the protocol admits.
+                 q8 is HELD until queue/EXPPILOT_GO_newmethod_q8 exists (W100q F1a: the common-state amendment must be
+                 hashed before the q8 gptq_w4_d1 f04-f06 reference outputs are read).
   sameprec       analysis/fork/analyze_sameprec.py and analyze_sameprec_w3.py once, after the 2026-10-04 00:00 PDT freeze
-                 (SAMEPREC_PROTOCOL A1: longest complete prefix; W3 protocol: K = 3).
+                 (SAMEPREC_PROTOCOL A1: longest complete prefix; W3 protocol: K = 3), skipped when a post-freeze output
+                 already exists (the main session owns F0).
+Outputs = the files the script prints as "wrote analysis/fork/out/<f>" (+ the .md sibling) that are new and match the
+prefix, so another session's concurrent outputs are never ledgered or committed.
 """
 from __future__ import annotations
 
 import datetime as dt
 import os
+import re
 import subprocess
 
 PDT = dt.timezone(dt.timedelta(hours=-7))
 T_DEADLINE = dt.datetime(2026, 10, 4, 12, 0, tzinfo=PDT)  # NEWMETHOD_PANEL_PROTOCOL §5.4
 T_FREEZE = dt.datetime(2026, 10, 4, 0, 0, tzinfo=PDT)     # SAMEPREC final analysis
+T_DECIDE = dt.datetime(2026, 10, 3, 20, 0, tzinfo=PDT)    # q8 expansion decision at the latest (§5.1 b)
+GO_Q8 = "EXPPILOT_GO_newmethod_q8"                         # in queue/: written by the main session after F1a is settled
 CO = "Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 ENV = "source scripts/a6000/env.sh >/dev/null 2>&1; export TMPDIR=/data/ziyangs/cloq_work/tmp; exec nice -n 10 python "
 
@@ -39,6 +47,10 @@ def step(P, idx: dict) -> None:
         if P.st["analyses"].get(key, {}).get("ok"):
             run(P, key, "", "", "")  # done; only retries a pending commit
             continue
+        if m == "q8" and not (P.WORK / "queue" / GO_Q8).exists():
+            P.once_per("anhold_q8", 3600, f"analysis {key}: HELD until queue/{GO_Q8} exists (W100q F1a: the common-state "
+                                          "amendment must be hashed before the gptq_w4_d1 f04-f06 outputs are read)")
+            continue
         req = required(P, m, rec, idx)
         left = [t for t in req if idx.get(t) != "done"]
         if left and now < T_DEADLINE:
@@ -47,10 +59,24 @@ def step(P, idx: dict) -> None:
         why = "all admitted panel+score tasks done" if not left else f"T_deadline passed, {len(left)}/{len(req)} not done"
         run(P, key, f"analysis/fork/analyze_newmethod.py --model {m}", f"newmethod_{m}_", why)
     if now >= T_FREEZE:
-        run(P, "sameprec", "analysis/fork/analyze_sameprec.py", "sameprec_2", "SAMEPREC freeze 2026-10-04 00:00 PDT")
-        run(P, "sameprec_w3", "analysis/fork/analyze_sameprec_w3.py", "sameprec_w3_", "SAMEPREC W3 freeze 2026-10-04 00:00 PDT")
+        for key, pre in (("sameprec", "sameprec_"), ("sameprec_w3", "sameprec_w3_")):
+            f = None if P.st["analyses"].get(key, {}).get("ok") else frozen_output(P, pre)
+            if f:
+                P.once_per(f"spdone_{key}", 1e9, f"analysis {key}: skipped, a post-freeze output exists ({f}; main session F0)")
+                continue
+            run(P, key, f"analysis/fork/analyze_{key}.py", pre + "2", f"{key} freeze 2026-10-04 00:00 PDT")
     else:
         P.once_per("sp_wait", 3 * 3600, f"analysis sameprec / sameprec_w3: waiting for the freeze {T_FREEZE.isoformat()}")
+
+
+def frozen_output(P, pre: str) -> str | None:
+    """An existing final output of this analysis stamped at or after the freeze (interim _capK outputs do not count)."""
+    stamp = T_FREEZE.astimezone(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    for f in sorted(os.listdir(P.ROOT / "analysis/fork/out")):
+        mm = re.match(re.escape(pre) + r"(\d{8}T\d{6}Z)\.json$", f)
+        if mm and mm.group(1) >= stamp:
+            return f
+    return None
 
 
 def run(P, key: str, script: str, prefix: str, why: str) -> None:
@@ -69,7 +95,9 @@ def run(P, key: str, script: str, prefix: str, why: str) -> None:
                                 timeout=1900).returncode
     except subprocess.TimeoutExpired:
         rc = "timeout"
-    new = sorted(f for f in set(os.listdir(out)) - before if f.startswith(prefix) and f.endswith((".json", ".md")))
+    said = set(re.findall(r"wrote (analysis/fork/out/[^/\s]+\.(?:json|md))\b", logf.read_text(errors="replace")))
+    said |= {x[:-5] + ".md" for x in said if x.endswith(".json")}  # the scripts print the .json; the .md is its sibling
+    new = sorted(f for f in set(os.listdir(out)) - before if f.startswith(prefix) and f"analysis/fork/out/{f}" in said)
     a.update(attempts=a.get("attempts", 0) + 1, log=str(logf))
     if rc != 0 or not new:
         return P.act(f"analysis {key} FAILED rc={rc} new={new} (attempt {a['attempts']}/3), log {logf}")
