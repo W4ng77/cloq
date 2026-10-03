@@ -10,6 +10,17 @@ Newest first.
 
 ---
 
+## W100y — node001 diagnosed: RAM-disk (tmpfs) leak from failed tasks, not NFS (2026-10-03 14:45 PDT)
+**TL;DR** node001 had 6 infra failures on 10-03 ("vLLM server did not come up in 90 min"; processes in D state). The cause was node-local scratch, not /data: compute nodes are diskless, `/` and /tmp are tmpfs (378 G of the 755 G RAM), and it was 94% full (354 G). About 340 G was our own checkpoint builds. worker.py freed a built checkpoint only after its server came up, so every task that failed earlier left 8-62 G behind. Finished jobs' /tmp/cloq_<job> dirs were never removed either. This drove memory pressure, which stalled new builds and loads, which caused more failures.
+- Actions (user approved stopping node001's tasks):
+  - Interrupted the 3 cs_q8_d2_d1 f04-f06 workers (no outcome yet) and requeued them.
+  - Requeued the 5 earlier node001 infra failures (cs_gate_q4_d2_d1 and 4 *_rro).
+  - DRAIN.node001 for all agent GPUs.
+  - Deleted the leftover ckpt_* dirs and finished-job scratch dirs on node001 (tmpfs 94% -> 8%, available RAM 379 G -> 704 G) and the finished-job dirs on the other 6 nodes (tmpfs 6-37% -> 5-11%).
+  - The watcher /data/ziyangs/cloq_work/tools/requeue_node001_infra.sh requeues node001 server-start failures of cs_* tasks.
+- Fix: worker.free_scratch() in main()'s finally removes ckpt_<id>, _rot, _Q, _Q_rot, _B, _B_rot (exact names) however the task ends. Unit test: a neighbouring id with the same prefix is kept.
+- I/O checks on node001 were normal (NFS v4.2 hard mount; dd reads and writes fast; no hung-task lines in dmesg; GPUs fine). The DRAIN can be lifted once a test task starts cleanly.
+
 ## W100x - Appendix backfill (EXPLORATORY): restoration location vs byte-matched random modules, error dose, low-bit failure modes; the three app:withdrawn \pending{} slots filled (2026-10-03 12:40 PDT)
 **TL;DR** CPU only, finished A6000 runs only (snapshot 20261003T1827Z; never pooled with 4080). Outages are not data (W6); context overflow counts as failure (W10). Three blocks per cell, so t intervals (df 2) come with crossed task x block intervals; no multiplicity correction.
 1. **Restoration location** (perturb-v1 closed-loop arms; located arm minus mean of the finished byte-matched random draws). RTN-W3, q4+q8 pooled: attention +9.8 [+6.1, +13.6] pp (crossed [+4.5, +15.1]); last third -8.6 [-13.4, -3.8] (crossed [-12.9, -4.7]); middle third +4.5 (crossed covers 0); MLP -5.4 [-14.1, +3.3]. GPTQ-W3, q4 GPTQ-W4 and q8 AWQ-W4: 0 of 30 contrasts exclude 0 under both intervals; 3 of 39 overall, all RTN-W3. Pivot arms (one decision, one random draw): attention reverts more pivot actions to B than random (q4 RTN-W3 +20.7; GPTQ-W3 pooled +35.7), with no GPTQ-W3 success counterpart (+1.6 [-4.8, +7.9]).
