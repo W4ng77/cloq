@@ -407,20 +407,27 @@ def run_eval(task, args, st: Status):
             if subprocess.run(cmd, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT).returncode != 0:
                 raise RuntimeError("openloop_d failed")
         jobs = [(r, d) for r in task["runs"] for d in task.get("domains", ("retail", "airline"))]
+        rro = task.get("rerun_outage")  # W100w: only these "run_id/domain"s, outage episodes only (cloq/rerun_outage.py)
+        if rro:
+            jobs = [(r, d) for r, d in jobs if f"{r['run_id']}/{d}" in rro]
         done, running = 0, []
         st.set("eval", f"{len(jobs)} run-domains", 0.0)
         leases: dict = {}
         pending = list(jobs)
         while pending or running:
-            while pending and len(running) < RUN_PAR:
+            while pending and len(running) < int(task.get("run_par", RUN_PAR)):  # W100w: per-task override
                 r, d = pending.pop(0)
                 if qmeta is not None:
                     qdir = ROOT / "runs" / r["run_id"]
                     qdir.mkdir(parents=True, exist_ok=True)
                     q = {k: v for k, v in qmeta.items() if k not in ("per_tensor", "stats")}
+                    if rro and (qdir / "quantization.json").exists():  # W100w: the re-run must serve the same model
+                        same_ckpt(qdir, q)
                     (qdir / "quantization.json").write_text(json.dumps(q, indent=1))
                 e = dict(env)
                 e.update({k: str(v) for k, v in r.get("env", {}).items()})  # per-run overrides, e.g. agent sampling
+                if rro:
+                    e["CLOQ_RERUN_OUTAGE"] = "1"
                 if r.get("nonce"):
                     e["CLOQ_PROMPT_NONCE"] = r["nonce"]
                 else:
@@ -435,6 +442,7 @@ def run_eval(task, args, st: Status):
                     cmd = [sys.executable, "-m", "cloq.run_arm", "--run-id", r["run_id"], "--arm", task["arm"], "--domain", d,
                            "--task-file", str(ROOT / r["task_file"]), "--agent-base", f"http://127.0.0.1:{args.port}/v1",
                            "--user-base", ub, "--checkpoint", json.dumps(task["ckpt"])]
+                    cmd += ["--max-concurrency", str(task["max_concurrency"])] if task.get("max_concurrency") else []  # W100w
                     leases[(r["run_id"], d)] = lease(ub, f"{r['run_id']}/{d}")
                 running.append(((r["run_id"], d), subprocess.Popen(cmd, cwd=ROOT, env=e, stdout=log, stderr=subprocess.STDOUT)))
             time.sleep(10)
@@ -507,6 +515,23 @@ def run_eval(task, args, st: Status):
         summ["_ckpt"] = {k: qmeta.get(k) for k in ("tag", "method", "arm", "alpha", "equals", "content_sha256", "files_sha256",
                                                    "eff_alpha", "n_restored", "canary", "base_cache")}
     return summ
+
+
+SAME_KEYS = ("method", "wbits", "group_size", "sym", "gauss_k", "gauss_seed", "source_model", "source_revision",
+             "n_quantized_tensors", "mean_rel_weight_err", "content_sha256", "files_sha256", "tag", "alpha", "eff_alpha",
+             "canary", "kv_cache", "activations")
+
+
+def same_ckpt(qdir: Path, q: dict) -> None:
+    """W100w: before a rerun_outage task overwrites runs/<id>/quantization.json, keep the original (first time only) and
+    refuse to run if the rebuilt checkpoint / serve hooks differ from the ones the run's other episodes were served with."""
+    old_p, keep = qdir / "quantization.json", qdir / "quantization.pre_rerun.json"
+    old = json.load(open(old_p))
+    if not keep.exists():
+        shutil.copy2(old_p, keep)
+    diff = {k: (old.get(k), q.get(k)) for k in SAME_KEYS if json.dumps(old.get(k), sort_keys=True) != json.dumps(q.get(k), sort_keys=True)}
+    if diff:
+        raise RuntimeError(f"rerun_outage: rebuilt checkpoint differs from the original run's: {diff}")
 
 
 def ckpt_sha(path: str) -> str | None:
