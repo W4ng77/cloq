@@ -1,4 +1,4 @@
-# A6000 queue snapshot (2026-10-03 10:41:26 PDT)
+# A6000 queue snapshot (2026-10-03 11:11:30 PDT)
 
 ## running (25)
 
@@ -15,11 +15,11 @@
 - `a6k2_q8_kvq_int4`
 - `cs_gate_q4_d2_d1`
 - `cs_q8_d2_bf16_f04`
-- `cs_q8_d2_bf16_f05`
 - `cs_q8_d2_d1_f04`
+- `cs_q8_d2_d1_f05`
 - `cs_ref_q8_gptq_w4_d1_f06`
 - `fork_repair_q4_rtn_w3`
-- `nmp_tau2_m24_gptq_w4_d1_f05`
+- `nmp_tau2_m24_gptq_w4_d1_f06`
 - `nmp_tau2_q8_spinquant_w4a4_f01`
 - `pert_q4_gptq_w3_resid_a2_q345_rro`
 - `pert_q4_rtn_w3_resid_a2_q345`
@@ -46,7 +46,7 @@
 - `pert_q4_rtn_w3_restore_rand_attn_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_attn_s3_q3/airline: 1 infrastructure_error episodes (outage)')
 - `pert_q4_rtn_w3_restore_rand_mlp_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_mlp_s3_q3/retail: 1 infrastructure_error episodes (outage)')
 
-## done (1291)
+## done (1293)
 
 - `a6k2_det_q14_x1_awq_a` · 11 min · node005
 - `a6k2_det_q14_x1_awq_b` · 54 min · node004
@@ -249,7 +249,7 @@
 - `a6k2_q32_gauss0.1_s2` · 25 min · node007
 - `a6k2_q32_gauss0.3_s1` · 35 min · node007
 
-## todo (36)
+## todo (34)
 
 - `a6k2_q32_gauss3_s1_rro`
 - `a6k2_q32_gauss3_s2_rro`
@@ -261,7 +261,6 @@
 - `cs_q4_d2_d1_f02`
 - `cs_q4_d2_d1_f03`
 - `cs_q8_d2_bf16_f06`
-- `cs_q8_d2_d1_f05`
 - `cs_q8_d2_d1_f06`
 - `nmp_score_m24_gptq_w4_d1_f01`
 - `nmp_score_m24_gptq_w4_d1_f02`
@@ -278,7 +277,6 @@
 - `nmp_score_q8_quarot_w4a4_f02`
 - `nmp_score_q8_spinquant_w4a4_f01`
 - `nmp_score_q8_spinquant_w4a4_f03`
-- `nmp_tau2_m24_gptq_w4_d1_f06`
 - `nmp_tau2_m24_rtn_w4_f04`
 - `nmp_tau2_m24_rtn_w4_f05`
 - `nmp_tau2_m24_rtn_w4_f06`
