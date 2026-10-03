@@ -96,8 +96,11 @@ def main():
     gates = [f"cs_gate_q8_{t}" for t in TYPES]
     tasks = []
     if a.design != "v1":
-        psha = hashlib.sha256((ROOT / man["protocol"]).read_bytes()).hexdigest()
-        if psha != man["protocol_sha256"]:
+        pb = (ROOT / man["protocol"]).read_bytes()
+        psha = hashlib.sha256(pb).hexdigest()
+        # W100u-r deviation D2 (sha 288fc65a): accepted only when its first 24,275 bytes are the A1 text the manifest records
+        if psha != man["protocol_sha256"] and not (psha == "288fc65a20cd3aa0830c81d099457b1a0b5550aeb379108750adabd90a92478a"
+                                                   and hashlib.sha256(pb[:24275]).hexdigest() == man["protocol_sha256"]):
             raise SystemExit(f"protocol sha256 {psha} != {man['protocol_sha256']} recorded in {DESIGNS[a.design].name}: refusing")
         m, blocks = man["model"], man["blocks"]
         if a.design == "q8ext" and a.gate or a.design == "q4" and a.ref:
