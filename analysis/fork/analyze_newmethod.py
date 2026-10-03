@@ -163,7 +163,8 @@ def expansion_ok(model: str) -> bool:
     return p.exists() and json.loads(p.read_text()).get("expand") is True
 
 
-def load_tau2(model: str, man: dict) -> tuple[dict, dict]:
+def load_tau2(model: str, man: dict, blocks: set | None = None, only: set | None = None) -> tuple[dict, dict]:
+    """blocks / only (--blocks / --cells): restrict what is loaded; a cell outside `only` is never opened. Default: all."""
     rows = {r["state_key"]: r for r in man["rows"]}
     allow2 = expansion_ok(model)
     cells: dict = defaultdict(list)
@@ -203,7 +204,10 @@ def load_tau2(model: str, man: dict) -> tuple[dict, dict]:
     base = NM / "tau2"
     for d in sorted(base.glob(f"{model}_*/*")) if base.exists() else []:
         cell, blk = d.parent.name[len(model) + 1:], d.name
-        if blk not in man["tau2"]["phase"]:
+        if blk not in man["tau2"]["phase"] or (only and cell not in only):
+            continue
+        if blocks and blk not in blocks:
+            log[cell].append(f"{blk}: not requested (--blocks)")
             continue
         if man["tau2"]["phase"][blk] == 2 and not allow2:
             log[cell].append(f"{blk}: phase 2 without an expand=true decision record (refused)")
@@ -211,6 +215,8 @@ def load_tau2(model: str, man: dict) -> tuple[dict, dict]:
         take(cell, blk, no_holdout(d), "panel", MANIFESTS[model][1])
     for cell in REF_TAU2.get(model, ()):
         for blk in ("f01", "f02", "f03"):
+            if (only and cell not in only) or (blocks and blk not in blocks):
+                continue
             if any(u["block"] == blk for u in cells.get(cell, [])):
                 continue  # a panel-run reference block takes precedence (not expected for f01-f03)
             take(cell, blk, no_holdout(ROOT / "analysis/fork/bank_u" / f"{model}_{cell}" / blk), "bank_u", BANK_U_SHA256)
@@ -359,13 +365,14 @@ def fidelity(cells: dict, scores: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------- panel B
-def load_bfcl(model: str, man: dict) -> tuple[dict, dict]:
+def load_bfcl(model: str, man: dict, only: set | None = None) -> tuple[dict, dict]:
     panel = {f"bfcl_{c}|{i}" for c in CATS for i in man["categories"][c]["nmp_v1"]}
     dirs = []
     if (NM / "bfcl").exists():
         dirs += [d for d in sorted((NM / "bfcl").glob(f"bfcl_{model}_*")) if d.is_dir()]
     dirs += [d for d in sorted((ROOT / "analysis/fork/ext/dev").glob(f"bfcl_{model}_*"))
              if d.is_dir() and AE.parse_dir(d.name)[2] in REF_BFCL.get(model, ())]
+    dirs = [d for d in dirs if not only or AE.parse_dir(d.name)[2] in only]  # --cells: other cells are never opened
     loaded = [AE.load_dir(no_holdout(d)) for d in dirs]
     done = [L for L in loaded if not L["incomplete"]]
     guard_counts = AE.replay_guard(done, "analyze_newmethod") if hasattr(AE, "replay_guard") else "replay_guard unavailable"
@@ -443,6 +450,10 @@ def main():
     ap.add_argument("--B", type=int, default=AD.B_BOOT)
     ap.add_argument("--dry", action="store_true")
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--blocks", help="comma list of panel A blocks to load, e.g. f01,f02,f03 (phase 1 only: an interim run while phase 2 "
+                                     "runs); default every block the rules admit. Rules are unchanged within the loaded blocks")
+    ap.add_argument("--cells", help="comma list of cells to load (tau2 panel/reference and BFCL); other cells' outputs are never opened")
+    ap.add_argument("--tag", help="output name prefix (default newmethod_<model>)")
     a = ap.parse_args()
     if a.selftest:
         selftest(a.B)
@@ -450,18 +461,24 @@ def main():
     g = guard(a.model)
     CT = CONTRASTS.get(a.model, CONTRASTS["q8"])
     man = json.loads((ROOT / g["manifest"]).read_text())
+    blocks = set(a.blocks.split(",")) if a.blocks else None
+    only = set(a.cells.split(",")) if a.cells else None
+    known = set(NEW_CELLS + M24_CELLS + REF_TAU2.get(a.model, ()) + REF_BFCL.get(a.model, ()))
+    if (blocks and not blocks <= set(man["tau2"]["phase"])) or (only and not only <= known):
+        raise SystemExit(f"analyze_newmethod: unknown --blocks {blocks} or --cells {only}")
+    restrict = {"blocks": sorted(blocks) if blocks else "all", "cells": sorted(only) if only else "all"}
     pop, excluded = population(a.model, man)
     n_tasks = len(pop)
     t0 = time.time()
-    raw, tlog = load_tau2(a.model, man)
+    raw, tlog = load_tau2(a.model, man, blocks, only)
     cells, blocks_info, cc_cells, avail_cells = apply_population(raw, pop, n_tasks)
-    bcells, blog = load_bfcl(a.model, man)
+    bcells, blog = load_bfcl(a.model, man, only)
     if a.dry:
-        print(json.dumps({"guard": g, "population": {"n_tasks": n_tasks, "excluded_by_mask": excluded}, "not_run": NOT_RUN, "tau2_blocks": blocks_info, "tau2_log": tlog, "bfcl_log": blog,
+        print(json.dumps({"guard": g, "restrict": restrict, "population": {"n_tasks": n_tasks, "excluded_by_mask": excluded}, "not_run": NOT_RUN, "tau2_blocks": blocks_info, "tau2_log": tlog, "bfcl_log": blog,
                           "expansion_ok": expansion_ok(a.model)}, indent=1, default=str))
         return
     R = {"guard": g, "script_sha256": sha(Path(__file__)), "git": subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip(),
-         "B": a.B, "seed": AD.SEED, "not_run": NOT_RUN, "expansion_ok": expansion_ok(a.model), "tau2": {"population": {"n_tasks": n_tasks, "excluded_by_mask": excluded,
+         "restrict": restrict, "B": a.B, "seed": AD.SEED, "not_run": NOT_RUN, "expansion_ok": expansion_ok(a.model), "tau2": {"population": {"n_tasks": n_tasks, "excluded_by_mask": excluded,
                                                                                                 "label": "conditional population (amendment A3)" if excluded else "full panel"},
                                                                                  "blocks": blocks_info, "log": tlog, "cells": {}, "complete_case": {},
                                                                                  "sensitivity_available_rows": {}}}
@@ -499,9 +516,10 @@ def main():
     R["seconds"] = time.time() - t0
     OUT.mkdir(parents=True, exist_ok=True)
     utc = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
-    jp = OUT / f"newmethod_{a.model}_{utc}.json"
+    tag = a.tag or f"newmethod_{a.model}"
+    jp = OUT / f"{tag}_{utc}.json"
     jp.write_text(json.dumps(R, indent=1, default=str))
-    (OUT / f"newmethod_{a.model}_{utc}.md").write_text(markdown(R, jp))
+    (OUT / f"{tag}_{utc}.md").write_text(markdown(R, jp))
     print("wrote", jp.relative_to(ROOT))
 
 
@@ -512,7 +530,8 @@ def markdown(R: dict, jp: Path) -> str:
         return f"{x['est']:+.1f} [{x['ci95'][0]:+.1f}, {x['ci95'][1]:+.1f}]" + (f" (crossed {x['crossed_ci95'][0]:+.1f}, {x['crossed_ci95'][1]:+.1f})" if x.get("crossed_ci95") else "")
     L = [f"# New-method panels ({R['guard']['manifest']})", "",
          f"Protocol sha256 `{R['guard']['protocol_sha256']}`, manifest sha256 `{R['guard']['manifest_sha256']}`, script `{R['script_sha256'][:12]}`, "
-         f"git `{R['git'][:10]}`. Phase-2 admitted: {R['expansion_ok']}. pp; primary interval per analyze_dev.summarise.", "",
+         f"git `{R['git'][:10]}`. Phase-2 admitted: {R['expansion_ok']}. Loaded (--blocks/--cells): {R.get('restrict')}. "
+         "pp; primary interval per analyze_dev.summarise.", "",
          "## τ² (U2B states), all states, task-equal", "", "| cell | k | n | D_cc | G | H | F | I | M | M_cc | exact |", "|---|---|---|---|---|---|---|---|---|---|---|"]
     for c, r in R["tau2"]["cells"].items():
         s = r["all_states_pp"]
