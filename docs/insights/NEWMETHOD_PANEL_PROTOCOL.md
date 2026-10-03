@@ -651,3 +651,86 @@ An arm is an **agent-output error** iff all three hold:
 - `strict_prereg` gives the sensitivity. `main()` asserts that it equals a load without A6, state by state;
 - `a6_report` gives the per-block counts (JSON `tau2.a6`, markdown section). `--dry` prints the counts and the admitted blocks under both rules;
 - `--selftest` covers A6 on synthetic error records.
+
+---
+
+## Amendment A6.E1 (2026-10-03 08:58 PDT, W100v-e): corrections to A6 after review; two added labelled sensitivities; the A6 primary rule is unchanged
+
+**TL;DR** A review of A6 found seven inaccurate or missing statements. This erratum corrects them and leaves the A6 primary rule exactly as committed in fe6765e. It adds two labelled sensitivities ("A6 prospective only"; "A6 + agent tool-call parse failures") and reports which model produced each arm scored Y = 0. The binding time is this commit's time.
+
+Status when written:
+- **m24 phase 2:** `gptq_w4_d1` f04 finished at 08:24:17 PDT, f05 is running, `gptq_w4_d1` f06 and `rtn_w4` f04 to f06 are in todo. No analysis, `--dry` or content read has touched any m24 phase-2 record (E1.6 lists the filename greps).
+- **q8:** no `expansion_q8.json`; no q8 panel analysis has run. For E1.5 the q8 phase-1 arm-error records were read for arm, exception type and `n_decisions` only.
+
+### E1.1 Why A6 was adopted for m24 (replaces A6.4's "The rule was not chosen for its effect on any estimate")
+
+- The A6 class is defined by exception type and branch origin and reads no Y. The decision to adopt a rule, however, was motivated by estimability. Under §7/A3.3 the m24 primary M1 had one common complete block (f03): not estimable. The W100q decision request said so ("without the change, m24 probably cannot be estimated").
+- A6 was proposed after the m24 phase-1 interim (`analysis/fork/out/m24_interim_20261003T141416Z.md`, 07:14 PDT) had been read. That included the available-rows sensitivity of M1 on k = 3 blocks: ΔD_cc +2.4 [−0.7, +5.5] pp (t p 0.077). With A6, M1's phase-1 blocks become {f01, f02, f03}, the blocks of that sensitivity, so A6's phase-1 M1 is close to an estimate already seen.
+- **New labelled sensitivity "A6 prospective only".** A6 applies only to rows whose outcomes were unread when A6 was fixed. The rule is strict as preregistered on m24 phase 1 (f01 to f03) and on the q8 reference rows reused from Bank U (f01 to f03). It is reported like "strict as preregistered": admitted blocks, per-cell estimates, every contrast and its own Holm family. For m24 this is the reading whose rule was fixed before its data were read. Where it and the primary disagree, the paper says so.
+
+### E1.2 `JSONDecodeError`: corrected reason; still missing in the primary; new sensitivity
+
+- **A6.2's reason is wrong for panel A.** It says the type "does not identify an agent message, so the record cannot establish their origin". In retail and airline only the agent is offered tools; user tools exist only in telecom, mock and banking_knowledge (`domains/*/environment.py`).
+  - The only uncaught `json.loads` in tau2 or cloq code on the branch's orchestrator path is `tau2/utils/llm_utils.py:440`, which parses the tool-call arguments of an LLM response. `cloq/context_policy.py:85`, `cloq/fork.py:62` and `cloq/loop_guard.py:50` catch the exception.
+  - It is raised inside `generate`, before that decision is logged. A branch `JSONDecodeError` with `n_decisions` ≥ 1 is therefore the controller's decision `n_decisions` + 1, a malformed tool call by the agent. The phase-1 case is m24 `rtn_w4` f03 airline:13 BQ, `n_decisions` 2, a masked task.
+- **Why it stays missing in the primary.** A6 rests on end-to-end consistency. End to end, `worker.classify` labels `JSONDecodeError` an outage and the task is re-run. It is never scored as the agent's failure. A3.3 forbids re-runs in the fork, so no end-to-end rule gives it a value. The known cost is that a block with such an arm fails under the primary, which is the outcome-dependent loss A6.1 describes.
+- **New labelled sensitivity "A6 + agent tool-call parse failures".** This is A6 plus `JSONDecodeError` arms with `n_decisions` ≥ 1 in retail or airline, scored Y = 0. It is reported like "strict as preregistered", with its own A6 report.
+  - pydantic `validation error for ToolCall` arms stay missing in every view, because their construction sites were not audited.
+  - The primary report already counts `JSONDecodeError` arms per (cell, block) among the arm errors that stayed missing.
+
+### E1.3 Panel B already scores this failure Y = 0 (corrects A6.3 and the W100v open question)
+
+- Since W99p (e352e28, 2026-10-02 01:42 PDT, before any panel output), `scripts/ext/common.py` raises `ChatError("agent_parse_error")` on "Function name was … must be a-z". `scripts/ext/bfcl_run.py` then ends the episode with that termination and scores it as a failure. `analysis/fork/analyze_ext.py` drops only arms that have an `error` key, so these arms enter with Y = 0. Five m24 BFCL branch records carry `agent_parse_error`.
+- A6.3's "Panel B: `analyze_ext` excludes an item with a branch error" is true only of arms with an `error` record, not of this failure. A6 brings panel A in line with this prespecified within-fork precedent (cited here as an addition to A6.1). No panel B amendment is needed, and the W100v open question about BFCL is withdrawn.
+
+### E1.4 Asymmetry with A3, and the producing model
+
+- **The cited precedent does not apply to panel A.** A6.1 cites "a source episode that ended this way is a valid failure, Y_QQ = 0". That precedent belongs to `fork_driver.search_task` (first-divergence mode). In panel A, a BF16 source episode that ended in `agent_parse_error` has no state, and A3 masks the task (airline 13, 44).
+  - So BB 'orig' outcomes are conditioned on BF16 not failing this way in the source episode.
+  - Under A6, a B-produced invalid message in a branch (B's forced action, or B as controller in QB or a BB run) is Y = 0. In QB this counts against Q's action in D_cc. This asymmetry is disclosed.
+- **Producer rule.** S1 and S3 are raised after the offending decision is logged, so `n_decisions` = 1 is the forced action (the arm's first letter) and ≥ 2 the controller (its second letter). A tool-call parse failure is always the controller's.
+- **Reporting.** The A6 report gives counts by producer per (cell, block) and the producer of every arm, for example `QB[Q]`. All four m24 phase-1 A6 arms are Q-produced: retail:51 QB and QQ (forced a_Q, `n_decisions` 1); retail:95 QQ (3); airline:2 BQ (7). Any B-produced Y = 0 in phase 2 is named in the write-up.
+
+### E1.5 Q-server timeouts: cause not established
+
+- A6.2 lists litellm `Timeout` among transport and server errors, and W100v called every q8 phase-1 arm error infrastructure. That is not shown for the 12 `Timeout` arms (kivi_k2v2 f01 to f03: 10; spinquant_w4a4 f01: 2).
+  - All 12 are Q-controller arms (BQ or QQ); none is BB or QB.
+  - While busy, the Q server decoded at a median of 6.4 to 7.8 tok/s in total for kivi_k2v2 (15.9 for spinquant_w4a4 f01), with up to 8 requests running.
+  - The agent's `max_tokens` is 1024 and the timeout is 600 s, so a long completion under load can reach the limit. The length of a timed-out completion is not recorded, because the decision record is written only after a response.
+- The cause (server throughput, completion length, or both) is therefore not established, and completion length can depend on the model's behaviour. By contrast, kivi_k4v4 f01's `InternalServerError` arms occur in all four arms.
+- **The rule is unchanged:** they stay missing, labelled "Q-server timeout, cause not established". They decide P3 (kivi_k2v2 has no admissible block under any view) and cost P2 one block (spinquant_w4a4 f01). Any ruling on them belongs to the main session and needs its own dated amendment before the q8 analysis is read.
+
+### E1.6 A6 status text, corrected
+
+- **What A6 said.** "None of their outputs had been opened" (m24 phase 2). This is inaccurate.
+- **What existed.** When A6 was committed (08:16:28 PDT), 64 of the 84 `gptq_w4_d1` f04 branch records already existed; the first was written at 07:47:21.
+- **What touched them before the commit** (ZFS relatime access times):
+  - 30 of them were first read at 08:01:18 by another workflow agent's recursive filename grep (`grep -rln "det_q32_x1|det_q14_x1" analysis docs --include=*.json`);
+  - 9 were first read at 08:03:47 to 08:03:48 by this stream's own sha search (`grep -rln f9f8b3a5 --include=*.json .`);
+  - both greps printed file names only. None of the 64 contained an arm error. No loader, `--dry` or content read touched them.
+- **After the commit,** a reviewer's `grep -rn "f9f8b3a5|73bf5538" --include=*.json .` first read 34 f04 records and one q8 spinquant_w4a4 f01 record at 08:19:27; it prints only lines that contain those sha strings.
+- **Corrected status:** "m24 phase 2: 64/84 `gptq_w4_d1` f04 states had been produced, unread, when A6 was committed; their files were touched only by recursive filename greps." Sha and guard searches now exclude fork output (`--exclude-dir=branches`).
+
+### E1.7 Scope of the user's approval
+
+- W100q decision 2 asked whether invalid tool names in Mistral fork branches count as Y = 0, and the user approved it (W100t). That covers S1 on m24.
+- S3 (empty agent message, W92) and the q8 scope (every q8 cell, including the reference cells) are this session's extension for consistency with the end-to-end rule. They were not part of the approved decision, so A6's TL;DR sentence "The user approved this" overstates the approval.
+- Both were fixed before any outcome they govern was read. S3 matches no phase-1 arm of either model, and on the q8 phase-1 record A6 gives exactly the strict result.
+- The main session confirms or reverts S3 and the q8 scope before writing `EXPPILOT_GO_newmethod_q8` or `_m24`. A revert would be a further dated amendment, made before reading.
+
+### E1.8 Paper wording (replaces A6.4's)
+
+"A branch that ended because the harness could not accept the agent's own message (an empty or invalid tool name, or an empty message) is scored as a failure, as in end-to-end evaluation. This rule was added after the Mistral phase-1 results had been read; without it the Mistral primary comparison is not estimable from phase 1 (one complete block). The analysis without the rule, and one applying it only to data not yet read when it was fixed, are reported alongside."
+
+### E1.9 Analysis script
+
+- `PROTOCOL_SHA256` = this file's new sha256 (same commit).
+- 43e2342 (before this commit): `load_tau2(..., views=)` reads every rule from one pass, and `main()` checks the strict view against that pass, so a block that finishes mid-run can no longer abort the analysis. Default behaviour was byte-identical (`--dry`, q8 and m24 f01-f03).
+- This commit:
+  - JSON `tau2.sensitivity_a6_prospective` and `tau2.sensitivity_a6_plus_toolcall_parse` (blocks, contrasts, own Holm family, per cell; the second with its A6 report);
+  - their markdown tables and `--dry` admitted blocks;
+  - `by_producer` and per-arm producers in the A6 report.
+- Checks, effect-blind:
+  - m24 f01-f03: the prospective view equals strict (rtn {f03}, gptq {f02, f03}); the plus view equals the primary, because the `JSONDecodeError` arm is in masked airline:13.
+  - q8: every view equals the primary.
+  - `--selftest` passes.

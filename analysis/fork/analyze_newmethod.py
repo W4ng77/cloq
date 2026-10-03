@@ -15,7 +15,9 @@ Panel A (tau2, U2B ordinary states on the BF16 trajectory; fork_driver mode bank
           phase-2 blocks (f04-f06) only if analysis/fork/newmethod/expansion_<model>.json says expand = true
           amendment A6 (primary, every model and cell): an arm error raised on the agent model's own generated message
           (A6_SIGNATURES, read from branches/<state_key>.json; >= 1 branch decision) is Y = 0 as end-to-end; every other
-          arm error stays missing; 'strict as preregistered' (no A6) is reported alongside, labelled sensitivity
+          arm error stays missing; 'strict as preregistered' (no A6) is reported alongside, labelled sensitivity;
+          A6.E1 adds two labelled sensitivities ('A6 prospective only'; 'A6 + agent tool-call parse failures') and the
+          producing model (forced action or controller) of every arm scored Y = 0
   stats   analyze_dev.effects + analyze_ghf.add_E (imported), plus D_cc = Y_QB - Y_BB, damage_cc, gain_cc, M_cc;
           all-state task-equal means (analyze_dev.Boot.task_mean: t over block means primary for k < 10, block bootstrap
           alongside, crossed task x block secondary); conditional on an action difference (Boot.ratio, non-exact states)
@@ -62,7 +64,8 @@ PROTOCOL = ROOT / "docs/insights/NEWMETHOD_PANEL_PROTOCOL.md"
 # Amendment A4 (W99t-b, 2026-10-02): was da8b69ba... (A3); kivi_k16v16 kernel-path control, KIVI _fx gates, k4v4 secondary.
 # Amendment A5 (W100g, 2026-10-02): was 0dc3143e... (A4); expansion decision: registered cells, KIVI _fx gates, fixed population, KIVI pairing, frozen snapshot.
 # Amendment A6 (W100v, 2026-10-03): was f9f8b3a5... (A5); fork-branch arm errors on the agent's own output scored Y = 0.
-PROTOCOL_SHA256 = "73bf5538e9316c5c695fc9441115e44e795095b88f1986c4379d8ad9f226d7b5"
+# Amendment A6.E1 (W100v-e, 2026-10-03): was 73bf5538... (A6); corrections, A6-prospective and tool-call-parse sensitivities.
+PROTOCOL_SHA256 = "b306cc70ebfca526472e519baa32f5ed7f698e953711f88eb987a9bc6e61771c"
 # Amendment A6.2 (W100v): exception signatures raised only by validating an AGENT message (repr as cloq/fork.py::run_branch records
 # it); S1 = mistral_common's check of an assistant tool call's function name (W99p), S3 = tau2's agent_msg.validate() on an
 # empty agent message (W92). Either quote style (repr switches to " when the message contains ').
@@ -231,17 +234,20 @@ def a6_report(raw: dict, pop: set) -> dict:
             if not k6:
                 continue
             r = rep.setdefault(c, {}).setdefault(u["block"], {"states_reclassified": 0, "arms_reclassified": 0, "arms_reused": 0,
-                                                               "by_signature": {}, "states_still_missing": 0, "missing_reasons": {}, "states": []})
+                                                               "by_signature": {}, "by_producer": {}, "states_still_missing": 0, "missing_reasons": {}, "states": []})
             r["states_reclassified" if k6 == "a6" else "states_still_missing"] += 1
-            for a, (kind, s, *_) in sorted(u[k6].items()):
+            for a, (kind, s, *pr) in sorted(u[k6].items()):
                 if kind == "agent_output":
                     r["arms_reclassified"] += 1
                     r["by_signature"][s] = r["by_signature"].get(s, 0) + 1
+                    for p in pr:  # A6.E1: which model's message failed (forced action = first, else the controller)
+                        r["by_producer"][p] = r["by_producer"].get(p, 0) + 1
                 elif kind == "reuse":
                     r["arms_reused"] += 1
                 else:
                     r["missing_reasons"][s] = r["missing_reasons"].get(s, 0) + 1
-            r["states"].append(f"{u['task'].replace('|', ':')} {'Y=0' if k6 == 'a6' else 'missing'} {','.join(sorted(u[k6]))}" + ("" if u["task"] in pop else " (outside population)"))
+            arms = ",".join(f"{a}[{c[2]}]" if len(c) > 2 else a for a, c in sorted(u[k6].items()))  # [producer] (A6.E1)
+            r["states"].append(f"{u['task'].replace('|', ':')} {'Y=0' if k6 == 'a6' else 'missing'} {arms}" + ("" if u["task"] in pop else " (outside population)"))
     return rep
 
 
@@ -624,10 +630,17 @@ def main():
     a6rep = a6_report(raw, pop)
     cells, blocks_info, cc_cells, avail_cells = apply_population(raw, pop, n_tasks)
     pcells, pblocks, _, _ = apply_population(pre, pop, n_tasks)
+    # A6.E1 sensitivities (labelled; never the primary): A6 only where fixed before reading, and A6 + tool-call parse failures
+    E1 = {"sensitivity_a6_prospective": ("SENSITIVITY: A6 prospective only (A6.E1: strict on m24 phase 1 and q8 Bank U reference rows)",
+                                         a6_prospective(raw, a.model)),
+          "sensitivity_a6_plus_toolcall_parse": ("SENSITIVITY: A6 + agent tool-call argument parse failures (A6.E1: JSONDecodeError, "
+                                                 ">= 1 branch decision, retail/airline) scored Y = 0", views["plus"])}
+    E1p = {k: apply_population(v, pop, n_tasks)[:2] for k, (_, v) in E1.items()}
     bcells, blog = load_bfcl(a.model, man, only)
     if a.dry:
         print(json.dumps({"guard": g, "restrict": restrict, "population": {"n_tasks": n_tasks, "excluded_by_mask": excluded}, "not_run": NOT_RUN, "tau2_blocks": blocks_info, "tau2_log": tlog, "bfcl_log": blog,
-                          "expansion_ok": expansion_ok(a.model), "a6": a6rep, "tau2_blocks_strict_prereg": pblocks}, indent=1, default=str))
+                          "expansion_ok": expansion_ok(a.model), "a6": a6rep, "tau2_blocks_strict_prereg": pblocks,
+                          **{f"tau2_blocks_{k[12:]}": b for k, (_, b) in E1p.items()}}, indent=1, default=str))
         return
     R = {"guard": g, "script_sha256": sha(Path(__file__)), "git": subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip(),
          "restrict": restrict, "B": a.B, "seed": AD.SEED, "not_run": NOT_RUN, "expansion_ok": expansion_ok(a.model), "tau2": {"population": {"n_tasks": n_tasks, "excluded_by_mask": excluded,
@@ -651,6 +664,13 @@ def main():
                                               "blocks": pblocks, "contrasts": pcon, "holm_primary_D_cc": phl,
                                               "cells": {c: {k: v for k, v in tau2_cell(us, a.B).items() if k in ("n_states", "k_blocks", "all_states_pp")}
                                                         for c, us in sorted(pcells.items()) if us}}
+    for k, (lab, view) in E1.items():
+        ec, eb = E1p[k]
+        econ, ehl = tau2_contrasts(ec, CT, a.B)
+        R["tau2"][k] = {"label": lab, "blocks": eb, "contrasts": econ, "holm_primary_D_cc": ehl,
+                        "cells": {c: {kk: v for kk, v in tau2_cell(us, a.B).items() if kk in ("n_states", "k_blocks", "all_states_pp")}
+                                  for c, us in sorted(ec.items()) if us},
+                        **({"a6": a6_report(view, pop)} if k.endswith("toolcall_parse") else {})}
     if excluded:
         sc = {}
         for lab, x, y in CT["primary"]:
@@ -697,16 +717,19 @@ def markdown(R: dict, jp: Path) -> str:
             L.append(f"| {lab} | {' − '.join(x['cells'])} | – | {x.get('not_estimable')} | | | |")
     a6 = R["tau2"].get("a6", {}).get("per_cell_block", {})
     L += ["", "## Amendment A6: arm errors on the agent's own message scored Y = 0", "",
-          "| cell | block | states Y=0 | arms Y=0 (+ reused) | signatures | arm errors still missing | states |", "|---|---|---|---|---|---|---|"]
-    L += [f"| {c} | {b} | {r['states_reclassified']} | {r['arms_reclassified']} (+{r['arms_reused']}) | {r['by_signature'] or '–'} | "
+          "| cell | block | states Y=0 | arms Y=0 (+ reused) | signatures; producer | arm errors still missing | states |", "|---|---|---|---|---|---|---|"]
+    L += [f"| {c} | {b} | {r['states_reclassified']} | {r['arms_reclassified']} (+{r['arms_reused']}) | {r['by_signature'] or '–'}; {r.get('by_producer') or '–'} | "
           f"{r['states_still_missing']} {r['missing_reasons'] or ''} | {'; '.join(r['states'])} |" for c, bs in a6.items() for b, r in bs.items()] or ["| – | | 0 | 0 | | 0 | |"]
-    ps = R["tau2"].get("sensitivity_strict_prereg", {})
-    L += ["", "SENSITIVITY, strict as preregistered (§7/A3.3 without A6): admitted blocks "
-          + "; ".join(f"{c} {','.join(b for b, i in bi.items() if i['admitted']) or 'none'}" for c, bi in ps.get("blocks", {}).items()), "",
-          "| id | cells | blocks | ΔD_cc | t p | Holm |", "|---|---|---|---|---|---|"]
-    L += [f"| {lab} | {' − '.join(x['cells'])} | {','.join(x.get('common_blocks', [])) or '–'} | "
-          + (f"{f(x['D_cc'])} | {x['D_cc'].get('t_p_two_sided')} | {ps['holm_primary_D_cc'].get(lab, '–')} |" if "D_cc" in x else f"{x.get('not_estimable')} | | |")
-          for lab, x in ps.get("contrasts", {}).items()]
+    for key, title in (("sensitivity_strict_prereg", "SENSITIVITY, strict as preregistered (§7/A3.3 without A6)"),
+                       ("sensitivity_a6_prospective", "SENSITIVITY, A6 prospective only (A6.E1)"),
+                       ("sensitivity_a6_plus_toolcall_parse", "SENSITIVITY, A6 + agent tool-call parse failures (A6.E1)")):
+        ps = R["tau2"].get(key, {})
+        L += ["", f"{title}: admitted blocks "
+              + "; ".join(f"{c} {','.join(b for b, i in bi.items() if i['admitted']) or 'none'}" for c, bi in ps.get("blocks", {}).items()), "",
+              "| id | cells | blocks | ΔD_cc | t p | Holm |", "|---|---|---|---|---|---|"]
+        L += [f"| {lab} | {' − '.join(x['cells'])} | {','.join(x.get('common_blocks', [])) or '–'} | "
+              + (f"{f(x['D_cc'])} | {x['D_cc'].get('t_p_two_sided')} | {ps['holm_primary_D_cc'].get(lab, '–')} |" if "D_cc" in x else f"{x.get('not_estimable')} | | |")
+              for lab, x in ps.get("contrasts", {}).items()]
     L += ["", "## BFCL (200 panel items), all items", "", "| cell | items | div | D_cc | G | M | M_cc |", "|---|---|---|---|---|---|---|"]
     for c, r in R["bfcl"].get("cells", {}).items():
         s = r["all_items_pp"]
