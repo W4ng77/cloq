@@ -1,4 +1,4 @@
-# A6000 queue snapshot (2026-10-03 12:46:17 PDT)
+# A6000 queue snapshot (2026-10-03 13:16:28 PDT)
 
 ## running (24)
 
@@ -19,13 +19,13 @@
 - `cs_q8_d2_d1_f05`
 - `cs_ref_q8_gptq_w4_d1_f06`
 - `fork_repair_q4_rtn_w3`
-- `nmp_score_q8_spinquant_w4a4_f01`
 - `nmp_tau2_m24_gptq_w4_d1_f06`
-- `pert_q4_gptq_w3_resid_a2_q345_rro`
+- `nmp_tau2_m24_rtn_w4_f04`
 - `pert_q4_rtn_w3_resid_a2_q345`
 - `pert_q4_rtn_w3_restore_rand_attn_s3_q345_rro`
 - `pert_q8_gptq_w3_resid_a2_q345`
 - `pert_q8_rtn_w3_resid_a2_q345`
+- `pivot_q8_rtn_w3_late__attn`
 
 ## failed (17)
 
@@ -47,7 +47,7 @@
 - `pert_q4_rtn_w3_restore_rand_mlp_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_mlp_s3_q3/retail: 1 infrastructure_error episodes (outage)')
 - `pert_q4_rtn_w3_restore_rand_mlp_s3_q345_rro` · RuntimeError('vLLM agent server did not come up in 90 min')
 
-## done (1295)
+## done (1297)
 
 - `a6k2_det_q14_x1_awq_a` · 11 min · node005
 - `a6k2_det_q14_x1_awq_b` · 54 min · node004
@@ -250,7 +250,7 @@
 - `a6k2_q32_gauss0.1_s2` · 25 min · node007
 - `a6k2_q32_gauss0.3_s1` · 35 min · node007
 
-## todo (31)
+## todo (29)
 
 - `a6k2_q32_rtn_w3_rro`
 - `cs_q4_d2_bf16_f01`
@@ -275,12 +275,10 @@
 - `nmp_score_m24_rtn_w4_f06`
 - `nmp_score_q8_quarot_w4a4_f02`
 - `nmp_score_q8_spinquant_w4a4_f03`
-- `nmp_tau2_m24_rtn_w4_f04`
 - `nmp_tau2_m24_rtn_w4_f05`
 - `nmp_tau2_m24_rtn_w4_f06`
 - `nmp_tau2_q8_spinquant_w4a4_f03`
 - `pivot_q8_rtn_w3_early__middle`
-- `pivot_q8_rtn_w3_late__attn`
 - `pivot_q8_rtn_w3_rand_attn_s1__rand_mlp_s1`
 - `pivot_q8_rtn_w3_resid_a0.5`
 
