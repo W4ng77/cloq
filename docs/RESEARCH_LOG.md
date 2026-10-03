@@ -10,6 +10,50 @@ Newest first.
 
 ---
 
+## W100u-r - Common-state review corrections: deviation D2 committed before any A1-task output; earlier outcomes at 17 q8 and 2 q4 states disclosed; Pocock two-look reading is now the confirmatory q8 reading; two node001 tasks stalled (2026-10-03 09:05 PDT)
+**TL;DR** A review of W100u raised six findings, and all six held after checking against the files. The A1 claim "written before any governed outcome existed" was wrong at 17 of the 255 q8 f04-f06 states and 2 of the 255 q4 states (9 f01-f03 states under v1). SAMEPREC and the dev precision fork had already run this design's arms at those identical states. Deviation D2 (commit f56682a, 08:54:31 PDT; protocol sha dce40245 → **288fc65a**) does the following:
+- discloses these states and prespecifies a sensitivity reading without them;
+- makes the Pocock two-look reading the confirmatory q8 reading, with the frozen-level reading labelled "unadjusted" and both always printed;
+- labels each reading with the realised k;
+- separates a gate stall from a gate verdict;
+- names the main session as the owner of both readings, with an acceptance-only `--check` first.
+
+No A1 task had written any output when D2 was hashed. **Action needed:** `cs_gate_q4_d2_d1` and `cs_ref_q8_gptq_w4_d1_f06` have been stuck on node001 since 08:13. They block all of q4 and q8 f06.
+- **Finding 1 (major, confirmed and widened): earlier outcomes at shared states.**
+  - Method: each panel state rebuilt with `make_state`, then compared field by field with every non-holdout fork state file; no outcome printed.
+  - q8 f04-f06: SAMEPREC g2 (B = d2) had run a_d2 and the d2→d1 arm at 13 states. Dev gptq_d1 g2 had run a_d1 and the reference arms BQ/QB at 14 states. The union is 17.
+  - q4: SAMEPREC g1 at 2 states.
+  - q8 f01-f03: SAMEPREC g1 (05:55) had run 9 states before v1 was committed (87733f7, 07:33).
+  - Y_BB at all f04-f06 states was already known from the main matrix.
+  - Replay check on the 9 f01-f03 overlaps: a_d2 identical 9/9, Y equal **8/9** (the review said 9/9). The replays are close, not exact.
+  - Lists: `manifests/fork/commonstate_d2_v1.json`.
+- **Finding 2 (minor, confirmed): two looks.** `commonstate_twolook_mc.py --given` holds f01-f03 at their observed W100b values (t criterion only).
+  - K(BF16), false difference at K = 0: 0.084-0.113 at the frozen levels, 0.036-0.065 at Pocock (sd 2-3.5 pp).
+  - K(d1), false equivalence at ±3 pp: 0.077-0.159 frozen, 0.022-0.066 Pocock.
+  - The A1 figure of 0.041 is an average over every first look that made no claim.
+  - D2.2 adopts the stricter option that F1a offered. No advisor sign-off is recorded yet.
+- **Finding 3 (minor, confirmed): labels.** Labels and titles now carry the realised k, e.g. "q8, k = 5 of 6 blocks (f06 excluded)". The Pocock levels are kept for k < 6, which is conservative because the correlation between looks is √(3/k) ≥ √(1/2).
+- **Finding 4 (major, confirmed): stalled tasks.**
+  - At 09:00 both node001 logs still held only the 08:13:15 header, and node001 GPUs 2-7 showed 0 % utilisation with 2 MiB in use (gpumon).
+  - The worker's build_ckpt has no timeout, so nothing will move these tasks to failed/.
+  - I did not stop anything: never kill, never touch running/.
+  - D2.4: such a stall is not a gate verdict. A human may move the task back to todo/ unchanged.
+  - My W100u status line ("5 running, building GPTQ checkpoints") was wrong for these two tasks.
+  - node007 is also slow: ref f04/f05 vLLM has been in start-up since 08:35, so the W100u ETAs are optimistic.
+- **Finding 5 (minor, confirmed): checkpoint check.** No A1 task had a server record at 09:00. `scripts/a6000/commonstate_ckpt_check.py [--hold]` compares the recorded ckpt sha256 and canary with the manifests as soon as servers.json appears. Tested: f01-f03 records 6/6 ok, a tampered expectation is flagged, and hold moves only todo files.
+- **Finding 6 (minor, confirmed): reading owner.**
+  - The main session owns both readings (D2.6).
+  - `analyze_commonstate.py --design <d> --check` prints acceptance fields only.
+  - Rows can be repaired before the freeze: a d2 task goes back to todo/ unchanged (`fork.resume`); a reference task is re-run whole.
+  - The reading is made at the earlier of all-done-and-checked or the freeze, and no later than 10-04 23:00 PDT.
+- **Code checks.**
+  - analyze_commonstate.py (22cde1a): the default real-data run and the selftest are identical to 6dccab1 except the timestamp (json and md diffed).
+  - The real `--design q8ext/q4` runs still refuse with "not yet".
+  - The design selftests (synthetic) and the k = 5 case pass.
+  - Guard: 5 file variants x 2 expected shas; only intact prefix chains are accepted.
+- **Commits:** f56682a (D2 + MC --given; default MC output byte-identical), c7e7fac (D2 record), 22cde1a (analysis), 9ddd5ca (checker), plus this entry.
+- Evidence: `docs/insights/COMMONSTATE_SOURCES_PROTOCOL.md` (D2), `manifests/fork/commonstate_d2_v1.json`, `analysis/fork/analyze_commonstate.py`, `analysis/fork/commonstate_twolook_mc.py`, `scripts/a6000/commonstate_ckpt_check.py`; `/data/ziyangs/cloq_work/logs/tasks/cs_gate_q4_d2_d1.log`, `cs_ref_q8_gptq_w4_d1_f06.log`, `/data/ziyangs/cloq_work/gpumon/node001.jsonl`.
+
 ## W100v-e - NEWMETHOD amendment A6.E1: review corrections to A6 committed before any m24 phase-2 or q8 panel outcome is read; A6 primary unchanged, two labelled sensitivities added (2026-10-03 08:58 PDT)
 **TL;DR** A review of A6 (W100v) found seven inaccurate or missing statements. All were checked against the code and files, and all seven held. Erratum A6.E1 was committed in 2f06102 at 08:55:59 PDT (protocol sha 73bf5538 → **b306cc70**). It was stacked on 43e2342 (08:51:13), which fixes a two-read race in `analyze_newmethod.main()`. The A6 primary rule is unchanged. m24 `gptq_w4_d1` f04 had been produced but not read, and f05 was running.
 - **Corrections (protocol A6.E1):**
@@ -155,6 +199,7 @@ Status at 09:00 PDT:
 
 ## W100u - Common-state comparison extended (F1a + F1b, user-approved): protocol amendment A1 committed before any governed outcome; q8 f04-f06 (K = 6) and q4 f01-f03 queued at −28 (2026-10-03 08:20 PDT)
 **TL;DR** Amendment A1 to COMMONSTATE_SOURCES_PROTOCOL (sha256 `dce40245…13ee`, commit ccf9f13, 08:10:19 PDT) fixes q8 at K = 6 with no condition. The K = 3 reading (W100b) stays as the first look, a prespecified Pocock two-look reading is added, and q4 becomes a separate prospective analysis (gate first, never pooled with q8). 17 tasks were queued at −28 (unpinned) at 08:12:43, after the commit. Expected cost ≈ 23–43 GPU-h; everything is due before the 10-04 21:00 PDT freeze.
+- **Corrected by W100u-r (2026-10-03 09:05 PDT, deviation D2):** "no governed outcome existed" held except at 17 q8 f04-f06 and 2 q4 states (listed in D2.1), whose outcomes had been seen only in other studies' aggregates. Pocock is now the confirmatory q8 reading. Two of the five tasks reported as running were stalled on node001.
 - **Approval.** The user answered "都做" at 07:45 PDT (W100t), covering GPU_FILL_PROPOSAL F1a and F1b.
 - **Order of events.**
   - ccf9f13 (A1 + Monte Carlo script) at 08:10:19.
