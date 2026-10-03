@@ -83,16 +83,27 @@ def render(st: dict, actions: dict) -> dict:
     pids = render_prompt_ids(kept_lm, tools)
     ptext = render_prompt(kept_lm, tools)
     tok = get_tokenizer()
-    eot = {tok.convert_tokens_to_ids(t) for t in ("<|im_end|>", "<|eot_id|>") if t in tok.get_vocab()}
-    if tok.eos_token_id is not None:
-        eot.add(tok.eos_token_id)
+    # W100o (m24 only): cloq.mistral_render.MistralChatRender (CLOQ_TOKENIZER_MODE=mistral) has no HF vocab and renders
+    # control tokens ([TOOL_CALLS], [/INST], </s>) that a text->ids re-encode does not reproduce, so the action ids come
+    # from mistral_common directly, on the raw messages as for the prompt (context_policy._view). HF path unchanged.
+    mistral = getattr(tok, "is_mistral", False)
+    if mistral:
+        eot = {tok.tok.eos_token_id}
+    else:
+        eot = {tok.convert_tokens_to_ids(t) for t in ("<|im_end|>", "<|eot_id|>") if t in tok.get_vocab()}
+        if tok.eos_token_id is not None:
+            eot.add(tok.eos_token_id)
     out = {"prompt_ids": pids, "prompt_ids_sha": F.ids_sha(pids), "n_prompt": len(pids), "context": cinfo.__dict__, "actions": {}}
     for name, msg in actions.items():
         a_lm = to_litellm_messages([F.msg_from_dict(msg)])
-        full = tok.apply_chat_template(template_view(kept_lm + a_lm), tools=tools or None, add_generation_prompt=False,
-                                       tokenize=False, **CHAT_TEMPLATE_KWARGS)
-        rec = {"render_prefix_ok": full.startswith(ptext)}
-        ids = tok.encode(full, add_special_tokens=False)
+        if mistral:
+            full, ids = tok.render_turn(kept_lm + a_lm, tools)
+            rec = {"render_prefix_ok": full.startswith(ptext)}
+        else:
+            full = tok.apply_chat_template(template_view(kept_lm + a_lm), tools=tools or None, add_generation_prompt=False,
+                                           tokenize=False, **CHAT_TEMPLATE_KWARGS)
+            rec = {"render_prefix_ok": full.startswith(ptext)}
+            ids = tok.encode(full, add_special_tokens=False)
         rec["ids_prefix_ok"] = ids[:len(pids)] == pids
         aids = ids[len(pids):]
         cut = next((i for i, x in enumerate(aids) if x in eot), None)

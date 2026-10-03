@@ -55,3 +55,17 @@ class MistralChatRender:
 
     def decode(self, ids, skip_special_tokens: bool = False) -> str:
         return self.tok.decode(ids, skip_special_tokens=skip_special_tokens)
+
+    def render_turn(self, messages: list[dict], tools: Optional[list[dict]] = None) -> tuple[str, list[int]]:
+        """W100o (score_driver, m24): a conversation that ENDS with a completed assistant turn, rendered by mistral_common
+        in finetuning validation mode (serving mode refuses a final assistant message): the assistant tokens are followed
+        by EOS, as the model emits them. Same server_view as apply_chat_template; returns (text, ids)."""
+        if getattr(self, "_ft", None) is None:
+            from transformers.tokenization_mistral_common import MistralCommonBackend
+            self._ft = MistralCommonBackend.from_pretrained(self.path, mode="finetuning")
+        msgs, tool_dicts = self.server_view(messages, tools)
+        ids = self._ft.apply_chat_template(msgs, tools=tool_dicts, tokenize=True)
+        if isinstance(ids, dict) or hasattr(ids, "input_ids"):
+            ids = ids["input_ids"]
+        text = self._ft.apply_chat_template(msgs, tools=tool_dicts, tokenize=False)
+        return text, list(ids)

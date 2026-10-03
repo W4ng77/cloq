@@ -19,7 +19,7 @@ panel   formal stage 2, after `make_newmethod_panel.py build --model m24` + the 
         BF16 >= 10% on nmp_v1).
 Priority -26 (ascending queue order). Never overwrites an existing id.
 
-usage: python3 scripts/a6000/make_tasks_m24.py {manifests|gate|bfpair|panel} [--cell rtn_w4] [--bfcl] [--write]
+usage: python3 scripts/a6000/make_tasks_m24.py {manifests|gate|bfpair|panel} [--cell rtn_w4] [--bfcl] [--phase 2] [--score-priority P] [--write]
 """
 from __future__ import annotations
 
@@ -151,26 +151,38 @@ def bfpair(prio: float) -> list[dict]:
     return ts
 
 
-def panel(prio: float, cell: str, bfcl: bool) -> list[dict]:
+def panel(prio: float, cell: str, bfcl: bool, phase: int = 1, score_prio: float | None = None) -> list[dict]:
     """Formal stage 2 (after `make_newmethod_panel.py build --model m24` and the dated sha amendment): one cell's gates,
     phase-1 panel tasks f01-f03, token scores, and (bfcl=True, only if BF16 >= 10% on nmp_v1) the BFCL forks. Specs come
-    verbatim from `make_newmethod_panel.py spec --model m24 --cell <cell>`; B = BF16, Q = the cell, 4 GPUs (TP=2 per role)."""
+    verbatim from `make_newmethod_panel.py spec --model m24 --cell <cell>`; B = BF16, Q = the cell, 4 GPUs (TP=2 per role).
+    W100o phase=2 (protocol §5): f04-f06 panel tasks + token scores only (gates not re-run, no BFCL), and only for a cell in
+    phase2_cells of the written expansion record analysis/fork/newmethod/expansion_m24.json."""
     import subprocess
     import sys
+    if phase == 2:
+        rec = json.load(open(ROOT / "analysis/fork/newmethod/expansion_m24.json"))
+        if bfcl or not rec.get("expand") or cell not in rec.get("phase2_cells", []):
+            raise SystemExit(f"phase 2 refused: expand={rec.get('expand')}, phase2_cells={rec.get('phase2_cells')}, bfcl={bfcl}")
     sp = json.loads(subprocess.check_output([sys.executable, str(ROOT / "scripts/a6000/make_newmethod_panel.py"), "spec", "--model", "m24",
-                                             "--cell", cell], cwd=ROOT, text=True))
+                                             "--cell", cell] + (["--phase", "2"] if phase == 2 else []), cwd=ROOT, text=True))
     if "<sha256" in json.dumps(sp):
         raise SystemExit("manifests/fork/newmethod_panel_v1_m24.json not built yet")
     strip = lambda d: {k: v for k, v in d.items() if not k.startswith("_")}  # noqa: E731
     gs = fork(f"nmp_gate_same_m24_{cell}", cell, cell, strip(sp["gate_same (Q determinism, foreign states)"]), prio, ["a6k2_m24_bfpair_f01_f02"])
     gb = fork(f"nmp_gate_bank_m24_{cell}", "bf16", cell, strip(sp["bank gate (BB no-op on every state)"]), prio, ["a6k2_m24_bfpair_f01_f02"])
-    ts = [gs, gb]
-    deps_blk = {"f01": "a6k2_m24_bfpair_f01_f02", "f02": "a6k2_m24_bfpair_f01_f02", "f03": "a6k2_m24_bfpair_f03_f04"}
+    ts = [gs, gb] if phase == 1 else []
+    deps_blk = {"f01": "a6k2_m24_bfpair_f01_f02", "f02": "a6k2_m24_bfpair_f01_f02", "f03": "a6k2_m24_bfpair_f03_f04",
+                "f04": "a6k2_m24_bfpair_f03_f04", "f05": "a6k2_m24_bfpair_f05_f06", "f06": "a6k2_m24_bfpair_f05_f06"}
     for spec_t, spec_s in zip(sp["panel tasks (one per block; task id nmp_tau2_<model>_<cell>_<blk>)"],
                               sp["token scores (KLu), driver score, after each panel task"]):
         blk = spec_t["blocks"][0]
-        pt = fork(f"nmp_tau2_m24_{cell}_{blk}", "bf16", cell, spec_t, prio, [gs["id"], gb["id"], deps_blk[blk]])
-        st = fork(f"nmp_score_m24_{cell}_{blk}", "bf16", cell, spec_s, prio, [pt["id"]])
+        gs_id = gs["id"] if phase == 1 else f"nmp_gate_same_m24_{cell}_r2"  # W100e-c: the passing fail_loud r2 gate_same
+        if phase == 2 and not (Q / "done" / f"{gs_id}.json").exists():
+            raise SystemExit(f"phase 2 refused: {gs_id} not done")
+        pt = fork(f"nmp_tau2_m24_{cell}_{blk}", "bf16", cell, spec_t, prio, [gs_id, gb["id"], deps_blk[blk]])
+        if phase == 2:
+            pt["note"] = NOTE + " | W100o: phase 2 (f04-f06) per analysis/fork/newmethod/expansion_m24.json (protocol §5, all or none); deps on the passing _r2 gate_same (W100e-c)"
+        st = fork(f"nmp_score_m24_{cell}_{blk}", "bf16", cell, spec_s, prio if score_prio is None else score_prio, [pt["id"]])
         ts += [pt, st]
     if bfcl:
         if cell != "rtn_w4":  # rtn_w4's closed-loop BFCL Q run was queued in stage 1 (bfpair); other cells need theirs (W100e)
@@ -190,11 +202,13 @@ def main():
     ap.add_argument("--bfcl", action="store_true", help="panel: also the BFCL forks (only if BF16 >= 10%% on nmp_v1)")
     ap.add_argument("--write", action="store_true")
     ap.add_argument("--priority", type=float, default=-26)
+    ap.add_argument("--phase", type=int, default=1, choices=[1, 2], help="panel: 2 = f04-f06 after the expansion record (W100o)")
+    ap.add_argument("--score-priority", type=float, default=None, help="panel: token-score tasks (default --priority)")
     a = ap.parse_args()
     if a.mode == "manifests":
         manifests()
         return
-    ts = gate(a.priority) if a.mode == "gate" else bfpair(a.priority) if a.mode == "bfpair" else panel(a.priority, a.cell, a.bfcl)
+    ts = gate(a.priority) if a.mode == "gate" else bfpair(a.priority) if a.mode == "bfpair" else panel(a.priority, a.cell, a.bfcl, a.phase, a.score_priority)
     for t in ts:
         clash = [s for s in ("todo", "running", "done", "failed", "deferred") if (Q / s / f"{t['id']}.json").exists()]
         print(t["id"], t.get("gpus"), t["priority"], t["deps"], "EXISTS " + str(clash) if clash else "")

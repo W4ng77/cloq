@@ -10,6 +10,37 @@ Newest first.
 
 ---
 
+## W100o - m24 phase 2 (f04-f06) queued for both cells per expansion_m24.json; m24 token-score failures were score_driver.render() calling HF-only tokenizer methods on the Mistral renderer (not TOOL_START); fixed model-gated, all 6 phase-1 score tasks requeued (2026-10-03 07:05 PDT)
+**TL;DR** The expansion record (written 2026-10-03 11:53Z: expand true, phase2_cells `rtn_w4`, `gptq_w4_d1`, no m24 reference cells, projected wall 4.6 h) had no phase-2 tasks behind it. They are now queued, all or none (§5.5): 6 `nmp_tau2_m24_*_f0{4,5,6}` at -30 and 6 `nmp_score_m24_*_f0{4,5,6}` at -26. Gates are not re-run. All 6 phase-1 score tasks had failed (the "running" f02 attempt failed at 06:47:39, 30 s before the fix landed), each after one autopilot retry, with `ok 0/85` and `prompt sha ok 0/85`.
+- **Root cause (from `token_scores/m24_*/f0k/score_summary.json` `missing[].reason`):** `prep error AttributeError("'MistralChatRender' object has no attribute 'get_vocab'")` on all 83 population rows; the other 2 are the manifest-missing rows. `score_driver.render()` assumed an HF tokenizer in two places:
+  - the EOT set (`get_vocab`, `convert_tokens_to_ids`);
+  - the action ids, which it took by re-encoding the template text. For Mistral that re-encode splits control tokens as plain text: 115 ids against 71 from mistral_common on a one-call test.
+  - A final assistant turn is also refused by mistral_common's serving validation (`InvalidMessageStructureException`).
+  - TOOL_START (`openloop_topk.py`) is not involved: it already has `"mistral": ["[TOOL_CALLS]"]`, and the scorer does not use it.
+- **Fix (m24 only; selected by `MistralChatRender.is_mistral`, which only `CLOQ_TOKENIZER_MODE=mistral` creates):**
+  - `cloq/mistral_render.py::render_turn` renders history + action with the same `server_view`, through a mistral_common backend in finetuning validation mode. The completed assistant turn then ends with EOS (id 2).
+  - `score_driver.render()` uses it for the action ids. The EOT set for Mistral is `{eos}`. The HF branch is the old code verbatim.
+- **Proof the HF path is unchanged:** old vs new `render()` on 16 q8 rows (`tau2/q8_quarot_w4/f01`) gives identical output: the sha of every prompt id, action id and token is equal, 16/16 prompt sha ok.
+- **Proof the m24 path works (CPU, tokenizer only, `tau2/m24_gptq_w4_d1/f02`):**
+  - 84/84 non-missing rows: prompt sha ok, render prefix ok, ids prefix ok, has EOT, 0 errors.
+  - The old code reproduces the production AttributeError on 12/12 rows.
+- **Expected flag, not a fault:** template ids equal the recorded BF16 a_B completion ids on 35/84 rows. The other 48 are tool calls (plus 1 text turn). For a completed tool call, mistral_common writes `[TOOL_CALLS]name[CALL_ID]<id>[ARGS]{...}`, but the model generates `[TOOL_CALLS]name[ARGS]{...}</s>`. So `template_eq_generated` will be low on m24 tool calls. Teacher forcing uses the generated ids (GPT-6.1 review 5), so the scores are unaffected.
+- **Phase-2 builder:** `scripts/a6000/make_tasks_m24.py panel --phase 2 [--score-priority]`. Specs come verbatim from `make_newmethod_panel.py spec --model m24 --cell <cell> --phase 2`, and they equal phase 1 except for block and out. Guards:
+  - phase 2 is refused unless the expansion record has expand true and the cell in `phase2_cells`;
+  - it never queues `--bfcl` (BFCL has no expansion) and no gates;
+  - tau2 deps are the passing fail_loud `nmp_gate_same_m24_<cell>_r2` (W100e-c), the bank gate, and `a6k2_m24_bfpair_f03_f04` (f04) or `_f05_f06` (f05, f06), all done.
+  - Phase-1 output of the builder is unchanged: same 8 ids, deps and specs as before.
+- **Coverage:** `runs/a6k2_m24_bfpair_f04..f06` exist. The manifest has 85 U2B rows per block f04-f06, with only airline 44 missing in each. Mask v1 `applies_to.blocks` = f01-f06, and both excluded tasks lie outside the 83-task population. So phase 2 adds 249 states per cell.
+- **Requeue:** 6 failed records were moved to todo atomically (tmp + os.replace, then the failed copy removed). Each keeps its old error/trace/failed_at/host/autopilot fields in `error_history`, with `requeue_note` and `requeue_notes`. Priority stays -26.
+- **Provenance finding in `expansion_m24.json` (record not edited; it is write-once):**
+  - `configs.<cell>.gates.same.task` names the superseded r1 tasks `nmp_gate_same_m24_<cell>` (r1 verdict was fail, W100e-c), with their finish times and task-file shas.
+  - The gate files it hashed are the r2 outputs: `same/gate_same.json` sha `3495fca7...` (rtn) and `01599893...` (gptq) have `spec.fail_loud` true and mtimes 23:45:40 and 23:51:34 PDT, which match r2's finish. r1's own output is under `same_r1_superseded/`.
+  - The eligibility verdict is right in substance (r2 passed), but the record attributes it to the r1 task.
+  - The builder's `_gates` looks up `nmp_gate_same_<m>_<c>` by fixed name, so any q8 cell gated by an `_rN` re-run gets the same attribution at the q8 decision (T_decide 2026-10-03 20:00 PDT). This is an open item for the main session.
+- **Not changed:** `analysis/fork/analyze_token_mech.py` (W88 mechanism analysis) hard-codes the hermes `<tool_call>` and HF EOT strings, so it would label every m24 tool call "talk". `analyze_newmethod.load_scores` reads only KLu, rank and lp per token, so it needs no markers. No m24 panel outcome (Y, KLu, effects) was read.
+
+Evidence: `analysis/fork/newmethod/expansion_m24.json`, `analysis/fork/newmethod/token_scores/m24_rtn_w4/f01/score_summary.json` (missing reasons), `/data/ziyangs/cloq_work/logs/tasks/nmp_score_m24_*.log`, `scripts/a6000/score_driver.py` (`render`), `cloq/mistral_render.py` (`render_turn`), `scripts/a6000/make_tasks_m24.py` (`panel`, `--phase 2`), queue `todo/nmp_{tau2,score}_m24_*_f0{4,5,6}.json`, `todo/nmp_score_m24_*_f0{1,2,3}.json`.
+
 ## W100p — g12 (Gemma-4-12B-it) gate verdict: FAIL on replay (check 3); measurable but not replayable under the frozen serving stack; no formal g12 task queued (2026-10-03 07:00 PDT)
 **TL;DR** g12 is measurable but its replays are not reproducible, so it is not admitted as a second family. The protocol cannot measure its same-state divergences. This is a valid paper result, like l8, which failed the capability floor.
 - **Passing checks.**
