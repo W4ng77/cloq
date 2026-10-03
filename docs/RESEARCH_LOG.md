@@ -91,7 +91,10 @@ Labels written into each task's `determinism_premise`:
 | pert_q4_rtn_w3_restore_rand_attn_s3_q345_rro | q3/airline | 1 + 0 | 1.0 | q3 airline only |
 | pert_q4_rtn_w3_restore_rand_mlp_s3_q345_rro | q3/retail, q4/retail | 2 + 1 | 1.8 | yes (q3-q5) |
 
-The two q14 gauss3 tasks were claimed on node001 at 08:34.
+Status at 09:00 PDT:
+- The two q14 gauss3 tasks were claimed on node001 at 08:34. Their checkpoints rebuilt with the same rel. error (0.09828), but both `vllm serve` processes have hung since 08:45 in D state on NFS (`rpc_wait_bit_killable`, `d_alloc_parallel`) with GPUs empty. The W100u fork tasks claimed on node001 at 08:13 (`cs_gate_q4_d2_d1`, `cs_ref_q8_gptq_w4_d1_f06`) show no progress either, so this is a node001 NFS stall.
+- If the server does not come up within SERVER_UP_S (90 min), these tasks fail with `autopilot_retry: no`. Requeue them by hand: the re-run is idempotent, because it resumes its archive.
+- `a6k2_q14_kvq_int3_rro` is starting on node007, where the vLLM banner took 8 min.
 
 **Not queued, and why.**
 - `pert_q4_gptq_w3_resid_a2_q3/retail` (1 user-side outage, 33 never-run). Rule: a run-domain is re-run only if its never-run episodes ≤ its outage episodes. Otherwise it is a resume of the paused original task, not an outage re-run.
