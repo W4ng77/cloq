@@ -254,6 +254,25 @@ Evidence: `scripts/a6000/make_newmethod_panel.py`, `docs/insights/NEWMETHOD_PANE
 
 Evidence: `docs/insights/NEWMETHOD_PANEL_PROTOCOL.md` (Amendment A4), `analysis/fork/analyze_newmethod.py`, `analysis/fork/kivi_gate/GATE.md` §6, `scripts/a6000/{kivi_gate,make_tasks_kivi}.py`, `cloq/kivi_ref.py` (`official_quant_lastdim`), W99t.
 
+## W100e-c — m24 nmp gate_same r1 failed on a selection bug, not on identity (it picked airline 44, an infrastructure_error episode with 0 agent turns); gate_same now skips invalid state sources; r2 gates at −30; τ² panel re-gated on r2 and raised to −30 (2026-10-02 23:10 PDT)
+**TL;DR** Both `nmp_gate_same_m24_{rtn_w4,gptq_w4_d1}` failed: verdict pass false, 5 states, 1 error.
+- **Root cause: a state-selection bug, not identity.**
+  - `pick_tasks` ranks every trajectory of `a6k2_m24_bfpair_f01/airline` by hash, and its third pick was **airline 44**. That episode is the `infrastructure_error` (`agent_parse_error`) episode, masked by A3. It has 4 decisions but 0 agent turns in the trajectory, so `cloq/fork.py::make_state` raised `IndexError` at `pos[t]` before any server call.
+  - Every other check passed in both cells: idcheck 8/8 + 8/8, and all 5 states have the shadow equal to a_Q, the prompts OK, all four branches equal, and the budget OK. The bank gates passed with 10/10 and 0 errors.
+  - The W99p gate_same passed because its gate blocks had no infrastructure episodes.
+- **Fix (`scripts/a6000/fork_driver.py`, gate_same only).**
+  - New `state_source_ok`: the termination is user_stop, agent_stop, max_steps or too_many_errors, and the number of agent turns equals the number of decisions and is > 0.
+  - `pick_tasks(valid_only=True)` keeps the same hash order and skips invalid sources. The gate and bank paths are untouched.
+  - Opt-in `fail_loud`: a failed gate_same raises, so tasks that depend on it never release (as the bank gate does, W76).
+- **Regression check.** The new selection was recomputed for all 14 earlier τ² gate_same outputs (q4 ×4, q8 nmp ×9, W99p m24) and reproduces each one's (domain, task, t) set exactly. For m24 r1, it replaces airline 44 with airline 23 (t 15) and keeps the other five states.
+- **Queue (atomic edits).**
+  - r1 outputs moved to `analysis/fork/newmethod/gate/m24_<cell>/same_r1_superseded/`, with a SUPERSEDED note. They are not reused.
+  - **`nmp_gate_same_m24_rtn_w4_r2` and `nmp_gate_same_m24_gptq_w4_d1_r2`**: −30, 4 GPUs, `fail_loud`, output to `…/same/`. The expansion rule reads that path.
+  - The six `nmp_tau2_m24_*` tasks were still in todo and unstarted. They now depend on the _r2 gates instead of r1, and their priority went from −26 to −30. The score and BFCL tasks are unchanged.
+- **ETA.** r1 took 17 min (RTN) and 52 min (GPTQ, including the build). The bank gate took 12 min for 10 states, so a τ² panel task (85 states) should take about 1–1.5 h, plus about 35 min of GPTQ build for gptq. With two 4-GPU windows, phase 1 τ² should finish about 5–7 h after the r2 gates are claimed, around 2026-10-03 05:00–08:00 PDT. That is well before T_decide (2026-10-04 00:00 PDT).
+
+Evidence: `analysis/fork/newmethod/gate/m24_{rtn_w4,gptq_w4_d1}/same_r1_superseded/gate_same.json` (cluster), `scripts/a6000/fork_driver.py` (`state_source_ok`, `pick_tasks`, `gate_same`), queue `todo/nmp_gate_same_m24_*_r2.json`, `todo/nmp_tau2_m24_*.json`, `done/nmp_gate_{same,bank}_m24_*.json`.
+
 ## W100e-b — m24 analysis population fixed at 83 tasks (airline 13 and 44 excluded uniformly): mask v1 + protocol amendment A3, done before any m24 panel output existed; analyze_newmethod gains the m24 mask, M1 contrast and available-rows sensitivity (2026-10-02 14:10 PDT)
 **TL;DR** This resolves W100e's open strict-block question as the advisor (GPT-6.1) decided, a corrected option (b).
 - **Population.** For both m24 cells and all six blocks, airline tasks 13 and 44 are excluded. The analysis population is fixed at 83 tasks: 249 states per cell in phase 1, 498 if expanded.

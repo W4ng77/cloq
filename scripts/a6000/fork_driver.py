@@ -236,8 +236,21 @@ def _tools_schema(st: dict) -> list[dict]:
     return _TOOLS_CACHE[d]
 
 
-def pick_tasks(block: F.Block, k: int, prefer_user_tools: bool = False) -> list[str]:
+def state_source_ok(block: F.Block, tid: str) -> bool:
+    """A task can supply a fork state iff its episode ended normally (or at a step/error budget) and every recorded
+    decision has its agent turn in the trajectory (W100e-c: an infrastructure_error episode, e.g. m24 airline 44, has
+    decisions but no agent turns, and make_state raised IndexError)."""
+    tr = block.traj[tid]
+    if tr.get("termination_reason") not in ("user_stop", "agent_stop", "max_steps", "too_many_errors"):
+        return False
+    pos = F.agent_positions(tr["messages"], F.prefix_len(tr["task"]))
+    return len(pos) > 0 and len(pos) == len(block.dec.get(tid, []))
+
+
+def pick_tasks(block: F.Block, k: int, prefer_user_tools: bool = False, valid_only: bool = False) -> list[str]:
     ids = sorted(block.traj, key=lambda t: hsel(f"fork-v1-gate|{block.run_id}|{block.domain}|{t}"))
+    if valid_only:  # same hash order, invalid state sources skipped (only changes picks that would have errored)
+        ids = [t for t in ids if state_source_ok(block, t)]
     if prefer_user_tools:
         ids = sorted(ids, key=lambda t: -int((block.traj[t].get("n_user_tool_calls") or 0) > 0))
     return ids[:k]
@@ -524,7 +537,7 @@ def gate_same(spec: dict, bases: dict, user_base: str, servers: dict, out: Path)
         res["idcheck_Bhandle"] = idcheck(bases["B"], qb, spec.get("idcheck_n", 8), "B-handle (same ckpt)")
     cand = []
     for b in qb:
-        for tid in pick_tasks(b, spec.get("n_per_block", 3), b.domain == "telecom"):
+        for tid in pick_tasks(b, spec.get("n_per_block", 3), b.domain == "telecom", valid_only=True):
             n = len(b.dec[tid])
             cand.append((b, tid, (n - 1) // 3))
     order = ["QQ", "BB", "BQ", "QB"]
@@ -567,6 +580,8 @@ def gate_same(spec: dict, bases: dict, user_base: str, servers: dict, out: Path)
     res["verdict"]["pass"] = res["verdict"]["b_same_ckpt"] and res["verdict"]["idcheck"]
     dump(out / "gate_same.json", res)
     log("verdict " + json.dumps(res["verdict"]))
+    if spec.get("fail_loud") and not res["verdict"]["pass"]:  # W100e-c: opt-in, as the bank gate (W76): deps never release
+        raise RuntimeError(f"gate_same failed: see {out / 'gate_same.json'}")
     return res
 
 
