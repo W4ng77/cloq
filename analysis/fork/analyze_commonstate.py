@@ -10,6 +10,9 @@ usage: python analysis/fork/analyze_commonstate.py [--boot 2000] [--selftest]
 W100u (amendment A1): --design q8ext (K = 6: commonstate_v1 f01-f03 + commonstate_q8ext_v1 f04-f06, own d1 reference, Pocock
 two-look reading, first look reported) | --design q4 (commonstate_q4_v1, K = 3). Once only, at the earlier of all tasks done
 and the freeze; blocks whose tasks finished after the freeze are excluded. --selftest also synthesises missing reference rows.
+W100u-r (deviation D2): --design needs the D2 protocol + manifests/fork/commonstate_d2_v1.json; q8 two-look (Pocock) reading is the
+confirmatory one, frozen levels = unadjusted, both printed; labels carry the realised k; sensitivity reading without the D2.1
+states; --check prints acceptance fields only (no outcome, nothing written, not the reading).
 """
 from __future__ import annotations
 
@@ -37,6 +40,9 @@ TCRIT = {1: (12.706, 6.314), 2: (4.303, 2.920), 3: (3.182, 2.353), 4: (2.776, 2.
 DESIGNS = {"q8ext": ROOT / "manifests" / "fork" / "commonstate_q8ext_v1.json", "q4": ROOT / "manifests" / "fork" / "commonstate_q4_v1.json"}
 PROTOCOL_SHA_A1 = "dce4024597441ab874324f03eb02609364b66cf821b67826b04a39feaa7b13ee"  # amendment A1 (W100u, commit ccf9f13)
 PREFIX_D1 = (12813, "c73ab2eec2f14052633e0703c2f50b1df9356c8222ba2ad1c8541301948198d0")  # v1 + D1, byte-identical prefix
+PROTOCOL_SHA_D2 = "288fc65a20cd3aa0830c81d099457b1a0b5550aeb379108750adabd90a92478a"  # deviation D2 (W100u-r, commit f56682a)
+PREFIX_A1 = (24275, PROTOCOL_SHA_A1)  # v1 + D1 + A1, byte-identical prefix of the D2 file
+D2_REC = ROOT / "manifests" / "fork" / "commonstate_d2_v1.json"  # D2.1 exclusion lists, D2.2 choice
 POCOCK = (0.0294, 0.0304)  # A1.3: two equally spaced looks, two-sided / one-sided nominal (commonstate_twolook_mc.py)
 TCRIT_POCOCK = {1: (21.649, 10.450), 2: (5.704, 3.870), 3: (3.927, 2.935), 4: (3.320, 2.589), 5: (3.021, 2.412)}
 
@@ -314,6 +320,25 @@ def reading(e: dict, margin: float, p_holm: float | None = None, label_pos: str 
     return {"reading": r, "tost": tost, "p_holm": p_holm}
 
 
+def sensitivity(units: list[dict], excl: dict, nboot: int, seed: int, margin: float, pocock: bool) -> dict:
+    """D2.1: the K readings repeated without the listed states (block means over the remaining rows; tasks resampled)."""
+    drop = {s for blk in excl.values() for s in blk}
+    us = [u for u in units if u["state_key"] not in drop]
+    out = {"n_listed": len(drop), "n_dropped": len(units) - len(us), "n": len(us), "k": len({u["block"] for u in us})}
+    if out["k"] < 2:
+        return {**out, "reading": "no reading (fewer than 2 blocks)"}
+    S = estimate(us, columns(us), nboot, seed, pocock)["stats"]
+    ph = holm([S["K[bf16]"]["boot_p2"], S["K[d1]"]["boot_p2"]])
+    lp, ln = "BF16 action adds value beyond a W4 swap", "another W4 action does better"
+    for i, key in enumerate(("K[bf16]", "K[d1]")):
+        e = S[key]
+        out[key] = {"point": e["point"], **{x: e[x] for x in ("t95", "boot95", "t97", "boot97") if x in e},
+                    "reading": reading(e, margin, ph[i], lp, ln)["reading"]}
+        if pocock:
+            out[key]["reading_two_look"] = reading(e, margin, ph[i], lp, ln, ("t97", "boot97"), ("t94", "boot94"), POCOCK[0])["reading"]
+    return out
+
+
 def holm(ps: list[float]) -> list[float]:
     o = sorted(range(len(ps)), key=lambda i: ps[i])
     adj, run = [0.0] * len(ps), 0.0
@@ -380,7 +405,8 @@ def write_md(R: dict, path: Path) -> None:
         L.append("| source \\ continuation | BF16 | d1 (GPTQ-W4 d1) |\n|---|---|---|")
         for s in SRC:
             L.append(f"| {s} | " + " | ".join(f"{100 * S[f'V[{s},{c}]']['point']:.1f} (t95 {iv(S[f'V[{s},{c}]'], 't95')})" for c in CONT) + " |")
-        L.append("\n## Key estimand K(c) = Δ_{BF16−d1}(c) − Δ_{d2−d1}(c) = Δ_{BF16−d2}(c) (pp)\n")
+        L.append("\n## Key estimand K(c) = Δ_{BF16−d1}(c) − Δ_{d2−d1}(c) = Δ_{BF16−d2}(c) (pp)"
+                 + (": unadjusted, frozen levels (D2.2)" if R.get("readings_two_look") else "") + "\n")
         L.append("| c | K | t95 | boot95 | t90 | boot90 | boot p (Holm) | reading |\n|---|---|---|---|---|---|---|---|")
         for c in CONT + ("bar",):
             key = "Kbar" if c == "bar" else f"K[{c}]"
@@ -389,7 +415,9 @@ def write_md(R: dict, path: Path) -> None:
             L.append(f"| {c if c != 'bar' else 'average (secondary)'} | {pp(e['point'])} | {iv(e, 't95')} | {iv(e, 'boot95')} | {iv(e, 't90')} | {iv(e, 'boot90')} | "
                      f"{e['boot_p2']:.3f}{f' ({ph:.3f})' if ph is not None else ''} | {r.get('reading')} |")
         if R.get("readings_two_look"):  # W100u A1.3
-            L.append(f"\n## Two-look reading (A1.3, Pocock: difference two-sided {POCOCK[0]}, TOST one-sided {POCOCK[1]} per side)\n")
+            L.append(f"\n## Two-look reading, confirmatory (A1.3 + D2.2, Pocock: difference two-sided {POCOCK[0]}, TOST one-sided {POCOCK[1]} per side)\n")
+            L.append(f"Levels derived for looks at 3 and 6 blocks (correlation √(1/2)); at k = {E.get('k')} the correlation is √(3/k) ≥ √(1/2), "
+                     "so the same levels are conservative (D2.3).\n")
             L.append("| c | K | t97 | boot97 | t94 | boot94 | Holm p | reading |\n|---|---|---|---|---|---|---|---|")
             for c in CONT:
                 e, r = S[f"K[{c}]"], R["readings_two_look"][f"K[{c}]"]
@@ -398,6 +426,18 @@ def write_md(R: dict, path: Path) -> None:
             fl = R["first_look"]
             L.append(f"\nFirst look (k = 3, W100b, `{fl['file']}`, unchanged): " + "; ".join(
                 f"{key} {pp(fl[key]['point'])} pp (t95 {iv(fl[key], 't95')}, boot95 {iv(fl[key], 'boot95')}): {fl[key]['reading']}" for key in ("K[d1]", "K[bf16]")) + "\n")
+        sd = R.get("sensitivity_d2")
+        if sd:  # D2.1
+            L.append(f"\n## Sensitivity without the D2.1 states (prespecified; {sd['n_dropped']} of {sd['n_listed']} listed states were in the analysis set, "
+                     f"n = {sd['n']}, k = {sd['k']})\n")
+            if "K[d1]" in sd:
+                L.append("| c | K | t95 | boot95 | t97 | boot97 | reading (frozen) | reading (two-look) |\n|---|---|---|---|---|---|---|---|")
+                for c in CONT:
+                    e = sd[f"K[{c}]"]
+                    L.append(f"| {c} | {pp(e['point'])} | {iv(e, 't95')} | {iv(e, 'boot95')} | {iv(e, 't97')} | {iv(e, 'boot97')} | {e['reading']} | "
+                             f"{e.get('reading_two_look', 'n/a (one look)')} |")
+            else:
+                L.append(sd["reading"])
         L.append("\n## Contrasts Δ, rescue r, damage d, turnover M (pp)\n")
         L.append("| contrast | c | Δ | Δ t95 | Δ boot95 | r | d | M | reading (descriptive) |\n|---|---|---|---|---|---|---|---|---|")
         for s1, s2 in PAIRS:
@@ -441,8 +481,9 @@ def guard(proto: Path, want: str) -> str:
     """Pre-registered sha, or (W100u) the A1 file whose first PREFIX_D1[0] bytes are the v1 + D1 text that `want` names."""
     b = proto.read_bytes()
     psha = hashlib.sha256(b).hexdigest()
-    amended = psha == PROTOCOL_SHA_A1 and hashlib.sha256(b[:PREFIX_D1[0]]).hexdigest() == PREFIX_D1[1]
-    if psha != want and not (amended and want == PREFIX_D1[1]):
+    d1 = hashlib.sha256(b[:PREFIX_D1[0]]).hexdigest() == PREFIX_D1[1]
+    amended = {PROTOCOL_SHA_A1: d1, PROTOCOL_SHA_D2: d1 and hashlib.sha256(b[:PREFIX_A1[0]]).hexdigest() == PREFIX_A1[1]}.get(psha, False)
+    if psha != want and not (amended and want in (PREFIX_D1[1], PROTOCOL_SHA_A1)):  # D2: the A1 text is a prefix too
         raise SystemExit(f"protocol sha256 {psha} != pre-registered {want}: refusing to run")
     return psha
 
@@ -464,31 +505,47 @@ def main():
     ap.add_argument("--boot", type=int, default=None)
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--design", choices=sorted(DESIGNS), default=None, help="W100u amendment A1 readings")
+    ap.add_argument("--check", action="store_true", help="D2.6: acceptance fields only (no outcome, nothing written, not a reading)")
     a = ap.parse_args()
     man = json.loads(MAN.read_text())
     proto = ROOT / man["protocol"]
     psha = guard(proto, man["protocol_sha256"])
     nboot = a.boot or man["boot"]["B"]
     inputs = {rel(MAN): sha_file(MAN), rel(proto): psha}
-    segs, freeze, dm = None, None, {}
+    segs, freeze, dm, d2 = None, None, {}, {}
     if a.design:
         dm = json.loads(DESIGNS[a.design].read_text())
-        if guard(proto, dm["protocol_sha256"]) != PROTOCOL_SHA_A1 or dm["protocol_prefix"]["sha256"] != PREFIX_D1[1]:
-            raise SystemExit("design manifests need the amendment A1 protocol")
+        if guard(proto, dm["protocol_sha256"]) != PROTOCOL_SHA_D2 or dm["protocol_prefix"]["sha256"] != PREFIX_D1[1]:
+            raise SystemExit("design manifests need the deviation D2 protocol")
+        d2 = json.loads(D2_REC.read_text())
+        if d2["protocol_sha256"] != PROTOCOL_SHA_D2 or d2["design_manifests"][a.design]["sha256"] != sha_file(DESIGNS[a.design]):
+            raise SystemExit(f"{rel(D2_REC)} does not match the protocol or the {a.design} manifest")
         inputs[rel(DESIGNS[a.design])] = sha_file(DESIGNS[a.design])
+        inputs[rel(D2_REC)] = sha_file(D2_REC)
         segs = ([man] if a.design == "q8ext" else []) + [dm]
         freeze = datetime.fromisoformat(dm["freeze"]).timestamp()
-        if not a.selftest:
+        if not a.selftest and not a.check:
             once_only(a.design, dm, freeze)
     units, notes = load(man, inputs, a.selftest, segs, freeze)
+    if a.check:  # D2.6: acceptance only; units (outcomes) are never printed
+        nex = {}
+        for x in notes["excluded"]:
+            nex.setdefault(x["block"], {}).setdefault(x["reason"][:40], 0)
+            nex[x["block"]][x["reason"][:40]] += 1
+        print(json.dumps({"design": a.design, "gate": notes["gate"], "blocks": notes["blocks"], "excluded_units_by_reason": nex}, indent=1, default=str))
+        return
     margin = man["margin_pp"] / 100
     R = {"protocol": man["protocol"], "protocol_sha256": psha, "created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
          "boot": {"B": nboot, "seed": man["boot"]["seed"]}, "margin_pp": man["margin_pp"], "selftest": a.selftest,
          "notes": notes, "inputs": inputs}
-    label = {"q8ext": "q8 K = 6 (amendment A1, confirmatory)", "q4": "q4 (amendment A1.4, separate prospective analysis)"}.get(a.design, "q8")
-    if a.design:
-        R.update(design=a.design, title={"q8ext": "q8, K = 6 (commonstate-v1 + amendment A1)", "q4": "q4 (commonstate-v1, amendment A1.4)"}[a.design])
     k = len({u["block"] for u in units})
+    label = "q8"
+    if a.design:  # D2.3: labels carry the realised k
+        allb = (man["blocks"] if a.design == "q8ext" else []) + dm["blocks"]
+        miss = [b for b in allb if b not in {u["block"] for u in units}]
+        kk = f"k = {k} of {len(allb)} blocks" + (f" ({', '.join(miss)} excluded)" if miss else "")
+        label = {"q8ext": f"q8, {kk} (commonstate-v1 + A1 + D2)", "q4": f"q4, {kk} (A1.4 + D2, separate prospective analysis)"}[a.design]
+        R.update(design=a.design, title=label)
     if k == 0:
         R["tldr"] = "No complete, non-quarantined block yet: nothing to estimate (acceptance status below)."
     else:
@@ -513,6 +570,8 @@ def main():
             inputs[rel(fp)] = sha_file(fp)
             R["first_look"] = {"file": rel(fp), **{key: {**{x: fl["estimates"]["stats"][key][x] for x in ("point", "t95", "boot95")},
                                                           "reading": fl["readings"][key]["reading"]} for key in ("K[bf16]", "K[d1]")}}
+        if a.design:  # D2.1: prespecified sensitivity reading without the states listed in commonstate_d2_v1.json
+            R["sensitivity_d2"] = sensitivity(units, d2["sensitivity_exclude"][a.design], nboot, man["boot"]["seed"], margin, a.design == "q8ext")
         R["agreement"] = agreement(units)
         sub = [u for u in units if not u["ag"]["bf16_d2"]]
         if sub:
@@ -526,11 +585,19 @@ def main():
                          f"K(BF16) = {pp(S['K[bf16]']['point'])} pp (t95 {iv(S['K[bf16]'], 't95')}, boot95 {iv(S['K[bf16]'], 'boot95')}): "
                          f"{rd['K[bf16]']['reading']}. Δ BF16−d1 / d2−d1 under d1: {pp(S['D[bf16-d1|d1]']['point'])} / {pp(S['D[d2-d1|d1]']['point'])} pp; "
                          f"exact action agreement BF16=d1 {100 * R['agreement']['exact_bf16_d1']:.0f}%, d1=d2 {100 * R['agreement']['exact_d1_d2']:.0f}%.")
-            if R.get("readings_two_look"):
+            if R.get("readings_two_look"):  # D2.2: two-look (Pocock) = confirmatory; frozen levels = unadjusted; both always printed
                 r2, fl = R["readings_two_look"], R["first_look"]
-                R["tldr"] += (f" Two-look (Pocock) reading: K(d1) {r2['K[d1]']['reading']}, K(BF16) {r2['K[bf16]']['reading']}. First look "
-                              f"(k = 3, W100b): K(d1) {pp(fl['K[d1]']['point'])} pp, {fl['K[d1]']['reading']}; K(BF16) {pp(fl['K[bf16]']['point'])} pp, "
-                              f"{fl['K[bf16]']['reading']}.")
+                R["tldr"] = (f"{label}, {E['n']} common states. Confirmatory two-look (Pocock) reading: " + "; ".join(
+                    f"{n} = {pp(S[key]['point'])} pp (t97 {iv(S[key], 't97')}, boot97 {iv(S[key], 'boot97')}): {r2[key]['reading']}"
+                    for n, key in (("K(d1)", "K[d1]"), ("K(BF16)", "K[bf16]"))) + ". Unadjusted (frozen levels): " + "; ".join(
+                    f"{n} (t95 {iv(S[key], 't95')}, boot95 {iv(S[key], 'boot95')}): {rd[key]['reading']}" for n, key in (("K(d1)", "K[d1]"), ("K(BF16)", "K[bf16]")))
+                    + f". First look (k = 3, W100b): K(d1) {pp(fl['K[d1]']['point'])} pp, {fl['K[d1]']['reading']}; K(BF16) {pp(fl['K[bf16]']['point'])} pp, "
+                    f"{fl['K[bf16]']['reading']}.")
+            sd = R.get("sensitivity_d2")
+            if sd and "K[d1]" in sd:  # D2.1
+                two = "reading_two_look" if "reading_two_look" in sd["K[d1]"] else "reading"
+                R["tldr"] += (f" Sensitivity without the {sd['n_dropped']} D2.1 states (n = {sd['n']}): " + "; ".join(
+                    f"{n} {pp(sd[key]['point'])} pp, {sd[key][two]}" for n, key in (("K(d1)", "K[d1]"), ("K(BF16)", "K[bf16]"))) + ".")
     if a.design and not R["tldr"].startswith(label):  # no-reading cases (k < 2) still name the design
         R["tldr"] = f"{label}: " + R["tldr"]
     dtag = f"{a.design}_" if a.design else ""
