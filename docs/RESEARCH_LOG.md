@@ -10,6 +10,40 @@ Newest first.
 
 ---
 
+## W100v - NEWMETHOD amendment A6: a fork-branch arm error caused by the agent's own message is scored Y = 0, as end to end; strict as preregistered becomes a labelled sensitivity (2026-10-03 08:30 PDT)
+**TL;DR** Amendment A6 was committed in fe6765e at 08:16 PDT (protocol sha f9f8b3a5 → **73bf5538**). That was before any m24 phase-2 τ² task had finished and before any q8 new-method panel outcome was read. The user approved it on 10-03 (W100q decision 2).
+- **The rule.** A τ² branch arm that stopped on an exception raised by validating the agent model's own message is scored Y = 0. The exception must be one of:
+  - S1, mistral_common `InvalidFunctionCallException`: an invalid or empty tool name (W99p);
+  - S3, tau2 `AssistantMessage must have either content or tool_calls`: an empty message (W92).
+
+  The branch must also have logged at least one decision before the error. Every other arm error stays missing and still fails its block (A3.3). That includes timeouts, server errors, `JSONDecodeError` (origin not identifiable, and an outage end to end) and user-simulator errors.
+- **Scope.** This is the primary rule for q8 and m24 and for every cell. The analysis without A6 ("strict as preregistered") is reported beside it, with its own Holm family.
+- **Disclosure.** The rule is post hoc for m24 phase 1 (W100s had seen the errors). It was fixed before reading for m24 phase 2 and the q8 new-method cells. For the q8 reference rows it is not blind.
+- **Verified on real records, with no effects computed.**
+  - m24 phase 1 (f01-f03): A6 scores 4 arms in 3 population states as Y = 0, exactly the W100s audit set (rtn f01 retail:51 QB+QQ, rtn f02 retail:95 QQ, gptq f01 airline:2 BQ). airline:13's `JSONDecodeError` stays missing.
+    - Strict admission without A6 reproduces W100s: rtn {f03}, gptq {f02, f03}.
+    - With A6 it is rtn and gptq {f01, f02, f03}.
+  - q8 `--dry`: A6 changes nothing, because no q8 phase-1 arm error is S1 or S3. All of them are infrastructure errors and stay missing:
+    - kivi_k2v2: 9 states with `litellm.Timeout` across f01-f03, so **no kivi_k2v2 block is admitted** under either rule;
+    - kivi_k4v4 f01: 8 states with `InternalServerError`, so kivi_k4v4 has {f02, f03}.
+    - Every other q8 cell has f01-f03; spinquant_w4a4 has {f02} (f01 still running, f03 in todo).
+- **Recording check (A6.5).** `run_branch` stores the untruncated `repr` and `n_decisions` in `branches/<state_key>.json` for every model, and has since d1d2a6d. `bank_rows.arm_source` truncates at 120 characters, so the analysis reads the branch file. No driver change was needed.
+- **Code.**
+  - `load_tau2(..., a6=False)` by default is the loader exactly as before. `main()` asserts that the strict-as-preregistered view equals a load without A6, state by state.
+  - Per-block A6 counts go into the JSON (`tau2.a6`), the markdown and `--dry`. `--selftest` covers A6 on synthetic records.
+  - Stacked commits: aaab5a0 (inert helpers), fe6765e (protocol, constant and wiring).
+- **Open for the main session.**
+  - kivi_k2v2 has no admissible τ² block (infrastructure timeouts, not A6).
+  - The script's P3 fallback (`kivi_k2v2` → `kivi_k4v4` when k2v2 has no admitted units) would fire on this non-gate reason, but protocol §1 defines the fallback for a gate failure only.
+  - BFCL (panel B) is outside A6: `analyze_ext` drops an item with any branch error.
+- **Evidence:**
+  - `docs/insights/NEWMETHOD_PANEL_PROTOCOL.md` (Amendment A6);
+  - `analysis/fork/analyze_newmethod.py` (`A6_SIGNATURES`, `a6_class`, `a6_resolve`, `strict_prereg`, `a6_report`);
+  - `analysis/fork/out/m24_budget_audit_20261003T1354Z.md` (W100s);
+  - `scripts/a6000/worker.py` (`classify`);
+  - `analysis/insights/iter_2/common.py` (`AGENT_SIDE`);
+  - `cloq/fork.py::run_branch`.
+
 ## W100t — Ops 2026-10-03 07:45 PDT: user approved all five W100q decisions ("都做"); doomed q32 telecom task stopped; freeze times unified
 **TL;DR** The user approved F1a, F1b, the m24 parse-error amendment, stopping a6k2_q32_tel_rtn_w3, and F3; each is being carried out separately (W100u+). This entry records the stop and the freeze definitions.
 - **Stopped `a6k2_q32_tel_rtn_w3`** (node001 GPUs 6,7) with SIGINT so the worker cleaned up its vLLM server. It had 7 agent-side 600 s timeouts, so it would fail on completion, and it would end after the freeze (W100q). Moved to deferred/ with `autopilot_retry: no` and a deferred_note. Its sibling a6k2_q32_tel_rtn_w4 was stopped for the same reason on 10-02.
