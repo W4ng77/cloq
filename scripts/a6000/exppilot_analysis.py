@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import datetime as dt
 import os
+import json
 import re
 import subprocess
 
@@ -24,7 +25,8 @@ PDT = dt.timezone(dt.timedelta(hours=-7))
 T_DEADLINE = dt.datetime(2026, 10, 4, 12, 0, tzinfo=PDT)  # NEWMETHOD_PANEL_PROTOCOL §5.4
 T_FREEZE = dt.datetime(2026, 10, 4, 0, 0, tzinfo=PDT)     # SAMEPREC final analysis
 T_DECIDE = dt.datetime(2026, 10, 3, 20, 0, tzinfo=PDT)    # q8 expansion decision at the latest (§5.1 b)
-GO_Q8 = "EXPPILOT_GO_newmethod_q8"                         # in queue/: written by the main session after F1a is settled
+GO = "EXPPILOT_GO_newmethod_{}"  # in queue/: main session writes it once acceptance is closed (budget audit + 2 independent
+                                 # reviews, GPT-6.1 10-03; for q8 also W100q F1a). Every model is held until it exists.
 CO = "Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 ENV = "source scripts/a6000/env.sh >/dev/null 2>&1; export TMPDIR=/data/ziyangs/cloq_work/tmp; exec nice -n 10 python "
 
@@ -47,9 +49,10 @@ def step(P, idx: dict) -> None:
         if P.st["analyses"].get(key, {}).get("ok"):
             run(P, key, "", "", "")  # done; only retries a pending commit
             continue
-        if m == "q8" and not (P.WORK / "queue" / GO_Q8).exists():
-            P.once_per("anhold_q8", 3600, f"analysis {key}: HELD until queue/{GO_Q8} exists (W100q F1a: the common-state "
-                                          "amendment must be hashed before the gptq_w4_d1 f04-f06 outputs are read)")
+        if not (P.WORK / "queue" / GO.format(m)).exists():
+            flagged = budget_flags(P, m)
+            P.once_per(f"anhold_{m}", 3600, f"analysis {key}: HELD until queue/{GO.format(m)} exists (acceptance: budget audit "
+                                            f"+ 2 independent reviews); blocks with budget_ok=false now: {flagged or 'none'}")
             continue
         req = required(P, m, rec, idx)
         left = [t for t in req if idx.get(t) != "done"]
@@ -67,6 +70,18 @@ def step(P, idx: dict) -> None:
             run(P, key, f"analysis/fork/analyze_{key}.py", pre + "2", f"{key} freeze 2026-10-04 00:00 PDT")
     else:
         P.once_per("sp_wait", 3 * 3600, f"analysis sameprec / sameprec_w3: waiting for the freeze {T_FREEZE.isoformat()}")
+
+
+def budget_flags(P, m: str) -> list:
+    """Read-only acceptance scan: panel blocks of model m whose bank_summary has budget_ok false (needs a per-branch audit)."""
+    out = []
+    for f in sorted((P.ROOT / "analysis/fork/newmethod/tau2").glob(f"{m}_*/f0*/bank_summary.json")):
+        try:
+            if json.load(open(f)).get("budget_ok") is False:
+                out.append(f"{f.parent.parent.name}/{f.parent.name}")
+        except (OSError, ValueError):
+            out.append(f"{f.parent.parent.name}/{f.parent.name}:unreadable")
+    return out
 
 
 def frozen_output(P, pre: str) -> str | None:
