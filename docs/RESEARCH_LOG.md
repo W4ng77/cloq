@@ -44,6 +44,65 @@ Newest first.
   - `analysis/insights/iter_2/common.py` (`AGENT_SIDE`);
   - `cloq/fork.py::run_branch`.
 
+## W100u - Common-state comparison extended (F1a + F1b, user-approved): protocol amendment A1 committed before any governed outcome; q8 f04-f06 (K = 6) and q4 f01-f03 queued at −28 (2026-10-03 08:20 PDT)
+**TL;DR** Amendment A1 to COMMONSTATE_SOURCES_PROTOCOL (sha256 `dce40245…13ee`, commit ccf9f13, 08:10:19 PDT) fixes q8 at K = 6 with no condition. The K = 3 reading (W100b) stays as the first look, a prespecified Pocock two-look reading is added, and q4 becomes a separate prospective analysis (gate first, never pooled with q8). 17 tasks were queued at −28 (unpinned) at 08:12:43, after the commit. Expected cost ≈ 23–43 GPU-h; everything is due before the 10-04 21:00 PDT freeze.
+- **Approval.** The user answered "都做" at 07:45 PDT (W100t), covering GPU_FILL_PROPOSAL F1a and F1b.
+- **Order of events.**
+  - ccf9f13 (A1 + Monte Carlo script) at 08:10:19.
+  - bfb5b2c (manifests + generator) at 08:12:24.
+  - Queue writes at 08:12:43; first task start at 08:12:48.
+  - 6dccab1 (analysis code) at 08:17:50, when no output existed yet.
+  - The A1 header says 08:20 PDT. The binding time is the commit time, 08:10:19.
+- **Known when A1 was written.**
+  - q8 f01–f03 (K = 3) had been fully read.
+  - q8 f04–f06 had no outcome of this design: no d2 action and no gptq_w4_d1 arm, and `expansion_q8.json` was not written.
+  - q4: the Bank U d1 four arms were known, and no q4 d2 action at these states existed.
+- **q8 f04–f06 reference (A1.1).**
+  - This study runs its own d1 arms, `cs_ref_q8_gptq_w4_d1_f0{4,5,6}`. They use the NEWMETHOD phase-2 reference-cell bank_u spec, identical except `out` (compared as JSON).
+  - Why: q8 phase 2 stays undecided until 20:00 PDT. The 07:53 dry run projected 18.2 h of wall time, so the decision can go either way.
+  - Duplicate cost if both run: about 5 GPU-h. If NEWMETHOD's outputs exist, they enter only a cross-check note.
+  - q8 needs no new gate: same checkpoints and stack, and the `commonstate` and `bank_u` functions are unchanged since 87733f7.
+- **Two looks (A1.3)**, from `analysis/fork/commonstate_twolook_mc.py`, with K = 0:
+  - The chance of a difference claim at k = 6, given no claim at k = 3, is 0.041 (nominal 0.05).
+  - The unconditional rate of "claim at k = 3 or k = 6" is 0.089.
+  - The prespecified Pocock reading (two-sided 0.0294; TOST one-sided 0.0304) keeps the two-look rate at 0.054 or less. The k = 3 look made no claim at either level.
+  - If the two readings disagree, the paper adds "not robust to the two-look adjustment".
+- **q4 (A1.4).**
+  - Gates `cs_gate_q4_d2_{bf16,d1}`: 12 rows, fail loudly, autopilot_retry "no". The six panel tasks depend on both gates.
+  - 1 GPU per task (gpu_util 0.44).
+  - d2 = GPTQ-W4 c2: ckpt `21c0934e…`, canary `a0fb6c52f4eb27fd`.
+  - CPU pre-check: 255/255 states equal the Bank U q4 rows on all six same-state fields.
+- **Deadline (A1.5).**
+  - Blocks whose tasks finish after 2026-10-04 21:00 PDT are excluded.
+  - Each reading runs once, at the earlier of all tasks done and the freeze.
+  - `analyze_commonstate.py --design q8ext|q4` enforces both. Both designs refuse now ("not yet").
+- **Queued.**
+  - q8: 3 reference tasks and 6 d2 tasks; each d2 task depends on its block's reference task.
+  - q4: 2 gates and 6 panel tasks.
+  - At 08:13 the 3 reference tasks and both q4 gates were running on node007 and node001.
+- **GPU-h / ETA** (from the W100b and Bank U done records):
+
+  | Task set | Basis | GPU-h |
+  |---|---|---|
+  | q8 reference | U2B share of the 2.5–3.3 GPU-h Bank U q8 blocks | ≈ 4–5.5 |
+  | q8 d2 | f01–f03: d2_bf16 2.5–3.6, d2_d1 1.4–2.4 GPU-h per task | ≈ 12–18 |
+  | q4 gates | | ≈ 1–2 |
+  | q4 panel | 1 GPU; Bank U q4 blocks 1.7–4.9 GPU-h | ≈ 6–18 |
+
+  - References finish ≈ 09:30–10:30 PDT.
+  - q8 d2 finishes ≈ 11:00–14:00 if 2-GPU pairs free. It can be later if q8 phase 2 (−29) is released first.
+  - q4 finishes by the evening.
+  - Readings: as soon as all tasks are done; hard bound 10-04 21:00 PDT.
+- **Code (default unchanged).**
+  - make_tasks_commonstate.py: the default `--gate/--panel` task JSON is byte-identical (8/8 files, scratch queue).
+  - analyze_commonstate.py: the default real-data run and the selftest are identical except the timestamp and the protocol sha.
+  - The q8ext and q4 selftests use synthetic data only.
+  - Unit checks cover reference acceptance, freeze, once-only, the cross-check and the guard.
+- **For the main session.**
+  - exppilot holds the q8 NEWMETHOD analysis "for F1a". F1a no longer needs NEWMETHOD's phase-2 reference cell, so that hold now rests only on NEWMETHOD's own acceptance.
+  - Assign who runs `--design q8ext` and `--design q4` once their tasks are done.
+- Evidence: `docs/insights/COMMONSTATE_SOURCES_PROTOCOL.md` (A1), `manifests/fork/commonstate_{q8ext,q4}_v1.json`, `scripts/a6000/make_tasks_commonstate.py`, `analysis/fork/analyze_commonstate.py`, `analysis/fork/commonstate_twolook_mc.py`; queue `/data/ziyangs/cloq_work/queue/{todo,running}/cs_*.json`; logs `/data/ziyangs/cloq_work/logs/tasks/cs_*.log`.
+
 ## W100t — Ops 2026-10-03 07:45 PDT: user approved all five W100q decisions ("都做"); doomed q32 telecom task stopped; freeze times unified
 **TL;DR** The user approved F1a, F1b, the m24 parse-error amendment, stopping a6k2_q32_tel_rtn_w3, and F3; each is being carried out separately (W100u+). This entry records the stop and the freeze definitions.
 - **Stopped `a6k2_q32_tel_rtn_w3`** (node001 GPUs 6,7) with SIGINT so the worker cleaned up its vLLM server. It had 7 agent-side 600 s timeouts, so it would fail on completion, and it would end after the freeze (W100q). Moved to deferred/ with `autopilot_retry: no` and a deferred_note. Its sibling a6k2_q32_tel_rtn_w4 was stopped for the same reason on 10-02.
