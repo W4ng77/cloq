@@ -1,0 +1,482 @@
+{
+ "rule": "protocol \u00a75 as amended by A5: decide once, at the earlier of (all phase-1 panel tasks of the registered cells finished, T_decide), on a frozen snapshot (state as of min(now, T_decide)); eligible = both \u00a72.4 gates passed (KIVI: the _fx gates, A4.2; kivi_k4v4 also strict T1, A4.3) and phase 1 complete at decision time (f01-f03 done, n_errors 0, every no-op passed, every population state covered: n_rows = manifest rows, n_missing = the manifest-missing source rows outside the population, n_ok = n_rows - n_missing; m24 population = the A3 83-task mask); KIVI pairing A5.3; expand ALL eligible cells and the reference cells iff now + SAFETY * (phase-1 GPU-h of eligible + reference U2B cost) / G_PANEL <= T_deadline. No outcome field is read.",
+ "model": "m24",
+ "registered_cells": [
+  "rtn_w4",
+  "gptq_w4_d1"
+ ],
+ "registry": "make_newmethod_panel.REGISTERED (amendment A5.1)",
+ "now": "2026-10-03T11:53:02.491434+00:00",
+ "T_decide": "2026-10-04T00:00:00-07:00",
+ "T_deadline": "2026-10-04T12:00:00-07:00",
+ "decision_due": true,
+ "trigger": "all phase-1 tasks finished",
+ "snapshot_as_of": "2026-10-03T11:53:02.491434+00:00",
+ "phase1_queue_now": {
+  "rtn_w4": [
+   "done",
+   "done",
+   "done"
+  ],
+  "gptq_w4_d1": [
+   "done",
+   "done",
+   "done"
+  ]
+ },
+ "G_PANEL": 8,
+ "SAFETY": 1.25,
+ "population": {
+  "population_n_tasks": 83,
+  "excluded_tasks": [
+   "airline|13",
+   "airline|44"
+  ],
+  "blocks": {
+   "f01": {
+    "n_rows": 85,
+    "missing_source_rows": [
+     "airline|13",
+     "airline|44"
+    ],
+    "n_missing": 2,
+    "n_population_states": 83
+   },
+   "f02": {
+    "n_rows": 85,
+    "missing_source_rows": [
+     "airline|44"
+    ],
+    "n_missing": 1,
+    "n_population_states": 83
+   },
+   "f03": {
+    "n_rows": 85,
+    "missing_source_rows": [
+     "airline|44"
+    ],
+    "n_missing": 1,
+    "n_population_states": 83
+   }
+  }
+ },
+ "guard": {
+  "protocol_sha256": "f9f8b3a5cfbbf9c068425d7dc2adbd69ae26b7229f3eb2b387d6bdcca7a0bf22",
+  "manifest": "manifests/fork/newmethod_panel_v1_m24.json",
+  "manifest_sha256": "53295b64fbcc7c4501ea8883aa34ce922a5ca0e23c5636c8bb1c4efe38e3ff4c",
+  "mask": "manifests/fork/newmethod_panel_v1_m24_mask_v1.json",
+  "mask_sha256": "b03a8a918959e3568315b1ae134f2902580e6af822d80beccb692729c2f82c81"
+ },
+ "configs": {
+  "rtn_w4": {
+   "gate_suffix": "",
+   "gates": {
+    "same": {
+     "task": "nmp_gate_same_m24_rtn_w4",
+     "queue": "done",
+     "finished": 1791003452.2412102,
+     "task_sha256": "a26d9ecfb92a85838bb660d7da2001d76e571bac1eada2acc118a8651584d4a7",
+     "out": "analysis/fork/newmethod/gate/m24_rtn_w4/same",
+     "pass": true,
+     "reasons": []
+    },
+    "bank": {
+     "task": "nmp_gate_bank_m24_rtn_w4",
+     "queue": "done",
+     "finished": 1791002439.963589,
+     "task_sha256": "0e2a68dd20fd0ed8b7895abfb46c7feb5071235868196051db2d0195bb85412c",
+     "out": "analysis/fork/newmethod/gate/m24_rtn_w4/bank",
+     "pass": true,
+     "reasons": []
+    }
+   },
+   "gate_pass": true,
+   "blocks": {
+    "f01": {
+     "task": "nmp_tau2_m24_rtn_w4_f01",
+     "queue": "done",
+     "finished": 1791013620.626963,
+     "task_sha256": "d27dafc6d019ce519c2e59d3d95aed2c5df140a74005ec5bacc74015cb99a863",
+     "gpus": 4,
+     "summary": {
+      "seconds": 3386.456924200058,
+      "n_rows": 85,
+      "n_ok": 83,
+      "n_missing": 2,
+      "n_errors": 0,
+      "budget_ok": true,
+      "noop_n": 5,
+      "noop_n_pass": 5
+     },
+     "complete": true,
+     "population_states_covered": 83,
+     "reasons": []
+    },
+    "f02": {
+     "task": "nmp_tau2_m24_rtn_w4_f02",
+     "queue": "done",
+     "finished": 1791013528.64119,
+     "task_sha256": "e73fbc095932a6687be6505e675c061cd256fe4d58c0adf08a405906f242f93d",
+     "gpus": 4,
+     "summary": {
+      "seconds": 3284.0475130081177,
+      "n_rows": 85,
+      "n_ok": 84,
+      "n_missing": 1,
+      "n_errors": 0,
+      "budget_ok": true,
+      "noop_n": 8,
+      "noop_n_pass": 8
+     },
+     "complete": true,
+     "population_states_covered": 83,
+     "reasons": []
+    },
+    "f03": {
+     "task": "nmp_tau2_m24_rtn_w4_f03",
+     "queue": "done",
+     "finished": 1791018417.560556,
+     "task_sha256": "0ee9337eb147bc26c4878c191a3324f2308fd91033caf292db612ad8f6c3707b",
+     "gpus": 4,
+     "summary": {
+      "seconds": 3652.5297939777374,
+      "n_rows": 85,
+      "n_ok": 84,
+      "n_missing": 1,
+      "n_errors": 0,
+      "budget_ok": true,
+      "noop_n": 9,
+      "noop_n_pass": 9
+     },
+     "complete": true,
+     "population_states_covered": 83,
+     "reasons": []
+    }
+   },
+   "phase1_complete": true,
+   "phase1_states_covered": 249,
+   "phase1_gpu_h": 11.47,
+   "eligible_own": true,
+   "reasons": [],
+   "eligible": true
+  },
+  "gptq_w4_d1": {
+   "gate_suffix": "",
+   "gates": {
+    "same": {
+     "task": "nmp_gate_same_m24_gptq_w4_d1",
+     "queue": "done",
+     "finished": 1791005151.1238286,
+     "task_sha256": "fe4969420587431440b6e0ac5879ec99a85068b1c6bba684b28ef674bcb05131",
+     "out": "analysis/fork/newmethod/gate/m24_gptq_w4_d1/same",
+     "pass": true,
+     "reasons": []
+    },
+    "bank": {
+     "task": "nmp_gate_bank_m24_gptq_w4_d1",
+     "queue": "done",
+     "finished": 1791001697.4091198,
+     "task_sha256": "8b5ce108c841b590c15e5e5e962901bcbced0b116c2de571c34f5c31d7b7c182",
+     "out": "analysis/fork/newmethod/gate/m24_gptq_w4_d1/bank",
+     "pass": true,
+     "reasons": []
+    }
+   },
+   "gate_pass": true,
+   "blocks": {
+    "f01": {
+     "task": "nmp_tau2_m24_gptq_w4_d1_f01",
+     "queue": "done",
+     "finished": 1791014479.3403597,
+     "task_sha256": "364471334a2359fa86a01f7732c36eb3b843633859c57289a0790df338a7d05d",
+     "gpus": 4,
+     "summary": {
+      "seconds": 2147.162657260895,
+      "n_rows": 85,
+      "n_ok": 83,
+      "n_missing": 2,
+      "n_errors": 0,
+      "budget_ok": true,
+      "noop_n": 5,
+      "noop_n_pass": 5
+     },
+     "complete": true,
+     "population_states_covered": 83,
+     "reasons": []
+    },
+    "f02": {
+     "task": "nmp_tau2_m24_gptq_w4_d1_f02",
+     "queue": "done",
+     "finished": 1791027799.351098,
+     "task_sha256": "f0f6208d71ac71acda26486528bb65139380dc49165490376aab80e9d2b8c140",
+     "gpus": 4,
+     "summary": {
+      "seconds": 12207.680822134018,
+      "n_rows": 85,
+      "n_ok": 84,
+      "n_missing": 1,
+      "n_errors": 0,
+      "budget_ok": false,
+      "noop_n": 11,
+      "noop_n_pass": 11
+     },
+     "complete": true,
+     "population_states_covered": 83,
+     "reasons": []
+    },
+    "f03": {
+     "task": "nmp_tau2_m24_gptq_w4_d1_f03",
+     "queue": "done",
+     "finished": 1791017500.7547505,
+     "task_sha256": "3b76d88dcc1d226f86681ff99dba8c5ac979dfac12cb1a38bc10ca065aca9706",
+     "gpus": 4,
+     "summary": {
+      "seconds": 1827.354219675064,
+      "n_rows": 85,
+      "n_ok": 84,
+      "n_missing": 1,
+      "n_errors": 0,
+      "budget_ok": true,
+      "noop_n": 12,
+      "noop_n_pass": 12
+     },
+     "complete": true,
+     "population_states_covered": 83,
+     "reasons": []
+    }
+   },
+   "phase1_complete": true,
+   "phase1_states_covered": 249,
+   "phase1_gpu_h": 17.98,
+   "eligible_own": true,
+   "reasons": [],
+   "eligible": true
+  }
+ },
+ "eligible": [
+  "rtn_w4",
+  "gptq_w4_d1"
+ ],
+ "ineligible": {},
+ "reference_cells": [],
+ "reference_inputs": {},
+ "reference_u2b_gpu_h": 0.0,
+ "projected_phase2_gpu_h": 36.812,
+ "projected_wall_h": 4.602,
+ "projected_finish": "2026-10-03T16:29:08.116434+00:00",
+ "expand": true,
+ "phase2_cells": [
+  "rtn_w4",
+  "gptq_w4_d1"
+ ],
+ "inputs": {
+  "files_sha256": {
+   "analysis/fork/newmethod/gate/m24_rtn_w4/same/gate_same.json": "3495fca70fee610e2f851ba28ecd121a47b683afb448fefa7e5c7336bb845afa",
+   "analysis/fork/newmethod/gate/m24_rtn_w4/bank/bank_summary.json": "4e8189fe262d1f006c95a2fb957ddb7132afa44a5ffe300b5ecb6d168392b36d",
+   "analysis/fork/newmethod/tau2/m24_rtn_w4/f01/bank_summary.json": "0c184a0c1f9380c067507396c59b599992e8ba1477732382a589fa6b8607ba40",
+   "analysis/fork/newmethod/tau2/m24_rtn_w4/f02/bank_summary.json": "27003ab013525b6a25b68100826ca5fa6485cf7dad00867f2b01dbaf8a5c6776",
+   "analysis/fork/newmethod/tau2/m24_rtn_w4/f03/bank_summary.json": "d4368d9391fc3fd7366a48eefdc883ac38610f4f60cfcb1fcbf32324f5cf32f6",
+   "analysis/fork/newmethod/gate/m24_gptq_w4_d1/same/gate_same.json": "015998936f6f5b53999576353464a2f3069898c9ae6fc20f5d003b38fe38a762",
+   "analysis/fork/newmethod/gate/m24_gptq_w4_d1/bank/bank_summary.json": "e2a35e2a24fe9d84f540730220e18463cb7dc56fc090371e62edc5df8a62aa8a",
+   "analysis/fork/newmethod/tau2/m24_gptq_w4_d1/f01/bank_summary.json": "d5c3356c6fe91a7c452053cd49aecbe32a9146dde8f1716bc6836888bd50b7f6",
+   "analysis/fork/newmethod/tau2/m24_gptq_w4_d1/f02/bank_summary.json": "3b1c303a0515ccb05daa32cd0dcc73df90d03e472ded0beb1739c39e2b3fbb76",
+   "analysis/fork/newmethod/tau2/m24_gptq_w4_d1/f03/bank_summary.json": "8a5ba2a3b03c3e2cd2082657fca1558bad101ec83813e5ba228a921a88b516b3"
+  },
+  "queue_tasks": {
+   "nmp_tau2_m24_rtn_w4_f01": {
+    "queue": "done",
+    "sha256": "d27dafc6d019ce519c2e59d3d95aed2c5df140a74005ec5bacc74015cb99a863",
+    "gpus": 4,
+    "finished": 1791013620.626963,
+    "fork": {
+     "mode": "bank_u",
+     "model": "m24",
+     "cell": "rtn_w4",
+     "blocks": [
+      "f01"
+     ],
+     "subs": [
+      "U2B"
+     ],
+     "manifest_sha256": "53295b64fbcc7c4501ea8883aa34ce922a5ca0e23c5636c8bb1c4efe38e3ff4c",
+     "limit_per_sub": null,
+     "out": "analysis/fork/newmethod/tau2/m24_rtn_w4/f01"
+    }
+   },
+   "nmp_tau2_m24_rtn_w4_f02": {
+    "queue": "done",
+    "sha256": "e73fbc095932a6687be6505e675c061cd256fe4d58c0adf08a405906f242f93d",
+    "gpus": 4,
+    "finished": 1791013528.64119,
+    "fork": {
+     "mode": "bank_u",
+     "model": "m24",
+     "cell": "rtn_w4",
+     "blocks": [
+      "f02"
+     ],
+     "subs": [
+      "U2B"
+     ],
+     "manifest_sha256": "53295b64fbcc7c4501ea8883aa34ce922a5ca0e23c5636c8bb1c4efe38e3ff4c",
+     "limit_per_sub": null,
+     "out": "analysis/fork/newmethod/tau2/m24_rtn_w4/f02"
+    }
+   },
+   "nmp_tau2_m24_rtn_w4_f03": {
+    "queue": "done",
+    "sha256": "0ee9337eb147bc26c4878c191a3324f2308fd91033caf292db612ad8f6c3707b",
+    "gpus": 4,
+    "finished": 1791018417.560556,
+    "fork": {
+     "mode": "bank_u",
+     "model": "m24",
+     "cell": "rtn_w4",
+     "blocks": [
+      "f03"
+     ],
+     "subs": [
+      "U2B"
+     ],
+     "manifest_sha256": "53295b64fbcc7c4501ea8883aa34ce922a5ca0e23c5636c8bb1c4efe38e3ff4c",
+     "limit_per_sub": null,
+     "out": "analysis/fork/newmethod/tau2/m24_rtn_w4/f03"
+    }
+   },
+   "nmp_tau2_m24_gptq_w4_d1_f01": {
+    "queue": "done",
+    "sha256": "364471334a2359fa86a01f7732c36eb3b843633859c57289a0790df338a7d05d",
+    "gpus": 4,
+    "finished": 1791014479.3403597,
+    "fork": {
+     "mode": "bank_u",
+     "model": "m24",
+     "cell": "gptq_w4_d1",
+     "blocks": [
+      "f01"
+     ],
+     "subs": [
+      "U2B"
+     ],
+     "manifest_sha256": "53295b64fbcc7c4501ea8883aa34ce922a5ca0e23c5636c8bb1c4efe38e3ff4c",
+     "limit_per_sub": null,
+     "out": "analysis/fork/newmethod/tau2/m24_gptq_w4_d1/f01"
+    }
+   },
+   "nmp_tau2_m24_gptq_w4_d1_f02": {
+    "queue": "done",
+    "sha256": "f0f6208d71ac71acda26486528bb65139380dc49165490376aab80e9d2b8c140",
+    "gpus": 4,
+    "finished": 1791027799.351098,
+    "fork": {
+     "mode": "bank_u",
+     "model": "m24",
+     "cell": "gptq_w4_d1",
+     "blocks": [
+      "f02"
+     ],
+     "subs": [
+      "U2B"
+     ],
+     "manifest_sha256": "53295b64fbcc7c4501ea8883aa34ce922a5ca0e23c5636c8bb1c4efe38e3ff4c",
+     "limit_per_sub": null,
+     "out": "analysis/fork/newmethod/tau2/m24_gptq_w4_d1/f02"
+    }
+   },
+   "nmp_tau2_m24_gptq_w4_d1_f03": {
+    "queue": "done",
+    "sha256": "3b76d88dcc1d226f86681ff99dba8c5ac979dfac12cb1a38bc10ca065aca9706",
+    "gpus": 4,
+    "finished": 1791017500.7547505,
+    "fork": {
+     "mode": "bank_u",
+     "model": "m24",
+     "cell": "gptq_w4_d1",
+     "blocks": [
+      "f03"
+     ],
+     "subs": [
+      "U2B"
+     ],
+     "manifest_sha256": "53295b64fbcc7c4501ea8883aa34ce922a5ca0e23c5636c8bb1c4efe38e3ff4c",
+     "limit_per_sub": null,
+     "out": "analysis/fork/newmethod/tau2/m24_gptq_w4_d1/f03"
+    }
+   },
+   "nmp_gate_same_m24_rtn_w4": {
+    "queue": "done",
+    "sha256": "a26d9ecfb92a85838bb660d7da2001d76e571bac1eada2acc118a8651584d4a7",
+    "gpus": 4,
+    "finished": 1791003452.2412102,
+    "fork": {
+     "mode": "gate_same",
+     "model": null,
+     "cell": null,
+     "blocks": null,
+     "subs": null,
+     "manifest_sha256": null,
+     "limit_per_sub": null,
+     "out": "analysis/fork/newmethod/gate/m24_rtn_w4/same"
+    }
+   },
+   "nmp_gate_bank_m24_rtn_w4": {
+    "queue": "done",
+    "sha256": "0e2a68dd20fd0ed8b7895abfb46c7feb5071235868196051db2d0195bb85412c",
+    "gpus": 4,
+    "finished": 1791002439.963589,
+    "fork": {
+     "mode": "bank_u",
+     "model": "m24",
+     "cell": "rtn_w4",
+     "blocks": [
+      "f01"
+     ],
+     "subs": [
+      "U2B"
+     ],
+     "manifest_sha256": "53295b64fbcc7c4501ea8883aa34ce922a5ca0e23c5636c8bb1c4efe38e3ff4c",
+     "limit_per_sub": 10,
+     "out": "analysis/fork/newmethod/gate/m24_rtn_w4/bank"
+    }
+   },
+   "nmp_gate_same_m24_gptq_w4_d1": {
+    "queue": "done",
+    "sha256": "fe4969420587431440b6e0ac5879ec99a85068b1c6bba684b28ef674bcb05131",
+    "gpus": 4,
+    "finished": 1791005151.1238286,
+    "fork": {
+     "mode": "gate_same",
+     "model": null,
+     "cell": null,
+     "blocks": null,
+     "subs": null,
+     "manifest_sha256": null,
+     "limit_per_sub": null,
+     "out": "analysis/fork/newmethod/gate/m24_gptq_w4_d1/same"
+    }
+   },
+   "nmp_gate_bank_m24_gptq_w4_d1": {
+    "queue": "done",
+    "sha256": "8b5ce108c841b590c15e5e5e962901bcbced0b116c2de571c34f5c31d7b7c182",
+    "gpus": 4,
+    "finished": 1791001697.4091198,
+    "fork": {
+     "mode": "bank_u",
+     "model": "m24",
+     "cell": "gptq_w4_d1",
+     "blocks": [
+      "f01"
+     ],
+     "subs": [
+      "U2B"
+     ],
+     "manifest_sha256": "53295b64fbcc7c4501ea8883aa34ce922a5ca0e23c5636c8bb1c4efe38e3ff4c",
+     "limit_per_sub": 10,
+     "out": "analysis/fork/newmethod/gate/m24_gptq_w4_d1/bank"
+    }
+   }
+  }
+ },
+ "builder": "scripts/a6000/make_newmethod_panel.py",
+ "builder_sha256": "eb505f123101c54c533ab10ad58e6b7cab393f4ac18d27cad7ba0e5b643ca9b4"
+}
