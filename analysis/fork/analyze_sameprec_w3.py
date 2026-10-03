@@ -41,6 +41,8 @@ def main():
         for p in sorted(outdir.glob("sameprec_*")):
             txt = p.read_text().replace("GPTQ-W4", "GPTQ-W3").replace("W4 calibration", "W3 calibration")
             txt = txt.replace(str(tmpman.relative_to(ROOT)), str(MAN.relative_to(ROOT)))
+            # self-references to the temporary output dir -> the final sameprec_w3_ path (W100h)
+            txt = txt.replace(str(outdir.relative_to(ROOT)) + "/sameprec_", str(S.AD.OUT.relative_to(ROOT)) + "/sameprec_w3_")
             dst = S.AD.OUT / p.name.replace("sameprec_", "sameprec_w3_", 1)
             dst.write_text(txt)
             print("wrote", dst.relative_to(ROOT))

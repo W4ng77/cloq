@@ -10,6 +10,79 @@ Newest first.
 
 ---
 
+## W100h — W3 same-precision pair (GPTQ-W3 d1 vs d2, K = 3, q3–q5): ΔM +1.6 pp, 90% CI [+0.05, +3.08], TOST p 0.055 — not resolved; cross-check bug fixed (2026-10-02 19:45 PDT)
+**TL;DR** All 6 formal tasks `fork_sameprec_w3_{q4,q8}_q{3,4,5}` are done. The W3 analysis first failed on an internal assert (`d_offdiag` −0.307 vs −0.288). The assert compared two different estimators of the same share; the protocol estimands are unchanged. The fix keeps the W4 analysis output identical to `sameprec_20261003T023735Z.json`.
+
+At W3, the same-precision substitution (d1 → d2) gives almost all of the BF16-vs-W3 turnover: M′ 17.3 vs M 18.8 pp of units. Paired ΔM is +1.6 pp:
+- 95% t [−0.7, +3.8], so no precision-specific excess at 95%;
+- 90% [+0.05, +3.08], p_TOST 0.055, so equivalence at ±3 pp is not shown.
+
+Reading: **not resolved**. Any precision-specific excess is small (≤ about 3 pp, about 8% of M at the point estimate), but K = 3 can neither exclude it nor show equivalence.
+
+The W4 result had the opposite sign: ΔM −0.98 at K = 6, 90% CI [−3.26, +1.30], TOST fails. The action-side shared unit core holds at W3: G κ rescue 0.60, harm 0.68, against 0.60 and 0.54 at W4.
+
+- **Bug and fix.**
+  - In `analysis/fork/analyze_sameprec.py`, the A1 consistency assert compared each TOST centre with the pooled point estimate.
+  - For ΔM and ΔG the two are the same number: `Boot.task_mean`'s point estimate is the mean of block means.
+  - For Δoff-diagonal they are different estimators. The point estimate (`Boot.ratio`) is the ratio of block **sums** over divergent states. The frozen primary t interval at K < 10 and the A1 TOST are both centred on the **mean of per-block ratios**.
+  - The two agree only when every block has the same number of states. W4 passed by coincidence (−1.210 vs −1.216).
+  - The check for `d_offdiag` now compares the TOST centre with the centre of the frozen pooled t interval (−0.307 = −0.307). Both centres are recorded in `tost_a1.consistency`, and the md prints both.
+  - `analyze_sameprec_w3.py` also left the temporary output path in the md's "Full numbers" line; that is fixed too.
+  - W4 re-run: `analysis/fork/out/sameprec_20261003T023857Z.json`. A recursive diff against `sameprec_20261003T023735Z.json` shows no differences, ignoring utc, script sha and the new `consistency` key.
+- **W3 estimands** (q4+q8 pooled, K = 3, t over 3 block means, df = 2; A1 TOST ±3 pp). `analysis/fork/out/sameprec_w3_20261003T023933Z.{md,json}`:
+
+  | | BF16 vs W3 (precision) | W3-d2 vs W3 (same-precision) |
+  |---|---|---|
+  | r | 9.6 | 8.2 |
+  | d | 9.2 | 9.0 |
+  | M | 18.8 [9.9, 27.7] | 17.3 [8.7, 25.8] |
+  | G_all | +0.4 | −0.8 |
+  | off-diagonal (% of divergent states) | 27.3 | 27.6 |
+  | divergence rate | 92.9% | 91.8% |
+
+  Divergence rate per cell: q4 91.0% vs 85.5%, q8 94.9% vs 98.0%. At W4 it was 76.9% in both designs.
+  - **ΔM** +1.57:
+    - 95% [−0.66, +3.80]; crossed [−2.0, +5.5];
+    - 90% [+0.05, +3.08];
+    - p_lower 0.006, p_upper 0.055, p_TOST 0.055, so not equivalent;
+    - block diffs +0.59 / +1.76 / +2.35.
+  - **ΔG_all** +1.18:
+    - 95% [−0.3, +2.6]; 90% [+0.18, +2.17];
+    - p_TOST 0.017, so equivalent under the A1 rule.
+    - Caveat: df = 2 and the 3 block diffs happen to be tight (+0.59 / +1.76 / +1.18). At the cell level q4 is not equivalent (+3.1, 90% [+0.11, +6.17]).
+  - **Δoff-diagonal** (descriptive; different state sets):
+    - point estimate (ratio of sums) −0.29; TOST centre −0.31;
+    - 95% [−16.0, +15.4]; 90% [−11.0, +10.4];
+    - p_TOST 0.27.
+  - **Per cell, ΔM.** q4 and q8 are both +1.57, 95% [−2.9, +6.0]. The per-block diffs are the same values in a different order (q4 +1.18 / 0 / +3.53; q8 0 / +3.53 / +1.18); this was checked against the per-block table and is a coincidence, not a bug.
+    - ΔG: q4 +3.14, q8 −0.78.
+    - Δoff: q4 +3.5, q8 −4.1.
+- **Overlap (descriptive, A1.4).** `analysis/fork/sameprec_split.py --w3`; the new flag swaps in the manifest, cell and guard and skips the trigger link (that rule is for W4 d1 on f01–f03). Output `analysis/fork/out/sameprec_w3_split_20261003T024007Z.{md,json}`, 510 units, with κ against the within-task shuffle null:
+
+  | contrast | κ | shared | within-task shuffle mean | design-specific share of flipping units | shuffle-null share |
+  |---|---|---|---|---|---|
+  | G rescue | 0.60 [0.51, 0.68] | 29 | 16 | | |
+  | G harm | 0.68 [0.50, 0.75] | 33 | 19 | | |
+  | G flip | | | | 49% | 70% |
+  | H rescue / harm | 0.40 / 0.31 | | | | |
+  | F rescue / harm | 0.46 / 0.37 | | | | |
+  | off-diagonal (443 states divergent in both designs) | 0.40 [0.32, 0.47] | 68 | 62 | 61% | |
+
+  - The split's Δflips (+1.6) and ΔG (+1.2) match analyze_sameprec.
+  - W4 values for comparison: G κ 0.60 / 0.54, H 0.20 / 0.45, F 0.34 / 0.35, off-diagonal 0.29.
+- **Interpretation** (GPT-6.1: "does the same-precision reference still explain the observed consequences under a stronger perturbation?").
+  - Mostly yes, but not resolved. Under W3, swapping only the calibration draw gives about 92% of the BF16-vs-W3 turnover, the same off-diagonal share and a similar net.
+  - The rescued and harmed units on the action side share a core well above the shuffle null, as strong as at W4 or stronger.
+  - The ΔM point estimate turned positive at W3 (+1.6, against −1.0 at W4), and the 90% interval just excludes 0. This hints at a small precision-specific excess under the stronger perturbation, but the 95% interval includes 0 and TOST fails, so neither excess nor equivalence is shown.
+  - With K = 3 (df = 2) these intervals are fragile. W3 is reported next to W4, never pooled with it (protocol §4).
+  - The ΔG_all "equivalent" rests on 3 blocks and should be cited only with that caveat.
+  - Status: the script labels this INTERIM, because it runs before the 2026-10-04 07 UTC freeze time. All K = 3 blocks are complete.
+- Files:
+  - `analysis/fork/analyze_sameprec.py` (cross-check fix);
+  - `analysis/fork/analyze_sameprec_w3.py` (output-path fix);
+  - `analysis/fork/sameprec_split.py` (`--w3`);
+  - the outputs above.
+
 ## W100g — Expansion tool fixed before any expansion decision: KIVI `_fx` gates, fixed-population completeness (m24 = 249 states), KIVI pairing, frozen snapshot; protocol amendment A5 (2026-10-02 14:55 PDT)
 **TL;DR** GPT-6.1 reviewed 6e0b11b and found three gaps in `make_newmethod_panel.py expansion`. All are fixed before any expansion decision was due or written: no `expansion_*.json` exists, and no `nmp_tau2_*` task is done. Protocol sha `0dc3143e…` becomes `f9f8b3a5…` (A5); `analyze_newmethod.py` has the new constant. The rule stays effect-blind.
 - **KIVI gates.** Eligibility now reads only `nmp_gate_{same,bank}_q8_<cell>_fx` (outputs `gate/q8_<cell>_fx/`, checked against the tasks' `out`). `kivi_k4v4` additionally needs `kivi_gate_q8_toy4` strict T1. The old pre-fix gates never admit a cell.

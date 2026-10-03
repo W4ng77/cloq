@@ -384,8 +384,23 @@ def main():
         ta = {"eps_pp": EPS_PP, "method": "TOST, t over the K pooled per-block differences (df = K - 1); 90% CI; p_lower: H0 diff <= -eps; p_upper: H0 diff >= +eps",
               "pooled": {k: tost(list(v.values())) for k, v in vals.items() if len(v) == len(models)},
               "per_cell": {m: {k: tost([v[m]]) for k, v in vals.items() if m in v} for m in models}}
-        for k, x in ta["pooled"].items():  # consistency with the frozen primary estimate
-            ref = pool["paired"]["dM" if k == "dM" else "dG" if k == "dG" else "d_offdiag"]["est"]
+        # Consistency with the frozen primary pipeline (W100h fix). dM / dG are unit means (Boot.task_mean): the point estimate
+        # IS the mean of block means, so it must equal the TOST centre. d_offdiag is a ratio over divergent states
+        # (Boot.ratio): its point estimate is the ratio of block SUMS (pooled over blocks), while its frozen primary interval
+        # at K < 10 (t over per-block ratios) and the A1 TOST are centred on the MEAN of per-block ratios. The two agree only
+        # when every block has the same number of states (W4 K = 6 passed by coincidence, 0.006 pp); so d_offdiag is checked
+        # against the centre of the frozen pooled t interval, and both centres are recorded.
+        ta["consistency"] = {}
+        for k, x in ta["pooled"].items():
+            pe = pool["paired"][k]
+            if k == "d_offdiag":
+                ref = (pe["t_ci95"][0] + pe["t_ci95"][1]) / 2 if pe.get("t_ci95") else x["est"]
+                ta["consistency"][k] = {"tost_centre_mean_of_block_ratios": x["est"], "primary_t_centre": round(ref, 3),
+                                        "point_est_ratio_of_block_sums": pe["est"],
+                                        "note": "different estimators of the same share; equal only with equal state counts per block"}
+            else:
+                ref = pe["est"]
+                ta["consistency"][k] = {"tost_centre": x["est"], "point_est": ref}
             assert abs(x["est"] - ref) < 0.01, (k, x["est"], ref)
         res["tost_a1"] = ta
         if K >= int(man["min_blocks_reading"]):
@@ -477,6 +492,10 @@ def markdown(r: dict, jp: Path) -> str:
                         bb = x["block_boot_ci90"]
                         L.append(f"| {sc} | {k}{' (descriptive)' if k == 'd_offdiag' else ''} | {x['est']:+.2f} | [{x['t_ci90'][0]:+.2f}, {x['t_ci90'][1]:+.2f}] | "
                                  f"{'[%+.2f, %+.2f]' % tuple(bb) if bb else 'n/a'} | {x['p_lower']:.3f} | {x['p_upper']:.3f} | {x['p_tost']:.3f} | {'yes' if x['equivalent'] else 'no'} |")
+            co = r["tost_a1"].get("consistency", {}).get("d_offdiag")
+            if co:
+                L += ["", f"d_offdiag centres: TOST / t interval = mean of per-block ratio differences {co['tost_centre_mean_of_block_ratios']:+.2f}; "
+                          f"point estimate = ratio of block sums {co['point_est_ratio_of_block_sums']:+.2f} (equal only with equal state counts per block)."]
             ra = r.get("reading_a1")
             if ra:
                 L += ["", "A1.3 reading (pooled):", ""] + [f"- {ra[k]['text']}" for k in ("M", "G_all", "offdiag") if k in ra]

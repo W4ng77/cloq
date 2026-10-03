@@ -27,8 +27,10 @@ A unit without divergence in a design has every arm equal to Y_QQ there (no flip
 
 Never reads analysis/fork/holdout/ (asserted by analyze_sameprec.dirs_under). Writes nothing outside analysis/fork/out/.
 
-usage: python analysis/fork/sameprec_split.py [--perm 10000] [--B 2000] [--max-k K]
-       -> analysis/fork/out/sameprec_split_<UTC>.{md,json}
+usage: python analysis/fork/sameprec_split.py [--perm 10000] [--B 2000] [--max-k K] [--w3]
+       -> analysis/fork/out/sameprec_split_<UTC>.{md,json}  (--w3: sameprec_w3_split_<UTC>.{md,json})
+  --w3 (W100h): the W3 pair (manifests/fork/sameprec_w3_v1.json, cell gptq_w3, blocks q3-q5, protocol guard of
+       analyze_sameprec_w3.py); the trigger link is skipped (the frozen rule is defined for gptq_w4_d1 on Bank U f01-f03).
 """
 from __future__ import annotations
 
@@ -328,8 +330,14 @@ def main():
     ap.add_argument("--perm", type=int, default=10000)
     ap.add_argument("--B", type=int, default=AD.B_BOOT)
     ap.add_argument("--max-k", type=int, default=None, help="restrict to the first K prefix blocks (labelled)")
+    ap.add_argument("--w3", action="store_true", help="W3 pair (sameprec_w3_v1 manifest; W100h); trigger link skipped")
     a = ap.parse_args()
     t0 = time.time()
+    stem = "sameprec_split"
+    if a.w3:
+        import analyze_sameprec_w3 as W3
+        SP.MANIFEST, SP.guard, stem = W3.MAN, W3.guard, "sameprec_w3_split"
+        SP.CELL = json.load(open(W3.MAN))["cell"]
     try:
         from loguru import logger
         logger.remove()
@@ -338,6 +346,8 @@ def main():
         pass
     man = json.load(open(SP.MANIFEST))
     psha = SP.guard(man)
+    if a.w3:
+        man.setdefault("snapshot", W3.SNAPSHOT)
     snap = json.load(open(ROOT / man["snapshot"]))
     models = man["cells"]
     U, prefix = SO.load(man, snap)
@@ -351,16 +361,20 @@ def main():
            "git_head": subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip(),
            "utc": time.strftime("%Y%m%dT%H%M%SZ", time.gmtime()), "seed": SEED, "n_perm": a.perm, "B": a.B,
            "status": ("INTERIM (before the 2026-10-03 evidence freeze); " if interim else "") + "DESCRIPTIVE / exploratory (amendment A1.4)",
-           "complete_prefix": full_prefix, "capped_by_max_k": a.max_k}
+           "complete_prefix": full_prefix, "capped_by_max_k": a.max_k, "manifest": str(SP.MANIFEST.relative_to(ROOT)), "cell": SP.CELL}
     rows = rows_for(U, prefix, models)
     res["main"] = analyse(rows, prefix, a.perm, a.B)
-    res["trigger"] = trigger_link(U, prefix, models)
+    res["trigger"] = ({"feasible": False, "note": "Trigger link skipped (--w3): the frozen Q-only rule is defined for gptq_w4_d1 on Bank U f01-f03, "
+                                   "not for GPTQ-W3 blocks q3-q5."} if a.w3 else trigger_link(U, prefix, models))
     res["seconds"] = round(time.time() - t0, 1)
     OUT.mkdir(parents=True, exist_ok=True)
     tag = res["utc"] + (f"_capK{len(prefix)}" if a.max_k else "")
-    jp = OUT / f"sameprec_split_{tag}.json"
+    jp = OUT / f"{stem}_{tag}.json"
     jp.write_text(json.dumps(res, indent=1, default=lambda o: o.item() if hasattr(o, "item") else str(o)))
-    (OUT / f"sameprec_split_{tag}.md").write_text(markdown(res, jp))
+    md = markdown(res, jp)
+    if a.w3:
+        md = md.replace("GPTQ-W4", "GPTQ-W3")
+    (OUT / f"{stem}_{tag}.md").write_text(md)
     print(f"sameprec_split: wrote {jp.relative_to(ROOT)} (K = {len(prefix)}, {res['seconds']} s)")
 
 
