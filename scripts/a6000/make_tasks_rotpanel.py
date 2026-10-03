@@ -14,13 +14,16 @@ stationary point (the loss is rotation invariant), and the advisor's SpinQuant c
 
   --gates   gate_same (foreign states, [run, domain] pairs) + bank_u gate per cell (protocol §2.4)
   --panel   phase-1 bank_u tasks f01-f03 (deps: both gates of the cell) + score tasks + BFCL nmp1 run + 4 fork_ext dev
-usage: python scripts/a6000/make_tasks_rotpanel.py (--gates | --panel) --cells quarot_w4 ... [--write]
+  --panel --phase 2   W100r: f04-f06 bank_u + score tasks only (no gates, no BFCL; protocol §5), refused unless the
+            written record analysis/fork/newmethod/expansion_q8.json has expand = true and lists the cell in phase2_cells
+usage: python scripts/a6000/make_tasks_rotpanel.py (--gates | --panel [--phase 2]) --cells quarot_w4 ... [--priority P] [--write]
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 
 ROOT = Path("/data/ziyangs/cloq")
@@ -77,19 +80,21 @@ def gate_tasks(c: str, ck: dict, senv: dict, i: int) -> list[dict]:
             fork_task(f"nmp_gate_bank_q8_{c}", c, i + 1, {"ckpt": {"kind": "bf16"}}, role, bank, [], n)]
 
 
-def panel_tasks(c: str, ck: dict, senv: dict, i: int) -> list[dict]:
+def panel_tasks(c: str, ck: dict, senv: dict, i: int, phase: int = 1) -> list[dict]:
     role = {"ckpt": ck, "serve_env": senv}
     B = {"ckpt": {"kind": "bf16"}}
     gates = [f"nmp_gate_same_q8_{c}", f"nmp_gate_bank_q8_{c}"]
-    n = "W99s rotation cell, phase 1 (make_tasks_rotpanel.py; NEWMETHOD_PANEL_PROTOCOL §2, §6)"
+    n = f"W99s rotation cell, phase {phase} (make_tasks_rotpanel.py; NEWMETHOD_PANEL_PROTOCOL §2, §5, §6)"
     out = []
-    for j, b in enumerate(("f01", "f02", "f03")):
+    for j, b in enumerate(("f01", "f02", "f03") if phase == 1 else ("f04", "f05", "f06")):
         spec = {"mode": "bank_u", "manifest": MAN, "manifest_sha256": MAN_SHA, "model": "q8", "cell": c, "blocks": [b],
                 "subs": ["U2B"], "noop_frac": 0.1, "concurrency": 8, "out": f"{OUT}/tau2/q8_{c}/{b}"}
         out.append(fork_task(f"nmp_tau2_q8_{c}_{b}", c, i + j, B, role, spec, gates, n))
         sc = {"driver": "score", "mode": "score_states", "model": "q8", "cell": c, "blocks": [b],
               "bank_out": f"{OUT}/tau2/q8_{c}/{b}", "out": f"{OUT}/token_scores/q8_{c}/{b}", "concurrency": 4}
         out.append(fork_task(f"nmp_score_q8_{c}_{b}", c, i + j, B, role, sc, [f"nmp_tau2_q8_{c}_{b}"], n))
+    if phase == 2:  # the BFCL panel has no expansion (protocol §5)
+        return out
     rid = f"ext_q8_{c}_bfcl_nmp1"
     out.append({"id": rid, "kind": "eval", "env": "bfcl", "model": "q8", "arm": "rot", "ckpt": ck, "serve_env": senv,
                 "domains": ["bfcl_base", "bfcl_miss_param", "bfcl_miss_func", "bfcl_long_context"], "priority": PRIO,
@@ -107,15 +112,23 @@ def main():
     g.add_argument("--gates", action="store_true")
     g.add_argument("--panel", action="store_true")
     ap.add_argument("--cells", nargs="+", required=True)
+    ap.add_argument("--phase", type=int, default=1, choices=(1, 2), help="--panel: 2 = f04-f06 after the expansion record")
+    ap.add_argument("--priority", type=int, default=PRIO)
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args()
+    globals()["PRIO"] = a.priority  # read by fork_task at call time
     got = hashlib.sha256((ROOT / MAN).read_bytes()).hexdigest()
     assert got == MAN_SHA, f"panel manifest sha {got} != frozen {MAN_SHA}"
+    if a.phase == 2:
+        rp = ROOT / OUT / "expansion_q8.json"
+        rec = json.load(open(rp)) if rp.exists() else {}
+        if a.gates or rec.get("expand") is not True or not set(a.cells) <= set(rec.get("phase2_cells", [])):
+            raise SystemExit(f"phase 2 refused: expand={rec.get('expand')}, phase2_cells={rec.get('phase2_cells')}")
     C = cells()
     tasks = []
     for i, c in enumerate(a.cells):
         ck, senv = C[c]
-        tasks += (gate_tasks if a.gates else panel_tasks)(c, ck, senv, i)
+        tasks += gate_tasks(c, ck, senv, i) if a.gates else panel_tasks(c, ck, senv, i, a.phase)
     for t in tasks:
         print(t["id"], t["kind"], t.get("node", "-"), t["deps"])
     if not a.write:
@@ -124,7 +137,9 @@ def main():
     n = 0
     for t in tasks:
         if not any((Q / d / f"{t['id']}.json").exists() for d in ("todo", "running", "done", "failed", "deferred")):
-            json.dump(t, open(Q / "todo" / f"{t['id']}.json", "w"), indent=1)
+            tmp = Q / "todo" / f".tmp_{t['id']}"  # atomic: never a partial *.json in todo
+            tmp.write_text(json.dumps(t, indent=1))
+            os.replace(tmp, Q / "todo" / f"{t['id']}.json")
             n += 1
     print(f"wrote {n} tasks")
 

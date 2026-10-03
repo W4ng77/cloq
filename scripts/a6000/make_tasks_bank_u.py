@@ -7,13 +7,21 @@
                 native bank_u task; B = BF16, Q = Q0 = <model> GPTQ-W4 d1 (for the GPTQ-W4 d1 cell the native arms are Q0)
 B = BF16, Q = the cell's exact serving config (kvq_int8: KV INT8 hook). q4 on 1 GPU (B+Q, GPU_UTIL 0.44); q8 on 2 GPUs pinned
 to node004/005/007. Priority -17.
-usage: python scripts/a6000/make_tasks_bank_u.py (--gate | --blocks f01 [f02 ...]) [--write]
+  --nmp-phase2 CELL ..  W100r: the q8 reference cells (gptq_w4_d1 awq_w4 kvq_int8) on the new-method panel's phase 2
+                (NEWMETHOD_PANEL_PROTOCOL §2.5, §5.5: "the reference cells run f04-f06 with the panel manifest like any other
+                cell"): both §2.4 gates (gate_same fail_loud) + f04-f06 bank_u U2B + token scores, specs verbatim from
+                `make_newmethod_panel.py spec --model q8 --cell <c> --phase 2`, Q = qrole (the Bank U serving config).
+                Refused unless analysis/fork/newmethod/expansion_q8.json has expand = true and lists the cells in phase2_cells.
+usage: python scripts/a6000/make_tasks_bank_u.py (--gate | --blocks f01 [f02 ...] | --nmp-phase2 CELL ..) [--priority P] [--write]
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path("/data/ziyangs/cloq")
@@ -29,11 +37,37 @@ def qrole(m, cell):
     return {"ckpt": ck}
 
 
+def nmp_phase2(cells: list[str], prio: int) -> list[dict]:
+    rp = ROOT / "analysis/fork/newmethod/expansion_q8.json"
+    rec = json.load(open(rp)) if rp.exists() else {}
+    if rec.get("expand") is not True or not set(cells) <= set(rec.get("phase2_cells", [])):
+        raise SystemExit(f"phase 2 refused: expand={rec.get('expand')}, phase2_cells={rec.get('phase2_cells')}")
+    note = "W100r q8 reference cell, nmp phase 2 (make_tasks_bank_u.py --nmp-phase2; NEWMETHOD_PANEL_PROTOCOL §2.5, §5.5)"
+    B, T, i = {"ckpt": {"kind": "bf16"}}, [], 0
+    for c in cells:
+        sp = json.loads(subprocess.check_output([sys.executable, str(ROOT / "scripts/a6000/make_newmethod_panel.py"), "spec",
+                                                 "--model", "q8", "--cell", c, "--phase", "2"], cwd=ROOT, text=True))
+        get = lambda pre: next(v for k, v in sp.items() if k.startswith(pre))  # noqa: E731
+        clean = lambda d: {k: v for k, v in d.items() if not k.startswith("_")}  # noqa: E731
+        Qr = qrole("q8", c)
+        g1, g2 = f"nmp_gate_same_q8_{c}", f"nmp_gate_bank_q8_{c}"
+        mk = lambda tid, b, f, deps, k: {"id": tid, "kind": "fork", "model": "q8", "gpus": 2, "node": NODES[k % 3],  # noqa: E731
+                                         "priority": prio, "deps": deps, "B": b, "Q": Qr, "fork": f, "note": note}
+        T += [mk(g1, Qr, {**clean(get("gate_same")), "fail_loud": True}, [], i), mk(g2, B, clean(get("bank gate")), [], i + 1)]
+        for j, (f, s) in enumerate(zip(get("panel tasks"), get("token scores"))):
+            tid = f"nmp_tau2_q8_{c}_{f['blocks'][0]}"
+            T += [mk(tid, B, clean(f), [g1, g2], i + j), mk(tid.replace("nmp_tau2_", "nmp_score_", 1), B, clean(s), [tid], i + j)]
+        i += 1
+    return T
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--gate", action="store_true")
     ap.add_argument("--blocks", nargs="*", default=[])
     ap.add_argument("--q0", action="store_true")
+    ap.add_argument("--nmp-phase2", nargs="+", default=None, metavar="CELL")
+    ap.add_argument("--priority", type=int, default=-17, help="--nmp-phase2 tasks")
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args()
     sha = hashlib.sha256((ROOT / MAN).read_bytes()).hexdigest()
@@ -66,13 +100,17 @@ def main():
                               "deps": [f"bank_u_{m}_{c}_{blk}"], "B": {"ckpt": {"kind": "bf16"}}, "Q": qrole(m, "gptq_w4_d1"),
                               "fork": spec, "note": "W70 Bank U Q0 controller (make_tasks_bank_u.py --q0; FORK_PROTOCOL §15 amendment 1)"})
                     i += 1
+    if a.nmp_phase2:
+        T = nmp_phase2(a.nmp_phase2, a.priority)
     for t in T:
-        print(t["id"], t["gpus"], t.get("node", ""), t["fork"]["blocks"])
+        print(t["id"], t["gpus"], t.get("node", ""), t["fork"].get("blocks"), t["deps"])
     if a.write:
         n = 0
         for t in T:
-            if not any((Q / d / f"{t['id']}.json").exists() for d in ("todo", "running", "done", "failed")):
-                json.dump(t, open(Q / "todo" / f"{t['id']}.json", "w"), indent=1)
+            if not any((Q / d / f"{t['id']}.json").exists() for d in ("todo", "running", "done", "failed", "deferred")):
+                tmp = Q / "todo" / f".tmp_{t['id']}"  # atomic: never a partial *.json in todo
+                tmp.write_text(json.dumps(t, indent=1))
+                os.replace(tmp, Q / "todo" / f"{t['id']}.json")
                 n += 1
         print("wrote", n)
 

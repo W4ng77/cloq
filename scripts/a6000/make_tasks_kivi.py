@@ -10,7 +10,10 @@ paper's settings: group 32, residual 128 (W99t gate: analysis/fork/kivi_gate/GAT
   ext_q8_<cell>_bfcl_nmp1      BFCL closed-loop Q run on the 200 panel items, deps both gates
   nmp_bfcl_q8_<cell>_<cat>     fork_ext dev per category, deps the BFCL run + ext_q8_bf16_bfcl_eval
 
-usage: python scripts/a6000/make_tasks_kivi.py --cells kivi_k4v4,kivi_k2v2 [--write] [--priority -24]
+--phase 2 (W100r): only nmp_tau2 / nmp_score for f04-f06 (deps: both gates, --gate-suffix _fx for the A4.2 gates), refused
+unless the written record analysis/fork/newmethod/expansion_q8.json has expand = true and lists the cell in phase2_cells.
+
+usage: python scripts/a6000/make_tasks_kivi.py --cells kivi_k4v4,kivi_k2v2 [--write] [--priority -24] [--phase 2 --score-priority P]
 """
 from __future__ import annotations
 
@@ -32,14 +35,14 @@ def role(cell):
                                                     "CLOQ_KIVI_GROUP": "32", "CLOQ_KIVI_RESID": "128"}}
 
 
-def spec(cell):
+def spec(cell, phase=1):
     out = subprocess.run([sys.executable, str(ROOT / "scripts/a6000/make_newmethod_panel.py"), "spec", "--model", "q8",
-                          "--cell", cell], capture_output=True, text=True, check=True, cwd=ROOT).stdout
+                          "--cell", cell, "--phase", str(phase)], capture_output=True, text=True, check=True, cwd=ROOT).stdout
     return json.loads(out)
 
 
-def tasks(cell, prio, gate_suffix="", gate_prio=None):
-    s = spec(cell)
+def tasks(cell, prio, gate_suffix="", gate_prio=None, phase=1, score_prio=None):
+    s = spec(cell, phase)
     get = lambda pre: next(v for k, v in s.items() if k.startswith(pre))  # noqa: E731
     Q, B = role(cell), {"ckpt": {"kind": "bf16"}}
     clean = lambda d: {k: v for k, v in d.items() if not k.startswith("_")}  # noqa: E731
@@ -58,8 +61,11 @@ def tasks(cell, prio, gate_suffix="", gate_prio=None):
                   "deps": [g1, g2], "B": B, "Q": Q, "fork": clean(f), "note": NOTE})
     for f in get("token scores"):
         blk = f["blocks"][0]
-        T.append({"id": f"nmp_score_q8_{cell}_{blk}", "kind": "fork", "model": "q8", "gpus": 2, "priority": prio,
+        T.append({"id": f"nmp_score_q8_{cell}_{blk}", "kind": "fork", "model": "q8", "gpus": 2,
+                  "priority": prio if score_prio is None else score_prio,
                   "deps": [f"nmp_tau2_q8_{cell}_{blk}"], "B": B, "Q": Q, "fork": clean(f), "note": NOTE})
+    if phase == 2:  # f04-f06 panel + scores only: gates already ran, the BFCL panel has no expansion (protocol §5)
+        return [t for t in T if t["id"].startswith(("nmp_tau2_", "nmp_score_"))]
     r = get("BFCL closed-loop")
     T.append({"id": r["run_id"], "kind": "eval", "env": "bfcl", "model": "q8", "arm": cell, "priority": prio,
               "deps": [g1, g2], "serve_env": Q["serve_env"], "ckpt": Q["ckpt"], "domains": r["domains"],
@@ -80,10 +86,17 @@ def main():
     ap.add_argument("--gate-suffix", default="", help="gate task-id / output-dir suffix, e.g. _fx (protocol A4.2)")
     ap.add_argument("--gate-priority", type=int, default=None)
     ap.add_argument("--no-bfcl", action="store_true", help="tau2 panel only (A4.1: kivi_k16v16)")
+    ap.add_argument("--phase", type=int, default=1, choices=(1, 2), help="2 = f04-f06 panel + scores after the expansion record")
+    ap.add_argument("--score-priority", type=int, default=None, help="token-score tasks (default --priority)")
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args()
+    if a.phase == 2:
+        rp = ROOT / "analysis/fork/newmethod/expansion_q8.json"
+        rec = json.load(open(rp)) if rp.exists() else {}
+        if rec.get("expand") is not True or not set(a.cells.split(",")) <= set(rec.get("phase2_cells", [])):
+            raise SystemExit(f"phase 2 refused: expand={rec.get('expand')}, phase2_cells={rec.get('phase2_cells')}")
     for cell in a.cells.split(","):
-        for t in tasks(cell, a.priority, a.gate_suffix, a.gate_priority):
+        for t in tasks(cell, a.priority, a.gate_suffix, a.gate_priority, a.phase, a.score_priority):
             if a.no_bfcl and "bfcl" in t["id"]:
                 continue
             if a.only and not any(t["id"].startswith(p) for p in a.only.split(",")):
