@@ -177,7 +177,11 @@ def main():
     run_dir = C.RUNS_DIR / args.run_id / args.domain
     run_dir.mkdir(parents=True, exist_ok=True)
     status_path = run_dir / "status.json"
-    if status_path.exists() and json.load(open(status_path)).get("status") == "completed":
+    rerun = None
+    if os.environ.get("CLOQ_RERUN_OUTAGE") == "1":  # W100w: re-run only the outage episodes (cloq/rerun_outage.py)
+        from cloq import rerun_outage as RO
+        rerun = RO.plan(run_dir)
+    if rerun is None and status_path.exists() and json.load(open(status_path)).get("status") == "completed":
         print(f"{run_dir} already completed; skipping")
         return
 
@@ -203,6 +207,8 @@ def main():
         # keep the requested order
         order = {t: i for i, t in enumerate(task_ids)}
         tasks = sorted(tasks, key=lambda t: order[t.id])
+    # W100w: a re-run runs only rerun["todo"] and writes its own artifacts in rerun["dir"]; merged into run_dir below
+    run_list, out_dir = (tasks, run_dir) if rerun is None else (RO.subset(tasks, rerun), rerun["dir"])
 
     bench = C.FROZEN["benchmark"]
     cfg = TextRunConfig(
@@ -220,7 +226,7 @@ def main():
         max_concurrency=args.max_concurrency,
         log_level="ERROR",
         save_to=f"{args.run_id}_{args.domain}",
-        task_ids=[t.id for t in tasks],
+        task_ids=[t.id for t in run_list],
         task_split_name="base",
         max_retries=1,
         auto_resume=True,
@@ -235,39 +241,44 @@ def main():
         loop_guard = {"policy": os.environ["CLOQ_LOOP_GUARD"], "code_sha256": LG.code_sha(),
                       "pinned_sha256": os.environ.get("CLOQ_LOOP_GUARD_SHA"), "window": LG.WINDOW,
                       "min_repeats": LG.MIN_REPEATS, "max_cycle": LG.MAX_CYCLE, "log": "loop_guard.jsonl"}
-    (run_dir / "config.json").write_text(json.dumps({
+    (out_dir / "config.json").write_text(json.dumps({
         "run_id": args.run_id, "arm": args.arm, "domain": args.domain, "note": args.note,
         "checkpoint": args.checkpoint, "frozen": C.FROZEN, "loop_guard": loop_guard,
         "tau2_run_config": json.loads(cfg.model_dump_json()),
         "evaluation_type_at_run": "all_ignore_basis (DB/ENV_ASSERTION/ACTION/COMMUNICATE computed; NL assertions judged offline by cloq.nl_judge;"
                                   " official_reward = product over the task's own reward_basis, the telecom primary endpoint)",
     }, indent=2))
-    (run_dir / "environment.json").write_text(json.dumps(environment_json(args.agent_base, args.user_base), indent=2))
-    (run_dir / "model.json").write_text(json.dumps({
+    (out_dir / "environment.json").write_text(json.dumps(environment_json(args.agent_base, args.user_base), indent=2))
+    (out_dir / "model.json").write_text(json.dumps({
         "hf_id": C.MODEL_ID, "revision": C.MODEL_REVISION, "arm": args.arm, "checkpoint": args.checkpoint,
         "agent_server_models": served_model_info(args.agent_base),
         "user_server_models": served_model_info(args.user_base),
     }, indent=2))
-    (run_dir / "task_manifest.json").write_text(json.dumps({
-        "domain": args.domain, "task_ids": [t.id for t in tasks], "n_tasks": len(tasks),
+    (out_dir / "task_manifest.json").write_text(json.dumps({
+        "domain": args.domain, "task_ids": [t.id for t in run_list], "n_tasks": len(run_list),
         "task_split": "base", "tau2_commit": _git_rev(C.TAU2_DIR),
     }, indent=2))
-    status = {"status": "running", "started": datetime.now(timezone.utc).isoformat(), "n_tasks": len(tasks)}
+    status = {"status": "running", "started": datetime.now(timezone.utc).isoformat(), "n_tasks": len(run_list)}
+    status_path = out_dir / "status.json"
     status_path.write_text(json.dumps(status, indent=2))
 
-    set_decision_writer(run_dir / "decisions.jsonl", run_meta)
+    set_decision_writer(out_dir / "decisions.jsonl", run_meta)
     t0 = time.time()
     try:
         results = run_tasks(
-            cfg, tasks,
-            save_path=run_dir / "tau2_results.json",
-            save_dir=run_dir / "tau2_logs",
+            cfg, run_list,
+            save_path=out_dir / "tau2_results.json",
+            save_dir=out_dir / "tau2_logs",
             evaluation_type=EvaluationType.ALL_IGNORE_BASIS,
             console_display=False,
         )
     finally:
         close_decision_writer()
     elapsed = time.time() - t0
+    if rerun is not None:  # W100w: merge the re-run into the run-domain (originals archived in rerun["dir"]/orig)
+        status_path.write_text(json.dumps(dict(status, status="rerun_done", elapsed_seconds=elapsed), indent=2))
+        results, status = RO.merge(run_dir, rerun, status, elapsed)
+        status_path = run_dir / "status.json"
 
     task_by_id = {t.id: t for t in tasks}
     n_ok = 0
@@ -305,6 +316,8 @@ def main():
         "elapsed_seconds": elapsed, "n_simulations": n_ok,
     })
     status_path.write_text(json.dumps(status, indent=2))
+    if rerun is not None:
+        RO.done(rerun, status)
     print(json.dumps({k: v for k, v in metrics.items() if not isinstance(v, (list, dict))}, indent=2))
     print(f"status={status['status']} elapsed={elapsed:.0f}s -> {run_dir}")
 
