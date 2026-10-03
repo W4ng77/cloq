@@ -553,15 +553,96 @@ With a matched rotated reference, the q4 interaction is $-9.0$ [$-30.6$, $+12.5$
 The pre-registered q8 replication gives $+2.1$ [$-5.8$, $+10.1$] over 6 blocks, crossed [$-8.2$, $+12.4$]. The replication is not supported, and we make no W$\times$KV claim. % src: analysis/ahook/out/wakv_20261001T094405Z.md
 
 \paragraph{Static precision restoration (appendix only).} We tested whether restoring selected modules to higher precision recovers a damaged RTN-W3 model. We report this line as a mechanism stress test, not a method. In RTN-W3 the gains largely tracked the number of restored bits. A random MLP arm also recovered much of the gap, and no arm beat whole-model GPTQ-W4 at matched storage. % src: docs/RESEARCH_LOG.md W67, W64
-A q8 RTN-W3 comparison of restored attention against byte-matched random attention is incomplete, and we report no result from it. The W4 restoration comparison below is a separate, pre-specified design. % src: docs/RESEARCH_LOG.md W67, W74 (restoration line paused); /data/ziyangs/cloq_work/queue/done/pert_q8_rtn_w3_restore_*attn*_q345.json; /data/ziyangs/cloq_work/queue/*/pert_q8_rtn_w3_restore_rand_attn_s*_q345.json
+Its comparison with byte-matched random modules, incomplete when the line was paused, is reported below for the cells that have since finished. % src: docs/RESEARCH_LOG.md W67, W74 (restoration line paused); analysis/fork/out/backfill_20261003T193042Z.md (§1)
 
 \paragraph{Success equivalence.} Not established (Table~\ref{tab:e2e}).
 
-% Former Appendix "Supplementary Perturbation Analyses" (merged here, W99n). Deletion rule: see the top of this file.
+% Former Appendix "Supplementary Perturbation Analyses" (merged here, W99n). Deletion rule: see the top of this file. Slots filled in W100x (RESEARCH_LOG) from analysis/fork/out/backfill_20261003T193042Z.md.
 \paragraph{Supplementary perturbation analyses (exploratory).} These analyses perturb the quantized weights directly instead of forking trajectories, and they enter no claim in the main text. Each derived checkpoint takes every decoder linear from the BF16 model, from Q, or from an interpolation between them; all other tensors come from the BF16 model, and the endpoints reproduce BF16 and Q bit for bit. % src: docs/insights/PERTURBATION_PROTOCOL.md (TL;DR; §1)
-\emph{Restoration location versus random modules.} On the GPTQ-W4 and AWQ-W4 checkpoints, restoring the BF16 weights of one layer third, of attention only or of the MLP only is compared with restoring randomly chosen modules with the same number of BF16 parameter bytes. \pending{[result pending: closed-loop success of located vs.\ byte-matched random restoration, with intervals]}. % src: docs/insights/PERTURBATION_PROTOCOL.md §2.1
-\emph{Error dose.} The residual intervention $W_\alpha=W+\alpha(W_{\mathrm{Q}}-W)$ scales the quantizer's own weight error, with $\alpha\in\{0, 0.25, 0.5, 1, 2\}$; it is not a bit width. \pending{[result pending: action agreement with BF16 and closed-loop success as functions of $\alpha$]}. % src: docs/insights/PERTURBATION_PROTOCOL.md §2.2
-\emph{Low-bit failure modes.} \pending{[result pending: how W3 and lower-bit checkpoints fail in closed loop, by failure category]}.
+Only finished end-to-end runs enter: q4 and q8, 85 tasks on each of three nonce blocks per cell (q3--q5 for W3, the development blocks f01--f03 for W4), with outage episodes excluded and context overflow counted as failure. Intervals are fixed-pool $t$ intervals over the three blocks, with crossed task$\times$block intervals alongside; there is no correction for multiplicity. % src: analysis/fork/out/backfill_20261003T193042Z.md (header; §1, §2)
+
+\emph{Restoration location versus random modules.} Restoring the BF16 weights of one layer third, of attention only or of the MLP only is compared with restoring randomly chosen modules with the same number of BF16 parameter bytes (mean over the finished random draws, up to three), on the same task$\times$block units (Table~\ref{tab:restoreloc}). % src: docs/insights/PERTURBATION_PROTOCOL.md §2.1
+In RTN-W3, where Q succeeds in 12.9\% (q4) and 13.3\% (q8) of episodes against 35.7\% and 30.6\% for BF16, restoring attention beat byte-matched random modules by $+9.8$ [$+6.1$, $+13.6$]\pp{} (q4 and q8 pooled; crossed [$+4.5$, $+15.1$]), and restoring the last third did worse than random, $-8.6$ [$-13.4$, $-3.8$] (crossed [$-12.9$, $-4.7$]); the middle third ($+4.5$, crossed [$-0.1$, $+9.4$]) and the MLP ($-5.4$ [$-14.1$, $+3.3$]) are not resolved. % src: analysis/fork/out/backfill_20261003T193042Z.md (TL;DR 1; §1 pooled table; §2, a = 0 and a = 1 rows)
+In GPTQ-W3, where Q and BF16 succeed about equally often, and in q4 GPTQ-W4 and q8 AWQ-W4, none of the 30 contrasts excludes zero under both intervals; of all 39, the three that do are RTN-W3 contrasts. % src: analysis/fork/out/backfill_20261003T193042Z.md (TL;DR 1)
+At the first divergent state itself (one decision, one random draw), restoring attention returned Q's action to B's more often than random modules did (q4 RTN-W3 $+20.7$ [$+6.3$, $+35.0$]\pp{}; GPTQ-W3 pooled $+35.7$ [$+27.3$, $+44.1$]), and restoring the last third did so less often (q4 RTN-W3 $-44.6$); in GPTQ-W3 this action effect has no counterpart in success ($+1.6$ [$-4.8$, $+7.9$]). % src: analysis/fork/out/backfill_20261003T193042Z.md (TL;DR 1; §1 pivot table and pooled table)
+Not finished, hence not reported: the q4 RTN-W3 early third, the third random draw for attention in both RTN-W3 models and for the q4 RTN-W3 MLP, and the q8 RTN-W3 pivot arms, so the pre-declared pivot-arm selection never ran. % src: analysis/fork/out/backfill_20261003T193042Z.md (§1, incomplete contrasts and unfinished arm runs)
+
+\begin{table*}[t]
+\centering
+\resizebox{\textwidth}{!}{\begin{tabular}{@{}lccccccc@{}}
+\toprule
+ & \multicolumn{3}{c}{RTN-W3 (q3--q5)} & \multicolumn{2}{c}{GPTQ-W3 (q3--q5)} & q4 GPTQ-W4 & q8 AWQ-W4 \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-6}
+Located arm & q4 & q8 & q4+q8 & q4 & q8 & (f01--f03) & (f01--f03) \\
+\midrule
+Success Q / BF16 (\%) & 12.9 / 35.7 & 13.3 / 30.6 & & 36.1 / 35.7 & 26.7 / 30.6 & 43.9 / 33.7 & 32.5 / 31.4 \\
+\midrule
+Early third & n.f. & $-2.1$ [$-10.0$, $+5.8$] & & $+2.7$ [$-3.3$, $+8.8$] & $+0.4$ [$-1.6$, $+2.3$] & $+5.6$ [$-1.7$, $+12.9$] & $-1.4$ [$-10.2$, $+7.3$] \\
+Middle third & $\mathbf{+6.9}$ [$+0.1$, $+13.6$] & $+2.2$ [$-1.7$, $+6.2$] & $+4.5$ [$+2.7$, $+6.3$] & $-4.7$ [$-12.4$, $+3.0$] & $-4.3$ [$-16.8$, $+8.1$] & $-1.0$ [$-7.0$, $+4.9$] & $+1.3$ [$-5.3$, $+7.9$] \\
+Last third & $-7.7$ [$-15.6$, $+0.2$] & $\mathbf{-9.5}$ [$-13.5$, $-5.6$] & $\mathbf{-8.6}$ [$-13.4$, $-3.8$] & $+1.6$ [$-8.7$, $+11.8$] & $-0.4$ [$-17.6$, $+16.8$] & $-0.3$ [$-10.8$, $+10.2$] & $-1.0$ [$-5.0$, $+2.9$] \\
+Attention & $\mathbf{+12.2}^{\ast}$ [$+4.1$, $+20.2$] & $+7.5^{\ast}$ [$-1.5$, $+16.4$] & $\mathbf{+9.8}$ [$+6.1$, $+13.6$] & $+5.9$ [$+0.8$, $+10.9$] & $-2.7$ [$-10.4$, $+4.9$] & $+0.8$ [$-18.4$, $+20.0$] & $-0.5$ [$-5.1$, $+4.1$] \\
+MLP & $-9.6^{\ast}$ [$-21.8$, $+2.6$] & $-1.2$ [$-6.3$, $+4.0$] & $-5.4$ [$-14.1$, $+3.3$] & $-1.4$ [$-10.5$, $+7.6$] & $-3.0$ [$-4.1$, $-1.9$] & $+0.1$ [$-5.4$, $+5.7$] & $+6.0$ [$-7.2$, $+19.2$] \\
+\bottomrule
+\end{tabular}}
+\caption{Restoration location versus byte-matched random modules (exploratory). Closed-loop success of the located arm minus the mean success of random module sets with the same BF16 parameter bytes (three draws; $^{\ast}$two draws, the third did not finish), pp, paired on 253--255 task$\times$block units per cell; fixed-pool 95\% $t$ interval over three blocks. Bold: the crossed task$\times$block interval also excludes zero (crossed intervals and per-draw success in the analysis output). q4+q8: equal-weight pool. n.f.: not finished. GPTQ-W3 arms swap BF16 modules into the sequentially calibrated checkpoint (re-calibrated variants in the analysis output). In the W4 cells Q is not worse than BF16 on these blocks, so a difference there is not a recovery.} % src: analysis/fork/out/backfill_20261003T193042Z.md (§1 tables; §2, a = 0 and a = 1 rows)
+\label{tab:restoreloc}
+\end{table*}
+
+\emph{Error dose.} The residual intervention $W_\alpha=W+\alpha(W_{\mathrm{Q}}-W)$ scales the quantizer's own weight error, with $\alpha\in\{0, 0.25, 0.5, 1, 2\}$; it is not a bit width (Table~\ref{tab:dose}). % src: docs/insights/PERTURBATION_PROTOCOL.md §2.2
+Agreement with BF16's actions fell at every step of $\alpha$ in all six cells, with both intervals of every step below zero; in q8 RTN-W3, the share of BF16's decisions before the first differing action is 1, 0.32, 0.16 and 0.04 at $\alpha=0$, 0.25, 0.5 and 1. Success did not follow. No success step up to $\alpha=0.5$ is resolved under both intervals (in RTN-W3 the point estimates at $\alpha=0.25$ lie above BF16, 40.0 and 36.5\% against 35.7 and 30.6\%), and success fell between $\alpha=0.5$ and 1 only in RTN-W3, by $-20.8$ [$-22.5$, $-19.1$]\pp{} in q4 (crossed [$-29.8$, $-11.8$]) and $-14.1$ [$-26.9$, $-1.4$] in q8 (crossed [$-24.7$, $-3.9$]). % src: analysis/fork/out/backfill_20261003T193042Z.md (TL;DR 2; §2)
+In GPTQ-W3, q4 GPTQ-W4 and q8 AWQ-W4 no success step is resolved under both intervals; doubling the q8 AWQ-W4 error ($\alpha=2$) changed success by $-10.6$ [$-16.4$, $-4.7$]\pp{} (crossed [$-20.8$, $0.0$]). The $\alpha=2$ arms of the four W3 cells did not finish. The action response to the error dose is thus monotone, whereas success shows only a drop between half and full RTN-W3 error. % src: analysis/fork/out/backfill_20261003T193042Z.md (TL;DR 2; §2 step tables)
+
+\begin{table}[h]
+\centering
+\resizebox{\columnwidth}{!}{\begin{tabular}{@{}lccccc@{}}
+\toprule
+Cell & $\alpha=0$ (BF16) & 0.25 & 0.5 & 1 (Q) & 2 \\
+\midrule
+q4 RTN-W3 & 35.7 (1) & 40.0 (0.362) & 33.7 (0.225) & 12.9 (0.088) & n.f. \\
+q8 RTN-W3 & 30.6 (1) & 36.5 (0.319) & 27.5 (0.162) & 13.3 (0.043) & n.f. \\
+q4 GPTQ-W3 & 35.7 (1) & 37.6 (0.508) & 36.1 (0.406) & 36.1 (0.234) & n.f. \\
+q8 GPTQ-W3 & 30.6 (1) & 29.4 (0.397) & 29.0 (0.297) & 26.7 (0.176) & n.f. \\
+q4 GPTQ-W4 & 33.7 (1) & 38.0 (0.572) & 38.4 (0.504) & 43.9 (0.424) & 37.6 (0.238) \\
+q8 AWQ-W4 & 31.4 (1) & 31.0 (0.392) & 32.5 (0.309) & 32.5 (0.194) & 22.0 (0.058) \\
+\bottomrule
+\end{tabular}}
+\caption{Error dose (exploratory): closed-loop success (\%) of $W_\alpha$ and, in parentheses, action agreement with BF16 (share of BF16's decisions before the first differing action; 1 = identical). 255 task$\times$block units per cell over three blocks; action agreement on 245 units for q4 RTN-W3, whose other 10 units contain an episode that ended in context overflow and has no message record. n.f.: not finished. Intervals of every step are in the analysis output.} % src: analysis/fork/out/backfill_20261003T193042Z.md (§2)
+\label{tab:dose}
+\end{table}
+
+\emph{Low-bit failure modes.} Table~\ref{tab:failmodes} assigns every finished, non-outage retail and airline episode to one ending (descriptive). BF16 failures nearly all end normally in a wrong end state (57.6--63.9\% of episodes; at most 6.3\% end otherwise), and GPTQ-W3 keeps this profile (1.8--9.0\% abnormal endings). RTN-W3 and q4 AWQ-W3 move failures to episodes that never end normally or never issue a parsed tool call. % src: analysis/fork/out/backfill_20261003T193042Z.md (TL;DR 3; §3)
+q4 RTN-W3 runs away (context overflow or the 200-step cap) in 32.9\% of episodes; in 44.7\% it ends normally after writing its tool calls as plain JSON, which the frozen tool parser does not accept. No q4 RTN-W3 episode issues a parsed write call, and none of its 33 successes is on a task that requires a write. q8 RTN-W3 runs away in 20.4\% of episodes and hits the cap of 10 failed tool calls in 16.9\%. In the W2 panel (24 tasks, one block, loop guard on), 66.7--87.5\% of episodes run away. No episode ended on an unparseable output. KV-INT3 (q4, q8, q14), Gaussian weight noise on q14, q32 RTN-W3 and the q4 RTN-W2 panel had not finished. % src: analysis/fork/out/backfill_20261003T193042Z.md (TL;DR 3; §3 table and unfinished runs)
+
+\begin{table}[h]
+\centering
+\resizebox{\columnwidth}{!}{\begin{tabular}{@{}lrrrrrrrr@{}}
+\toprule
+Cell & $n$ & Succ. & Run. & Err. & Text & No wr. & Tool & Args \\
+\midrule
+q4 BF16 & 255 & 35.7 & 0.4 & 0.0 & 0.4 & 14.9 & 23.9 & 24.7 \\
+q4 GPTQ-W3 & 255 & 36.1 & 1.2 & 1.2 & 0.4 & 14.9 & 24.7 & 21.6 \\
+q4 AWQ-W3 & 253 & 19.4 & 16.6 & 0.0 & 30.8 & 32.8 & 0.4 & 0.0 \\
+q4 RTN-W3 & 255 & 12.9 & 32.9 & 0.0 & 44.7 & 9.4 & 0.0 & 0.0 \\
+\midrule
+q8 BF16 & 255 & 30.6 & 3.5 & 2.7 & 0.0 & 8.2 & 31.0 & 23.9 \\
+q8 GPTQ-W3 & 255 & 26.7 & 4.3 & 4.7 & 1.6 & 9.8 & 30.6 & 22.4 \\
+q8 AWQ-W3 & 255 & 14.9 & 3.1 & 11.4 & 0.4 & 13.3 & 35.3 & 21.6 \\
+q8 RTN-W3 & 255 & 13.3 & 20.4 & 16.9 & 6.7 & 12.2 & 16.1 & 14.5 \\
+q8 GPTQ-W2$^{\dagger}$ & 24 & 12.5 & 66.7 & 0.0 & 0.0 & 20.8 & 0.0 & 0.0 \\
+q8 RTN-W2$^{\dagger}$ & 24 & 0.0 & 87.5 & 0.0 & 0.0 & 12.5 & 0.0 & 0.0 \\
+\midrule
+q14 BF16 & 85 & 42.4 & 0.0 & 0.0 & 0.0 & 7.1 & 30.6 & 20.0 \\
+q14 GPTQ-W3 & 425 & 33.9 & 0.7 & 1.9 & 0.2 & 16.2 & 27.1 & 20.0 \\
+q14 RTN-W3 & 425 & 23.5 & 11.3 & 1.4 & 1.9 & 15.1 & 24.5 & 22.4 \\
+\midrule
+q32 BF16 & 85 & 38.8 & 0.0 & 0.0 & 0.0 & 10.6 & 31.8 & 18.8 \\
+q32 GPTQ-W3 & 170 & 40.0 & 0.6 & 1.2 & 0.0 & 4.1 & 28.2 & 25.9 \\
+q32 noise$^{\ddagger}$ & 82 & 17.1 & 12.2 & 9.8 & 9.8 & 24.4 & 11.0 & 15.9 \\
+\bottomrule
+\end{tabular}}
+\caption{Low-bit failure modes (descriptive): share (\%) of $n$ finished, non-outage retail and airline episodes by how the episode ends, one category per episode, assigned in column order. Succ.: DB success. Run.: no normal ending (context overflow, 200-step cap, or the W2 loop-guard stop). Err.: stopped after 10 failed tool calls. Text: normal ending; a required write was never issued as a parsed call while the agent wrote tool calls as plain text. No wr.: normal ending; a write was required and none was attempted. Tool: the set of write tools called differs from the required set. Args: same write tools, wrong end state. q4 and q8: blocks q3--q5; q14 W3: five blocks; q32 GPTQ-W3: two blocks; q14 and q32 BF16: one run. $^{\dagger}$24-task W2 panel, one block, loop guard on. $^{\ddagger}$Gaussian weight noise at three times the RTN-W4 error norm, one seed. Outage episodes excluded: 2 (q4 AWQ-W3) and 3 (q32 noise). A6000 runs only.} % src: analysis/fork/out/backfill_20261003T193042Z.md (§3)
+\label{tab:failmodes}
+\end{table}
 
 \section{Provenance}
 \label{app:figsrc}
