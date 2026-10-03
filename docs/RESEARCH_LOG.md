@@ -10,6 +10,20 @@ Newest first.
 
 ---
 
+## W100ab - GPT 10-03 review executed: disk margin, KIVI/q8 arm recovery amendment A7, common-state relabel, q8 phase-1 scheduling (2026-10-03 16:55 PDT)
+
+**TL;DR** Four changes. (1) Disk: 2.4 GB free, steady burn about 0.2-0.4 GB/h plus merge bursts, and 4.2 GB freed at 00:00. The disk guard now parks low-priority todo tasks (priority >= -23) below 3 GB, was 0.7, and unparks above 6 GB. Running tasks are untouched. (2) NEWMETHOD **A7** (commit 10a5518, 16:44 PDT; the header says 16:50, the commit time is authoritative): one controlled re-run of the 31 q8 phase-1 arms that stopped on a server-side error (kivi_k2v2 10 Timeout, kivi_k4v4 f01 12 InternalServerError, spinquant_w4a4 f01 9 Timeout), using recorded actions, the original state, checkpoint, kernel and budgets, concurrency 1. Arms that fail again stay missing. The pre-re-run and strict views are reported. P3 never falls back to k4v4 for missing blocks. Protocol sha **ba743cee**; committed before expansion_q8.json existed. (3) Paper §5 relabelled "after the fixed extension"; Pocock is a sensitivity analysis (about 97% difference, 94% equivalence); the continuation-interaction conjecture is withdrawn; new framing: sensitivity, extra value and gain are separate quantities. (4) The 7 waiting m24 score tasks are pinned to node004/008/009/002, so the other runners stop holding pairs. nmp_tau2_q8_spinquant_w4a4_f03 was claimed within a minute (node006, 16:48).
+
+- **Correction to the 16:20 report.** The common-state two-look reading uses about 97.06% intervals for a difference and **about 93.92%** for equivalence (TOST 0.0304 per side), not 97% for both.
+- **A7 code.**
+  - `fork_driver.py`, `bank_u_arms`: named failed arms only. The state is rebuilt and must equal the original row; the current actions are the recorded ones; the Q shadow is a check only; the original block is read only. CPU stub test: 4 states identical, 87 original files unchanged, refusals work.
+  - `analyze_newmethod.py`: `a7_apply`, `a7_records`, `load_tau2(recovery=)`, the `prerecovery` view, an A7 report, `P3_K2V2_GATE_FAILED = False`. `--selftest` PASS, including A7. `--dry` with no recovery records matches the old code (q8, m24). The expansion dry run passes the guard.
+  - `scripts/a6000/make_tasks_a7.py`: queues one task per (cell, block) from the classified list. It runs only after `analysis/fork/kivi_recovery/failed_arms.json` (log forensics, read-only, still running) is committed.
+- **Scope check.** m24 has no non-A6 infrastructure arm error. Its arm errors are InvalidFunctionCallException, plus JSONDecodeError in rtn_w4 f03 and f04, which is agent output under E1.2.
+- **Pending.** CPU check of the D2.1 replay mismatch (8/9): a subagent is comparing the two trajectories decision by decision and the determinism acceptance range.
+
+Evidence: `docs/insights/NEWMETHOD_PANEL_PROTOCOL.md` (A7), `scripts/a6000/{fork_driver,make_tasks_a7}.py`, `analysis/fork/analyze_newmethod.py`, `paper/latex/sections/{results_r2,appendix_moved}.tex` (3423096), `/data/ziyangs/cloq_work/tools/disk_guard2.sh`, `/data/ziyangs/cloq_work/logs/disk_guard.log`, `queue/todo/nmp_score_m24_*.json` requeue_note.
+
 ## W100aa - Common-state q8 confirmatory reading (K = 6): not resolved; paper §5 updated; q8 rotation tasks unpinned (2026-10-03 16:20 PDT)
 
 **TL;DR** The once-only q8 K = 6 reading ran at 16:12 (commonstate_readings.sh). Confirmatory Pocock two-look: K(d1) = +1.0 pp (t97 [-4.2, +6.2], boot97 [-1.4, +3.5]) and K(BF16) = +0.8 pp (t97 [-2.2, +3.8], boot97 [-2.0, +3.7]), both **not resolved**. Unadjusted K(BF16) would pass TOST within ±3 pp; the confirmatory reading does not. The first look's interaction (+2.7) does not persist (-0.2 [-4.5, +4.1]). Without the 26 D2.1 states: +0.5 / +0.8, not resolved. Paper §5, the appendix and F8 now carry the K = 6 reading (commit cfcff97; check_numbers PASS; build OK).
