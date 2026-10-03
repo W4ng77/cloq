@@ -10,6 +10,14 @@ Newest first.
 
 ---
 
+## W100n — g12 (google/gemma-4-12B-it) second-family gate: protocol frozen, gate queued at −21; no g12 outcome yet (2026-10-02 22:42 PDT)
+**TL;DR** A time-boxed second-family gate (GPT-6.1 approved; ≤ 6 h engineering from 22:27, ≤ 24 GPU-h) for Gemma 4 12B, reusing the m24 pipeline. Model pinned at 707f0a3b…, served text-only (the 666 `model.language_model.*` tensors byte-identical, as `Gemma4ForCausalLM`, the class vLLM's own multimodal wrapper builds), official template, vLLM `gemma4` tool parser, thinking off. B = BF16, Q = RTN-W4 g128 (`cloq.compress`, 328 linears). Admission = measurable and replayable only: exact tool protocol, state/budget restore, QQ/BB no-ops, same-checkpoint control, and BF16 success ≥ 10% on τ² and on BFCL (the floor that failed l8). Frozen hash-selected gate samples are disjoint from the formal panels. 11 tasks queued at −21.
+- **Rendering.** vLLM detects the `openai` content format for the Gemma 4 template, so the server renders content as text parts (the system turn gains a trailing space). Local rendering emulates exactly that step, for Gemma-4 ids only (`cloq/context_policy.py::_openai_parts`); it gives the same message list as `vllm…parse_chat_messages` on a tool-call conversation.
+- **GPTQ readiness.** Gemma 4 alternates sliding and full attention, with different rotary tables and masks per type, and its full layers have no `v_proj` (K = V). `cloq/quantize.py` captures per-type layer kwargs and skips the absent module, only when the model type is `gemma4*`. CPU test: exact equality with the model forward; Qwen3 is unchanged.
+- **Shared-file changes**, all model-gated and no-op otherwise: models.json `g12`, `cloq/context_policy.py`, `cloq/quantize.py`. worker.py, noderunner.py and serve.sh are unchanged.
+
+Evidence: `analysis/fork/g12_gate/{GATE.md,test_gptq_gemma4_kwargs.py,test_gptq_gemma4_kwargs.out}`, `scripts/a6000/{g12_textonly,make_tasks_g12}.py`, `manifests/a6k2/g12/gate_tau2_v1.json`, `manifests/bfcl/bfcl_mt_g12_v1.json`, `/data/ziyangs/cloq_work/ckpt_cache/g12_textonly_v1/textonly.json` (cluster), queue `todo/*g12*.json`.
+
 ## W100m — Paper: abstract and §4 restated on the Holm W4 G−H family without a model regularity; Fig. 2 split into main (four W4 cells + pool, Holm-consistent intervals) and supplementary panels (2026-10-02 PDT)
 **TL;DR** GPT-6.1 fixes, all from existing data.
 - **Abstract.** The sentence now reads: "On the fixed task pool, action replacement outperforms continuation takeover for both Qwen3-8B W4 methods (by 2.9 and 3.4 pp; Holm-adjusted p = .013 and .012 across four comparisons). Qwen3-4B point estimates favor continuation takeover, but neither contrast is significant. All four new-task intervals include zero, limiting this exploratory finding to the fixed task pool." The 4B values stay in the text and the figure.

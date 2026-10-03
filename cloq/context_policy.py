@@ -26,6 +26,10 @@ from cloq.config import CHAT_TEMPLATE_KWARGS, MAX_PROMPT_TOKENS, MODEL_ID, MODEL
 _TOK = None
 _TOK_LOCK = threading.Lock()
 _MISTRAL = os.environ.get("CLOQ_TOKENIZER_MODE") == "mistral"  # W99p; unset for every HF-template model
+# W100n (g12, Gemma 4): vLLM detects the "openai" content format for the official Gemma 4 template (it iterates
+# message['content'] items), so the server hands the template every non-tool content as a list of text parts (the
+# system turn then renders `text|trim + ' '`). Only for Gemma 4 model ids; every other model renders as before.
+_OPENAI_PARTS = MODEL_ID.startswith("google/gemma-4-")
 
 
 def get_tokenizer():
@@ -86,6 +90,34 @@ def template_view(messages: list[dict]) -> list[dict]:
                 tc = {**tc, "function": {**fn, "arguments": parsed if isinstance(parsed, dict) else {}}}
             new_tcs.append(tc)
         out.append({**m, "tool_calls": new_tcs})
+    return _openai_parts(out) if _OPENAI_PARTS else out
+
+
+def _openai_parts(messages: list[dict]) -> list[dict]:
+    """W100n (g12 only): vllm.entrypoints.chat_utils._parse_chat_message_content with content_format "openai" for
+    text-only messages: content None -> [], str -> [{"type": "text", "text": s}]; tool messages are joined back to a
+    string ("\n".join of the text parts, "" if none); only role, content, tool_calls, reasoning (+ reasoning_content),
+    tool_call_id (tool) and a string name are kept. Applied after the template_view steps above (vLLM's
+    _postprocess_messages acts on the parsed list; both steps commute for text-only content)."""
+    out = []
+    for m in messages:
+        role, c = m.get("role"), m.get("content")
+        parts = [] if c is None else [{"type": "text", "text": c}] if isinstance(c, str) else list(c)
+        n: dict = {"role": role, "content": parts}
+        if role == "assistant":
+            if m.get("tool_calls") is not None:
+                n["tool_calls"] = list(m["tool_calls"])
+            if m.get("reasoning") is not None:
+                n["reasoning"] = n["reasoning_content"] = m["reasoning"]
+        elif role == "tool":
+            if "tool_call_id" in m:
+                n["tool_call_id"] = m["tool_call_id"]
+            if not any(isinstance(p, dict) and p.get("type") != "text" for p in parts):
+                texts = [p.get("text", "") for p in parts if isinstance(p, dict) and p.get("type") == "text"]
+                n["content"] = "\n".join(texts) if texts else ""
+        if isinstance(m.get("name"), str):
+            n["name"] = m["name"]
+        out.append(n)
     return out
 
 

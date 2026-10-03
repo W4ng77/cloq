@@ -89,7 +89,28 @@ def is_moe(layer: nn.Module) -> bool:
 
 
 def groups_for(layer: nn.Module) -> list[list[str]]:
-    return ATTN_GROUPS if is_moe(layer) else SEQUENTIAL_GROUPS
+    gs = ATTN_GROUPS if is_moe(layer) else SEQUENTIAL_GROUPS
+    if _is_gemma4(layer):  # W100n g12: full-attention layers have no v_proj (attention_k_eq_v: V = K), v_proj is None
+        gs = [[n for n in g if _get_module(layer, n) is not None] for g in gs]
+    return gs
+
+
+def _is_gemma4(obj) -> bool:
+    """W100n: Gemma 4 text stacks (g12). Every other model returns False, so their code paths are unchanged."""
+    cfg = getattr(obj, "config", None)
+    if cfg is None and hasattr(obj, "self_attn"):
+        cfg = getattr(obj.self_attn, "config", None)
+    mt = getattr(cfg, "model_type", "") or ""
+    return mt.startswith("gemma4")
+
+
+def _layer_types(model) -> list[str] | None:
+    """W100n g12: per-layer attention type when it varies (Gemma 4: sliding / full). The decoder layers then take a
+    different `position_embeddings` and `attention_mask` per type; layer 0's kwargs are valid only for its own type."""
+    if not _is_gemma4(model):
+        return None
+    lt = list(model.config.get_text_config().layer_types)
+    return lt if len(set(lt)) > 1 else None
 
 
 def load_calib_sequences(manifest_path: Path) -> tuple[list[list[int]], list[list[int]] | None, dict]:
@@ -161,9 +182,55 @@ def capture_layer0_inputs(model, seqs: list[list[int]], device: str, offload: bo
             if "captured" not in str(e):
                 raise
     layers[0] = orig
+    lt = _layer_types(model)
+    per_type = None
+    if lt is not None:  # W100n g12: also capture the kwargs of the first layer of every other attention type
+        per_type = {lt[0]: [kw for _, kw in captured]}
+        for t in sorted(set(lt) - {lt[0]}):
+            first = lt.index(t)
+            got = []
+
+            class Passthrough(nn.Module):  # layers before `first` are skipped (only the kwargs are wanted)
+                def forward(self, hidden_states, **kwargs):
+                    return hidden_states
+
+            class KwCatcher(nn.Module):
+                def forward(self, hidden_states, **kwargs):
+                    got.append(_to(dict(kwargs), "cpu") if offload else dict(kwargs))
+                    raise ValueError("captured")
+
+            saved = [layers[i] for i in range(first + 1)]
+            for i in range(first):
+                layers[i] = Passthrough()
+            layers[first] = KwCatcher()
+            try:
+                for ids in seqs:
+                    x = torch.tensor([ids], dtype=torch.long, device=device)
+                    try:
+                        model(input_ids=x, use_cache=False)
+                    except ValueError as e:
+                        if "captured" not in str(e):
+                            raise
+            finally:
+                for i, m in enumerate(saved):
+                    layers[i] = m
+            assert len(got) == len(seqs)
+            per_type[t] = got
     model.model.embed_tokens.cpu()
     torch.cuda.empty_cache()
-    return Inputs(captured, offload)
+    inp = Inputs(captured, offload)
+    inp.per_type, inp.layer_types = per_type, lt
+    return inp
+
+
+def _layer_kwargs(inputs: "Inputs", li: int, si: int, kw: dict, device) -> dict:
+    """W100n g12: kwargs of sequence si for layer li (its own attention type); identity for every other model."""
+    if getattr(inputs, "per_type", None) is None:
+        return kw
+    t = inputs.layer_types[li]
+    own = inputs.per_type[t][si]
+    own = _to(own, device) if inputs.offload else own
+    return {**kw, "position_embeddings": own["position_embeddings"], "attention_mask": own["attention_mask"]}
 
 
 @torch.no_grad()
@@ -247,7 +314,7 @@ def quantize_model(model, seqs, method: str, wbits: int, groupsize: int, percdam
                 handles.append(mod.register_forward_hook(hook))
             for si, (hid, kw) in enumerate(inputs.iter(device)):
                 seq_pos["i"] = si
-                layer(hid, **kw)
+                layer(hid, **_layer_kwargs(inputs, li, si, kw, device))
             for hd in handles:
                 hd.remove()
             for name in group:
@@ -267,7 +334,7 @@ def quantize_model(model, seqs, method: str, wbits: int, groupsize: int, percdam
         # propagate through the (now quantized) layer
         new_items = []
         for i, (hid, kw) in enumerate(inputs.iter(device)):
-            out = layer(hid, **kw)
+            out = layer(hid, **_layer_kwargs(inputs, li, i, kw, device))
             if isinstance(out, tuple):
                 out = out[0]
             out = out.detach()

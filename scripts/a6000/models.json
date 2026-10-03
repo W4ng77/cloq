@@ -65,5 +65,16 @@
    "parallel_tool_calls": false
   },
   "ext_request_note": "W99f: ext adapters only (scripts/ext/common.py gen_params); the Llama-3.1 template raises on an assistant turn with >1 tool call, so BFCL requests ask vLLM to keep the first call only. tau2 runs do not read this field."
+ },
+ "g12": {
+  "hf_id": "google/gemma-4-12B-it",
+  "revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7",
+  "gpus": 1,
+  "parser": "gemma4",
+  "chat_template_kwargs": {
+   "enable_thinking": false
+  },
+  "note": "W100n second-family gate (Gemma 4). Multimodal checkpoint (Gemma4UnifiedForConditionalGeneration); served text-only from src_path = the model.language_model.* tensors of the pinned model.safetensors, byte-identical, renamed model.X, config = source text_config (gemma4_unified_text) with architectures Gemma4ForCausalLM, the class vLLM's unified wrapper itself builds (scripts/a6000/g12_textonly.py; provenance and sha256 in src_path/textonly.json). Official chat_template.jinja and generation_config.json (stop ids 1, 106, 50) copied byte-identical; vLLM tool parser gemma4; thinking disabled (template default, set explicitly). Local rendering emulates vLLM's 'openai' content format for this template (cloq/context_policy.py _openai_parts, Gemma-4 ids only).",
+  "src_path": "/data/ziyangs/cloq_work/ckpt_cache/g12_textonly_v1"
  }
 }
