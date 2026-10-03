@@ -1,25 +1,25 @@
-# A6000 queue snapshot (2026-10-03 00:37:09 PDT)
+# A6000 queue snapshot (2026-10-03 01:07:13 PDT)
 
 ## running (22)
 
-- `a6k2_g12_bf16_gate`
+- `a6k2_g12_gptq_w4_d1_gate`
 - `a6k2_q32_tel_rtn_w3`
+- `ext_g12_rtn_w4_bfcl_gate_g12`
+- `fork_gate_g12_rtn_w4`
 - `fork_repair_q4_rtn_w3`
-- `nmp_bfcl_q8_kivi_k4v4_base`
-- `nmp_bfcl_q8_spinquant_w4a4_miss_func`
-- `nmp_bfcl_q8_spinquant_w4a4_miss_param`
-- `nmp_tau2_m24_gptq_w4_d1_f01`
-- `nmp_tau2_m24_rtn_w4_f01`
-- `nmp_tau2_m24_rtn_w4_f02`
+- `nmp_tau2_m24_gptq_w4_d1_f02`
+- `nmp_tau2_m24_gptq_w4_d1_f03`
+- `nmp_tau2_m24_rtn_w4_f03`
 - `nmp_tau2_q8_kivi_k4v4_f03`
 - `nmp_tau2_q8_quarot_w16_f01`
+- `nmp_tau2_q8_quarot_w4_f02`
+- `nmp_tau2_q8_quarot_w4_f03`
 - `pert_q4_gptq_w3_resid_a2_q345`
 - `pert_q4_rtn_w3_resid_a2_q345`
 - `pert_q4_rtn_w3_restore_rand_attn_s1_q345`
 - `pert_q4_rtn_w3_restore_rand_third_s3_q345`
 - `pert_q8_gptq_w3_resid_a2_q345`
 - `pert_q8_rtn_w3_resid_a2_q345`
-- `pert_q8_rtn_w3_restore_rand_third_s2_q345`
 - `pert_q8_rtn_w3_restore_rand_third_s3_q345`
 - `pert_q8_tel_awq_w4_restore_attn_f456`
 - `pert_q8_tel_awq_w4_restore_early_f123`
@@ -39,7 +39,7 @@
 - `pert_q4_rtn_w3_restore_rand_attn_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_attn_s3_q3/airline: 1 infrastructure_error episodes (outage)')
 - `pert_q4_rtn_w3_restore_rand_mlp_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_mlp_s3_q3/retail: 1 infrastructure_error episodes (outage)')
 
-## done (1189)
+## done (1201)
 
 - `a6k2_det_q14_x1_awq_a` · 11 min · node005
 - `a6k2_det_q14_x1_awq_b` · 54 min · node004
@@ -65,7 +65,9 @@
 - `a6k2_det_q8_x1_fp8_a` · 40 min · node005
 - `a6k2_det_q8_x1_fp8_b` · 10 min · node004
 - `a6k2_g12_bf16_cal` · 24 min · node001
+- `a6k2_g12_bf16_gate` · 9 min · node001
 - `a6k2_g12_calib_c1` · 0 min · node008
+- `a6k2_g12_rtn_w4_gate` · 7 min · node004
 - `a6k2_l8_bf16` · 18 min · node005
 - `a6k2_l8_bf16_cal` · 8 min · node008
 - `a6k2_l8_calib_c1` · 0 min · node008
@@ -239,13 +241,9 @@
 - `a6k2_q32_null_extra` · 104 min · node007
 - `a6k2_q32_ol_awq_w4` · 59 min · node004
 - `a6k2_q32_ol_bf16` · 24 min · node004
-- `a6k2_q32_ol_bf16_eager` · 23 min · node004
-- `a6k2_q32_ol_gauss0.03_s1` · 29 min · node005
 
-## todo (110)
+## todo (98)
 
-- `a6k2_g12_gptq_w4_d1_gate`
-- `a6k2_g12_rtn_w4_gate`
 - `a6k2_q14_tel_gauss0.1_s1`
 - `a6k2_q14_tel_gauss1_s1`
 - `a6k2_q14_tel_gptq_w3`
@@ -277,17 +275,13 @@
 - `a6k2_q8_tel_rtn_w4`
 - `a6k2_q8_x1_awq`
 - `a6k2_q8_x1_fp8`
-- `ext_g12_bf16_bfcl_gate_g12`
-- `ext_g12_rtn_w4_bfcl_gate_g12`
 - `fork_ext_gate_g12_rtn_w4_bfcl`
 - `fork_ext_gate_same_g12_rtn_w4_bfcl`
-- `fork_gate_g12_rtn_w4`
 - `fork_gate_same_g12_rtn_w4`
 - `nmp_bfcl_m24_rtn_w4_base`
 - `nmp_bfcl_m24_rtn_w4_long_context`
 - `nmp_bfcl_m24_rtn_w4_miss_func`
 - `nmp_bfcl_m24_rtn_w4_miss_param`
-- `nmp_bfcl_q8_kivi_k4v4_long_context`
 - `nmp_bfcl_q8_kivi_k4v4_miss_func`
 - `nmp_bfcl_q8_kivi_k4v4_miss_param`
 - `nmp_score_m24_gptq_w4_d1_f01`
@@ -300,7 +294,6 @@
 - `nmp_score_q8_kivi_k4v4_f02`
 - `nmp_score_q8_kivi_k4v4_f03`
 - `nmp_score_q8_quarot_w16_f01`
-- `nmp_score_q8_quarot_w16_f02`
 - `nmp_score_q8_quarot_w16_f03`
 - `nmp_score_q8_quarot_w4_f01`
 - `nmp_score_q8_quarot_w4_f02`
@@ -314,13 +307,8 @@
 - `nmp_score_q8_spinquant_w4a4_f01`
 - `nmp_score_q8_spinquant_w4a4_f02`
 - `nmp_score_q8_spinquant_w4a4_f03`
-- `nmp_tau2_m24_gptq_w4_d1_f02`
-- `nmp_tau2_m24_gptq_w4_d1_f03`
-- `nmp_tau2_m24_rtn_w4_f03`
 - `nmp_tau2_q8_quarot_w16_f03`
 - `nmp_tau2_q8_quarot_w4_f01`
-- `nmp_tau2_q8_quarot_w4_f02`
-- `nmp_tau2_q8_quarot_w4_f03`
 - `nmp_tau2_q8_quarot_w4a4_f01`
 - `nmp_tau2_q8_quarot_w4a4_f02`
 - `nmp_tau2_q8_quarot_w4a4_f03`
