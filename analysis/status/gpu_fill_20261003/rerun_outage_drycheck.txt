@@ -1,0 +1,34 @@
+# W100w dry checks, 2026-10-03 08:20-08:32 PDT (login node, no GPU). OLD = git HEAD 6be062a versions of cloq/run_arm.py and scripts/a6000/worker.py; NEW = the versions committed in fb6b9f5 / 1adec78.
+# run_arm: /data/ziyangs/cloq_work/envs/cloq/bin/python scripts/a6000/rerun_outage_drycheck.py <old run_arm.py> <new run_arm.py> <scratch>
+A completed_clean: no flag, old == new: True; run_tasks calls 0 ids []
+A completed_outage: no flag, old == new: True; run_tasks calls 0 ids []
+A completed_outage_ctx_overflow: no flag, old == new: True; run_tasks calls 0 ids []
+A running_outage_missing: no flag, old == new: True; run_tasks calls 1 ids [58]
+B completed_clean: flag, skipped and unchanged: True
+C completed_outage: outage 3 missing 0 -> {'run_dir untouched by the interrupted re-run': True, 're-run ids == outage + missing': True, 'max_concurrency recorded': True, 'archive sha == original': True, 'archive read-only': True, 'kept episodes byte-identical, same slots': True, 'merged complete': True, 'merged.json written': True, 'non-outage infra episodes kept': True, 'rerun decisions replace originals': True}
+  status.rerun_outage = {'dir': 'rerun_outage/0b074e53', 'n_outage': 3, 'n_missing': 0, 'rerun_ids': ['18', '4', '45'], 'rerun_elapsed_seconds': 0.7608730792999268, 'orig_status': 'completed', 'orig_elapsed_seconds': 48718.36878204346, 'rerun_started': '2026-10-03T15:31:49.976491+00:00'}
+C completed_outage_ctx_overflow: outage 2 missing 0 -> {'run_dir untouched by the interrupted re-run': True, 're-run ids == outage + missing': True, 'max_concurrency recorded': True, 'archive sha == original': True, 'archive read-only': True, 'kept episodes byte-identical, same slots': True, 'merged complete': True, 'merged.json written': True, 'non-outage infra episodes kept': True, 'rerun decisions replace originals': True}
+  status.rerun_outage = {'dir': 'rerun_outage/f2d1013f', 'n_outage': 2, 'n_missing': 0, 'rerun_ids': ['31', '5'], 'rerun_elapsed_seconds': 0.675368070602417, 'orig_status': 'completed', 'orig_elapsed_seconds': 45779.96390247345, 'rerun_started': '2026-10-03T15:32:00.544246+00:00'}
+C running_outage_missing: outage 1 missing 1 -> {'run_dir untouched by the interrupted re-run': True, 're-run ids == outage + missing': True, 'max_concurrency recorded': True, 'archive sha == original': True, 'archive read-only': True, 'kept episodes byte-identical, same slots': True, 'merged complete': True, 'merged.json written': True, 'non-outage infra episodes kept': True, 'rerun decisions replace originals': True}
+  status.rerun_outage = {'dir': 'rerun_outage/1006f26f', 'n_outage': 1, 'n_missing': 1, 'rerun_ids': ['40', '72'], 'rerun_elapsed_seconds': 1.289919137954712, 'orig_status': 'running', 'orig_elapsed_seconds': None, 'rerun_started': '2026-10-03T15:32:14.454138+00:00'}
+ALL OK
+
+# worker: python scripts/a6000/rerun_outage_drycheck_worker.py <old worker.py> <new worker.py> <scratch> <rro task> (tasks generated with make_tasks_rerun_outage.py --write --todo <scratch>)
+A a6k2_q14_kvq_int3: old == new True; run_arm calls 6, max parallel 4, error None
+A a6k2_q32_rtn_w3: old == new True; run_arm calls 4, max parallel 4, error None
+A pert_q4_gptq_w3_resid_a2_q345: old == new True; run_arm calls 6, max parallel 4, error None
+A a6k2_q4_samp_T0.5: old == new True; run_arm calls 6, max parallel 4, error None
+B a6k2_q32_rtn_w3_rro: {'only listed run-domains': True, 'max parallel <= run_par': True, 'CLOQ_RERUN_OUTAGE=1': True, '--max-concurrency': True, 'original quantization kept': True, 'no error': True, 'different ckpt refused': True}; run-domains ['a6k2_q32_rtn_w3_q1/retail', 'a6k2_q32_rtn_w3_q2/airline']; refused with: RuntimeError("rerun_outage: rebuilt checkpoint differs from the original run's: {'mean_rel_weight_err': (0.049664145767954845, 0.5), 'content_sha256': (None, 'x
+ALL OK
+A a6k2_q14_kvq_int3: old == new True; run_arm calls 6, max parallel 4, error None
+A a6k2_q32_rtn_w3: old == new True; run_arm calls 4, max parallel 4, error None
+A pert_q4_gptq_w3_resid_a2_q345: old == new True; run_arm calls 6, max parallel 4, error None
+A a6k2_q4_samp_T0.5: old == new True; run_arm calls 6, max parallel 4, error None
+B a6k2_q14_kvq_int3_rro: {'only listed run-domains': True, 'max parallel <= run_par': True, 'CLOQ_RERUN_OUTAGE=1': True, '--max-concurrency': True, 'original quantization kept': True, 'no error': True, 'different ckpt refused': True}; run-domains ['a6k2_q14_kvq_int3_q2/airline']; refused with: None
+ALL OK
+A a6k2_q14_kvq_int3: old == new True; run_arm calls 6, max parallel 4, error None
+A a6k2_q32_rtn_w3: old == new True; run_arm calls 4, max parallel 4, error None
+A pert_q4_gptq_w3_resid_a2_q345: old == new True; run_arm calls 6, max parallel 4, error None
+A a6k2_q4_samp_T0.5: old == new True; run_arm calls 6, max parallel 4, error None
+B pert_q4_gptq_w3_resid_a2_q345_rro: {'only listed run-domains': True, 'max parallel <= run_par': True, 'CLOQ_RERUN_OUTAGE=1': True, '--max-concurrency': True, 'original quantization kept': True, 'no error': True, 'different ckpt refused': True}; run-domains ['a6k2_pert_q4_gptq_w3_resid_a2_q3/airline']; refused with: RuntimeError("rerun_outage: rebuilt checkpoint differs from the original run's: {'mean_rel_weight_err': (None, 0.5), 'content_sha256': ('670e0238611444a1b4dcd27
+ALL OK
