@@ -2,13 +2,9 @@
 \label{sec:scope}
 \label{sec:r3}
 
-Each further configuration asks how a factor changes this structure: whether upgrade value appears, disappears, or shifts between the action and the continuation. The three lines still running vary numerical quality (QuaRot and SpinQuant), where quantization error lives (KIVI's KV cache) and the model family (Mistral). Full matrices are in the appendix.
+Each further configuration asks how a factor changes this structure: whether upgrade value appears, disappears, or shifts between the action and the continuation. The three lines still running vary numerical quality (QuaRot and SpinQuant), where quantization error lives (KIVI's KV cache) and the model family (Mistral).
 
-\paragraph{Without a simulated user, and on unseen tasks, value stays small while turnover stays two-sided.} On BFCL and ALFWorld, and on the pre-registered telecom holdout, the replacement rescues and damages and its net value is small or negative (\S\ref{sec:value}).
-
-\paragraph{At a larger scale, value can appear in the action.} For Qwen3-14B on BFCL, replacing the action produces net task gain and continuation dependence is low (\S\ref{sec:value}, Figure~\ref{fig:modes}); it is one configuration within the family.
-
-\paragraph{At lower bit widths, value can move to the continuation.} In q8 RTN-W3 the gain comes from B taking over the continuation, not from the action (Figure~\ref{fig:modes}). Four of the five stress cells turn over 18.4--20.4\% of units with three blocks; we keep them separate from W4, and W2 runs did not complete and are not reported (Appendix~\ref{app:coverage}). % src: analysis/fork/out/dev_all_20261001T070326Z.md
+\paragraph{What is established.} Without a simulated user (BFCL, ALFWorld) and on the pre-registered telecom holdout, the replacement rescues and damages and its net value is small or negative; at a larger scale (Qwen3-14B, BFCL) value can appear in the action, and at a lower bit width (q8 RTN-W3) it can move to the continuation (\S\ref{sec:value}). Four of the five stress cells turn over 18.4--20.4\% of units with three blocks; we keep them separate from W4, and W2 runs did not complete (Appendix~\ref{app:coverage}). % src: analysis/fork/out/dev_all_20261001T070326Z.md
 
 \paragraph{Numerical quality: does it change task value?} Rotation-based quantizers improve local numerics \citep{ashkboos2024quarot,liu2025spinquant}. The test is a matched W4A4 contrast of SpinQuant against QuaRot (same calibration, grid, clipping and KV cache) on shared q8 ordinary states, reporting the task-value difference with its interval next to the KL difference with its interval: \pending{[result pending: finding first, then $r$, $d$, $M$, $\Gall$ and the action effect with the BF16 continuation fixed]}. A KL improvement without a task benefit would be read as a dissociation only if both effects are reported with sizes and intervals. % src: docs/insights/NEWMETHOD_PANEL_PROTOCOL.md (Amendment A1, Holm P2)
 
