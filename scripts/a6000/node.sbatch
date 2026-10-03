@@ -9,6 +9,8 @@ LIMIT=$(squeue -j $SLURM_JOB_ID -h -o %L | awk -F'[-:]' '{ if (NF==4) print $1*8
 export CLOQ_JOB_END=$(( $(date +%s) + LIMIT ))
 # Probe each allocated GPU; a card whose NVML handle fails (node003 01:00.0, node009) is left out entirely.
 GOOD=""; for i in $(nvidia-smi -L 2>/dev/null | sed -n 's/^GPU \([0-9]*\):.*/\1/p'); do
+  ecc=$(timeout 20 nvidia-smi -i $i --query-gpu=ecc.errors.uncorrected.volatile.total --format=csv,noheader 2>/dev/null | tr -dc '0-9')
+  if [ "${ecc:-0}" -gt 0 ] 2>/dev/null; then echo "GPU $i FAILED probe: $ecc uncorrected ECC errors (W100z: node009 01:00.0)"; continue; fi
   if timeout 20 nvidia-smi -i $i --query-gpu=index,pci.bus_id,name --format=csv,noheader >/dev/null 2>&1 && \
      CUDA_VISIBLE_DEVICES=$i timeout 60 python -c "import torch;x=torch.ones(1024,1024,device='cuda');assert float((x@x).sum())==1024**3" 2>/dev/null; then
     GOOD="$GOOD,$i"; else echo "GPU $i FAILED probe: $(nvidia-smi -i $i --query-gpu=pci.bus_id --format=csv,noheader 2>&1 | head -1)"; fi
