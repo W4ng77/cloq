@@ -63,7 +63,7 @@ def f9():
         assert lo < 0 < hi, lab
     chk("q8 RTN-W3$^s$", "GmH", -15.7, [-27.5, -3.9]); chk("q14 GPTQ-W4$^b$", "GmH", 5.3, [2.3, 8.4])
 
-    # Holm family (m = 4) for G-H: plain 95% t interval and Holm-consistent Bonferroni 98.75% interval (same source)
+    # Holm family (m = 4) for G-H: plain 95% t interval and Bonferroni simultaneous 98.75% interval (same source)
     mult = {r_["cell"]: r_ for r_ in MF.load("mult")["rows"]}
     cellkey = {"q4 GPTQ-W4": "q4:gptq_w4_d1", "q4 AWQ-W4": "q4:awq_w4", "q8 GPTQ-W4": "q8:gptq_w4_d1",
                "q8 AWQ-W4": "q8:awq_w4"}
@@ -118,7 +118,7 @@ def f9():
                              color=INK2, style="italic", loc="center")
     fig.supxlabel("gain over QQ, or paired difference (pp)", fontsize=7)
     MF.save(fig, "f9_upgrade_modes", ["ghf", "q14", "mult"],
-            "main: G/H/F and G-H (t 95% + Holm-consistent Bonferroni 98.75%) for four core W4 cells + pool; supplementary: q8 RTN-W3, q14 BFCL (own scale)")
+            "main: G/H/F and G-H (t 95% + Bonferroni simultaneous 98.75%) for four core W4 cells + pool; supplementary: q8 RTN-W3, q14 BFCL (own scale)")
     pj = os.path.join(MF.OUT, "provenance.json")
     old = json.load(open(pj))
     for kk, v in MF.PROV.items():
