@@ -1,0 +1,3261 @@
+{
+ "title": "Replay check of the 9 q8 f01-f03 overlap states (SAMEPREC q8 g1 vs common-state d2_d1 panel)",
+ "created": "2026-10-03",
+ "author": "read-only CPU investigation",
+ "premise_checked": {
+  "claim": "a_d2 identical 9/9, Y equal 8/9; the replays are close, not exact",
+  "where": [
+   "docs/RESEARCH_LOG.md:68",
+   "docs/insights/COMMONSTATE_SOURCES_PROTOCOL.md:338-339",
+   "docs/insights/COMMONSTATE_SOURCES_PROTOCOL.md:447"
+  ]
+ },
+ "verdict": "premise not reproduced: the 9 BQ arms are byte-identical replays (9/9 branch_signature equal, 0 divergent decisions or messages); outcomes are equal 9/9 under the outcome both studies use (DB success). The 8/9 is reproduced only by comparing commonstate Y (DB success) with SAMEPREC branches.json official_reward; the single 'mismatch' 79aa9e6a7ca99243 (airline 3) has db_match True + user_stop (Y=1) and tau2 official_reward 0 (ACTION 0, COMMUNICATE 0) in BOTH runs.",
+ "mismatch_state": {
+  "state_key": "79aa9e6a7ca99243",
+  "block": "f03",
+  "domain": "airline",
+  "task_id": "3",
+  "t": 0,
+  "commonstate_state_id": "868193df553e24a9",
+  "sameprec_state_id": "5859e02aecc11d39",
+  "first_divergence_step": null,
+  "first_divergence_side": "none (no divergence; metric mismatch in the comparison)",
+  "a_d2_prompt_ids_sha": "9f4db4494d2cc313b8a9842c167a5395165acef3b8e1e40aff581468b926227e",
+  "a_d2_completion_ids_sha": "cc19111a10ff6dcd6a5ce7d858b2378863b2bd437c0ce476f89b457c137e8047",
+  "suffix_sha_both": "5d4d49aa437de23be4fe650fccbe4b66787c1ea08aa5bdfb56f3fbd6dbdf8eb0",
+  "outcome_fields_both": {
+   "termination_reason": "user_stop",
+   "db_match": true,
+   "reward": 0.0,
+   "official_reward": 0.0,
+   "reward_breakdown": {
+    "DB": 1.0,
+    "ACTION": 0.0,
+    "COMMUNICATE": 0.0
+   },
+   "communicate_check": "Information '4' not communicated.",
+   "action_checks": {
+    "get_reservation_details": false,
+    "get_user_details": true
+   }
+  },
+  "Y_commonstate": 1,
+  "Y_sameprec_db_success": 1,
+  "sameprec_official_reward": 0.0
+ },
+ "outcome_comparisons": {
+  "cs_Y_vs_sp_db_success": 9,
+  "cs_Y_vs_sp_official_reward": 8,
+  "cs_Y_vs_sp_reward": 6,
+  "n": 9,
+  "definitions": {
+   "commonstate_Y": "scripts/a6000/fork_driver.py:664-670 (_y: db_match and termination in user_stop/agent_stop; telecom official_reward==1)",
+   "sameprec_Y": "analysis/fork/analyze_dev.py:203-206 success(), used for BQ at :333 via analyze_sameprec.py",
+   "sameprec_branches_json_row": "fork_driver.py:1552 stores only reward, db_match, official_reward, termination_reason, duration, error"
+  }
+ },
+ "totals_compared": {
+  "n_states": 9,
+  "n_decisions": 157,
+  "n_d1_decisions": 148,
+  "n_completion_tokens": 6370,
+  "n_user_msgs": 59,
+  "n_tool_msgs": 98,
+  "n_assistant_msgs": 157
+ },
+ "states": [
+  {
+   "state_key": "c4209bd6e73eaf27",
+   "block": "f01",
+   "domain": "retail",
+   "task_id": "10",
+   "t": 0,
+   "commonstate": {
+    "state_id": "0f07da117962b15a",
+    "row": "analysis/fork/commonstate/q8/panel/d2_d1/f01/rows/c4209bd6e73eaf27.json",
+    "branch": "analysis/fork/commonstate/q8/panel/d2_d1/f01/branches/c4209bd6e73eaf27.json#BQ",
+    "Y": 0
+   },
+   "sameprec_g1": {
+    "state_id": "f5828251e92b6268",
+    "state": "analysis/fork/sameprec/q8_gptq_w4_d1_vs_d2/g1/states/f5828251e92b6268.json",
+    "branch": "analysis/fork/sameprec/q8_gptq_w4_d1_vs_d2/g1/branches/f5828251e92b6268.json#BQ",
+    "branches_json_row": {
+     "termination_reason": "user_stop",
+     "reward": 0.0,
+     "db_match": false,
+     "official_reward": 0.0
+    },
+    "Y_db_success": 0
+   },
+   "state_match": {
+    "history_sha": "a0b0d7a5aa3e9094959747ccfe5950c240615a5f98994305ed8620052ebe3ac4",
+    "prompt_ids_sha": "818a669dd0692b93b28f8b4557de65c530ac47374908bfaedca168fdfa4813ee",
+    "env_hash_db": "b25c9cb211f5efcaee5dd646054a73c4a9f43f4f5acc32c10713cd9f9ac20e9c",
+    "steps_left": 199,
+    "sim_seed": 626729,
+    "nonce": "1d972ae1",
+    "sp_source_run": "a6k2_q8_gptq_w4_d1_f01",
+    "cs_source_run": "a6k2_q8_bfpair_f01"
+   },
+   "a_d2_completion_ids_sha": {
+    "commonstate": "9e76cb1ad416770169e952031ce6d8af377bb1fde7663d776a2a09b3f60ff38c",
+    "sameprec": "9e76cb1ad416770169e952031ce6d8af377bb1fde7663d776a2a09b3f60ff38c",
+    "equal": true
+   },
+   "suffix_sha": {
+    "commonstate": "178c370a4a06086be9be90f467256b0c9c964645c5e8da2c718a931dcf46108c",
+    "sameprec": "178c370a4a06086be9be90f467256b0c9c964645c5e8da2c718a931dcf46108c"
+   },
+   "env_hash_final_db": {
+    "commonstate": "84943061237258722a54ff9d43b1fb754e86fe3b56305f64b951111a2fe6b52e",
+    "sameprec": "84943061237258722a54ff9d43b1fb754e86fe3b56305f64b951111a2fe6b52e"
+   },
+   "reward_info_equal": true,
+   "reward_breakdown": {
+    "DB": 0.0,
+    "ACTION": 0.0,
+    "COMMUNICATE": 1.0
+   },
+   "termination_reason": [
+    "user_stop",
+    "user_stop"
+   ],
+   "db_match": [
+    false,
+    false
+   ],
+   "official_reward": [
+    0.0,
+    0.0
+   ],
+   "branch_signature_equal": true,
+   "n_decisions": [
+    21,
+    21
+   ],
+   "n_messages": [
+    42,
+    42
+   ],
+   "n_user_msgs": [
+    8,
+    8
+   ],
+   "first_divergence_decision": null,
+   "first_divergence_message": null,
+   "fields_that_differ_anywhere": [
+    "controller_base/api_base (port)",
+    "duration",
+    "generation_time_seconds",
+    "state_id (study-specific id of the same state)",
+    "tag",
+    "timestamp",
+    "tool_call id / tool_call_id (random per request; prompt token shas equal, so not rendered)"
+   ],
+   "duration_s": [
+    138.80130791664124,
+    138.4785451889038
+   ],
+   "q_server_running_reqs_near_each_d1_decision": {
+    "commonstate": [
+     7,
+     7,
+     7,
+     7,
+     3,
+     3,
+     3,
+     7,
+     7,
+     7,
+     3,
+     3,
+     8,
+     8,
+     8,
+     8,
+     8,
+     6,
+     7,
+     7
+    ],
+    "sameprec": [
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     3,
+     1,
+     1,
+     1,
+     1,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4
+    ],
+    "note": "max of the two vLLM engine-log 10 s intervals bracketing the assistant message timestamp; approximate"
+   },
+   "per_decision": [
+    {
+     "i": 0,
+     "forced": true,
+     "prompt_ids_sha": [
+      "818a669dd0692b93b28f8b4557de65c530ac47374908bfaedca168fdfa4813ee",
+      "818a669dd0692b93b28f8b4557de65c530ac47374908bfaedca168fdfa4813ee"
+     ],
+     "completion_ids_sha": [
+      null,
+      null
+     ],
+     "n_prompt_tokens": [
+      4928,
+      4928
+     ],
+     "n_completion_tokens": [
+      null,
+      null
+     ],
+     "finish_reason": [
+      null,
+      null
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 1,
+     "forced": false,
+     "prompt_ids_sha": [
+      "17a6bfaeca502e2ef262dc1d3f6c4f9ec117e929a457e329daf36ca1d4e3ee9e",
+      "17a6bfaeca502e2ef262dc1d3f6c4f9ec117e929a457e329daf36ca1d4e3ee9e"
+     ],
+     "completion_ids_sha": [
+      "d3dbcb607dd4d65872ee0379c9fba243966dd65d5cda16e44b49929f8d1db39d",
+      "d3dbcb607dd4d65872ee0379c9fba243966dd65d5cda16e44b49929f8d1db39d"
+     ],
+     "n_prompt_tokens": [
+      4971,
+      4971
+     ],
+     "n_completion_tokens": [
+      35,
+      35
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 2,
+     "forced": false,
+     "prompt_ids_sha": [
+      "825b15fd90169391df194f727b4fb86b9de370e846c0b56bf9f36a887274e812",
+      "825b15fd90169391df194f727b4fb86b9de370e846c0b56bf9f36a887274e812"
+     ],
+     "completion_ids_sha": [
+      "4c74f581dc25b4fc4afe467552571394730a29e00699bbb00b94cd6baf35f7e3",
+      "4c74f581dc25b4fc4afe467552571394730a29e00699bbb00b94cd6baf35f7e3"
+     ],
+     "n_prompt_tokens": [
+      5026,
+      5026
+     ],
+     "n_completion_tokens": [
+      45,
+      45
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 3,
+     "forced": false,
+     "prompt_ids_sha": [
+      "3f63d817272aa5f82839b9cf767761f3b852c249f0b845db7a53c804e99efcbd",
+      "3f63d817272aa5f82839b9cf767761f3b852c249f0b845db7a53c804e99efcbd"
+     ],
+     "completion_ids_sha": [
+      "2ff2069655b5a259e5d4f6dfda8908f0149533f3365853838d8329ae1a8d3dca",
+      "2ff2069655b5a259e5d4f6dfda8908f0149533f3365853838d8329ae1a8d3dca"
+     ],
+     "n_prompt_tokens": [
+      5089,
+      5089
+     ],
+     "n_completion_tokens": [
+      41,
+      41
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 4,
+     "forced": false,
+     "prompt_ids_sha": [
+      "fdbe83c4535df9c127d22407f6a6bbc5d64de8c985cc7a1f2942f236dc368653",
+      "fdbe83c4535df9c127d22407f6a6bbc5d64de8c985cc7a1f2942f236dc368653"
+     ],
+     "completion_ids_sha": [
+      "7929f53974da915ab1b93e1997fa69a2155e3dc3fde09de331d945b2298ada9d",
+      "7929f53974da915ab1b93e1997fa69a2155e3dc3fde09de331d945b2298ada9d"
+     ],
+     "n_prompt_tokens": [
+      5163,
+      5163
+     ],
+     "n_completion_tokens": [
+      32,
+      32
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 5,
+     "forced": false,
+     "prompt_ids_sha": [
+      "7b264af7d40f7289736141fa1f8bba19377b2d116f25c4abb985a2c339d2473a",
+      "7b264af7d40f7289736141fa1f8bba19377b2d116f25c4abb985a2c339d2473a"
+     ],
+     "completion_ids_sha": [
+      "61c6bec7ba8c16b736f5b9893a7c6b5efee9c13985a084c144007713a6296734",
+      "61c6bec7ba8c16b736f5b9893a7c6b5efee9c13985a084c144007713a6296734"
+     ],
+     "n_prompt_tokens": [
+      5217,
+      5217
+     ],
+     "n_completion_tokens": [
+      38,
+      38
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 6,
+     "forced": false,
+     "prompt_ids_sha": [
+      "826b15107bc6a16292ec4803378fd79dd0e83e9730834b75d39f0ad3a5166a1e",
+      "826b15107bc6a16292ec4803378fd79dd0e83e9730834b75d39f0ad3a5166a1e"
+     ],
+     "completion_ids_sha": [
+      "e75dfa4f99e0316bda58641e7dccc0408bf604307d7de1444e3c41c41f32299b",
+      "e75dfa4f99e0316bda58641e7dccc0408bf604307d7de1444e3c41c41f32299b"
+     ],
+     "n_prompt_tokens": [
+      5290,
+      5290
+     ],
+     "n_completion_tokens": [
+      27,
+      27
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 7,
+     "forced": false,
+     "prompt_ids_sha": [
+      "97647e50e2b986f27c1e020b03b362a52c84ac13a0743dcad0589ada1f6ec129",
+      "97647e50e2b986f27c1e020b03b362a52c84ac13a0743dcad0589ada1f6ec129"
+     ],
+     "completion_ids_sha": [
+      "26d21798cb0be78c2cfd186b4cc97cff6e7b95a52c1f910b793e77732091dcfc",
+      "26d21798cb0be78c2cfd186b4cc97cff6e7b95a52c1f910b793e77732091dcfc"
+     ],
+     "n_prompt_tokens": [
+      5335,
+      5335
+     ],
+     "n_completion_tokens": [
+      27,
+      27
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 8,
+     "forced": false,
+     "prompt_ids_sha": [
+      "043e1aaab1b1ae3674e64da2cbca4d9ef8a967923d46190054ee7c60a277364b",
+      "043e1aaab1b1ae3674e64da2cbca4d9ef8a967923d46190054ee7c60a277364b"
+     ],
+     "completion_ids_sha": [
+      "b77859f9e65a8a6a524c41e32d29992bc3a38ef742c86f9e315f9d740956040f",
+      "b77859f9e65a8a6a524c41e32d29992bc3a38ef742c86f9e315f9d740956040f"
+     ],
+     "n_prompt_tokens": [
+      5380,
+      5380
+     ],
+     "n_completion_tokens": [
+      48,
+      48
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 9,
+     "forced": false,
+     "prompt_ids_sha": [
+      "5b83265066f750588eecf8e1b82a774647a80d8eaa64a9d467f3d2cd2275cc58",
+      "5b83265066f750588eecf8e1b82a774647a80d8eaa64a9d467f3d2cd2275cc58"
+     ],
+     "completion_ids_sha": [
+      "16d56d34a521880d2ba09d58c95657df1066507bfdccfd2b493893349cb84ca5",
+      "16d56d34a521880d2ba09d58c95657df1066507bfdccfd2b493893349cb84ca5"
+     ],
+     "n_prompt_tokens": [
+      5467,
+      5467
+     ],
+     "n_completion_tokens": [
+      30,
+      30
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 10,
+     "forced": false,
+     "prompt_ids_sha": [
+      "f428420edfb8afc491e9fc2db3703a14e799a09bdb8d7f001933232d15db3596",
+      "f428420edfb8afc491e9fc2db3703a14e799a09bdb8d7f001933232d15db3596"
+     ],
+     "completion_ids_sha": [
+      "bd1e660384794148a072878beb6e9b06c1e6d2e43019d62ff2ee7f0623810b33",
+      "bd1e660384794148a072878beb6e9b06c1e6d2e43019d62ff2ee7f0623810b33"
+     ],
+     "n_prompt_tokens": [
+      5723,
+      5723
+     ],
+     "n_completion_tokens": [
+      120,
+      120
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 11,
+     "forced": false,
+     "prompt_ids_sha": [
+      "2af4272ccab989b2fdebf019f486f7b37316bbb1843f8366fc6fac9c9f3b0071",
+      "2af4272ccab989b2fdebf019f486f7b37316bbb1843f8366fc6fac9c9f3b0071"
+     ],
+     "completion_ids_sha": [
+      "e75dfa4f99e0316bda58641e7dccc0408bf604307d7de1444e3c41c41f32299b",
+      "e75dfa4f99e0316bda58641e7dccc0408bf604307d7de1444e3c41c41f32299b"
+     ],
+     "n_prompt_tokens": [
+      5897,
+      5897
+     ],
+     "n_completion_tokens": [
+      27,
+      27
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 12,
+     "forced": false,
+     "prompt_ids_sha": [
+      "80a7b8314647bd586b3d78675765ad9c75ec4ef513d7c530ffd56c40b5cf673d",
+      "80a7b8314647bd586b3d78675765ad9c75ec4ef513d7c530ffd56c40b5cf673d"
+     ],
+     "completion_ids_sha": [
+      "26d21798cb0be78c2cfd186b4cc97cff6e7b95a52c1f910b793e77732091dcfc",
+      "26d21798cb0be78c2cfd186b4cc97cff6e7b95a52c1f910b793e77732091dcfc"
+     ],
+     "n_prompt_tokens": [
+      5942,
+      5942
+     ],
+     "n_completion_tokens": [
+      27,
+      27
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 13,
+     "forced": false,
+     "prompt_ids_sha": [
+      "3c17f6bf0567fe3c600e57405acc369ca44e410ddc7c04862e1133c3ef2c5cae",
+      "3c17f6bf0567fe3c600e57405acc369ca44e410ddc7c04862e1133c3ef2c5cae"
+     ],
+     "completion_ids_sha": [
+      "34f4da00f63e7fbda6f306502be445db57c0fac0ae99eb187c351f00ca484df8",
+      "34f4da00f63e7fbda6f306502be445db57c0fac0ae99eb187c351f00ca484df8"
+     ],
+     "n_prompt_tokens": [
+      5987,
+      5987
+     ],
+     "n_completion_tokens": [
+      43,
+      43
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 14,
+     "forced": false,
+     "prompt_ids_sha": [
+      "e026e10d73c5526a1dffaeaab33be36d9a6ed92ba95049c8e4603f3adc67c346",
+      "e026e10d73c5526a1dffaeaab33be36d9a6ed92ba95049c8e4603f3adc67c346"
+     ],
+     "completion_ids_sha": [
+      "c77ae86ae5a95ce3225807c096e35522af63ea32aee68eaec6590be7289b260e",
+      "c77ae86ae5a95ce3225807c096e35522af63ea32aee68eaec6590be7289b260e"
+     ],
+     "n_prompt_tokens": [
+      6082,
+      6082
+     ],
+     "n_completion_tokens": [
+      64,
+      64
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 15,
+     "forced": false,
+     "prompt_ids_sha": [
+      "3fbdb594e242798a8be3f916fc03d7e87a3d5c472575bff7f750cb0053056338",
+      "3fbdb594e242798a8be3f916fc03d7e87a3d5c472575bff7f750cb0053056338"
+     ],
+     "completion_ids_sha": [
+      "85a0c27f28743c0877bcf3be0dc9851168e2f055ff21446841e36557dfa447e2",
+      "85a0c27f28743c0877bcf3be0dc9851168e2f055ff21446841e36557dfa447e2"
+     ],
+     "n_prompt_tokens": [
+      6165,
+      6165
+     ],
+     "n_completion_tokens": [
+      29,
+      29
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 16,
+     "forced": false,
+     "prompt_ids_sha": [
+      "1cce46a937db4d1636b768d01453172811fdac0e886d0c95e01762e9c4dfb4bd",
+      "1cce46a937db4d1636b768d01453172811fdac0e886d0c95e01762e9c4dfb4bd"
+     ],
+     "completion_ids_sha": [
+      "5cd9d5eccc29b53b5778bbbaec5f4b49c7d8967492c849237e8734e8477a7383",
+      "5cd9d5eccc29b53b5778bbbaec5f4b49c7d8967492c849237e8734e8477a7383"
+     ],
+     "n_prompt_tokens": [
+      6768,
+      6768
+     ],
+     "n_completion_tokens": [
+      100,
+      100
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 17,
+     "forced": false,
+     "prompt_ids_sha": [
+      "e17eaa89b83d0ad1636fe66a324c58cfa72a39772a9a13cd8f1aa402e9090546",
+      "e17eaa89b83d0ad1636fe66a324c58cfa72a39772a9a13cd8f1aa402e9090546"
+     ],
+     "completion_ids_sha": [
+      "615c3bf27296a92cc0b50742c5802c8830e90cde9ae920f28d71c1d035e20aa4",
+      "615c3bf27296a92cc0b50742c5802c8830e90cde9ae920f28d71c1d035e20aa4"
+     ],
+     "n_prompt_tokens": [
+      7498,
+      7498
+     ],
+     "n_completion_tokens": [
+      100,
+      100
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 18,
+     "forced": false,
+     "prompt_ids_sha": [
+      "71bdcff946a2191dcf19dd22e9873c740cb8bc6962abac5b0053f3869654ccdd",
+      "71bdcff946a2191dcf19dd22e9873c740cb8bc6962abac5b0053f3869654ccdd"
+     ],
+     "completion_ids_sha": [
+      "87b99e410229db6001d8340670023ee69a8a31b78319d3eb110b5b2357e0878b",
+      "87b99e410229db6001d8340670023ee69a8a31b78319d3eb110b5b2357e0878b"
+     ],
+     "n_prompt_tokens": [
+      7621,
+      7621
+     ],
+     "n_completion_tokens": [
+      121,
+      121
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 19,
+     "forced": false,
+     "prompt_ids_sha": [
+      "34c9485c08fad124454743dfb04bbe97f257459f2a8ea1c033bfac747e7048e0",
+      "34c9485c08fad124454743dfb04bbe97f257459f2a8ea1c033bfac747e7048e0"
+     ],
+     "completion_ids_sha": [
+      "3c76636ce6d9b37c16f1b9012bf353c75301c08c713f92121acc25da4fdefaea",
+      "3c76636ce6d9b37c16f1b9012bf353c75301c08c713f92121acc25da4fdefaea"
+     ],
+     "n_prompt_tokens": [
+      7783,
+      7783
+     ],
+     "n_completion_tokens": [
+      57,
+      57
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 20,
+     "forced": false,
+     "prompt_ids_sha": [
+      "6d586be2d5d6105907c087e4bfa00d72afe7ea4d19307fc3ddd02010e97642ba",
+      "6d586be2d5d6105907c087e4bfa00d72afe7ea4d19307fc3ddd02010e97642ba"
+     ],
+     "completion_ids_sha": [
+      "cacc8c3e25417257a1f6666be0be37e4b0f6a3fa4d0b1e3970dacd88c7f5ff71",
+      "cacc8c3e25417257a1f6666be0be37e4b0f6a3fa4d0b1e3970dacd88c7f5ff71"
+     ],
+     "n_prompt_tokens": [
+      7855,
+      7855
+     ],
+     "n_completion_tokens": [
+      19,
+      19
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    }
+   ]
+  },
+  {
+   "state_key": "2857c7a7b30fe4e5",
+   "block": "f01",
+   "domain": "retail",
+   "task_id": "44",
+   "t": 1,
+   "commonstate": {
+    "state_id": "72b3b6c3f4e7e902",
+    "row": "analysis/fork/commonstate/q8/panel/d2_d1/f01/rows/2857c7a7b30fe4e5.json",
+    "branch": "analysis/fork/commonstate/q8/panel/d2_d1/f01/branches/2857c7a7b30fe4e5.json#BQ",
+    "Y": 1
+   },
+   "sameprec_g1": {
+    "state_id": "d1e6a397a45c75cd",
+    "state": "analysis/fork/sameprec/q8_gptq_w4_d1_vs_d2/g1/states/d1e6a397a45c75cd.json",
+    "branch": "analysis/fork/sameprec/q8_gptq_w4_d1_vs_d2/g1/branches/d1e6a397a45c75cd.json#BQ",
+    "branches_json_row": {
+     "termination_reason": "user_stop",
+     "reward": 0.0,
+     "db_match": true,
+     "official_reward": 1.0
+    },
+    "Y_db_success": 1
+   },
+   "state_match": {
+    "history_sha": "2133bda1f2d5b2497ba9428351f0086e7676719cf7ac694d3da6bba54da618d5",
+    "prompt_ids_sha": "db580a1879b7c1d60042525c448739500ba9bbdfc6f337f7a0a99bdc92c066fc",
+    "env_hash_db": "b25c9cb211f5efcaee5dd646054a73c4a9f43f4f5acc32c10713cd9f9ac20e9c",
+    "steps_left": 197,
+    "sim_seed": 626729,
+    "nonce": "1d972ae1",
+    "sp_source_run": "a6k2_q8_gptq_w4_d1_f01",
+    "cs_source_run": "a6k2_q8_bfpair_f01"
+   },
+   "a_d2_completion_ids_sha": {
+    "commonstate": "bf7d282a471a7bdc7dcf88122ef08812cb90510eae9078ee95fe4a3882d9c81e",
+    "sameprec": "bf7d282a471a7bdc7dcf88122ef08812cb90510eae9078ee95fe4a3882d9c81e",
+    "equal": true
+   },
+   "suffix_sha": {
+    "commonstate": "cd2fa38ba09e58676571bca423734901ab2e45cac0290cf3238110c5e17eb397",
+    "sameprec": "cd2fa38ba09e58676571bca423734901ab2e45cac0290cf3238110c5e17eb397"
+   },
+   "env_hash_final_db": {
+    "commonstate": "7261dbb2b5feffa798d080a3e2b2b4c3bf5c32c7a281bc94205bc1b3015a7e5f",
+    "sameprec": "7261dbb2b5feffa798d080a3e2b2b4c3bf5c32c7a281bc94205bc1b3015a7e5f"
+   },
+   "reward_info_equal": true,
+   "reward_breakdown": {
+    "DB": 1.0,
+    "ACTION": 0.0,
+    "COMMUNICATE": 1.0
+   },
+   "termination_reason": [
+    "user_stop",
+    "user_stop"
+   ],
+   "db_match": [
+    true,
+    true
+   ],
+   "official_reward": [
+    1.0,
+    1.0
+   ],
+   "branch_signature_equal": true,
+   "n_decisions": [
+    5,
+    5
+   ],
+   "n_messages": [
+    10,
+    10
+   ],
+   "n_user_msgs": [
+    2,
+    2
+   ],
+   "first_divergence_decision": null,
+   "first_divergence_message": null,
+   "fields_that_differ_anywhere": [
+    "controller_base/api_base (port)",
+    "duration",
+    "generation_time_seconds",
+    "state_id (study-specific id of the same state)",
+    "tag",
+    "timestamp",
+    "tool_call id / tool_call_id (random per request; prompt token shas equal, so not rendered)"
+   ],
+   "duration_s": [
+    19.919718027114868,
+    19.650481939315796
+   ],
+   "q_server_running_reqs_near_each_d1_decision": {
+    "commonstate": [
+     7,
+     7,
+     7,
+     6
+    ],
+    "sameprec": [
+     3,
+     3,
+     3,
+     2
+    ],
+    "note": "max of the two vLLM engine-log 10 s intervals bracketing the assistant message timestamp; approximate"
+   }
+  },
+  {
+   "state_key": "ae8398d726bf9a2c",
+   "block": "f01",
+   "domain": "retail",
+   "task_id": "81",
+   "t": 0,
+   "commonstate": {
+    "state_id": "904fe1497b6e1a64",
+    "row": "analysis/fork/commonstate/q8/panel/d2_d1/f01/rows/ae8398d726bf9a2c.json",
+    "branch": "analysis/fork/commonstate/q8/panel/d2_d1/f01/branches/ae8398d726bf9a2c.json#BQ",
+    "Y": 0
+   },
+   "sameprec_g1": {
+    "state_id": "d427cc3635956e1b",
+    "state": "analysis/fork/sameprec/q8_gptq_w4_d1_vs_d2/g1/states/d427cc3635956e1b.json",
+    "branch": "analysis/fork/sameprec/q8_gptq_w4_d1_vs_d2/g1/branches/d427cc3635956e1b.json#BQ",
+    "branches_json_row": {
+     "termination_reason": "user_stop",
+     "reward": 0.0,
+     "db_match": false,
+     "official_reward": 0.0
+    },
+    "Y_db_success": 0
+   },
+   "state_match": {
+    "history_sha": "489c8a20ed56ce246096c4667d960bdf643f3d425bf40a6596b6c895787f166c",
+    "prompt_ids_sha": "5c054a556b36f4afadfbeb61afcac54cf127f893860fd777ae377a3d75ff0182",
+    "env_hash_db": "b25c9cb211f5efcaee5dd646054a73c4a9f43f4f5acc32c10713cd9f9ac20e9c",
+    "steps_left": 199,
+    "sim_seed": 626729,
+    "nonce": "1d972ae1",
+    "sp_source_run": "a6k2_q8_gptq_w4_d1_f01",
+    "cs_source_run": "a6k2_q8_bfpair_f01"
+   },
+   "a_d2_completion_ids_sha": {
+    "commonstate": "8a278ac550ffd8c54450e99048eb5f0c99e0d615d9a67eeee02910f9ef15ea12",
+    "sameprec": "8a278ac550ffd8c54450e99048eb5f0c99e0d615d9a67eeee02910f9ef15ea12",
+    "equal": true
+   },
+   "suffix_sha": {
+    "commonstate": "2c44d125663c6b3bcb48e706fb447c76b248825d76798636d1e950a2139366d1",
+    "sameprec": "2c44d125663c6b3bcb48e706fb447c76b248825d76798636d1e950a2139366d1"
+   },
+   "env_hash_final_db": {
+    "commonstate": "c8e6a226352c71e33abb25c4f11822bd8981e968a6dc86517aaf838e3b56a08f",
+    "sameprec": "c8e6a226352c71e33abb25c4f11822bd8981e968a6dc86517aaf838e3b56a08f"
+   },
+   "reward_info_equal": true,
+   "reward_breakdown": {
+    "DB": 0.0,
+    "ACTION": 0.0,
+    "COMMUNICATE": 1.0
+   },
+   "termination_reason": [
+    "user_stop",
+    "user_stop"
+   ],
+   "db_match": [
+    false,
+    false
+   ],
+   "official_reward": [
+    0.0,
+    0.0
+   ],
+   "branch_signature_equal": true,
+   "n_decisions": [
+    12,
+    12
+   ],
+   "n_messages": [
+    24,
+    24
+   ],
+   "n_user_msgs": [
+    5,
+    5
+   ],
+   "first_divergence_decision": null,
+   "first_divergence_message": null,
+   "fields_that_differ_anywhere": [
+    "controller_base/api_base (port)",
+    "duration",
+    "generation_time_seconds",
+    "state_id (study-specific id of the same state)",
+    "tag",
+    "timestamp",
+    "tool_call id / tool_call_id (random per request; prompt token shas equal, so not rendered)"
+   ],
+   "duration_s": [
+    90.97465467453003,
+    67.6058361530304
+   ],
+   "q_server_running_reqs_near_each_d1_decision": {
+    "commonstate": [
+     6,
+     6,
+     6,
+     6,
+     6,
+     7,
+     7,
+     7,
+     6,
+     6,
+     6
+    ],
+    "sameprec": [
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     3,
+     3,
+     1,
+     1,
+     1
+    ],
+    "note": "max of the two vLLM engine-log 10 s intervals bracketing the assistant message timestamp; approximate"
+   }
+  },
+  {
+   "state_key": "cc4156b2230c6fbf",
+   "block": "f02",
+   "domain": "retail",
+   "task_id": "68",
+   "t": 0,
+   "commonstate": {
+    "state_id": "72ab2bad8aa575bc",
+    "row": "analysis/fork/commonstate/q8/panel/d2_d1/f02/rows/cc4156b2230c6fbf.json",
+    "branch": "analysis/fork/commonstate/q8/panel/d2_d1/f02/branches/cc4156b2230c6fbf.json#BQ",
+    "Y": 0
+   },
+   "sameprec_g1": {
+    "state_id": "7338dc39feab2b95",
+    "state": "analysis/fork/sameprec/q8_gptq_w4_d1_vs_d2/g1/states/7338dc39feab2b95.json",
+    "branch": "analysis/fork/sameprec/q8_gptq_w4_d1_vs_d2/g1/branches/7338dc39feab2b95.json#BQ",
+    "branches_json_row": {
+     "termination_reason": "too_many_errors",
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0
+    },
+    "Y_db_success": 0
+   },
+   "state_match": {
+    "history_sha": "fcd430d0b332e89d7f4b3c6025bedfbfeb785f99734eea406eaa4c7a0c8a43dd",
+    "prompt_ids_sha": "c18c274dd69f91e298c7c522ba3334458c8a4c70c5d6a50857647e06143c9126",
+    "env_hash_db": "b25c9cb211f5efcaee5dd646054a73c4a9f43f4f5acc32c10713cd9f9ac20e9c",
+    "steps_left": 199,
+    "sim_seed": 626729,
+    "nonce": "d1613e2a",
+    "sp_source_run": "a6k2_q8_gptq_w4_d1_f02",
+    "cs_source_run": "a6k2_q8_bfpair_f02"
+   },
+   "a_d2_completion_ids_sha": {
+    "commonstate": "e06dae53068f8f5250057a8d1de1f97b7e7bd854292c286c9b976ec283761ad9",
+    "sameprec": "e06dae53068f8f5250057a8d1de1f97b7e7bd854292c286c9b976ec283761ad9",
+    "equal": true
+   },
+   "suffix_sha": {
+    "commonstate": "38f5acf3b98de963880d362c7f6783d80f01a35a02bc2312c67f69bd952b06c0",
+    "sameprec": "38f5acf3b98de963880d362c7f6783d80f01a35a02bc2312c67f69bd952b06c0"
+   },
+   "env_hash_final_db": {
+    "commonstate": "b25c9cb211f5efcaee5dd646054a73c4a9f43f4f5acc32c10713cd9f9ac20e9c",
+    "sameprec": "b25c9cb211f5efcaee5dd646054a73c4a9f43f4f5acc32c10713cd9f9ac20e9c"
+   },
+   "reward_info_equal": true,
+   "reward_breakdown": null,
+   "termination_reason": [
+    "too_many_errors",
+    "too_many_errors"
+   ],
+   "db_match": [
+    null,
+    null
+   ],
+   "official_reward": [
+    0.0,
+    0.0
+   ],
+   "branch_signature_equal": true,
+   "n_decisions": [
+    33,
+    33
+   ],
+   "n_messages": [
+    66,
+    66
+   ],
+   "n_user_msgs": [
+    16,
+    16
+   ],
+   "first_divergence_decision": null,
+   "first_divergence_message": null,
+   "fields_that_differ_anywhere": [
+    "duration",
+    "generation_time_seconds",
+    "state_id (study-specific id of the same state)",
+    "tag",
+    "timestamp",
+    "tool_call id / tool_call_id (random per request; prompt token shas equal, so not rendered)"
+   ],
+   "duration_s": [
+    123.08743953704834,
+    123.85058259963989
+   ],
+   "q_server_running_reqs_near_each_d1_decision": {
+    "commonstate": [
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     6,
+     6,
+     6,
+     6,
+     6,
+     6,
+     6,
+     6,
+     6,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7
+    ],
+    "sameprec": [
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     3,
+     3,
+     3,
+     3,
+     3,
+     6,
+     6,
+     6,
+     5,
+     5,
+     5,
+     4,
+     4,
+     4,
+     3,
+     3,
+     2,
+     2,
+     2
+    ],
+    "note": "max of the two vLLM engine-log 10 s intervals bracketing the assistant message timestamp; approximate"
+   }
+  },
+  {
+   "state_key": "79aa9e6a7ca99243",
+   "block": "f03",
+   "domain": "airline",
+   "task_id": "3",
+   "t": 0,
+   "commonstate": {
+    "state_id": "868193df553e24a9",
+    "row": "analysis/fork/commonstate/q8/panel/d2_d1/f03/rows/79aa9e6a7ca99243.json",
+    "branch": "analysis/fork/commonstate/q8/panel/d2_d1/f03/branches/79aa9e6a7ca99243.json#BQ",
+    "Y": 1
+   },
+   "sameprec_g1": {
+    "state_id": "5859e02aecc11d39",
+    "state": "analysis/fork/sameprec/q8_gptq_w4_d1_vs_d2/g1/states/5859e02aecc11d39.json",
+    "branch": "analysis/fork/sameprec/q8_gptq_w4_d1_vs_d2/g1/branches/5859e02aecc11d39.json#BQ",
+    "branches_json_row": {
+     "termination_reason": "user_stop",
+     "reward": 0.0,
+     "db_match": true,
+     "official_reward": 0.0
+    },
+    "Y_db_success": 1
+   },
+   "state_match": {
+    "history_sha": "15cd4121097932938027ae1e69a8b32b60b5cc47e9eb3bdf7928922d34fbd081",
+    "prompt_ids_sha": "9f4db4494d2cc313b8a9842c167a5395165acef3b8e1e40aff581468b926227e",
+    "env_hash_db": "124e39a664b56402bcd09cb8a6a9cece6acb8462337c969799d5658e3250f263",
+    "steps_left": 199,
+    "sim_seed": 626729,
+    "nonce": "96da6c1a",
+    "sp_source_run": "a6k2_q8_gptq_w4_d1_f03",
+    "cs_source_run": "a6k2_q8_bfpair_f03"
+   },
+   "a_d2_completion_ids_sha": {
+    "commonstate": "cc19111a10ff6dcd6a5ce7d858b2378863b2bd437c0ce476f89b457c137e8047",
+    "sameprec": "cc19111a10ff6dcd6a5ce7d858b2378863b2bd437c0ce476f89b457c137e8047",
+    "equal": true
+   },
+   "suffix_sha": {
+    "commonstate": "5d4d49aa437de23be4fe650fccbe4b66787c1ea08aa5bdfb56f3fbd6dbdf8eb0",
+    "sameprec": "5d4d49aa437de23be4fe650fccbe4b66787c1ea08aa5bdfb56f3fbd6dbdf8eb0"
+   },
+   "env_hash_final_db": {
+    "commonstate": "124e39a664b56402bcd09cb8a6a9cece6acb8462337c969799d5658e3250f263",
+    "sameprec": "124e39a664b56402bcd09cb8a6a9cece6acb8462337c969799d5658e3250f263"
+   },
+   "reward_info_equal": true,
+   "reward_breakdown": {
+    "DB": 1.0,
+    "ACTION": 0.0,
+    "COMMUNICATE": 0.0
+   },
+   "termination_reason": [
+    "user_stop",
+    "user_stop"
+   ],
+   "db_match": [
+    true,
+    true
+   ],
+   "official_reward": [
+    0.0,
+    0.0
+   ],
+   "branch_signature_equal": true,
+   "n_decisions": [
+    6,
+    6
+   ],
+   "n_messages": [
+    12,
+    12
+   ],
+   "n_user_msgs": [
+    3,
+    3
+   ],
+   "first_divergence_decision": null,
+   "first_divergence_message": null,
+   "fields_that_differ_anywhere": [
+    "duration",
+    "generation_time_seconds",
+    "state_id (study-specific id of the same state)",
+    "tag",
+    "timestamp",
+    "tool_call id / tool_call_id (random per request; prompt token shas equal, so not rendered)"
+   ],
+   "duration_s": [
+    54.06358027458191,
+    20.109375476837158
+   ],
+   "q_server_running_reqs_near_each_d1_decision": {
+    "commonstate": [
+     6,
+     6,
+     6,
+     5,
+     5
+    ],
+    "sameprec": [
+     2,
+     2,
+     2,
+     1,
+     1
+    ],
+    "note": "max of the two vLLM engine-log 10 s intervals bracketing the assistant message timestamp; approximate"
+   },
+   "per_decision": [
+    {
+     "i": 0,
+     "forced": true,
+     "prompt_ids_sha": [
+      "9f4db4494d2cc313b8a9842c167a5395165acef3b8e1e40aff581468b926227e",
+      "9f4db4494d2cc313b8a9842c167a5395165acef3b8e1e40aff581468b926227e"
+     ],
+     "completion_ids_sha": [
+      null,
+      null
+     ],
+     "n_prompt_tokens": [
+      4951,
+      4951
+     ],
+     "n_completion_tokens": [
+      null,
+      null
+     ],
+     "finish_reason": [
+      null,
+      null
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 1,
+     "forced": false,
+     "prompt_ids_sha": [
+      "9fe706e95539e370b25f0f911807973ce529bb9006fb85c732a69c208e6d3f1a",
+      "9fe706e95539e370b25f0f911807973ce529bb9006fb85c732a69c208e6d3f1a"
+     ],
+     "completion_ids_sha": [
+      "bfc215019367f359a913bd572b01ae9a8e311b37ecd0154b0d8eec0729b472f7",
+      "bfc215019367f359a913bd572b01ae9a8e311b37ecd0154b0d8eec0729b472f7"
+     ],
+     "n_prompt_tokens": [
+      5007,
+      5007
+     ],
+     "n_completion_tokens": [
+      27,
+      27
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 2,
+     "forced": false,
+     "prompt_ids_sha": [
+      "61fd26483d2b5dc119f7fbce0eba1d6822c9a53fdc6e0ed1d53cb6608bad672c",
+      "61fd26483d2b5dc119f7fbce0eba1d6822c9a53fdc6e0ed1d53cb6608bad672c"
+     ],
+     "completion_ids_sha": [
+      "390d47cd0b970e8a8c82ecf1b87301ff658cb43afec30e8b2e8cf996ea5e9469",
+      "390d47cd0b970e8a8c82ecf1b87301ff658cb43afec30e8b2e8cf996ea5e9469"
+     ],
+     "n_prompt_tokens": [
+      5107,
+      5107
+     ],
+     "n_completion_tokens": [
+      30,
+      30
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 3,
+     "forced": false,
+     "prompt_ids_sha": [
+      "216325cea1bd712ce546f1bcd81d3c1aed7d3468e68fac1b04e6906fb612f863",
+      "216325cea1bd712ce546f1bcd81d3c1aed7d3468e68fac1b04e6906fb612f863"
+     ],
+     "completion_ids_sha": [
+      "644b98185929ed5983cb70b6556fd95e435a1ce17c99fad70bb0f3d5e3caeffd",
+      "644b98185929ed5983cb70b6556fd95e435a1ce17c99fad70bb0f3d5e3caeffd"
+     ],
+     "n_prompt_tokens": [
+      5461,
+      5461
+     ],
+     "n_completion_tokens": [
+      96,
+      96
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 4,
+     "forced": false,
+     "prompt_ids_sha": [
+      "78bdb4d088b039c7c00471059e705b4da7834ba837c8b82e857316044edc90d1",
+      "78bdb4d088b039c7c00471059e705b4da7834ba837c8b82e857316044edc90d1"
+     ],
+     "completion_ids_sha": [
+      "3d15f72b6b94996fb6fb5fdd745cf50507c9ad73e3174c7803663d2f33202fa6",
+      "3d15f72b6b94996fb6fb5fdd745cf50507c9ad73e3174c7803663d2f33202fa6"
+     ],
+     "n_prompt_tokens": [
+      5635,
+      5635
+     ],
+     "n_completion_tokens": [
+      47,
+      47
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 5,
+     "forced": false,
+     "prompt_ids_sha": [
+      "5126ee0bccb3164892f274200e52b8395ff23d544258b5704e7f4f303bb0c75c",
+      "5126ee0bccb3164892f274200e52b8395ff23d544258b5704e7f4f303bb0c75c"
+     ],
+     "completion_ids_sha": [
+      "cacc8c3e25417257a1f6666be0be37e4b0f6a3fa4d0b1e3970dacd88c7f5ff71",
+      "cacc8c3e25417257a1f6666be0be37e4b0f6a3fa4d0b1e3970dacd88c7f5ff71"
+     ],
+     "n_prompt_tokens": [
+      5697,
+      5697
+     ],
+     "n_completion_tokens": [
+      19,
+      19
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    }
+   ]
+  },
+  {
+   "state_key": "1d40f5f213d18ec6",
+   "block": "f03",
+   "domain": "airline",
+   "task_id": "5",
+   "t": 1,
+   "commonstate": {
+    "state_id": "e323d1dddf68b721",
+    "row": "analysis/fork/commonstate/q8/panel/d2_d1/f03/rows/1d40f5f213d18ec6.json",
+    "branch": "analysis/fork/commonstate/q8/panel/d2_d1/f03/branches/1d40f5f213d18ec6.json#BQ",
+    "Y": 1
+   },
+   "sameprec_g1": {
+    "state_id": "9c56d53ae0493f7a",
+    "state": "analysis/fork/sameprec/q8_gptq_w4_d1_vs_d2/g1/states/9c56d53ae0493f7a.json",
+    "branch": "analysis/fork/sameprec/q8_gptq_w4_d1_vs_d2/g1/branches/9c56d53ae0493f7a.json#BQ",
+    "branches_json_row": {
+     "termination_reason": "user_stop",
+     "reward": 0.0,
+     "db_match": true,
+     "official_reward": 1.0
+    },
+    "Y_db_success": 1
+   },
+   "state_match": {
+    "history_sha": "bfd8ca57ff9b0d86c22a9de2f7266d89a229c9cb7473209d96792fdde5c3a19a",
+    "prompt_ids_sha": "d61bdbd06802748ba1842e7676380af92f75749a69fa703e2a705155c16a100a",
+    "env_hash_db": "124e39a664b56402bcd09cb8a6a9cece6acb8462337c969799d5658e3250f263",
+    "steps_left": 197,
+    "sim_seed": 626729,
+    "nonce": "96da6c1a",
+    "sp_source_run": "a6k2_q8_gptq_w4_d1_f03",
+    "cs_source_run": "a6k2_q8_bfpair_f03"
+   },
+   "a_d2_completion_ids_sha": {
+    "commonstate": "9b1c11ef6e3312a307f46316b318443aed98fb46ad4227d6ea1dc23956a6e9e5",
+    "sameprec": "9b1c11ef6e3312a307f46316b318443aed98fb46ad4227d6ea1dc23956a6e9e5",
+    "equal": true
+   },
+   "suffix_sha": {
+    "commonstate": "bb225ab4dd611ddfbb8ba501714744b70641e6e62488720a1568762709d0b03f",
+    "sameprec": "bb225ab4dd611ddfbb8ba501714744b70641e6e62488720a1568762709d0b03f"
+   },
+   "env_hash_final_db": {
+    "commonstate": "124e39a664b56402bcd09cb8a6a9cece6acb8462337c969799d5658e3250f263",
+    "sameprec": "124e39a664b56402bcd09cb8a6a9cece6acb8462337c969799d5658e3250f263"
+   },
+   "reward_info_equal": true,
+   "reward_breakdown": {
+    "DB": 1.0,
+    "ACTION": 0.0,
+    "COMMUNICATE": 1.0
+   },
+   "termination_reason": [
+    "user_stop",
+    "user_stop"
+   ],
+   "db_match": [
+    true,
+    true
+   ],
+   "official_reward": [
+    1.0,
+    1.0
+   ],
+   "branch_signature_equal": true,
+   "n_decisions": [
+    2,
+    2
+   ],
+   "n_messages": [
+    4,
+    4
+   ],
+   "n_user_msgs": [
+    1,
+    1
+   ],
+   "first_divergence_decision": null,
+   "first_divergence_message": null,
+   "fields_that_differ_anywhere": [
+    "duration",
+    "generation_time_seconds",
+    "state_id (study-specific id of the same state)",
+    "tag",
+    "timestamp",
+    "tool_call id / tool_call_id (random per request; prompt token shas equal, so not rendered)"
+   ],
+   "duration_s": [
+    17.774333000183105,
+    1.5262432098388672
+   ],
+   "q_server_running_reqs_near_each_d1_decision": {
+    "commonstate": [
+     2
+    ],
+    "sameprec": [
+     1
+    ],
+    "note": "max of the two vLLM engine-log 10 s intervals bracketing the assistant message timestamp; approximate"
+   }
+  },
+  {
+   "state_key": "3f0beb57c67b8233",
+   "block": "f03",
+   "domain": "retail",
+   "task_id": "68",
+   "t": 0,
+   "commonstate": {
+    "state_id": "a1fd24bdc2121757",
+    "row": "analysis/fork/commonstate/q8/panel/d2_d1/f03/rows/3f0beb57c67b8233.json",
+    "branch": "analysis/fork/commonstate/q8/panel/d2_d1/f03/branches/3f0beb57c67b8233.json#BQ",
+    "Y": 0
+   },
+   "sameprec_g1": {
+    "state_id": "9dd5b1df4615fdc3",
+    "state": "analysis/fork/sameprec/q8_gptq_w4_d1_vs_d2/g1/states/9dd5b1df4615fdc3.json",
+    "branch": "analysis/fork/sameprec/q8_gptq_w4_d1_vs_d2/g1/branches/9dd5b1df4615fdc3.json#BQ",
+    "branches_json_row": {
+     "termination_reason": "too_many_errors",
+     "reward": 0.0,
+     "db_match": null,
+     "official_reward": 0.0
+    },
+    "Y_db_success": 0
+   },
+   "state_match": {
+    "history_sha": "fcd430d0b332e89d7f4b3c6025bedfbfeb785f99734eea406eaa4c7a0c8a43dd",
+    "prompt_ids_sha": "d7cec91824cad11beb7d7685643f343b01d69dbacd9da8d4670124fa62255631",
+    "env_hash_db": "b25c9cb211f5efcaee5dd646054a73c4a9f43f4f5acc32c10713cd9f9ac20e9c",
+    "steps_left": 199,
+    "sim_seed": 626729,
+    "nonce": "96da6c1a",
+    "sp_source_run": "a6k2_q8_gptq_w4_d1_f03",
+    "cs_source_run": "a6k2_q8_bfpair_f03"
+   },
+   "a_d2_completion_ids_sha": {
+    "commonstate": "e06dae53068f8f5250057a8d1de1f97b7e7bd854292c286c9b976ec283761ad9",
+    "sameprec": "e06dae53068f8f5250057a8d1de1f97b7e7bd854292c286c9b976ec283761ad9",
+    "equal": true
+   },
+   "suffix_sha": {
+    "commonstate": "0a1a2fd211b12c89b6df09218ef94d80066d3c385d25298a6f3d3eddfde6c43e",
+    "sameprec": "0a1a2fd211b12c89b6df09218ef94d80066d3c385d25298a6f3d3eddfde6c43e"
+   },
+   "env_hash_final_db": {
+    "commonstate": "b25c9cb211f5efcaee5dd646054a73c4a9f43f4f5acc32c10713cd9f9ac20e9c",
+    "sameprec": "b25c9cb211f5efcaee5dd646054a73c4a9f43f4f5acc32c10713cd9f9ac20e9c"
+   },
+   "reward_info_equal": true,
+   "reward_breakdown": null,
+   "termination_reason": [
+    "too_many_errors",
+    "too_many_errors"
+   ],
+   "db_match": [
+    null,
+    null
+   ],
+   "official_reward": [
+    0.0,
+    0.0
+   ],
+   "branch_signature_equal": true,
+   "n_decisions": [
+    30,
+    30
+   ],
+   "n_messages": [
+    60,
+    60
+   ],
+   "n_user_msgs": [
+    13,
+    13
+   ],
+   "first_divergence_decision": null,
+   "first_divergence_message": null,
+   "fields_that_differ_anywhere": [
+    "duration",
+    "generation_time_seconds",
+    "state_id (study-specific id of the same state)",
+    "tag",
+    "timestamp",
+    "tool_call id / tool_call_id (random per request; prompt token shas equal, so not rendered)"
+   ],
+   "duration_s": [
+    208.1028847694397,
+    106.25474786758423
+   ],
+   "q_server_running_reqs_near_each_d1_decision": {
+    "commonstate": [
+     7,
+     7,
+     3,
+     3,
+     5,
+     5,
+     3,
+     3,
+     6,
+     6,
+     6,
+     6,
+     4,
+     4,
+     3,
+     4,
+     4,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5
+    ],
+    "sameprec": [
+     0,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     0,
+     0,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     5,
+     5,
+     6,
+     6,
+     6,
+     6,
+     6,
+     5,
+     5,
+     5,
+     2
+    ],
+    "note": "max of the two vLLM engine-log 10 s intervals bracketing the assistant message timestamp; approximate"
+   },
+   "per_decision": [
+    {
+     "i": 0,
+     "forced": true,
+     "prompt_ids_sha": [
+      "d7cec91824cad11beb7d7685643f343b01d69dbacd9da8d4670124fa62255631",
+      "d7cec91824cad11beb7d7685643f343b01d69dbacd9da8d4670124fa62255631"
+     ],
+     "completion_ids_sha": [
+      null,
+      null
+     ],
+     "n_prompt_tokens": [
+      4963,
+      4963
+     ],
+     "n_completion_tokens": [
+      null,
+      null
+     ],
+     "finish_reason": [
+      null,
+      null
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 1,
+     "forced": false,
+     "prompt_ids_sha": [
+      "6537509ec8d27df3a681eaae834434317264bf6b8d03f2b6fa70e8d1c70fd0bc",
+      "6537509ec8d27df3a681eaae834434317264bf6b8d03f2b6fa70e8d1c70fd0bc"
+     ],
+     "completion_ids_sha": [
+      "a7afdf0b6df296eee7954041300adf19c19784b61972d3a01dae79e3510ee95c",
+      "a7afdf0b6df296eee7954041300adf19c19784b61972d3a01dae79e3510ee95c"
+     ],
+     "n_prompt_tokens": [
+      5014,
+      5014
+     ],
+     "n_completion_tokens": [
+      44,
+      44
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 2,
+     "forced": false,
+     "prompt_ids_sha": [
+      "aaea4b32d91a67550f33bdfa004886837ef9ac4edecad0ea9aa268ee40c767f5",
+      "aaea4b32d91a67550f33bdfa004886837ef9ac4edecad0ea9aa268ee40c767f5"
+     ],
+     "completion_ids_sha": [
+      "f5b1535cb22f1bca86bfabcda9192bf34ca49f3948abee321ca44b8e351f4903",
+      "f5b1535cb22f1bca86bfabcda9192bf34ca49f3948abee321ca44b8e351f4903"
+     ],
+     "n_prompt_tokens": [
+      5076,
+      5076
+     ],
+     "n_completion_tokens": [
+      35,
+      35
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 3,
+     "forced": false,
+     "prompt_ids_sha": [
+      "42879bd6f8b5a1dd74e68e6ef9c0855ef6feaa01959ab5ddf8649a5854e20e29",
+      "42879bd6f8b5a1dd74e68e6ef9c0855ef6feaa01959ab5ddf8649a5854e20e29"
+     ],
+     "completion_ids_sha": [
+      "312880248c6683f9aaf0f40b5b6c6eecb9a2ca6890ca19e1b2d7e298163d4596",
+      "312880248c6683f9aaf0f40b5b6c6eecb9a2ca6890ca19e1b2d7e298163d4596"
+     ],
+     "n_prompt_tokens": [
+      5165,
+      5165
+     ],
+     "n_completion_tokens": [
+      44,
+      44
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 4,
+     "forced": false,
+     "prompt_ids_sha": [
+      "a5719a036b2202da8ece0f2eeeb2d590527b9c8757c0dff8f49cff90af7ab67f",
+      "a5719a036b2202da8ece0f2eeeb2d590527b9c8757c0dff8f49cff90af7ab67f"
+     ],
+     "completion_ids_sha": [
+      "a35e021deaae0c90a4bb52e974546fdfda774a688da0a014f9e0696a2a26b423",
+      "a35e021deaae0c90a4bb52e974546fdfda774a688da0a014f9e0696a2a26b423"
+     ],
+     "n_prompt_tokens": [
+      5231,
+      5231
+     ],
+     "n_completion_tokens": [
+      42,
+      42
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 5,
+     "forced": false,
+     "prompt_ids_sha": [
+      "ea12753d44330558e3e88e781f915058a5d51b3f693efa4eb34ae104201c87da",
+      "ea12753d44330558e3e88e781f915058a5d51b3f693efa4eb34ae104201c87da"
+     ],
+     "completion_ids_sha": [
+      "54d660c273fe9420dca5b2d2a6f0299ddfca32f03c19e2e79f3f1dfcb475faf1",
+      "54d660c273fe9420dca5b2d2a6f0299ddfca32f03c19e2e79f3f1dfcb475faf1"
+     ],
+     "n_prompt_tokens": [
+      5290,
+      5290
+     ],
+     "n_completion_tokens": [
+      30,
+      30
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 6,
+     "forced": false,
+     "prompt_ids_sha": [
+      "1155961716de3987f0d149d68770a5d6e8484a92d061d8f83bd0d334cf14e049",
+      "1155961716de3987f0d149d68770a5d6e8484a92d061d8f83bd0d334cf14e049"
+     ],
+     "completion_ids_sha": [
+      "4aa1d4ef33c28442d5a0c6b1a93f5db62b053fa19124e3feaa9a55dd0a617495",
+      "4aa1d4ef33c28442d5a0c6b1a93f5db62b053fa19124e3feaa9a55dd0a617495"
+     ],
+     "n_prompt_tokens": [
+      5523,
+      5523
+     ],
+     "n_completion_tokens": [
+      39,
+      39
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 7,
+     "forced": false,
+     "prompt_ids_sha": [
+      "96d2b28f71a8429c07c251fd97740daad4311f7c0aa3587bdbd699521d65830d",
+      "96d2b28f71a8429c07c251fd97740daad4311f7c0aa3587bdbd699521d65830d"
+     ],
+     "completion_ids_sha": [
+      "d3e145e660234acd9391fe8936e8cb7449665cf11ed3eea5eed9ccc9a9d33cdb",
+      "d3e145e660234acd9391fe8936e8cb7449665cf11ed3eea5eed9ccc9a9d33cdb"
+     ],
+     "n_prompt_tokens": [
+      5583,
+      5583
+     ],
+     "n_completion_tokens": [
+      29,
+      29
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 8,
+     "forced": false,
+     "prompt_ids_sha": [
+      "3255eb036b64ee600ff9b6dfef87895affa5f08edfd1302a6834a3bc39e91ac1",
+      "3255eb036b64ee600ff9b6dfef87895affa5f08edfd1302a6834a3bc39e91ac1"
+     ],
+     "completion_ids_sha": [
+      "e0175405e92e778205a9911ccd16d4af7d7c93720b8f27b2e39b8a15fd2fd20d",
+      "e0175405e92e778205a9911ccd16d4af7d7c93720b8f27b2e39b8a15fd2fd20d"
+     ],
+     "n_prompt_tokens": [
+      5630,
+      5630
+     ],
+     "n_completion_tokens": [
+      40,
+      40
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 9,
+     "forced": false,
+     "prompt_ids_sha": [
+      "3bb59f1b87fa760263a886f064f5a6f67c3214c2cb61a31430134ebc60cb20cc",
+      "3bb59f1b87fa760263a886f064f5a6f67c3214c2cb61a31430134ebc60cb20cc"
+     ],
+     "completion_ids_sha": [
+      "54d660c273fe9420dca5b2d2a6f0299ddfca32f03c19e2e79f3f1dfcb475faf1",
+      "54d660c273fe9420dca5b2d2a6f0299ddfca32f03c19e2e79f3f1dfcb475faf1"
+     ],
+     "n_prompt_tokens": [
+      5715,
+      5715
+     ],
+     "n_completion_tokens": [
+      30,
+      30
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 10,
+     "forced": false,
+     "prompt_ids_sha": [
+      "be8f76b6580e27dda127a3c70000fd26c9e6e60c6d0d10f0db7f2befd00a198d",
+      "be8f76b6580e27dda127a3c70000fd26c9e6e60c6d0d10f0db7f2befd00a198d"
+     ],
+     "completion_ids_sha": [
+      "c38088d574522ca595e03387a01ddd89480afe814e75c0b6c07b13ccd9afcf86",
+      "c38088d574522ca595e03387a01ddd89480afe814e75c0b6c07b13ccd9afcf86"
+     ],
+     "n_prompt_tokens": [
+      5948,
+      5948
+     ],
+     "n_completion_tokens": [
+      26,
+      26
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 11,
+     "forced": false,
+     "prompt_ids_sha": [
+      "abb7f8f9cc6e778ec50dec2ba102c4a34f2ea1f936c742a0669e6b6e3202df62",
+      "abb7f8f9cc6e778ec50dec2ba102c4a34f2ea1f936c742a0669e6b6e3202df62"
+     ],
+     "completion_ids_sha": [
+      "d3e145e660234acd9391fe8936e8cb7449665cf11ed3eea5eed9ccc9a9d33cdb",
+      "d3e145e660234acd9391fe8936e8cb7449665cf11ed3eea5eed9ccc9a9d33cdb"
+     ],
+     "n_prompt_tokens": [
+      5993,
+      5993
+     ],
+     "n_completion_tokens": [
+      29,
+      29
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 12,
+     "forced": false,
+     "prompt_ids_sha": [
+      "82b06785bddf4097beb2826e94d9a876556e52415f6e76f8d7a361fc34c6b384",
+      "82b06785bddf4097beb2826e94d9a876556e52415f6e76f8d7a361fc34c6b384"
+     ],
+     "completion_ids_sha": [
+      "b922c1d7e7074500756dcbc842140416e9e2bdbe7c3bcc93233f2f13b073e8f1",
+      "b922c1d7e7074500756dcbc842140416e9e2bdbe7c3bcc93233f2f13b073e8f1"
+     ],
+     "n_prompt_tokens": [
+      6040,
+      6040
+     ],
+     "n_completion_tokens": [
+      55,
+      55
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 13,
+     "forced": false,
+     "prompt_ids_sha": [
+      "54b5f4df52778e742fd19cfc082585b5100bfa02c396c944c57069adee7d47ad",
+      "54b5f4df52778e742fd19cfc082585b5100bfa02c396c944c57069adee7d47ad"
+     ],
+     "completion_ids_sha": [
+      "63e8dd363e8c53c6013ba8dd79269be3a9515be4b41ff55e5cab2fc894df74d8",
+      "63e8dd363e8c53c6013ba8dd79269be3a9515be4b41ff55e5cab2fc894df74d8"
+     ],
+     "n_prompt_tokens": [
+      6146,
+      6146
+     ],
+     "n_completion_tokens": [
+      18,
+      18
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 14,
+     "forced": false,
+     "prompt_ids_sha": [
+      "a5314b2b0aa80b17941e2cf484745ec8ec75fb8545b74911ffe72bea7e412093",
+      "a5314b2b0aa80b17941e2cf484745ec8ec75fb8545b74911ffe72bea7e412093"
+     ],
+     "completion_ids_sha": [
+      "690ecaadc45bf3275725d1fa92388c6c42553ead62237f47ffaeff1701ec97e9",
+      "690ecaadc45bf3275725d1fa92388c6c42553ead62237f47ffaeff1701ec97e9"
+     ],
+     "n_prompt_tokens": [
+      7012,
+      7012
+     ],
+     "n_completion_tokens": [
+      31,
+      31
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 15,
+     "forced": false,
+     "prompt_ids_sha": [
+      "c29e621b48fcedae5c4ef0939169a5f43b8929c85db2e194e5d9beb262f6d7f7",
+      "c29e621b48fcedae5c4ef0939169a5f43b8929c85db2e194e5d9beb262f6d7f7"
+     ],
+     "completion_ids_sha": [
+      "54d660c273fe9420dca5b2d2a6f0299ddfca32f03c19e2e79f3f1dfcb475faf1",
+      "54d660c273fe9420dca5b2d2a6f0299ddfca32f03c19e2e79f3f1dfcb475faf1"
+     ],
+     "n_prompt_tokens": [
+      7061,
+      7061
+     ],
+     "n_completion_tokens": [
+      30,
+      30
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 16,
+     "forced": false,
+     "prompt_ids_sha": [
+      "5e7fe00d8d0cdab6ef97843d016cae03d095566de47aae60b7a1d9feb4b34d9c",
+      "5e7fe00d8d0cdab6ef97843d016cae03d095566de47aae60b7a1d9feb4b34d9c"
+     ],
+     "completion_ids_sha": [
+      "e7fe2f4ac56db4f3b7636c62521433da13522025296f81cf95573773e0be6591",
+      "e7fe2f4ac56db4f3b7636c62521433da13522025296f81cf95573773e0be6591"
+     ],
+     "n_prompt_tokens": [
+      7294,
+      7294
+     ],
+     "n_completion_tokens": [
+      29,
+      29
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 17,
+     "forced": false,
+     "prompt_ids_sha": [
+      "0cbf474f6c9136735bc4e564bb6b9e57264a8fead1bed464bf36a376ddf11aeb",
+      "0cbf474f6c9136735bc4e564bb6b9e57264a8fead1bed464bf36a376ddf11aeb"
+     ],
+     "completion_ids_sha": [
+      "d3e145e660234acd9391fe8936e8cb7449665cf11ed3eea5eed9ccc9a9d33cdb",
+      "d3e145e660234acd9391fe8936e8cb7449665cf11ed3eea5eed9ccc9a9d33cdb"
+     ],
+     "n_prompt_tokens": [
+      7342,
+      7342
+     ],
+     "n_completion_tokens": [
+      29,
+      29
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 18,
+     "forced": false,
+     "prompt_ids_sha": [
+      "bb91f7fcddd299263e8acd9c737e8cea9b663b30f74154cba65fc8cf023014ef",
+      "bb91f7fcddd299263e8acd9c737e8cea9b663b30f74154cba65fc8cf023014ef"
+     ],
+     "completion_ids_sha": [
+      "16c5b79d5acde5a964b6bf92239f3a338979e8ea5145cefcb2d3f95e9f77f940",
+      "16c5b79d5acde5a964b6bf92239f3a338979e8ea5145cefcb2d3f95e9f77f940"
+     ],
+     "n_prompt_tokens": [
+      7389,
+      7389
+     ],
+     "n_completion_tokens": [
+      58,
+      58
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 19,
+     "forced": false,
+     "prompt_ids_sha": [
+      "1c8dc2b076454675b5cc980c6427eed02b4b0eec649805560b0087a58e6b1c05",
+      "1c8dc2b076454675b5cc980c6427eed02b4b0eec649805560b0087a58e6b1c05"
+     ],
+     "completion_ids_sha": [
+      "830931e9e997ec148f80023a7d3be3aee804fc682e462990c52b119df5328d81",
+      "830931e9e997ec148f80023a7d3be3aee804fc682e462990c52b119df5328d81"
+     ],
+     "n_prompt_tokens": [
+      7494,
+      7494
+     ],
+     "n_completion_tokens": [
+      31,
+      31
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 20,
+     "forced": false,
+     "prompt_ids_sha": [
+      "f2dab3da49016f1cb3ce0c1ce57e42f7529d80657c9e4f68f77f77c0d3dab459",
+      "f2dab3da49016f1cb3ce0c1ce57e42f7529d80657c9e4f68f77f77c0d3dab459"
+     ],
+     "completion_ids_sha": [
+      "7553ae8b318800aac4a87db9a327d38c5816213422598f32ee33e0198e0a9522",
+      "7553ae8b318800aac4a87db9a327d38c5816213422598f32ee33e0198e0a9522"
+     ],
+     "n_prompt_tokens": [
+      7543,
+      7543
+     ],
+     "n_completion_tokens": [
+      31,
+      31
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 21,
+     "forced": false,
+     "prompt_ids_sha": [
+      "a1f09796de526bb80231eccaa4de3cfaa17a79b9f60ee175529895b1020d7f30",
+      "a1f09796de526bb80231eccaa4de3cfaa17a79b9f60ee175529895b1020d7f30"
+     ],
+     "completion_ids_sha": [
+      "f52d5b0ff46beef75d3101a0aa56e5b9bad7343531c48ea0a422334fa87d3604",
+      "f52d5b0ff46beef75d3101a0aa56e5b9bad7343531c48ea0a422334fa87d3604"
+     ],
+     "n_prompt_tokens": [
+      7592,
+      7592
+     ],
+     "n_completion_tokens": [
+      45,
+      45
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 22,
+     "forced": false,
+     "prompt_ids_sha": [
+      "a247f35dcd83e58eecdb80865a2c425dd6ec94f6921656f185ea761bdadeb833",
+      "a247f35dcd83e58eecdb80865a2c425dd6ec94f6921656f185ea761bdadeb833"
+     ],
+     "completion_ids_sha": [
+      "d3e145e660234acd9391fe8936e8cb7449665cf11ed3eea5eed9ccc9a9d33cdb",
+      "d3e145e660234acd9391fe8936e8cb7449665cf11ed3eea5eed9ccc9a9d33cdb"
+     ],
+     "n_prompt_tokens": [
+      7671,
+      7671
+     ],
+     "n_completion_tokens": [
+      29,
+      29
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 23,
+     "forced": false,
+     "prompt_ids_sha": [
+      "118e004b855b50760ab2eb20d2c2e68c8be868679fd9da7f6b1c798e0a92d775",
+      "118e004b855b50760ab2eb20d2c2e68c8be868679fd9da7f6b1c798e0a92d775"
+     ],
+     "completion_ids_sha": [
+      "bffebb298ac7577aab5b7df3129cfd903888054e5d8540a3d19e9955ba6ee6ea",
+      "bffebb298ac7577aab5b7df3129cfd903888054e5d8540a3d19e9955ba6ee6ea"
+     ],
+     "n_prompt_tokens": [
+      7718,
+      7718
+     ],
+     "n_completion_tokens": [
+      56,
+      56
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 24,
+     "forced": false,
+     "prompt_ids_sha": [
+      "e4730cac9ea4b6690ad91856b1e406072f72e177d36c82cbc7531f35307674a3",
+      "e4730cac9ea4b6690ad91856b1e406072f72e177d36c82cbc7531f35307674a3"
+     ],
+     "completion_ids_sha": [
+      "d3e145e660234acd9391fe8936e8cb7449665cf11ed3eea5eed9ccc9a9d33cdb",
+      "d3e145e660234acd9391fe8936e8cb7449665cf11ed3eea5eed9ccc9a9d33cdb"
+     ],
+     "n_prompt_tokens": [
+      7823,
+      7823
+     ],
+     "n_completion_tokens": [
+      29,
+      29
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 25,
+     "forced": false,
+     "prompt_ids_sha": [
+      "4f2e4a261a01b42251d910e5a48ca635fe2d6d4b2bf032ba99e88b26c5fcaf99",
+      "4f2e4a261a01b42251d910e5a48ca635fe2d6d4b2bf032ba99e88b26c5fcaf99"
+     ],
+     "completion_ids_sha": [
+      "16c5b79d5acde5a964b6bf92239f3a338979e8ea5145cefcb2d3f95e9f77f940",
+      "16c5b79d5acde5a964b6bf92239f3a338979e8ea5145cefcb2d3f95e9f77f940"
+     ],
+     "n_prompt_tokens": [
+      7870,
+      7870
+     ],
+     "n_completion_tokens": [
+      58,
+      58
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 26,
+     "forced": false,
+     "prompt_ids_sha": [
+      "6f295951c3f4bc9a876a35ea5d838981d92a6e94f065ebd6c19f71251064a0d6",
+      "6f295951c3f4bc9a876a35ea5d838981d92a6e94f065ebd6c19f71251064a0d6"
+     ],
+     "completion_ids_sha": [
+      "5f09e408da0fdc3507acafa8ef92632cba78828a6f48d6554972a0faa7f9a594",
+      "5f09e408da0fdc3507acafa8ef92632cba78828a6f48d6554972a0faa7f9a594"
+     ],
+     "n_prompt_tokens": [
+      7975,
+      7975
+     ],
+     "n_completion_tokens": [
+      31,
+      31
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 27,
+     "forced": false,
+     "prompt_ids_sha": [
+      "8c10498bd8061eef337168bbb10e68b6e742000be7f2cf6422927accf1c6a801",
+      "8c10498bd8061eef337168bbb10e68b6e742000be7f2cf6422927accf1c6a801"
+     ],
+     "completion_ids_sha": [
+      "a510926216d3efe43bbfc8c2439d6b7b7107b59588ffaa4c73d1f56f4db68e02",
+      "a510926216d3efe43bbfc8c2439d6b7b7107b59588ffaa4c73d1f56f4db68e02"
+     ],
+     "n_prompt_tokens": [
+      8410,
+      8410
+     ],
+     "n_completion_tokens": [
+      31,
+      31
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 28,
+     "forced": false,
+     "prompt_ids_sha": [
+      "5f2afe5fce14f75da1458c55eb1b9e7502586cc50046c2b06b91780d623489d9",
+      "5f2afe5fce14f75da1458c55eb1b9e7502586cc50046c2b06b91780d623489d9"
+     ],
+     "completion_ids_sha": [
+      "634655179c50cfb317b0218f52f62b95a5a2f2292da5ffc61e8114a381695150",
+      "634655179c50cfb317b0218f52f62b95a5a2f2292da5ffc61e8114a381695150"
+     ],
+     "n_prompt_tokens": [
+      9711,
+      9711
+     ],
+     "n_completion_tokens": [
+      41,
+      41
+     ],
+     "finish_reason": [
+      "stop",
+      "stop"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    },
+    {
+     "i": 29,
+     "forced": false,
+     "prompt_ids_sha": [
+      "a181de09a5beeb707c74aa90900b077e2ea1e71cd0872c544ce44f0efd6deeb7",
+      "a181de09a5beeb707c74aa90900b077e2ea1e71cd0872c544ce44f0efd6deeb7"
+     ],
+     "completion_ids_sha": [
+      "d3e145e660234acd9391fe8936e8cb7449665cf11ed3eea5eed9ccc9a9d33cdb",
+      "d3e145e660234acd9391fe8936e8cb7449665cf11ed3eea5eed9ccc9a9d33cdb"
+     ],
+     "n_prompt_tokens": [
+      9778,
+      9778
+     ],
+     "n_completion_tokens": [
+      29,
+      29
+     ],
+     "finish_reason": [
+      "tool_calls",
+      "tool_calls"
+     ],
+     "tool_calls_equal": true,
+     "diff_fields": []
+    }
+   ]
+  },
+  {
+   "state_key": "763a22f520eda960",
+   "block": "f03",
+   "domain": "retail",
+   "task_id": "82",
+   "t": 1,
+   "commonstate": {
+    "state_id": "0fc1238d41af6cb4",
+    "row": "analysis/fork/commonstate/q8/panel/d2_d1/f03/rows/763a22f520eda960.json",
+    "branch": "analysis/fork/commonstate/q8/panel/d2_d1/f03/branches/763a22f520eda960.json#BQ",
+    "Y": 0
+   },
+   "sameprec_g1": {
+    "state_id": "02f6b4051e32b744",
+    "state": "analysis/fork/sameprec/q8_gptq_w4_d1_vs_d2/g1/states/02f6b4051e32b744.json",
+    "branch": "analysis/fork/sameprec/q8_gptq_w4_d1_vs_d2/g1/branches/02f6b4051e32b744.json#BQ",
+    "branches_json_row": {
+     "termination_reason": "user_stop",
+     "reward": 0.0,
+     "db_match": false,
+     "official_reward": 0.0
+    },
+    "Y_db_success": 0
+   },
+   "state_match": {
+    "history_sha": "b9c228421bb786a70dcf476de0dbf51525ab878b6a7bc23acc3c072e852e776c",
+    "prompt_ids_sha": "3035a8e7ca617035a752e83a55b9176e801b5fe9fd3ac2a677a179a7b875e6c6",
+    "env_hash_db": "b25c9cb211f5efcaee5dd646054a73c4a9f43f4f5acc32c10713cd9f9ac20e9c",
+    "steps_left": 197,
+    "sim_seed": 626729,
+    "nonce": "96da6c1a",
+    "sp_source_run": "a6k2_q8_gptq_w4_d1_f03",
+    "cs_source_run": "a6k2_q8_bfpair_f03"
+   },
+   "a_d2_completion_ids_sha": {
+    "commonstate": "74e689451e62f3d33f31fd03de4210989334f2634e546f735312bd1772170209",
+    "sameprec": "74e689451e62f3d33f31fd03de4210989334f2634e546f735312bd1772170209",
+    "equal": true
+   },
+   "suffix_sha": {
+    "commonstate": "beb128207d5ee8a665203c07c88b5932a9d027aabcf8197fc74ce946d402f79b",
+    "sameprec": "beb128207d5ee8a665203c07c88b5932a9d027aabcf8197fc74ce946d402f79b"
+   },
+   "env_hash_final_db": {
+    "commonstate": "a11f89d10d9ca63911c7c0a79b6633a1cee14d945e414c8224b58da1539a159a",
+    "sameprec": "a11f89d10d9ca63911c7c0a79b6633a1cee14d945e414c8224b58da1539a159a"
+   },
+   "reward_info_equal": true,
+   "reward_breakdown": {
+    "DB": 0.0,
+    "ACTION": 0.0,
+    "COMMUNICATE": 1.0
+   },
+   "termination_reason": [
+    "user_stop",
+    "user_stop"
+   ],
+   "db_match": [
+    false,
+    false
+   ],
+   "official_reward": [
+    0.0,
+    0.0
+   ],
+   "branch_signature_equal": true,
+   "n_decisions": [
+    17,
+    17
+   ],
+   "n_messages": [
+    34,
+    34
+   ],
+   "n_user_msgs": [
+    6,
+    6
+   ],
+   "first_divergence_decision": null,
+   "first_divergence_message": null,
+   "fields_that_differ_anywhere": [
+    "duration",
+    "generation_time_seconds",
+    "state_id (study-specific id of the same state)",
+    "tag",
+    "timestamp",
+    "tool_call id / tool_call_id (random per request; prompt token shas equal, so not rendered)"
+   ],
+   "duration_s": [
+    194.67057585716248,
+    88.78852152824402
+   ],
+   "q_server_running_reqs_near_each_d1_decision": {
+    "commonstate": [
+     1,
+     7,
+     7,
+     7,
+     7,
+     6,
+     6,
+     6,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5
+    ],
+    "sameprec": [
+     2,
+     2,
+     2,
+     2,
+     2,
+     1,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     1,
+     1
+    ],
+    "note": "max of the two vLLM engine-log 10 s intervals bracketing the assistant message timestamp; approximate"
+   }
+  },
+  {
+   "state_key": "762a8bf4acfc1d88",
+   "block": "f03",
+   "domain": "retail",
+   "task_id": "95",
+   "t": 1,
+   "commonstate": {
+    "state_id": "8e401580c289ae51",
+    "row": "analysis/fork/commonstate/q8/panel/d2_d1/f03/rows/762a8bf4acfc1d88.json",
+    "branch": "analysis/fork/commonstate/q8/panel/d2_d1/f03/branches/762a8bf4acfc1d88.json#BQ",
+    "Y": 0
+   },
+   "sameprec_g1": {
+    "state_id": "ee81224144b8b751",
+    "state": "analysis/fork/sameprec/q8_gptq_w4_d1_vs_d2/g1/states/ee81224144b8b751.json",
+    "branch": "analysis/fork/sameprec/q8_gptq_w4_d1_vs_d2/g1/branches/ee81224144b8b751.json#BQ",
+    "branches_json_row": {
+     "termination_reason": "user_stop",
+     "reward": 0.0,
+     "db_match": false,
+     "official_reward": 0.0
+    },
+    "Y_db_success": 0
+   },
+   "state_match": {
+    "history_sha": "a3f38253104446f74933d293a06a8038ae153ad4104bfaa00b0eba489b838461",
+    "prompt_ids_sha": "f7d651e47779f7ac2bd1d80aee674c8e6549bf616a2d87b9ded1b3824209d878",
+    "env_hash_db": "b25c9cb211f5efcaee5dd646054a73c4a9f43f4f5acc32c10713cd9f9ac20e9c",
+    "steps_left": 197,
+    "sim_seed": 626729,
+    "nonce": "96da6c1a",
+    "sp_source_run": "a6k2_q8_gptq_w4_d1_f03",
+    "cs_source_run": "a6k2_q8_bfpair_f03"
+   },
+   "a_d2_completion_ids_sha": {
+    "commonstate": "74e689451e62f3d33f31fd03de4210989334f2634e546f735312bd1772170209",
+    "sameprec": "74e689451e62f3d33f31fd03de4210989334f2634e546f735312bd1772170209",
+    "equal": true
+   },
+   "suffix_sha": {
+    "commonstate": "e1ab3b96b207b21a01995b05d210b79c7c4c3190e5ddc8582edc1ef1a9242dd7",
+    "sameprec": "e1ab3b96b207b21a01995b05d210b79c7c4c3190e5ddc8582edc1ef1a9242dd7"
+   },
+   "env_hash_final_db": {
+    "commonstate": "e74a02c3ca39adc6de78b323c6efe37d84fcb2c857b878925f835693d06e3398",
+    "sameprec": "e74a02c3ca39adc6de78b323c6efe37d84fcb2c857b878925f835693d06e3398"
+   },
+   "reward_info_equal": true,
+   "reward_breakdown": {
+    "DB": 0.0,
+    "ACTION": 0.0,
+    "COMMUNICATE": 0.0
+   },
+   "termination_reason": [
+    "user_stop",
+    "user_stop"
+   ],
+   "db_match": [
+    false,
+    false
+   ],
+   "official_reward": [
+    0.0,
+    0.0
+   ],
+   "branch_signature_equal": true,
+   "n_decisions": [
+    31,
+    31
+   ],
+   "n_messages": [
+    62,
+    62
+   ],
+   "n_user_msgs": [
+    5,
+    5
+   ],
+   "first_divergence_decision": null,
+   "first_divergence_message": null,
+   "fields_that_differ_anywhere": [
+    "duration",
+    "generation_time_seconds",
+    "state_id (study-specific id of the same state)",
+    "tag",
+    "timestamp",
+    "tool_call id / tool_call_id (random per request; prompt token shas equal, so not rendered)"
+   ],
+   "duration_s": [
+    192.33220171928406,
+    118.15338826179504
+   ],
+   "q_server_running_reqs_near_each_d1_decision": {
+    "commonstate": [
+     1,
+     2,
+     2,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     6,
+     6,
+     6,
+     6,
+     6,
+     6,
+     6,
+     6,
+     6,
+     4,
+     4,
+     4,
+     5,
+     5,
+     3,
+     5,
+     5,
+     5,
+     5
+    ],
+    "sameprec": [
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     4,
+     3,
+     3,
+     3,
+     2,
+     1,
+     1,
+     1
+    ],
+    "note": "max of the two vLLM engine-log 10 s intervals bracketing the assistant message timestamp; approximate"
+   }
+  }
+ ],
+ "serving_context": {
+  "sameprec_q8_g1": {
+   "task": "fork_sameprec_q8_g1",
+   "queue_record": "/data/ziyangs/cloq_work/queue/done/fork_sameprec_q8_g1.json",
+   "servers_json": "/data/ziyangs/cloq_work/logs/tasks/fork_sameprec_q8_g1.servers.json",
+   "host": "node004",
+   "job": "49862",
+   "driver_concurrency": 8,
+   "user_base": "http://127.0.0.1:8000/v1",
+   "B": {
+    "gpu": "4",
+    "port": 8105,
+    "ckpt_sha256": "320409ad7d28102cd4b78c32c5233f76a03b65cb6cb137c1309eee5fddfd873e",
+    "canary": "15e5098c08c412da",
+    "effective_config_sha": "6efd8895e51ea91e",
+    "launch_args": [
+     "4",
+     "8105",
+     "/tmp/cloq_49862/ckpt_fork_sameprec_q8_g1_B",
+     "agent",
+     "33792"
+    ],
+    "serve_env": {},
+    "serve_extra": [],
+    "gpu_util": "0.90",
+    "hook_coverage": null,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    }
+   },
+   "Q": {
+    "gpu": "5",
+    "port": 8205,
+    "ckpt_sha256": "6ee628e67194f0c073cb8efe917eaa083fe53281f507a48b1d6146f636e10d70",
+    "canary": "a9f812fb17241b72",
+    "effective_config_sha": "cd7c70f5e9fe40d4",
+    "launch_args": [
+     "5",
+     "8205",
+     "/tmp/cloq_49862/ckpt_fork_sameprec_q8_g1_Q",
+     "agent",
+     "33792"
+    ],
+    "serve_env": {},
+    "serve_extra": [],
+    "gpu_util": "0.90",
+    "hook_coverage": null,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    }
+   },
+   "wall": "2026-10-02 02:11:49 to 05:55:35 PDT",
+   "branches_run": [
+    "BB",
+    "BQ",
+    "QB"
+   ],
+   "user_sim_log": "/data/ziyangs/cloq_work/logs/sim_node004_49862.log",
+   "q_server_load": {
+    "running_median": 1,
+    "running_max": 6,
+    "waiting_max": 1,
+    "kv_usage_max_pct": 30.1,
+    "kv_cache_tokens": 174128,
+    "log": "/data/ziyangs/cloq_work/logs/tasks/fork_sameprec_q8_g1.Q.vllm.log"
+   }
+  },
+  "commonstate_d2_d1_f01": {
+   "task": "cs_q8_d2_d1_f01",
+   "queue_record": "/data/ziyangs/cloq_work/queue/done/cs_q8_d2_d1_f01.json",
+   "servers_json": "/data/ziyangs/cloq_work/logs/tasks/cs_q8_d2_d1_f01.servers.json",
+   "host": "node005",
+   "job": "49863",
+   "driver_concurrency": 8,
+   "user_base": "http://127.0.0.1:8000/v1",
+   "B": {
+    "gpu": "6",
+    "port": 8107,
+    "ckpt_sha256": "320409ad7d28102cd4b78c32c5233f76a03b65cb6cb137c1309eee5fddfd873e",
+    "canary": "15e5098c08c412da",
+    "effective_config_sha": "6efd8895e51ea91e",
+    "launch_args": [
+     "6",
+     "8107",
+     "/tmp/cloq_49863/ckpt_cs_q8_d2_d1_f01_B",
+     "agent",
+     "33792"
+    ],
+    "serve_env": {},
+    "serve_extra": [],
+    "gpu_util": "0.90",
+    "hook_coverage": null,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    }
+   },
+   "Q": {
+    "gpu": "7",
+    "port": 8207,
+    "ckpt_sha256": "6ee628e67194f0c073cb8efe917eaa083fe53281f507a48b1d6146f636e10d70",
+    "canary": "a9f812fb17241b72",
+    "effective_config_sha": "cd7c70f5e9fe40d4",
+    "launch_args": [
+     "7",
+     "8207",
+     "/tmp/cloq_49863/ckpt_cs_q8_d2_d1_f01_Q",
+     "agent",
+     "33792"
+    ],
+    "serve_env": {},
+    "serve_extra": [],
+    "gpu_util": "0.90",
+    "hook_coverage": null,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    }
+   },
+   "wall": "2026-10-02 11:00:49 to 11:41:59 PDT",
+   "user_sim_log": "/data/ziyangs/cloq_work/logs/sim_node005_49863.log",
+   "q_server_load": {
+    "running_median": 5,
+    "running_max": 8,
+    "waiting_max": 3,
+    "kv_usage_max_pct": 32.7,
+    "kv_cache_tokens": 193680,
+    "log": "/data/ziyangs/cloq_work/logs/tasks/cs_q8_d2_d1_f01.Q.vllm.log"
+   }
+  },
+  "commonstate_d2_d1_f02": {
+   "task": "cs_q8_d2_d1_f02",
+   "queue_record": "/data/ziyangs/cloq_work/queue/done/cs_q8_d2_d1_f02.json",
+   "servers_json": "/data/ziyangs/cloq_work/logs/tasks/cs_q8_d2_d1_f02.servers.json",
+   "host": "node005",
+   "job": "49863",
+   "driver_concurrency": 8,
+   "user_base": "http://127.0.0.1:8000/v1",
+   "B": {
+    "gpu": "4",
+    "port": 8105,
+    "ckpt_sha256": "320409ad7d28102cd4b78c32c5233f76a03b65cb6cb137c1309eee5fddfd873e",
+    "canary": "15e5098c08c412da",
+    "effective_config_sha": "6efd8895e51ea91e",
+    "launch_args": [
+     "4",
+     "8105",
+     "/tmp/cloq_49863/ckpt_cs_q8_d2_d1_f02_B",
+     "agent",
+     "33792"
+    ],
+    "serve_env": {},
+    "serve_extra": [],
+    "gpu_util": "0.90",
+    "hook_coverage": null,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    }
+   },
+   "Q": {
+    "gpu": "5",
+    "port": 8205,
+    "ckpt_sha256": "6ee628e67194f0c073cb8efe917eaa083fe53281f507a48b1d6146f636e10d70",
+    "canary": "a9f812fb17241b72",
+    "effective_config_sha": "cd7c70f5e9fe40d4",
+    "launch_args": [
+     "5",
+     "8205",
+     "/tmp/cloq_49863/ckpt_cs_q8_d2_d1_f02_Q",
+     "agent",
+     "33792"
+    ],
+    "serve_env": {},
+    "serve_extra": [],
+    "gpu_util": "0.90",
+    "hook_coverage": null,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    }
+   },
+   "wall": "2026-10-02 11:30:50 to 12:29:22 PDT",
+   "user_sim_log": "/data/ziyangs/cloq_work/logs/sim_node005_49863.log",
+   "q_server_load": {
+    "running_median": 2,
+    "running_max": 8,
+    "waiting_max": 0,
+    "kv_usage_max_pct": 37.7,
+    "kv_cache_tokens": 174128,
+    "log": "/data/ziyangs/cloq_work/logs/tasks/cs_q8_d2_d1_f02.Q.vllm.log"
+   }
+  },
+  "commonstate_d2_d1_f03": {
+   "task": "cs_q8_d2_d1_f03",
+   "queue_record": "/data/ziyangs/cloq_work/queue/done/cs_q8_d2_d1_f03.json",
+   "servers_json": "/data/ziyangs/cloq_work/logs/tasks/cs_q8_d2_d1_f03.servers.json",
+   "host": "node004",
+   "job": "49862",
+   "driver_concurrency": 8,
+   "user_base": "http://127.0.0.1:8000/v1",
+   "B": {
+    "gpu": "4",
+    "port": 8105,
+    "ckpt_sha256": "320409ad7d28102cd4b78c32c5233f76a03b65cb6cb137c1309eee5fddfd873e",
+    "canary": "15e5098c08c412da",
+    "effective_config_sha": "6efd8895e51ea91e",
+    "launch_args": [
+     "4",
+     "8105",
+     "/tmp/cloq_49862/ckpt_cs_q8_d2_d1_f03_B",
+     "agent",
+     "33792"
+    ],
+    "serve_env": {},
+    "serve_extra": [],
+    "gpu_util": "0.90",
+    "hook_coverage": null,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    }
+   },
+   "Q": {
+    "gpu": "5",
+    "port": 8205,
+    "ckpt_sha256": "6ee628e67194f0c073cb8efe917eaa083fe53281f507a48b1d6146f636e10d70",
+    "canary": "a9f812fb17241b72",
+    "effective_config_sha": "cd7c70f5e9fe40d4",
+    "launch_args": [
+     "5",
+     "8205",
+     "/tmp/cloq_49862/ckpt_cs_q8_d2_d1_f03_Q",
+     "agent",
+     "33792"
+    ],
+    "serve_env": {},
+    "serve_extra": [],
+    "gpu_util": "0.90",
+    "hook_coverage": null,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    }
+   },
+   "wall": "2026-10-02 11:34:30 to 12:46:36 PDT",
+   "user_sim_log": "/data/ziyangs/cloq_work/logs/sim_node004_49862.log",
+   "q_server_load": {
+    "running_median": 3,
+    "running_max": 8,
+    "waiting_max": 4,
+    "kv_usage_max_pct": 62.4,
+    "kv_cache_tokens": 174128,
+    "log": "/data/ziyangs/cloq_work/logs/tasks/cs_q8_d2_d1_f03.Q.vllm.log"
+   }
+  },
+  "identical_in_all_four": {
+   "vllm": "0.29.0 (+cu129; same env /data/ziyangs/cloq_work/envs/cloq)",
+   "launcher": "scripts/a6000/serve.sh (TP = #GPUs = 1, --seed 0, --dtype bfloat16, --max-model-len 33792, --gpu-memory-utilization 0.90, --generation-config vllm, hermes tool parser, combo_kernels on / benchmark off)",
+   "env": "scripts/a6000/env.sh: VLLM_BATCH_INVARIANT=1, VLLM_USE_FLASHINFER_SAMPLER=0, TORCHINDUCTOR_DETERMINISTIC=1",
+   "engine": "tensor_parallel_size=1, quantization=None (fake-quant bf16 storage), enable_prefix_caching=True, enable_chunked_prefill=True, compilation mode VLLM_COMPILE(3), cudagraph_mode FULL_AND_PIECEWISE, max_cudagraph_capture_size 512, attention FLASH_ATTN, kv_cache_dtype auto",
+   "max_num_seqs": "not set; vLLM 0.29.0 default for a <70 GiB GPU = 256 (max_num_batched_tokens 2048), vllm/engine/arg_utils.py:2718-2727",
+   "driver_concurrency": 8,
+   "B_effective_config_sha": "6efd8895e51ea91e",
+   "Q_effective_config_sha": "cd7c70f5e9fe40d4",
+   "d1_ckpt_sha256": "6ee628e67194f0c073cb8efe917eaa083fe53281f507a48b1d6146f636e10d70",
+   "d1_canary": "a9f812fb17241b72",
+   "d2_ckpt_sha256": "320409ad7d28102cd4b78c32c5233f76a03b65cb6cb137c1309eee5fddfd873e",
+   "d2_canary": "15e5098c08c412da",
+   "agent_sampling": "temperature 0, top_p 1, top_k -1, seed 0, enable_thinking false",
+   "user_sim": "Qwen3-30B-A3B-Instruct-2507 TP=2, served name 'user', port 8000, prefix caching on, batch-invariant env, temperature 0 seed 0 (state files label it Qwen/Qwen3-4B-Instruct-2507: known stale label, RESEARCH_LOG.md:1527)"
+  },
+  "differs": [
+   "node: SAMEPREC g1 node004 (job 49862) vs commonstate f01/f02 node005 (job 49863), f03 node004 (job 49862)",
+   "GPU ids: f01 B/Q = 6/7, others 4/5",
+   "Q port: f01 8207, others 8205",
+   "KV cache blocks: node005 f01 193,680 tokens vs 174,128 elsewhere",
+   "user-simulator instance: sim_node005_49863 (f01,f02) vs sim_node004_49862 (SAMEPREC g1, f03)",
+   "load on the d1 server: SAMEPREC running median 1 (max 6) vs commonstate median 2-5 (max 8); waiting max 1 vs 0-4",
+   "workload mix: SAMEPREC ran BB/BQ/QB per state (Q server also served QB continuations); commonstate ran one BQ arm per state plus 20% QQ reference re-runs",
+   "time: 02:11-05:55 vs 11:00-12:46 PDT; servers and checkpoints rebuilt per task (same sha256)"
+  ]
+ },
+ "determinism_coverage": {
+  "source": "analysis/status/gpu_fill_20261003/rerun_premise_det.json (+ .py); docs/RESEARCH_LOG.md:146,161-173,3582-3584",
+  "method": "same config, two closed-loop runs on two nodes at different times; per common decision compare prompt token ids, completion token ids, token logprobs",
+  "pairs": {
+   "a6k2_det_q4": {
+    "covers": "dense Qwen3 BF16 path, TP=1 (pert_q4 derived ckpts, q14 gauss3 kernel class)",
+    "verdict": "bit-exact",
+    "n_common": 257,
+    "same_completion": 257,
+    "running_max": [
+     16,
+     15
+    ],
+    "waiting_max": [
+     0,
+     1
+    ],
+    "max_prompt_tokens_identical": 13800
+   },
+   "a6k2_det_q4_fp32h": {
+    "covers": "dense Qwen3 TP=1, fp32 head",
+    "verdict": "bit-exact",
+    "n_common": 281,
+    "same_completion": 281,
+    "running_max": [
+     13,
+     14
+    ],
+    "waiting_max": [
+     0,
+     0
+    ],
+    "max_prompt_tokens_identical": 13940
+   },
+   "a6k2_det_q30a3": {
+    "covers": "user simulator model (MoE, TP=2)",
+    "verdict": "bit-exact",
+    "n_common": 303,
+    "same_completion": 303,
+    "running_max": [
+     16,
+     16
+    ],
+    "waiting_max": [
+     0,
+     0
+    ],
+    "max_prompt_tokens_identical": 25537
+   },
+   "a6k2_det_q30a3_x1_fp8": {
+    "covers": "MoE TP=2, FP8 GEMM",
+    "verdict": "bit-exact",
+    "n_common": 278,
+    "same_completion": 278,
+    "running_max": [
+     15,
+     6
+    ],
+    "waiting_max": [
+     0,
+     0
+    ],
+    "max_prompt_tokens_identical": 13715
+   },
+   "a6k2_det_q4_x1_fp8": {
+    "covers": "q4 FP8 GEMM, TP=1",
+    "verdict": "bit-exact",
+    "n_common": 352,
+    "same_completion": 352,
+    "running_max": [
+     16,
+     7
+    ],
+    "waiting_max": [
+     0,
+     0
+    ],
+    "max_prompt_tokens_identical": 12917
+   },
+   "a6k2_det_q8_x1_fp8": {
+    "covers": "q8 FP8 GEMM, TP=1",
+    "verdict": "bit-exact",
+    "n_common": 312,
+    "same_completion": 312,
+    "running_max": [
+     2,
+     3
+    ],
+    "waiting_max": [
+     0,
+     0
+    ],
+    "max_prompt_tokens_identical": 12522
+   },
+   "a6k2_det_q14_x1_fp8": {
+    "covers": "q14 TP=1 (FP8 GEMM; same attention/norm kernels as q14 BF16)",
+    "verdict": "bit-exact",
+    "n_common": 366,
+    "same_completion": 366,
+    "running_max": [
+     16,
+     15
+    ],
+    "waiting_max": [
+     0,
+     1
+    ],
+    "max_prompt_tokens_identical": 27154
+   },
+   "a6k2_det_q32_x1_fp8": {
+    "covers": "q32 TP=2 all-reduce (FP8 GEMM; same attention/norm/all-reduce as q32 BF16)",
+    "verdict": "bit-exact",
+    "n_common": 290,
+    "same_completion": 290,
+    "running_max": [
+     15,
+     11
+    ],
+    "waiting_max": [
+     0,
+     0
+    ],
+    "max_prompt_tokens_identical": 13764
+   },
+   "a6k2_det_q8_x1_awq": {
+    "covers": "AWQ fp16 dequant path, TP=1",
+    "verdict": "NOT bit-exact",
+    "n_common": 558,
+    "same_completion": 417,
+    "running_max": [
+     9,
+     6
+    ],
+    "waiting_max": [
+     1,
+     0
+    ],
+    "max_prompt_tokens_identical": 32736
+   },
+   "a6k2_det_q14_x1_awq": {
+    "covers": "AWQ fp16 dequant path, TP=1",
+    "verdict": "NOT bit-exact",
+    "n_common": 262,
+    "same_completion": 225,
+    "running_max": [
+     14,
+     7
+    ],
+    "waiting_max": [
+     0,
+     0
+    ],
+    "max_prompt_tokens_identical": 11523
+   },
+   "a6k2_det_q32_x1_awq": {
+    "covers": "AWQ fp16 dequant path, TP=2",
+    "verdict": "NOT bit-exact",
+    "n_common": 322,
+    "same_completion": 303,
+    "running_max": [
+     9,
+     16
+    ],
+    "waiting_max": [
+     0,
+     0
+    ],
+    "max_prompt_tokens_identical": 17058
+   },
+   "a6k2_tel_det_q8": {
+    "covers": "q8 BF16 telecom (long contexts)",
+    "verdict": "bit-exact",
+    "n_common": 1520,
+    "same_completion": 1520,
+    "running_max": [
+     6,
+     7
+    ],
+    "waiting_max": [
+     0,
+     0
+    ],
+    "max_prompt_tokens_identical": 32305
+   },
+   "a6k2_det_q4_kvq_int4_rot": {
+    "covers": "KV-quant pyhook (CLOQ_PYHOOKS) closed loop",
+    "verdict": "pair incomplete (no _b run)",
+    "n_common": null,
+    "same_completion": null,
+    "running_max": [
+     5,
+     null
+    ],
+    "waiting_max": [
+     0,
+     null
+    ],
+    "max_prompt_tokens_identical": null
+   }
+  },
+  "gptq_det_pair": "none; no det pair serves a GPTQ checkpoint",
+  "q8_gptq_d1_status": "inside the verified kernel class, not covered by a direct det pair: the GPTQ-W4 ckpt is stored as fake-quant BF16 (vLLM quantization=None), so it runs the dense BF16 TP=1 path covered by a6k2_det_q4 (257/257, running max 16) and a6k2_tel_det_q8 (Qwen3-8B BF16, 1520/1520, running max 7). Commonstate d1 servers reached running 8 and waiting 3-4, beyond every det pair's waiting_max <= 1; no preemption logged.",
+  "direct_fork_evidence_q8_gptq_d1": {
+   "commonstate_ref_rerun_QQ": "68/68 branch_signature-equal vs Bank U QQ (gate 12/12 node007 + panel f01-f03 19+18+19 node005/node004; Bank U ran on node004 job 49671)",
+   "commonstate_implicit_identities": "147/147 (gate 5 + panel 53+48+41)",
+   "this_check": "9/9 BQ arms byte-identical across SAMEPREC g1 and commonstate panel"
+  }
+ },
+ "scoped_wording": {
+  "protocol_D2.1_replacement": "On the 9 f01-f03 overlaps, the (d2 action, d1 continuation) arm of SAMEPREC q8 g1 and of this design are byte-identical replays: a_d2 completion ids 9/9, and every d1 decision's prompt and completion token ids (148 decisions), every user-simulator and tool message, the final DB hash and all reward fields 9/9. Outcomes are therefore equal 9/9. (An earlier count of 8/9 compared this design's DB-success Y with SAMEPREC's tau2 official_reward; at 79aa9e6a7ca99243 the two metrics differ by definition, not between runs.)",
+  "paper_claim": "Replays are exact within the verified serving envelope: with greedy decoding and a batch-invariant vLLM 0.29.0 stack (VLLM_BATCH_INVARIANT=1, TORCHINDUCTOR_DETERMINISTIC=1, prefix caching and chunked prefill on), a fork arm re-run at the same state with the same checkpoint (sha256) and the same user simulator (Qwen3-30B-A3B-Instruct-2507, TP=2) reproduced the original trajectory token for token. Verified directly for Qwen3-8B GPTQ-W4 checkpoints stored as fake-quant BF16 and served at TP=1 on A6000 nodes 004/005/007 with 1-8 concurrent requests per server and no preemption (9/9 overlapping arms across two studies; 68/68 d1 reference re-runs); and by closed-loop det pairs for dense BF16 and FP8-GEMM Qwen3 paths at TP=1 and TP=2 (up to 16 concurrent requests, waiting queue <= 1). It does not hold for the AWQ fp16-dequant path (20/20 det-pair tasks diverge) and was not tested under KV-cache preemption, for the KV-quant hook, or for other models, GPUs or vLLM versions."
+ }
+}

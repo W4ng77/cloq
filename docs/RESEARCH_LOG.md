@@ -10,6 +10,26 @@ Newest first.
 
 ---
 
+## W100ac - A7 forensics and re-runs queued; the D2.1 "8/9" replay mismatch was a metric mix-up (9/9 byte-identical); paper replay claim scoped (2026-10-03 17:05 PDT)
+
+**TL;DR**
+- **A7.2 classification** (read-only log audit, commit e370e4b, before any re-run):
+  - kivi_k4v4 f01, 12 arms: **service_failure_verified**. The node004 user simulator was down 21:28:44 to 21:33:41 PDT on 10-02, because the node004 runner exited with "nothing left to run" while a node006 task still used it.
+  - kivi_k2v2, 10 arms: **timeout_cause_not_established**. These are Q-server calls, each the 4th consecutive 600 s attempt. Q decoded at 0.94 to 1.43 tok/s per request at concurrency up to 8, and 1024 tokens need at least 1.71 tok/s.
+  - spinquant_w4a4 f01, 9 arms: **other**. The timeouts were on the overloaded node005 user simulator (83 to 92 waiting, KV cache 94 to 99%), not on Q. **This contradicts E1.5's "Q-server timeout" label.** Under A7.2 they stay missing; a ruling is requested.
+- **Queued** 4 `a7_rr1_*` tasks (22 arms, priority -29, concurrency 1, originals read-only).
+- **Replay check:** all 9 overlap arms are byte-identical, on every token, message, DB hash and reward field. "8/9" compared DB-success Y with SAMEPREC's official_reward at 79aa9e6a7ca99243. The erratum is in `docs/insights/COMMONSTATE_ERRATA.md`; the hashed protocol is untouched because the q4 reading is pending.
+- **Paper (method):** exact replay is stated as a tested property of this stack, and preemption, other models, GPUs and vLLM versions are named as untested. The deployed AWQ fp16 path is not replay-exact and is unused.
+
+- **Infra findings (not fixed yet):**
+  - a runner exiting shuts down its user simulator while tasks on other nodes still lease it;
+  - node005's simulator was overloaded by co-located 1-GPU eval tasks.
+- **Evidence:**
+  - `analysis/fork/kivi_recovery/{failed_arms.json, FORENSICS.md}`;
+  - `analysis/fork/commonstate_replay_check/{REPLAY_8of9.md, replay_8of9.json}`;
+  - `docs/insights/COMMONSTATE_ERRATA.md`;
+  - `paper/latex/sections/method.tex`.
+
 ## W100ab - GPT 10-03 review executed: disk margin, KIVI/q8 arm recovery amendment A7, common-state relabel, q8 phase-1 scheduling (2026-10-03 16:55 PDT)
 
 **TL;DR** Four changes. (1) Disk: 2.4 GB free, steady burn about 0.2-0.4 GB/h plus merge bursts, and 4.2 GB freed at 00:00. The disk guard now parks low-priority todo tasks (priority >= -23) below 3 GB, was 0.7, and unparks above 6 GB. Running tasks are untouched. (2) NEWMETHOD **A7** (commit 10a5518, 16:44 PDT; the header says 16:50, the commit time is authoritative): one controlled re-run of the 31 q8 phase-1 arms that stopped on a server-side error (kivi_k2v2 10 Timeout, kivi_k4v4 f01 12 InternalServerError, spinquant_w4a4 f01 9 Timeout), using recorded actions, the original state, checkpoint, kernel and budgets, concurrency 1. Arms that fail again stay missing. The pre-re-run and strict views are reported. P3 never falls back to k4v4 for missing blocks. Protocol sha **ba743cee**; committed before expansion_q8.json existed. (3) Paper §5 relabelled "after the fixed extension"; Pocock is a sensitivity analysis (about 97% difference, 94% equivalence); the continuation-interaction conjecture is withdrawn; new framing: sensitivity, extra value and gain are separate quantities. (4) The 7 waiting m24 score tasks are pinned to node004/008/009/002, so the other runners stop holding pairs. nmp_tau2_q8_spinquant_w4a4_f03 was claimed within a minute (node006, 16:48).
