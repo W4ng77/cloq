@@ -10,6 +10,28 @@ Newest first.
 
 ---
 
+## W100j — Paper revised after the GPT-6.1 review (NAACL-main borderline): contribution re-centred on same-state measurement of upgrade modes; G/H/F figure in the main text; §5 set structure foregrounded; §7 rewritten as question-and-test items (2026-10-02 PDT)
+**TL;DR** Main changes:
+- **Re-centred contribution.** The abstract, intro and contributions now lead with what is distinctive: separate the current action from the subsequent execution, measure upgrade value on the same frozen state, and use a same-precision substitution to check attribution. "Changing outcomes ≠ improving them" is kept, but as a subordinate point.
+- **Take-away:** a precision upgrade has continuation-dependent task value, so the rescues and damages of a specific upgrade mode must be measured.
+- **Replay Gap (2608.08239).** It is now described precisely in related work, from verbatim excerpts in `outputs/.drafts/replay_gap_2608.08239_excerpt.md`: live SWE-bench forks at 30%/70% of trajectory length, a Qwen3-4B FP8 / Qwen3-14B AWQ pair, same-model controls, 0 flips in 359 controls, and a swap that changes action and continuation together. One intro sentence positions us against it.
+- **New main-text figure F9** (`tools/figs/make_fig_modes.py`): paired G/H/F for q4/q8 GPTQ-W4, the W4 pool, q8 RTN-W3 (H +15.3 [+0.7, +29.9], F +18.4, G −0.4) and q14 BFCL (G +5.7 [+2.9, +8.7], H +0.4, F +9.1). All numbers come from ghf_20261001T211519Z and ext_q14_20261002T085647Z, with asserts.
+- **F6 redrawn** with two panels: (a) W4 rates; (b) units affected by only BF16 / both / only the second checkpoint, W4 107/64/74 and W3 62/34/26.
+- **§5 compressed.** Moved to Appendix D.6:
+  - the TOST details and both off-diagonal aggregation conventions;
+  - full-substitution volume;
+  - the W3 TOST and per-model numbers;
+  - the net values on the same-precision blocks;
+  - the common-state interval details.
+  The common-state comparison stays "not resolved", with an explicit sentence that it does not show that B's action lacks extra value.
+- **§7** is now "When Upgrade Value Appears, Disappears or Moves". Each item is a question with a stated test. The `\pending{}` slots are kept for QuaRot/SpinQuant, KIVI and Mistral.
+- **Fixes.**
+  - The interaction I is stated as ∈ {−2,…,+2}.
+  - KIVI is described as the replay-compatible decode-view variant (per kivi_gate/GATE.md §6), not as a persisted compressed cache.
+- **Build:** 23 pp, Limitations on p. 8 (right column), 0 undefined refs, 0 overfull boxes; `check_numbers.py` PASS (3133 numbers).
+
+Evidence: `paper/latex/sections/{abstract,introduction,related_work,method,results_r1,results_r2,results_r4,discussion,appendix_moved}.tex`, `paper/latex/figures/{f6_sameprec,f9_upgrade_modes}.pdf`, `paper/latex/tools/figs/{make_figs.py,make_fig_modes.py}`, `outputs/.drafts/replay_gap_2608.08239_excerpt.md`.
+
 ## W100i — Same-precision acceptance check (773/774 is a context-overflow sentinel, no number changes); W3 same-precision stress check moved into paper §5 (2026-10-02 20:00 PDT)
 **TL;DR**
 - **Task A.** The single `prefix_and_env_ok` failure, 773/774, is in the **W3** analysis (`sameprec_w3_20261003T023933Z`, q8 same). The W4 analysis has none: `sameprec_20261003T023857Z` is 1405/1405.

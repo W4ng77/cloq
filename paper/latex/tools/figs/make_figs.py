@@ -40,6 +40,7 @@ SRC = {
     "dev": "analysis/fork/out/dev_all_20261001T070326Z.json",
     "same": "analysis/fork/out/sameprec_20261002T142834Z.json",
     "ovl": "analysis/fork/out/sameprec_overlap_20261002T143218Z.json",
+    "w3split": "analysis/fork/out/sameprec_w3_split_20261003T024007Z.json",
 }
 _cache = {}
 
@@ -581,9 +582,16 @@ def f6():
     n_flip = c["both"] + c["only_bf16"] + c["only_d2"]
     assert n_flip == 245 and c["only_bf16"] + c["only_d2"] == 138
 
-    fig, axs = plt.subplots(1, 3, figsize=(FULL_W, 1.55), layout="constrained",
-                            gridspec_kw={"width_ratios": [2.3, 1.25, 1.75]})
-    a, b, cax = axs
+    # W3 stress pair (K = 3): unit sets of the action-side (G) flips, from the W3 split analysis
+    w3 = load("w3split")["main"]
+    assert w3["K"] == 3 and w3["n_units"] == 510
+    g3 = w3["sets"]["by_contrast"]["G"]["flip"]
+    assert (g3["both"], g3["only_a"], g3["only_b"]) == (62, 34, 26) and round(g3["kappa"], 2) == 0.60
+    assert round(g3["exp_indep_cell_block"]) == 17 and round(g3["null_within_task"]["both_null_mean"]) == 43
+
+    fig, axs = plt.subplots(1, 2, figsize=(FULL_W, 1.45), layout="constrained",
+                            gridspec_kw={"width_ratios": [1.5, 1.5]})
+    a, cax = axs
     # (a) rates under the two replacement sources
     style_axis(a)
     for i, (k, lab) in enumerate(mets):
@@ -594,58 +602,35 @@ def f6():
     a.set_xticklabels([m[1] for m in mets])
     a.tick_params(axis="x", length=0)
     a.set_ylabel("pp of units (off-diag.: %)")
-    a.set_title("(a) replacement source: BF16 vs. second W4 checkpoint", pad=2)
+    a.set_title("(a) W4: BF16 vs. second W4 checkpoint as replacement", pad=2)
     a.legend(handles=[Line2D([], [], color=BLUE, marker="o", lw=0, ms=3.6, label="BF16 action"),
-                      Line2D([], [], color=ORANGE, marker="s", lw=0, ms=3.6, label="W4 checkpoint 2 action")],
+                      Line2D([], [], color=ORANGE, marker="s", lw=0, ms=3.6, label="checkpoint-2 action")],
              loc="upper left", frameon=False, fontsize=6.5, handletextpad=0.2, borderaxespad=0.1)
     a.set_ylim(-7, 34)
-    # (b) paired differences with the +/-3 pp equivalence margin (TOST, 90% t interval)
-    style_axis(b, grid_axis="x")
-    b.axvspan(-3, 3, color=BAND, zorder=0, lw=0)
-    rows = [("dM", "$\\Delta M$"), ("dG", r"$\Delta G_{\mathrm{all}}$"), ("d_offdiag", "$\\Delta$off-diag.")]
-    for j, (k, lab) in enumerate(rows):
-        interval(b, -j, t[k]["est"], t[k]["t_ci90"], None, INK, marker="D", ms=3.2, horizontal=True)
-    b.axvline(0, color=INK2, lw=0.5, zorder=1)
-    for x in (-3, 3):
-        b.axvline(x, color=MUTED, lw=0.5, ls=(0, (2, 2)), zorder=1)
-    b.set_yticks([0, -1, -2])
-    b.set_yticklabels([r[1] for r in rows])
-    b.tick_params(axis="y", length=0)
-    b.set_ylim(-2.6, 0.6)
-    b.set_xlim(-6, 4)
-    b.set_xticks([-6, -3, 0, 3])
-    b.set_xlabel("BF16 $-$ checkpoint 2 (pp; 90%)")
-    b.set_title("(b) difference vs. $\\pm$3 pp margin", pad=2)
-    # (c) which units flip under each replacement
+    # (b) which units flip: only BF16 / both / only the same-precision checkpoint, W4 and W3
     style_axis(cax, grid_axis="x")
-    left = 0
-    for n, col, lab in [(c["only_bf16"], BLUE, "only BF16"), (c["both"], AQUA, "both"),
-                        (c["only_d2"], ORANGE, "only ckpt 2")]:
-        cax.barh(0, n, left=left, height=0.5, color=col, alpha=0.85, lw=0, zorder=2)
-        cax.text(left + n / 2, 0, f"{n}", ha="center", va="center", fontsize=6.5, color="white", zorder=3)
-        cax.text(left + n / 2, 0.36, lab, ha="center", va="bottom", fontsize=6.5, color=INK)
-        left += n
-    # 'both' count: observed vs. two nulls, on its own row, measured from the start of the 'both' segment
-    x0, yy = c["only_bf16"], -0.8
-    cax.plot([x0, x0 + c["both"]], [yy, yy], color=GRID, lw=0.8, zorder=1)
-    cax.plot([x0 + kp["both_exp_indep"]], [yy], marker="o", ms=3.4, color=MUTED, mfc="white", zorder=5, ls="none")
-    cax.plot([x0 + nw["both_null_95"][0], x0 + nw["both_null_95"][1]], [yy, yy], color=INK2, lw=1.8, zorder=4)
-    cax.plot([x0 + nw["both_null_mean"]], [yy], marker="s", ms=3.2, color=INK2, zorder=5, ls="none")
-    cax.plot([x0 + c["both"]], [yy], marker="D", ms=3.4, color=AQUA, zorder=5, ls="none")
-    cax.text(x0 + kp["both_exp_indep"], yy - 0.22, f"indep.\n{kp['both_exp_indep']:.0f}", ha="center", va="top",
-             fontsize=6, color=INK2, linespacing=0.9)
-    cax.text(x0 + nw["both_null_mean"], yy + 0.2, f"task shuffle {nw['both_null_mean']:.0f}", ha="center",
-             va="bottom", fontsize=6, color=INK2)
-    cax.text(x0 + c["both"] + 4, yy, f"obs. {c['both']}", ha="left", va="center", fontsize=6, color=INK)
-    cax.set_yticks([0, -0.75])
-    cax.set_yticklabels(["observed", "both: null"])
+    sets = [("W4 (K=%d)" % K, c["only_bf16"], c["both"], c["only_d2"], 0.0),
+            ("W3 (K=3)", g3["only_a"], g3["both"], g3["only_b"], -1.0)]
+    for lab, ob, bo, od, yy in sets:
+        tot = ob + bo + od
+        left = 0.0
+        for n, col in [(ob, BLUE), (bo, AQUA), (od, ORANGE)]:
+            w = 100.0 * n / tot
+            cax.barh(yy, w, left=left, height=0.55, color=col, alpha=0.85, lw=0, zorder=2)
+            cax.text(left + w / 2, yy, f"{n}", ha="center", va="center", fontsize=6.8, color="white", zorder=3)
+            left += w
+    for x, lab in [(50.0 * 64 / 245, "only BF16"), (100.0 * (64 + 107 / 2) / 245, "both"),
+                   (100.0 * (64 + 107 + 37) / 245, "only ckpt 2")]:
+        cax.text(x, 0.36, lab, ha="center", va="bottom", fontsize=6.5, color=INK)
+    cax.set_yticks([0, -1])
+    cax.set_yticklabels([s_[0] for s_ in sets])
     cax.tick_params(axis="y", length=0)
-    cax.set_ylim(-1.45, 0.8)
-    cax.set_xlim(0, n_flip)
-    cax.set_xlabel(f"units (neither flips: {c['neither']} of {o['overlap']['n']})")
-    cax.set_title("(c) units whose outcome flips", pad=2)
-    save(fig, "f6_sameprec", ["same", "ovl"],
-         "same-precision reference: r/d/M/G_all/off-diag for BF16 vs W4 d2 replacement, TOST differences, overlap")
+    cax.set_ylim(-1.45, 0.85)
+    cax.set_xlim(0, 100)
+    cax.set_xlabel("% of units that flip under either replacement (counts in bars)")
+    cax.set_title("(b) units affected by both or by only one replacement", pad=2)
+    save(fig, "f6_sameprec", ["same", "ovl", "w3split"],
+         "same-precision reference: r/d/M/G_all/off-diag (W4) and affected-unit sets only BF16/both/only ckpt2 (W4, W3)")
 
 
 PROV_EXTRA = {}
