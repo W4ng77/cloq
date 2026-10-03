@@ -1,25 +1,28 @@
-# A6000 queue snapshot (2026-10-03 04:07:59 PDT)
+# A6000 queue snapshot (2026-10-03 04:38:02 PDT)
 
-## running (26)
+## running (29)
 
 - `a6k2_q14_tel_gauss0.1_s1`
 - `a6k2_q14_tel_gauss1_s1`
+- `a6k2_q14_tel_gptq_w3`
+- `a6k2_q14_tel_gptq_w4`
+- `a6k2_q14_tel_rtn_w3`
+- `a6k2_q14_tel_rtn_w4`
+- `a6k2_q14_x1_awq`
+- `a6k2_q14_x1_fp8`
 - `a6k2_q32_tel_rtn_w3`
-- `nmp_score_m24_gptq_w4_d1_f03`
-- `nmp_score_q8_kivi_k4v4_f02`
+- `nmp_score_q8_kivi_k4v4_f03`
 - `nmp_score_q8_quarot_w4a4_f03`
 - `nmp_tau2_m24_gptq_w4_d1_f02`
-- `nmp_tau2_q8_kivi_k4v4_f03`
 - `nmp_tau2_q8_quarot_w16_f03`
 - `nmp_tau2_q8_quarot_w4_f01`
 - `nmp_tau2_q8_quarot_w4a4_f01`
+- `nmp_tau2_q8_spinquant_w16_f03`
 - `nmp_tau2_q8_spinquant_w4a4_f01`
 - `pert_q4_rtn_w3_resid_a2_q345`
 - `pert_q4_rtn_w3_restore_rand_third_s3_q345`
 - `pert_q8_gptq_w3_resid_a2_q345`
 - `pert_q8_rtn_w3_resid_a2_q345`
-- `pert_q8_tel_awq_w4_restore_early_f123`
-- `pert_q8_tel_awq_w4_restore_late_f123`
 - `pert_q8_tel_awq_w4_restore_mlp_f123`
 - `pert_q8_tel_awq_w4_restore_mlp_f456`
 - `pert_q8_tel_awq_w4_restore_rand_attn_s1_f123`
@@ -29,7 +32,7 @@
 - `pert_q8_tel_awq_w4_restore_rand_third_s1_f123`
 - `pert_q8_tel_awq_w4_restore_rand_third_s1_f456`
 
-## failed (17)
+## failed (18)
 
 - `a6k2_q14_gauss3_s1` · RuntimeError('run a6k2_q14_gauss3_s1/airline: 2 infrastructure_error episodes (outage)')
 - `a6k2_q14_gauss3_s2` · RuntimeError('run a6k2_q14_gauss3_s2/airline: 3 infrastructure_error episodes (outage)')
@@ -42,6 +45,7 @@
 - `ext_l8_gptq_w4_d1_bfcl_smoke_l8g_sc` · RuntimeError("checkpoint build failed ({'kind': 'gptq', 'wbits': 4, 'calib': 'manifests/a6k2/l8/calib_fp_traj_c1.json'}) rc=1")
 - `kivi_gate_q8` · RuntimeError('cmd failed rc=-9')
 - `nmp_score_m24_gptq_w4_d1_f01` · RuntimeError('fork_driver failed rc=1')
+- `nmp_score_m24_gptq_w4_d1_f03` · RuntimeError('fork_driver failed rc=1')
 - `nmp_score_m24_rtn_w4_f01` · RuntimeError('fork_driver failed rc=1')
 - `nmp_score_m24_rtn_w4_f02` · RuntimeError('fork_driver failed rc=1')
 - `nmp_score_m24_rtn_w4_f03` · RuntimeError('fork_driver failed rc=1')
@@ -49,7 +53,7 @@
 - `pert_q4_rtn_w3_restore_rand_attn_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_attn_s3_q3/airline: 1 infrastructure_error episodes (outage)')
 - `pert_q4_rtn_w3_restore_rand_mlp_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_mlp_s3_q3/retail: 1 infrastructure_error episodes (outage)')
 
-## done (1230)
+## done (1234)
 
 - `a6k2_det_q14_x1_awq_a` · 11 min · node005
 - `a6k2_det_q14_x1_awq_b` · 54 min · node004
@@ -252,14 +256,8 @@
 - `a6k2_q32_null_extra` · 104 min · node007
 - `a6k2_q32_ol_awq_w4` · 59 min · node004
 
-## todo (57)
+## todo (49)
 
-- `a6k2_q14_tel_gptq_w3`
-- `a6k2_q14_tel_gptq_w4`
-- `a6k2_q14_tel_rtn_w3`
-- `a6k2_q14_tel_rtn_w4`
-- `a6k2_q14_x1_awq`
-- `a6k2_q14_x1_fp8`
 - `a6k2_q4_gauss2_s1_redo`
 - `a6k2_q4_gauss3_s1_redo`
 - `a6k2_q4_gauss3_s2_redo`
@@ -284,7 +282,6 @@
 - `a6k2_q8_x1_fp8`
 - `fork_repair_q4_rtn_w3`
 - `nmp_score_m24_gptq_w4_d1_f02`
-- `nmp_score_q8_kivi_k4v4_f03`
 - `nmp_score_q8_quarot_w16_f03`
 - `nmp_score_q8_quarot_w4_f01`
 - `nmp_score_q8_quarot_w4a4_f01`
@@ -296,7 +293,6 @@
 - `nmp_score_q8_spinquant_w4a4_f03`
 - `nmp_tau2_q8_quarot_w4a4_f02`
 - `nmp_tau2_q8_spinquant_w16_f01`
-- `nmp_tau2_q8_spinquant_w16_f03`
 - `nmp_tau2_q8_spinquant_w4a4_f02`
 - `nmp_tau2_q8_spinquant_w4a4_f03`
 - `pivot_q4_rtn_w3_early__middle`
