@@ -10,6 +10,74 @@ Newest first.
 
 ---
 
+## W100w - F3: outage re-run path (flag-gated) and 9 re-run tasks for the failed outage tasks; coverage/appendix cells only (2026-10-03 08:40 PDT)
+**TL;DR** A flag-gated path re-runs only the outage-classified episodes (600 s timeouts) of a run-domain, plus its never-run ids, at run_par 1 / max_concurrency 4 on the task's own agent server. It archives the originals (never deletes) and merges. Without the flag, run_arm and worker behave exactly as before (dry checks: old == new).
+Queued 9 `<id>_rro` tasks at -21 for the 9 failed outage tasks: 12 run-domains, 56 outage + 11 never-run episodes, estimates 0.8 to 14.2 h, all inside the freeze budget. **These results fill coverage/appendix cells only.**
+Determinism premise: bit-exact det pairs cover the BF16 and derived-ckpt paths. The q14 KV-INT3 cell rests on an unverified closed-loop premise and stays labelled.
+
+- **Why a retry could not work (W100q §1.1).** run_arm skips a `completed` run-domain, and the worker's W6 check re-raises on its recorded outages. tau2's own resume drops *every* infrastructure_error episode, so it would also re-run W10 context overflows, which count as agent failures.
+- **Mechanism (`cloq/rerun_outage.py`, `CLOQ_RERUN_OUTAGE=1`).**
+  1. Episodes are classified exactly like the worker's W6/W10/W41/W92/W99p rules. The plan must agree with `infra_causes.json`, or the task fails loud.
+  2. Kept: every non-outage episode, including context_overflow.
+  3. The todo ids run as their own tau2 run in `runs/<id>/<domain>/rerun_outage/<tag>/`, with their own results, decisions, config (max_concurrency 4 recorded), environment and status. The run is resumable. An interrupted re-run resumes from its archive.
+  4. Originals go to `rerun_outage/<tag>/orig/` with a sha256 manifest. The two big files are kept as read-only hard links: no extra disk, and any in-place write fails instead of altering them. Small files are copied.
+  5. Merge: each re-run episode takes the slot of the episode it replaces, with task id, trial and seed checked (all 12 run-domains use seed 626729). Never-run ids are appended. The decisions of re-run ids are replaced. run_arm then writes trajectory, metrics and status as usual (`status.rerun_outage` names the re-run ids), and the worker repeats its W6 check.
+- **Worker gate (`rerun_outage` task field).** Only the listed run-domains run, with per-task `run_par` and `max_concurrency`. A rebuilt checkpoint must match the run's `quantization.json` (method, seed, rel. error, content sha, canary, kv_cache). The original is kept as `quantization.pre_rerun.json`. Dedicated server: each task already starts its own vLLM agent server. With ≤4 requests in flight, below the 5-6 sequences the worst servers held at 90% KV (W100q table), the request queue that produced the 600 s timeouts should stay empty. Check: the `Waiting` count in the tasks' `.vllm.log`, and no new outage.
+- **Proof that nothing else changed** (`analysis/status/gpu_fill_20261003/rerun_outage_drycheck.txt`). Old (6be062a) and new code ran on scratch copies of real run-domains, with tau2/vLLM faked.
+  - run_arm without the flag gives identical `run_tasks` calls and files in all 4 cases (completed clean, completed with outages, completed with context overflow, running with outage + missing).
+  - With the flag, a completed clean run-domain is skipped unchanged. In 3 outage cases, only the outage and never-run ids run. Kept episodes are byte-identical in the same slots, the archive sha equals the original and is read-only, and an interrupted re-run leaves the run-domain untouched and resumes.
+  - worker.py: 4 existing tasks (KVQ serve_env, RTN, derived pert, per-run env) give identical Popen commands, env and quantization files. The rro tasks run only their listed run-domains, one at a time, with the flag and `--max-concurrency 4`. A different rebuilt checkpoint is refused.
+
+**Determinism premise** (`analysis/status/gpu_fill_20261003/rerun_premise_det.{py,json}`). Closed-loop det pairs are the same config on two nodes at different times, so the batch compositions differ (running 1 to 16).
+
+| Pair | Covers | Result |
+|---|---|---|
+| q4 BF16 | dense TP=1 (pert_q4 derived ckpts) | 257/257 bit-exact (tokens and logprobs), prompts to 13.8k |
+| q14 x1_fp8 | q14 TP=1 attention/norm | 366/366, to 27.2k |
+| q32 x1_fp8 | q32 TP=2 all-reduce | 290/290, to 13.8k |
+| q30a3 BF16 | user simulator (MoE TP=2) | 303/303, to 25.5k |
+| q8 telecom BF16 | long contexts | 1520/1520, to 32.3k |
+| x1_awq (q8, q14, q32) | AWQ fp16 dequant | **NOT bit-exact** (20/20 tasks diverge); no re-run arm uses it |
+| q4 KVQ int4_rot | pyhook closed loop | **no _b run** (deferred; on the exppilot fill allowlist) |
+
+Caveat: no det pair ran with a waiting queue (waiting_max ≤ 1), so preemption under KV pressure is not covered. That affects the original episodes, not the low-load re-runs.
+
+Labels written into each task's `determinism_premise`:
+- `verified directly`: the pert_q4 tasks, whose 4 outages are user-side; the simulator pair also applies.
+- `verified by kernel class`: q14 gauss3 (q14 FP8 TP=1 pair + q4 BF16) and q32 gauss3 / rtn_w3 (q32 FP8 TP=2 pair + q30a3 TP=2). No BF16 closed-loop pair exists for q14 or q32.
+- **`UNVERIFIED closed loop`: `a6k2_q14_kvq_int3_rro`.** Hook batch invariance is shown only open-loop, on q4, with 8 prompts: the INT3 batch-of-9 and the prefix hit both equal the alone run (`analysis/kvq/validate_q4.json`). Its 16 re-run episodes stay labelled in any table.
+
+**Queued** (`queue/todo/*_rro.json`, priority -21, `autopilot_retry: no (W100w ...)`, `coverage_only: true`). Plan: `analysis/status/gpu_fill_20261003/rerun_outage_plan.json`. The estimate is 0.5 h + ceil(n/4) rounds × p90 of the run-domain's episode durations under the original load (conservative). Budget: 23 h from an assumed start of 22:00 PDT to the 21:00 PDT 10-04 freeze.
+
+| Task | Run-domains | Outage + never-run | Est. h | Cell complete after? |
+|---|---|---|---|---|
+| a6k2_q14_gauss3_s1_rro | airline | 2 + 0 | 0.8 | airline only (retail 39 never-run) |
+| a6k2_q14_gauss3_s2_rro | airline | 3 + 0 | 0.8 | airline only (retail 43) |
+| a6k2_q14_kvq_int3_rro | q2/airline | 16 + 0 | 5.4 | q2 airline only; UNVERIFIED label |
+| a6k2_q32_gauss3_s1_rro | retail, airline | 3 + 1 | 3.3 | yes |
+| a6k2_q32_gauss3_s2_rro | retail | 3 + 0 | 1.6 | yes |
+| a6k2_q32_rtn_w3_rro | q1/retail, q2/airline | 25 + 9 | 14.2 | those two only (q1 airline 10, q2 retail 35 never-run) |
+| pert_q4_gptq_w3_resid_a2_q345_rro | q3/airline | 1 + 0 | 1.7 | q3 airline only |
+| pert_q4_rtn_w3_restore_rand_attn_s3_q345_rro | q3/airline | 1 + 0 | 1.0 | q3 airline only |
+| pert_q4_rtn_w3_restore_rand_mlp_s3_q345_rro | q3/retail, q4/retail | 2 + 1 | 1.8 | yes (q3-q5) |
+
+The two q14 gauss3 tasks were claimed on node001 at 08:34.
+
+**Not queued, and why.**
+- `pert_q4_gptq_w3_resid_a2_q3/retail` (1 user-side outage, 33 never-run). Rule: a run-domain is re-run only if its never-run episodes ≤ its outage episodes. Otherwise it is a resume of the paused original task, not an outage re-run.
+- Running tasks with recorded outages (not failed): `pert_q8_gptq_w3_resid_a2_q345` (16) and `pert_q8_rtn_w3_resid_a2_q345` (11). If they fail, the same generator applies.
+- Deferred, not on the fill allowlist: `a6k2_q4_awq_w3_qx` (2) and `a6k2_q32_tel_rtn_w3` (7, stopped in W100t; would not finish).
+- Never-run run-domains of the queued tasks stay incomplete, as listed in the table.
+
+- **Protocol.** No amendment. W6 already says outage episodes are never data and are re-run. The re-run changes concurrency only, which under the premise above changes latency, not tokens. No estimand changes.
+- **Risk (open).** The /data/ziyangs quota is full: 1.0 to 1.4 GB free at 08:15-08:33, with 1013 GB live data and only 9.5 GB in snapshots. Each merge writes new decisions and results files (≈0.4 GB of decisions over all 12 run-domains; the merged results file is deleted after the W6 check). `plan()` refuses to start a re-run if fewer than its need + 512 MB would remain. The same quota threatens every running task.
+- **Evidence.**
+  - Code: `cloq/rerun_outage.py`, `cloq/run_arm.py`, `scripts/a6000/worker.py`, `scripts/a6000/make_tasks_rerun_outage.py`, `scripts/a6000/rerun_outage_drycheck{,_worker}.py`. Commits fb6b9f5, 1adec78, cd8feea, 8670610.
+  - Outputs: `analysis/status/gpu_fill_20261003/{rerun_outage_plan.json,rerun_outage_drycheck.txt,rerun_premise_det.py,rerun_premise_det.json}`.
+  - Queue: `/data/ziyangs/cloq_work/queue/{todo,running}/*_rro.json`.
+  - Logs: `/data/ziyangs/cloq_work/logs/tasks/*_rro.{log,vllm.log}`.
+  - Background: `docs/insights/GPU_FILL_PROPOSAL_20261003.md` (F3) and W100q.
+
 ## W100v - NEWMETHOD amendment A6: a fork-branch arm error caused by the agent's own message is scored Y = 0, as end to end; strict as preregistered becomes a labelled sensitivity (2026-10-03 08:30 PDT)
 **TL;DR** Amendment A6 was committed in fe6765e at 08:16 PDT (protocol sha f9f8b3a5 → **73bf5538**). That was before any m24 phase-2 τ² task had finished and before any q8 new-method panel outcome was read. The user approved it on 10-03 (W100q decision 2).
 - **The rule.** A τ² branch arm that stopped on an exception raised by validating the agent model's own message is scored Y = 0. The exception must be one of:
