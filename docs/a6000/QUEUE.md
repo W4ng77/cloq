@@ -1,15 +1,15 @@
-# A6000 queue snapshot (2026-10-02 23:06:59 PDT)
+# A6000 queue snapshot (2026-10-02 23:37:03 PDT)
 
 ## running (23)
 
 - `a6k2_q32_tel_rtn_w3`
 - `fork_repair_q4_rtn_w3`
-- `nmp_bfcl_m24_gptq_w4_d1_miss_func`
 - `nmp_bfcl_m24_gptq_w4_d1_miss_param`
-- `nmp_bfcl_q8_quarot_w4a4_base`
-- `nmp_bfcl_q8_quarot_w4a4_long_context`
-- `nmp_bfcl_q8_quarot_w4a4_miss_func`
+- `nmp_bfcl_q8_quarot_w4a4_miss_param`
+- `nmp_bfcl_q8_spinquant_w16_long_context`
+- `nmp_bfcl_q8_spinquant_w16_miss_func`
 - `nmp_gate_same_m24_gptq_w4_d1_r2`
+- `nmp_gate_same_m24_rtn_w4_r2`
 - `nmp_tau2_q8_kivi_k4v4_f02`
 - `nmp_tau2_q8_kivi_k4v4_f03`
 - `nmp_tau2_q8_quarot_w16_f02`
@@ -22,9 +22,9 @@
 - `pert_q8_rtn_w3_resid_a2_q345`
 - `pert_q8_rtn_w3_restore_rand_third_s2_q345`
 - `pert_q8_rtn_w3_restore_rand_third_s3_q345`
-- `pert_q8_tel_awq_w4_resid_a0.5_f123`
 - `pert_q8_tel_awq_w4_restore_attn_f456`
 - `pert_q8_tel_awq_w4_restore_early_f123`
+- `pert_q8_tel_awq_w4_restore_early_f456`
 
 ## failed (11)
 
@@ -40,7 +40,7 @@
 - `pert_q4_rtn_w3_restore_rand_attn_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_attn_s3_q3/airline: 1 infrastructure_error episodes (outage)')
 - `pert_q4_rtn_w3_restore_rand_mlp_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_mlp_s3_q3/retail: 1 infrastructure_error episodes (outage)')
 
-## done (1169)
+## done (1175)
 
 - `a6k2_det_q14_x1_awq_a` · 11 min · node005
 - `a6k2_det_q14_x1_awq_b` · 54 min · node004
@@ -243,7 +243,7 @@
 - `a6k2_q32_ol_gauss0.03_s2` · 26 min · node007
 - `a6k2_q32_ol_gauss0.03_s3` · 24 min · node005
 
-## todo (129)
+## todo (123)
 
 - `a6k2_g12_bf16_cal`
 - `a6k2_g12_bf16_gate`
@@ -295,16 +295,11 @@
 - `nmp_bfcl_q8_kivi_k4v4_long_context`
 - `nmp_bfcl_q8_kivi_k4v4_miss_func`
 - `nmp_bfcl_q8_kivi_k4v4_miss_param`
-- `nmp_bfcl_q8_quarot_w4a4_miss_param`
-- `nmp_bfcl_q8_spinquant_w16_base`
-- `nmp_bfcl_q8_spinquant_w16_long_context`
-- `nmp_bfcl_q8_spinquant_w16_miss_func`
 - `nmp_bfcl_q8_spinquant_w16_miss_param`
 - `nmp_bfcl_q8_spinquant_w4a4_base`
 - `nmp_bfcl_q8_spinquant_w4a4_long_context`
 - `nmp_bfcl_q8_spinquant_w4a4_miss_func`
 - `nmp_bfcl_q8_spinquant_w4a4_miss_param`
-- `nmp_gate_same_m24_rtn_w4_r2`
 - `nmp_score_m24_gptq_w4_d1_f01`
 - `nmp_score_m24_gptq_w4_d1_f02`
 - `nmp_score_m24_gptq_w4_d1_f03`
@@ -349,7 +344,6 @@
 - `nmp_tau2_q8_spinquant_w4a4_f01`
 - `nmp_tau2_q8_spinquant_w4a4_f02`
 - `nmp_tau2_q8_spinquant_w4a4_f03`
-- `pert_q8_tel_awq_w4_restore_early_f456`
 - `pert_q8_tel_awq_w4_restore_late_f123`
 - `pert_q8_tel_awq_w4_restore_late_f456`
 - `pert_q8_tel_awq_w4_restore_middle_f123`

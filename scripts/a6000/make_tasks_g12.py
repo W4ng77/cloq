@@ -43,6 +43,13 @@ CK = {"bf16": {"kind": "bf16"}, "rtn_w4": {"kind": "rtn", "wbits": 4}, "gptq_w4_
 ARM = {"bf16": "bf16", "rtn_w4": "rtn", "gptq_w4_d1": "gptq"}
 NOTE = "W100n g12 (gemma-4-12B-it, text-only, gemma4 parser, thinking off) second-family gate"
 OUT = "analysis/fork/g12_gate"
+WORK_OLD = Path("/data/ziyangs/cloq_work/staged/w100n_superseded")  # superseded definitions of requeued g12 tasks (kept, renamed)
+# W100n r1: with combo_kernels on (serve.sh default), Inductor fuses Gemma 4's per-head q/k/v norms of the 512-dim
+# full-attention layers into one combo reduction kernel whose only deterministic config needs 256 KiB of shared memory
+# (A6000 limit 99 KiB): "No valid triton configs" at startup (queue/failed/a6k2_g12_bf16_cal.json). g12 servers run with
+# combo_kernels off (no benchmarking either way, so still TORCHINDUCTOR_DETERMINISTIC-compatible); every other serve.sh
+# flag unchanged. Applied to every g12 server (eval, B and Q roles) so all g12 numerics share one flavour.
+SERVE_EXTRA = ["--compilation-config", json.dumps({"inductor_compile_config": {"combo_kernels": False, "benchmark_combo_kernel": False}})]
 
 
 def write_once(path: Path, obj: dict) -> None:
@@ -98,18 +105,19 @@ def manifests() -> None:
 
 def ev_tau(arm: str, runs: list[dict], prio: float, deps: list[str], tid: str) -> dict:
     return {"id": tid, "kind": "eval", "model": "g12", "arm": ARM[arm], "ckpt": CK[arm], "gpus": 1, "runs": runs,
-            "priority": prio, "deps": deps, "note": NOTE}
+            "priority": prio, "deps": deps, "serve_extra": SERVE_EXTRA, "note": NOTE}
 
 
 def ev_bfcl(arm: str, subset: str, prio: float, deps: list[str]) -> dict:
     rid = f"ext_g12_{arm}_bfcl_{subset}"
     return {"id": rid, "kind": "eval", "env": "bfcl", "model": "g12", "arm": ARM[arm], "ckpt": CK[arm], "domains": DOMS,
-            "gpus": 1, "priority": prio, "deps": deps, "runs": [{"run_id": rid, "task_file": BFCL, "subset": subset}], "note": NOTE}
+            "gpus": 1, "priority": prio, "deps": deps, "runs": [{"run_id": rid, "task_file": BFCL, "subset": subset}],
+            "serve_extra": SERVE_EXTRA, "note": NOTE}
 
 
 def fork(tid: str, b: str, q: str, spec: dict, prio: float, deps: list[str], env: str | None = None) -> dict:
     t = {"id": tid, "kind": "fork", "model": "g12", "gpus": 2, "priority": prio, "deps": deps,
-         "B": {"ckpt": CK[b]}, "Q": {"ckpt": CK[q]}, "fork": spec, "note": NOTE}
+         "B": {"ckpt": CK[b], "serve_extra": SERVE_EXTRA}, "Q": {"ckpt": CK[q], "serve_extra": SERVE_EXTRA}, "fork": spec, "note": NOTE}
     if b != q:
         t["expect_distinct_numerics"] = True
     return {**({"env": env} if env else {}), **t}
@@ -134,7 +142,7 @@ def gate(prio: float) -> list[dict]:
         "mode": "gate_same", "q_blocks": [f"{bq}:{d}" for d in DOMS], "n_items": 3, "n_same": 4, "concurrency": 8,
         "out": f"{OUT}/bfcl_same_rtn_w4"}, prio, [bq], env="bfcl"))
     # GPTQ-W4 d1 readiness (as l8/q14/m24): BF16 calibration-split run -> calib_fp_traj c1 -> one GPTQ-W4 d1 eval
-    ts.append({"id": "a6k2_g12_bf16_cal", "kind": "eval", "model": "g12", "arm": "bf16", "ckpt": CK["bf16"], "gpus": 1,
+    ts.append({"id": "a6k2_g12_bf16_cal", "kind": "eval", "model": "g12", "arm": "bf16", "ckpt": CK["bf16"], "gpus": 1, "serve_extra": SERVE_EXTRA,
                "runs": [{"run_id": "a6k2_g12_bf16_cal", "task_file": "manifests/cal_tasks_v0.json", "nonce": None}],
                "priority": prio, "deps": [], "note": NOTE + ": BF16 calibration-split run for GPTQ d1 (as a6k2_q14_bf16_cal)"})
     ts.append({"id": "a6k2_g12_calib_c1", "kind": "calib", "model": "g12", "arm": "fp_traj", "draw": "c1", "fp_run": "a6k2_g12_bf16_cal",
@@ -173,7 +181,7 @@ def formal1(prio: float, protocol: str) -> list[dict]:
         rid = f"ext_g12_{arm}_bfcl_nmp1"
         ts.append({"id": rid, "kind": "eval", "env": "bfcl", "model": "g12", "arm": ARM[arm], "ckpt": CK[arm], "domains": DOMS, "gpus": 1,
                    "priority": prio, "deps": [], "runs": [{"run_id": rid, "task_file": "manifests/fork/newmethod_panel_v1.json", "subset": "nmp_v1"}],
-                   "note": note + ": NEWMETHOD_PANEL_PROTOCOL panel B closed-loop run (same 200 ids as nmp_v1)"})
+                   "serve_extra": SERVE_EXTRA, "note": note + ": NEWMETHOD_PANEL_PROTOCOL panel B closed-loop run (same 200 ids as nmp_v1)"})
     return ts
 
 
@@ -212,7 +220,8 @@ def main():
     ap.add_argument("--protocol", default=None, help="formal1/formal2: the dated g12 panel protocol (docs/insights/...)")
     ap.add_argument("--bfcl", action="store_true", help="formal2: also the BFCL forks (only if BF16 >= 10%% on nmp_v1)")
     ap.add_argument("--write", action="store_true")
-    ap.add_argument("--priority", type=float, default=-21)
+    ap.add_argument("--requeue", nargs="*", default=[], help="ids in failed/ or deferred/ to replace by the current definition (todo)")
+    ap.add_argument("--priority", type=float, default=-24)
     a = ap.parse_args()
     if a.mode == "manifests":
         manifests()
@@ -220,6 +229,11 @@ def main():
     ts = gate(a.priority) if a.mode == "gate" else formal1(a.priority, a.protocol) if a.mode == "formal1" else formal2(a.priority, a.protocol, a.bfcl)
     for t in ts:
         clash = [s for s in ("todo", "running", "done", "failed", "deferred") if (Q / s / f"{t['id']}.json").exists()]
+        if t["id"] in a.requeue and clash and set(clash) <= {"failed", "deferred"}:
+            if a.write:
+                for s_ in clash:
+                    (Q / s_ / f"{t['id']}.json").rename(WORK_OLD / f"{t['id']}.{s_}.{int(time.time())}.json")
+            clash = []
         print(t["id"], t.get("gpus"), t["priority"], t["deps"], "EXISTS " + str(clash) if clash else "")
         if a.write and not clash:
             tmp = Q / "todo" / f".{t['id']}.json.tmp"

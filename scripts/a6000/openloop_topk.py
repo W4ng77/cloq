@@ -99,7 +99,7 @@ from openloop_d import ROOT, load  # noqa: E402  (same decision loader as E3)
 WORK = Path("/data/ziyangs/cloq_work")
 NAME_RE = re.compile(r'"name"\s*:\s*"([^"]*)"')
 TOOLS_RE = re.compile(r'"function"\s*:\s*\{\s*"name"\s*:\s*"([^"]+)"')
-TOOL_START = {"hermes": ["<tool_call>"], "mistral": ["[TOOL_CALLS]"], "llama3_json": ["<|python_tag|>", "{", '{"']}
+TOOL_START = {"hermes": ["<tool_call>"], "mistral": ["[TOOL_CALLS]"], "llama3_json": ["<|python_tag|>", "{", '{"'], "gemma4": ["<|tool_call>"]}  # W100n g12: gemma4 key only; other parsers unchanged
 EPS = 1e-6
 TOL = 5.001e-5  # decisions.jsonl token_logprobs are rounded to 4 decimals (cloq/agent.py)
 
