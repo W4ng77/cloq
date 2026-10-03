@@ -46,6 +46,7 @@ import json
 import re
 import subprocess
 import sys
+import tempfile
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -67,6 +68,11 @@ PROTOCOL_SHA256 = "73bf5538e9316c5c695fc9441115e44e795095b88f1986c4379d8ad9f226d
 # empty agent message (W92). Either quote style (repr switches to " when the message contains ').
 A6_SIGNATURES = (("invalid_function_name", re.compile(r"""^InvalidFunctionCallException\(['"]Function name was """)),
                  ("empty_agent_message", re.compile(r"""^ValueError\(['"]AssistantMessage must have either content or tool_calls""")))
+# Amendment A6.E1 (W100v-e): SENSITIVITY ONLY, never the primary. A branch JSONDecodeError in a domain where only the agent is
+# offered tools (retail, airline) comes from tau2 llm_utils.generate parsing the agent response's tool-call arguments
+# (json.loads, llm_utils.py:440), raised before that decision is logged, so it is the controller's decision n_decisions + 1.
+A6E1_SIGNATURES = (("toolcall_args_json", re.compile(r"^JSONDecodeError\(")),)
+A6E1_DOMAINS = ("retail", "airline")
 ARMS4 = ("BB", "BQ", "QB", "QQ")
 # Amendment A3 (W100e-b): per-model tau2 analysis mask (frozen file + sha); the population is the manifest tasks minus the mask's
 # excluded tasks, uniformly for all cells and blocks.
@@ -159,27 +165,39 @@ def no_holdout(p: Path) -> Path:
 
 
 # ---------------------------------------------------------------------------- amendment A6
-def a6_class(br: dict | None) -> tuple[str, str]:
+def a6_class(br: dict | None, plus: bool = False, domain: str | None = None) -> tuple[str, str]:
     """A6.2: ('agent_output', signature) iff the arm's branch error record matches A6_SIGNATURES and the branch logged >= 1
-    agent decision before the error (so the offending message was produced in the branch); else ('missing', reason)."""
+    agent decision before the error (so the offending message was produced in the branch); else ('missing', reason).
+    plus (A6.E1 sensitivity only): A6E1_SIGNATURES too, with >= 1 branch decision, in A6E1_DOMAINS only."""
     if not isinstance(br, dict) or "error" not in br:
         return "missing", "no branch error record"
     if br.get("infra_cause"):
         return "missing", f"infra_cause {br['infra_cause']}"
     e = str(br["error"])
-    for name, rx in A6_SIGNATURES:
+    for name, rx in A6_SIGNATURES + (A6E1_SIGNATURES if plus and domain in A6E1_DOMAINS else ()):
         if rx.search(e):
             return ("agent_output", name) if int(br.get("n_decisions") or 0) >= 1 else ("missing", f"{name} before any branch decision")
     return "missing", (re.match(r"[\w.]+", e) or [e[:40]])[0]
 
 
-def a6_resolve(x: dict, branches: dict) -> tuple[dict | None, dict]:
+def a6_producer(arm: str, br: dict, sig: str) -> str:
+    """A6.E1: the model whose message failed (arm = first + controller). S1/S3 are raised after the offending decision is
+    logged (S1 when the next request is rendered, S3 by agent_msg.validate()), so n_decisions == 1 is the forced action
+    (first) and >= 2 the controller; a tool-call parse failure is raised inside generate, before its decision is logged,
+    so it is always the controller's decision n_decisions + 1."""
+    return arm[1] if sig in dict(A6E1_SIGNATURES) or int(br.get("n_decisions") or 0) >= 2 else arm[0]
+
+
+def a6_resolve(x: dict, branches: dict, plus: bool = False, domain: str | None = None) -> tuple[dict | None, dict]:
     """A6.2/A6.3 on one bank row with an undefined arm: run arms with an error -> a6_class on their branch record; a reused
-    arm ('reuse=XX', §2.3 identity under protocol A) takes XX's value. (four defined arms or None, per-arm classes)."""
+    arm ('reuse=XX', §2.3 identity under protocol A) takes XX's value. (four defined arms or None, per-arm classes; an
+    'agent_output' class carries its producer as a third element, A6.E1). plus: the A6.E1 sensitivity class."""
     Y, src, cls = dict(x.get("Y") or {}), x.get("arm_source") or {}, {}
     for a in ARMS4:
         if Y.get(a) is None and str(src.get(a, "")).startswith("error"):
-            cls[a] = a6_class(branches.get(a))
+            cls[a] = a6_class(branches.get(a), plus, domain)
+            if cls[a][0] == "agent_output":
+                cls[a] += (a6_producer(a, branches[a], cls[a][1]),)
             Y[a] = 0 if cls[a][0] == "agent_output" else None
     for a in ARMS4:
         s = str(src.get(a, ""))
@@ -195,6 +213,14 @@ def strict_prereg(raw: dict) -> dict:
             for c, us in raw.items()}
 
 
+def a6_prospective(raw: dict, model: str) -> dict:
+    """A6.E1 sensitivity 'A6 prospective only': A6 only on rows whose outcomes were unread when A6 was fixed (A6.4); strict as
+    preregistered on m24 phase 1 (post hoc) and on q8 reference rows reused from Bank U (not blind)."""
+    pre = strict_prereg(raw)
+    return {c: [p if (model == "m24" and u["phase"] == 1) or u["source"] == "bank_u" else u for u, p in zip(us, pre[c])]
+            for c, us in raw.items()}
+
+
 def a6_report(raw: dict, pop: set) -> dict:
     """A6.3 reporting: per cell and block, states / arms scored Y = 0 under A6 (by signature, with tasks) and the arm errors
     that stayed missing (by reason)."""
@@ -207,7 +233,7 @@ def a6_report(raw: dict, pop: set) -> dict:
             r = rep.setdefault(c, {}).setdefault(u["block"], {"states_reclassified": 0, "arms_reclassified": 0, "arms_reused": 0,
                                                                "by_signature": {}, "states_still_missing": 0, "missing_reasons": {}, "states": []})
             r["states_reclassified" if k6 == "a6" else "states_still_missing"] += 1
-            for a, (kind, s) in sorted(u[k6].items()):
+            for a, (kind, s, *_) in sorted(u[k6].items()):
                 if kind == "agent_output":
                     r["arms_reclassified"] += 1
                     r["by_signature"][s] = r["by_signature"].get(s, 0) + 1
@@ -235,14 +261,35 @@ def expansion_ok(model: str) -> bool:
     return p.exists() and json.loads(p.read_text()).get("expand") is True
 
 
-def load_tau2(model: str, man: dict, blocks: set | None = None, only: set | None = None, a6: bool = False) -> tuple[dict, dict]:
+def load_tau2(model: str, man: dict, blocks: set | None = None, only: set | None = None, a6: bool = False,
+              views: dict | None = None) -> tuple[dict, dict]:
     """blocks / only (--blocks / --cells): restrict what is loaded; a cell outside `only` is never opened. Default: all.
     a6 (amendment A6; main() passes True for the primary): a row whose only gap is arm errors is completed by a6_resolve
-    from its branch records; default False = the loader exactly as before A6 (strict as preregistered)."""
+    from its branch records; default False = the loader exactly as before A6 (strict as preregistered).
+    views (A6.E1; main() only): filled from the SAME read (same finished blocks, row bytes and branch records) with the units
+    under the other rules: 'strict' (a6 False) and 'plus' (A6 + the A6.E1 class). Default None: nothing else changes."""
     rows = {r["state_key"]: r for r in man["rows"]}
     allow2 = expansion_ok(model)
     cells: dict = defaultdict(list)
     log: dict = defaultdict(list)
+    if views is not None:
+        views.update(strict=defaultdict(list), plus=defaultdict(list))
+
+    def unit(x: dict, base: dict, rule, branches) -> dict:
+        u = dict(base)
+        Y = x.get("Y") or {}
+        if "missing_reason" in x or "error" in x or any(Y.get(a) is None for a in ("BB", "BQ", "QB", "QQ")):
+            Y6, cls = (a6_resolve(x, branches(), rule == "plus", base["domain"]) if rule and "missing_reason" not in x and "error" not in x
+                       else (None, {}))
+            if Y6 is not None:
+                u.update(Y=Y6, E=unit_effects(Y6, x["exact_agreement"]), exact=x["exact_agreement"], category=x.get("agreement_category"), a6=cls)
+            else:
+                u["excluded"] = str(x.get("missing_reason") or x.get("error") or "arm missing")[:160]
+                if cls:
+                    u["a6_missing"] = cls
+        else:
+            u.update(Y=Y, E=unit_effects(Y, x["exact_agreement"]), exact=x["exact_agreement"], category=x.get("agreement_category"))
+        return u
 
     def take(cell, blk, d: Path, src: str, sha_want: str):
         sp = d / "bank_summary.json"
@@ -266,25 +313,23 @@ def load_tau2(model: str, man: dict, blocks: set | None = None, only: set | None
             if r is None or any(x.get(k) != r[k] for k in ("t", "source_run", "domain", "task_id", "block")):
                 log[cell].append(f"{blk}: row {x['state_key']} not identical to the panel row (refused)")
                 continue
-            u = {"cell": cell, "block": blk, "phase": r["phase"], "task": f"{r['domain']}|{r['task_id']}", "state_key": r["state_key"],
-                 "domain": r["domain"], "div": True, "source": src}
-            Y = x.get("Y") or {}
-            if "missing_reason" in x or "error" in x or any(Y.get(a) is None for a in ("BB", "BQ", "QB", "QQ")):
-                Y6, cls = (a6_resolve(x, _branches(d, x["state_key"])) if a6 and "missing_reason" not in x and "error" not in x
-                           else (None, {}))
-                if Y6 is not None:
-                    u.update(Y=Y6, E=unit_effects(Y6, x["exact_agreement"]), exact=x["exact_agreement"], category=x.get("agreement_category"), a6=cls)
-                else:
-                    u["excluded"] = str(x.get("missing_reason") or x.get("error") or "arm missing")[:160]
-                    if cls:
-                        u["a6_missing"] = cls
-            else:
-                u.update(Y=Y, E=unit_effects(Y, x["exact_agreement"]), exact=x["exact_agreement"], category=x.get("agreement_category"))
-            cells[cell].append(u)
+            base = {"cell": cell, "block": blk, "phase": r["phase"], "task": f"{r['domain']}|{r['task_id']}", "state_key": r["state_key"],
+                    "domain": r["domain"], "div": True, "source": src}
+            branches = _branches(d, x["state_key"])
+            cells[cell].append(unit(x, base, a6, branches))
+            if views is not None:
+                for name, rule in (("strict", False), ("plus", "plus")):
+                    views[name][cell].append(unit(x, base, rule, branches))
 
-    def _branches(d: Path, sk: str) -> dict:
-        p = no_holdout(d) / "branches" / f"{sk}.json"
-        return json.loads(p.read_text()) if p.exists() else {}
+    def _branches(d: Path, sk: str):
+        memo: list = []  # the branch record is read at most once per row and shared by every rule
+
+        def get() -> dict:
+            if not memo:
+                p = no_holdout(d) / "branches" / f"{sk}.json"
+                memo.append(json.loads(p.read_text()) if p.exists() else {})
+            return memo[0]
+        return get
 
     base = NM / "tau2"
     for d in sorted(base.glob(f"{model}_*/*")) if base.exists() else []:
@@ -305,6 +350,8 @@ def load_tau2(model: str, man: dict, blocks: set | None = None, only: set | None
             if any(u["block"] == blk for u in cells.get(cell, [])):
                 continue  # a panel-run reference block takes precedence (not expected for f01-f03)
             take(cell, blk, no_holdout(ROOT / "analysis/fork/bank_u" / f"{model}_{cell}" / blk), "bank_u", BANK_U_SHA256)
+    if views is not None:
+        views.update({k: dict(views[k]) for k in ("strict", "plus")})
     return dict(cells), dict(log)
 
 
@@ -568,9 +615,10 @@ def main():
     pop, excluded = population(a.model, man)
     n_tasks = len(pop)
     t0 = time.time()
-    raw, tlog = load_tau2(a.model, man, blocks, only, a6=True)  # amendment A6: primary
+    views: dict = {}  # A6.E1: every rule from ONE read, so a block finishing mid-run cannot make the views differ
+    raw, tlog = load_tau2(a.model, man, blocks, only, a6=True, views=views)  # amendment A6: primary
     pre = strict_prereg(raw)  # A6.3 sensitivity; must equal the loader without A6 unit by unit (A6 touches nothing else)
-    raw0, _ = load_tau2(a.model, man, blocks, only)
+    raw0 = views["strict"]
     sig = lambda R_: {c: [(u["state_key"], "excluded" in u, u.get("Y")) for u in us] for c, us in R_.items()}  # noqa: E731
     assert sig(pre) == sig(raw0), "A6: strict-as-preregistered view differs from the loader without A6"
     a6rep = a6_report(raw, pop)
@@ -706,6 +754,7 @@ def selftest(B: int) -> None:
     v6["Y"]["QQ"] = 0
     v6.update(E=unit_effects(v6["Y"], v6["exact"]), a6={"QQ": ("agent_output", "invalid_function_name")})
     a6_selftest()
+    a6e1_selftest(man)
     pc, pinfo, _, _ = apply_population(strict_prereg(raw), pop, len(pop))
     assert pinfo["rtn_w4"]["f02"]["admitted"] is False and len(pc["rtn_w4"]) == 166 and len(pc["gptq_w4_d1"]) == 166, pinfo["rtn_w4"]
     assert "not_estimable" in tau2_contrasts(pc, CONTRASTS["m24"], B)[0]["M1"]  # prereg: common blocks {f01} only
@@ -751,12 +800,52 @@ def a6_selftest() -> None:
     x = {"Y": {"BB": 1, "BQ": None, "QB": 1, "QQ": None},
          "arm_source": {"BB": "orig", "QB": "reuse=BB", "QQ": "error: InvalidFunctionCallException('Function name was", "BQ": "reuse=QQ"}}
     Y6, cls = a6_resolve(x, {"QQ": s1})
-    assert Y6 == {"BB": 1, "BQ": 0, "QB": 1, "QQ": 0} and cls == {"QQ": ("agent_output", "invalid_function_name"), "BQ": ("reuse", "reuse=QQ")}
+    assert Y6 == {"BB": 1, "BQ": 0, "QB": 1, "QQ": 0} and cls == {"QQ": ("agent_output", "invalid_function_name", "Q"), "BQ": ("reuse", "reuse=QQ")}
     assert x["Y"]["QQ"] is None  # the bank row itself is not modified
     assert a6_resolve(x, {"QQ": {"error": "JSONDecodeError('x')", "n_decisions": 2}})[0] is None and a6_resolve(x, {})[0] is None
     two = {"Y": {"BB": 0, "BQ": None, "QB": None, "QQ": 1}, "arm_source": {"BB": "run", "BQ": "error: a", "QB": "error: b", "QQ": "run"}}
     assert a6_resolve(two, {"BQ": s3, "QB": {"error": "litellm.Timeout: x", "n_decisions": 1}})[0] is None  # one arm still missing
     assert a6_resolve(two, {"BQ": s3, "QB": s1})[0] == {"BB": 0, "BQ": 0, "QB": 0, "QQ": 1}
+
+
+def a6e1_selftest(man: dict) -> None:
+    """A6.E1 on synthetic records: the tool-call parse class (sensitivity only), the producer, 'A6 prospective only', and
+    load_tau2 views from ONE read on a temporary m24 tree (strict view == a load without A6, unit by unit)."""
+    global NM
+    jd = {"error": "JSONDecodeError('Unterminated string starting at: line 1 column 34 (char 33)')", "n_decisions": 2}
+    s1 = {"error": "InvalidFunctionCallException('Function name was  but must be a-z')", "n_decisions": 1}
+    assert a6_class(jd)[0] == "missing" and a6_class(jd, True, "airline") == ("agent_output", "toolcall_args_json")
+    assert a6_class(jd, True, "telecom")[0] == "missing" and a6_class({**jd, "n_decisions": 0}, True, "retail")[0] == "missing"
+    assert (a6_producer("QB", s1, "invalid_function_name"), a6_producer("BQ", {**s1, "n_decisions": 3}, "invalid_function_name"),
+            a6_producer("QB", jd, "toolcall_args_json"), a6_producer("QB", {**jd, "n_decisions": 1}, "toolcall_args_json")) == ("Q", "Q", "B", "B")
+    u = {"Y": {}, "E": {}, "exact": 1, "category": None, "a6": {"QQ": ("agent_output", "invalid_function_name", "Q")}}
+    raw = {"c": [{**u, "phase": 1, "source": "panel"}, {**u, "phase": 2, "source": "panel"}, {**u, "phase": 2, "source": "bank_u"}]}
+    assert ["excluded" in v for v in a6_prospective(raw, "m24")["c"]] == [True, False, True]
+    assert ["excluded" in v for v in a6_prospective(raw, "q8")["c"]] == [False, False, True]
+    rows = [r for r in man["rows"] if r["block"] == "f01" and not r["missing_reason"]][:3]
+    old = NM
+    with tempfile.TemporaryDirectory() as td:
+        NM, d = Path(td), Path(td) / "tau2" / "m24_rtn_w4" / "f01"
+        (d / "branches").mkdir(parents=True)
+        (d / "bank_summary.json").write_text(json.dumps({"manifest_sha256": MANIFESTS["m24"][1], "noop": {"n": 1, "n_pass": 1}}))
+        L = []
+        for r, (Y, br) in zip(rows, [({"BB": 1, "BQ": 1, "QB": 0, "QQ": 1}, None), ({"BB": 1, "BQ": 1, "QB": 1, "QQ": None}, {**s1, "n_decisions": 3}),
+                                     ({"BB": 0, "BQ": None, "QB": 1, "QQ": 1}, jd)]):
+            src = {a: "run" if Y[a] is not None else "error: x" for a in ARMS4}
+            L.append(json.dumps({**{k: r[k] for k in ("state_key", "t", "source_run", "domain", "task_id", "block")}, "sub": "U2B", "model": "m24",
+                                 "Y": Y, "arm_source": src, "exact_agreement": False, "agreement_category": None}))
+            if br:
+                (d / "branches" / f"{r['state_key']}.json").write_text(json.dumps({a: br for a in ARMS4 if Y[a] is None}))
+        (d / "bank_rows.jsonl").write_text("\n".join(L) + "\n")
+        views: dict = {}
+        prim, _ = load_tau2("m24", man, {"f01"}, None, a6=True, views=views)
+        strict0, _ = load_tau2("m24", man, {"f01"}, None)
+    NM = old
+    sig = lambda R_: {c: [(u["state_key"], u.get("excluded"), u.get("Y")) for u in us] for c, us in R_.items()}  # noqa: E731
+    assert sig(views["strict"]) == sig(strict0) == sig(strict_prereg(prim)) and sum("excluded" in v for v in strict0["rtn_w4"]) == 2
+    assert [("excluded" in v, v.get("a6")) for v in prim["rtn_w4"]][1:] == [(False, {"QQ": ("agent_output", "invalid_function_name", "Q")}),
+                                                                         (True, None)]
+    assert views["plus"]["rtn_w4"][2]["a6"] == {"BQ": ("agent_output", "toolcall_args_json", "Q")} and views["plus"]["rtn_w4"][2]["Y"]["BQ"] == 0
 
 
 if __name__ == "__main__":
