@@ -1,4 +1,4 @@
-# A6000 queue snapshot (2026-10-02 18:06:08 PDT)
+# A6000 queue snapshot (2026-10-02 18:36:11 PDT)
 
 ## running (20)
 
@@ -7,9 +7,9 @@
 - `fork_repair_q4_rtn_w3`
 - `fork_sameprec_q8_g3`
 - `fork_sameprec_q8_g6`
-- `fork_sameprec_w3_q8_q5`
-- `nmp_gate_same_q8_kivi_k4v4_fx`
 - `nmp_tau2_q8_kivi_k16v16_f01`
+- `nmp_tau2_q8_kivi_k16v16_f02`
+- `nmp_tau2_q8_kivi_k16v16_f03`
 - `nmp_tau2_q8_kivi_k2v2_f03`
 - `pert_q4_gptq_w3_resid_a2_q345`
 - `pert_q4_rtn_w3_resid_a2_q345`
@@ -21,12 +21,13 @@
 - `pert_q4_rtn_w3_restore_rand_third_s3_q345`
 - `pert_q8_awq_w4_restore_rand_third_s3_fdev`
 - `pert_q8_gptq_w3_resid_a2_q345`
-- `pert_q8_rtn_w3_resid_a0.25_q345`
+- `pert_q8_rtn_w3_resid_a2_q345`
 
-## failed (9)
+## failed (10)
 
 - `a6k2_q14_gauss3_s1` · RuntimeError('run a6k2_q14_gauss3_s1/airline: 2 infrastructure_error episodes (outage)')
 - `a6k2_q14_gauss3_s2` · RuntimeError('run a6k2_q14_gauss3_s2/airline: 3 infrastructure_error episodes (outage)')
+- `a6k2_q14_kvq_int3` · RuntimeError('run a6k2_q14_kvq_int3_q2/airline: 16 infrastructure_error episodes (outage)')
 - `a6k2_q32_gauss3_s1` · RuntimeError('run a6k2_q32_gauss3_s1/airline: 2 infrastructure_error episodes (outage)')
 - `a6k2_q32_rtn_w3` · RuntimeError('run a6k2_q32_rtn_w3_q2/airline: 12 infrastructure_error episodes (outage)')
 - `a6k2_smoke_l8` · RuntimeError('run a6k2_smoke_l8/retail: 5 infrastructure_error episodes')
@@ -35,7 +36,7 @@
 - `kivi_gate_q8` · RuntimeError('cmd failed rc=-9')
 - `pert_q4_rtn_w3_restore_rand_mlp_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_mlp_s3_q3/retail: 1 infrastructure_error episodes (outage)')
 
-## done (1118)
+## done (1121)
 
 - `a6k2_det_q14_x1_awq_a` · 11 min · node005
 - `a6k2_det_q14_x1_awq_b` · 54 min · node004
@@ -238,9 +239,8 @@
 - `a6k2_q32_ol_gauss0.03_s2` · 26 min · node007
 - `a6k2_q32_ol_gauss0.03_s3` · 24 min · node005
 
-## todo (109)
+## todo (105)
 
-- `a6k2_q14_kvq_int3`
 - `a6k2_q14_tel_gauss0.1_s1`
 - `a6k2_q14_tel_gauss1_s1`
 - `a6k2_q14_tel_gptq_w3`
@@ -310,9 +310,6 @@
 - `nmp_tau2_m24_rtn_w4_f01`
 - `nmp_tau2_m24_rtn_w4_f02`
 - `nmp_tau2_m24_rtn_w4_f03`
-- `nmp_tau2_q8_kivi_k16v16_f02`
-- `nmp_tau2_q8_kivi_k16v16_f03`
-- `pert_q8_rtn_w3_resid_a2_q345`
 - `pert_q8_rtn_w3_restore_rand_attn_s2_q345`
 - `pert_q8_rtn_w3_restore_rand_attn_s3_q345`
 - `pert_q8_rtn_w3_restore_rand_mlp_s2_q345`
