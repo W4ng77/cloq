@@ -10,6 +10,37 @@ Newest first.
 
 ---
 
+## W100s - m24 (Mistral-24B) phase-1 INTERIM analysis (f01-f03; phase 2 running): strict A3.3 admits rtn {f03}, gptq {f02, f03}; M1 not estimable; G-H unresolved in the second family, while the turnover structure matches q8 (2026-10-03 07:15 PDT)
+**TL;DR** INTERIM, not the protocol's final m24 analysis, and no paper claim. The run is `analyze_newmethod.py --model m24 --blocks f01,f02,f03` as protocol §7/A3 define it (83-task mask, strict completeness). The budget audit (`m24_budget_audit_20261003T1354Z.md`, two skeptics) and the frozen loader agree on what is admitted.
+- **Admission.**
+  - gptq f02 (`budget_ok=false`) is admitted. The flag is the context-overflow sentinel (airline:45 QQ), a valid failure, Y = 0.
+  - Three in-population fork-branch Mistral parse errors (Y = None) fail rtn f01 (retail:51), rtn f02 (retail:95) and gptq f01 (airline:2).
+- **τ² primary (pp).**
+  - gptq (k = 2, t df 1): divergence 50.6 %, M +12.7 [+5.0, +20.3], G_all +0.6 [-22.4, +23.6], within-divergent G-H +0.0 [-30.3, +30.3].
+  - rtn (k = 1; only the crossed task interval exists): divergence 59.0 %, M +10.8, G_all +3.6, G-H +4.1 (c -8.9, +17.1).
+  - Some gptq intervals have zero width because both block means are identical, not because the estimate is precise.
+- **M1 (gptq - rtn, D_cc).**
+  - Primary: not estimable, with one common block (f03) and no §7 fallback.
+  - f03 point estimate: +1.2 pp, descriptive.
+  - Available-rows sensitivity (k = 3): +2.4 [-0.7, +5.5], p = .077.
+  - BFCL M1 D_cc_all: +0.0 [-6.0, +6.0]. ΔM -7.0 [-13.0, -1.0]: GPTQ changes fewer outcomes than RTN.
+- **Sensitivities with k = 3.** Within-divergent G-H: gptq -4.5 [-17.8, +9.3] and rtn -0.6 [-10.6, +9.6] (available rows); gptq -3.8 and rtn -0.6 (complete-case).
+- **BFCL (complete; 200 items).** Within-divergent G-H: gptq +0.0 [-6.2, +6.4], rtn -0.6 [-7.3, +5.9].
+- **q8 W4 reference, same protocol (U2B, k = 3, descriptive, never pooled).** Within-divergent G-H: gptq +2.8 [-10.3, +14.7], awq +1.5 [-7.3, +10.1]. The paper's significant +2.9 / +3.4 comes from first-divergence states with 20 blocks.
+- **Reading.**
+  - The G-H sign in a second family is not answerable yet. Every m24 interval contains both 0 and the q8 point estimates.
+  - What replicates descriptively: large two-sided turnover (within-divergent M 15-25 pp in m24, 16-17 pp in q8) with small net G_all, and an off-diagonal (controller-dependent) share of 18-24 % in m24 against 16.5-18.5 % in q8.
+- **Code.**
+  - `analyze_newmethod.py` gains `--blocks`, `--cells` and `--tag`. The default behaviour is unchanged: selftest PASS, and the m24 dry run is identical.
+  - The q8 run used `--cells`, so q8 new-method outputs were never opened before `expansion_q8`.
+  - `m24_interim_report.py` recomputes every protocol field and asserts it equal to the protocol runs. It adds G-H with the same Boot.
+- **Open.**
+  1. Main session: whether a fork-branch `agent_parse_error` counts as Y = 0, as overflow does. This would be a post-hoc, disclosed amendment, and it would re-admit three blocks.
+  2. §9 fidelity is pending the m24 score re-runs (W100o).
+  3. The final m24 analysis runs after phase 2.
+
+Evidence: `analysis/fork/out/m24_interim_20261003T141416Z.{md,json}`, `analysis/fork/out/m24_interim_nmp_20261003T140821Z.{md,json}` (protocol run), `analysis/fork/out/q8ref_w4_nmp_20261003T140825Z.{md,json}` (q8 W4 reference run), `analysis/fork/out/m24_budget_audit_20261003T1354Z.md`, `analysis/fork/{analyze_newmethod,m24_interim_report,m24_interim_md}.py`. Commits 6c1f1b0, d82973b, a34a205.
+
 ## W100q - GPU fill proposal and failure triage: the "airline outages" are agent-server queue timeouts on damaged models (not simulator instability), retries of them are futile; cluster idles from ~19:00-22:00 10-03 (~950-1080 idle GPU-h to the freeze); ranked fill options (2026-10-03 07:20 PDT)
 **TL;DR**
 1. **No failed task qualifies for a plain infra requeue; none was requeued.** The m24 score failures were a code bug, now fixed and requeued by W100o. The other eval failures were all already retried once.
