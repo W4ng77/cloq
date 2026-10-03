@@ -10,6 +10,36 @@ Newest first.
 
 ---
 
+## W100v-e - NEWMETHOD amendment A6.E1: review corrections to A6 committed before any m24 phase-2 or q8 panel outcome is read; A6 primary unchanged, two labelled sensitivities added (2026-10-03 08:58 PDT)
+**TL;DR** A review of A6 (W100v) found seven inaccurate or missing statements. All were checked against the code and files, and all seven held. Erratum A6.E1 was committed in 2f06102 at 08:55:59 PDT (protocol sha 73bf5538 → **b306cc70**). It was stacked on 43e2342 (08:51:13), which fixes a two-read race in `analyze_newmethod.main()`. The A6 primary rule is unchanged. m24 `gptq_w4_d1` f04 had been produced but not read, and f05 was running.
+- **Corrections (protocol A6.E1):**
+  - **E1.1:** m24 adopted A6 for estimability, after the interim had been read. Without A6, M1 had 1 block; the available-rows ΔD_cc had been +2.4 pp, p 0.077. A new sensitivity, "A6 prospective only", applies strict rules on m24 phase 1 and the q8 Bank U rows.
+  - **E1.2:** `JSONDecodeError` in retail/airline is the agent's own malformed tool-call arguments (`llm_utils.py:440`), not an error of unknown origin. It stays missing in the primary, because end to end it counts as an outage. A new sensitivity, "A6 + agent tool-call parse failures", scores it Y = 0.
+  - **E1.3:** BFCL already scores the S1-type failure as Y = 0 (W99p). The W100v BFCL open question is withdrawn.
+  - **E1.4:** the A3 mask and A6 treat a BF16 parse failure asymmetrically; this is now disclosed. The report shows each Y = 0 arm's producer. All 4 m24 phase-1 arms were produced by Q.
+  - **E1.5:** the 12 q8 timeouts are relabelled "Q-server timeout, cause not established". All are BQ/QQ arms; the Q server ran at a median of 6.4–7.8 tok/s across ≤ 8 requests, against max_tokens 1024 and a 600 s limit.
+  - **E1.6:** the A6 status text is corrected: 64/84 f04 states had been produced, and filename greps had touched their files.
+  - **E1.7:** the user approved S1 on m24 only. S3 and the q8 scope are this session's extension.
+- **Code (`analysis/fork/analyze_newmethod.py`):**
+  - Every view now comes from one read (`load_tau2(..., views=)`).
+  - New JSON keys `tau2.sensitivity_a6_prospective` and `tau2.sensitivity_a6_plus_toolcall_parse`, each with its own Holm family.
+  - `by_producer` in the A6 report.
+- **Checks (effect-blind; admitted blocks and booleans only):**
+  - In 43e2342, `--dry` is byte-identical between old and new code (q8; m24 f01-f03), and the loaders match unit by unit.
+  - After 2f06102: on m24 f01-f03, prospective = strict (rtn {f03}, gptq {f02, f03}) and plus = primary. On q8 every view equals the primary.
+  - `--selftest` passes, including a test of the views on a temporary tree. A synthetic end-to-end run exercised the full JSON and markdown output.
+- **For the main session, before `EXPPILOT_GO_newmethod_q8` / `_m24`:**
+  - confirm or revert S3 and the q8 scope (E1.7);
+  - rule on Q-server timeouts if needed; this decides P3 (kivi_k2v2 has no block) and costs P2 its spinquant_w4a4 f01 block (E1.5);
+  - the P3 fallback question from W100v stays open.
+- **Evidence:**
+  - `docs/insights/NEWMETHOD_PANEL_PROTOCOL.md` (Amendment A6.E1);
+  - `analysis/fork/analyze_newmethod.py` (`a6_producer`, `a6_prospective`, `A6E1_SIGNATURES`, `load_tau2(views=)`);
+  - `third_party/tau2-bench/src/tau2/utils/llm_utils.py:440`;
+  - `scripts/ext/common.py:101-104`;
+  - `analysis/fork/out/m24_interim_20261003T141416Z.md`;
+  - `/data/ziyangs/cloq_work/logs/tasks/nmp_tau2_q8_kivi_k2v2_f0{1,2,3}.Q.vllm.log`.
+
 ## W100w - F3: outage re-run path (flag-gated) and 9 re-run tasks for the failed outage tasks; coverage/appendix cells only (2026-10-03 08:40 PDT)
 **TL;DR** A flag-gated path re-runs only the outage-classified episodes (600 s timeouts) of a run-domain, plus its never-run ids, at run_par 1 / max_concurrency 4 on the task's own agent server. It archives the originals (never deletes) and merges. Without the flag, run_arm and worker behave exactly as before (dry checks: old == new).
 Queued 9 `<id>_rro` tasks at -21 for the 9 failed outage tasks: 12 run-domains, 56 outage + 11 never-run episodes, estimates 0.8 to 14.2 h, all inside the freeze budget. **These results fill coverage/appendix cells only.**
@@ -80,6 +110,14 @@ The two q14 gauss3 tasks were claimed on node001 at 08:34.
 
 ## W100v - NEWMETHOD amendment A6: a fork-branch arm error caused by the agent's own message is scored Y = 0, as end to end; strict as preregistered becomes a labelled sensitivity (2026-10-03 08:30 PDT)
 **TL;DR** Amendment A6 was committed in fe6765e at 08:16 PDT (protocol sha f9f8b3a5 → **73bf5538**). That was before any m24 phase-2 τ² task had finished and before any q8 new-method panel outcome was read. The user approved it on 10-03 (W100q decision 2).
+- **Correction (2026-10-03 08:58 PDT, W100v-e; amendment A6.E1).** Parts of this entry are wrong:
+  - A6's status text says "none of their outputs had been opened", but 64/84 m24 f04 states had been produced, unread, and filename greps had touched their files;
+  - the user approved S1 on m24 only;
+  - `JSONDecodeError` is the agent's malformed tool call, not of unknown origin;
+  - the q8 timeouts are "Q-server timeout, cause not established", not infrastructure;
+  - BFCL already scores S1 as Y = 0, so that open question is withdrawn.
+
+  See W100v-e.
 - **The rule.** A τ² branch arm that stopped on an exception raised by validating the agent model's own message is scored Y = 0. The exception must be one of:
   - S1, mistral_common `InvalidFunctionCallException`: an invalid or empty tool name (W99p);
   - S3, tau2 `AssistantMessage must have either content or tool_calls`: an empty message (W92).
