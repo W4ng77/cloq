@@ -15,7 +15,14 @@ gate    BF16 and RTN-W4 evals on both gate samples (1 GPU each; 12B BF16 fits on
         calib_fp_traj c1, and a GPTQ-W4 d1 eval on the tau2 gate sample (build + serve check; not an admission criterion).
 Priority -21 (ascending queue order: behind pert -22 / pivot -23, ahead of -19 backfill). Never overwrites an existing id.
 
-usage: python3 scripts/a6000/make_tasks_g12.py {manifests|gate} [--write]
+formal1 formal stage 1, only after the gate PASS and after the dated protocol (docs/insights/G12_PANEL_PROTOCOL_*.md,
+        --protocol) is frozen: BF16 closed-loop runs a6k2_g12_bfpair_f01..f0K on the 85-task panel (eval_tasks_v0, main
+        nonce blocks; K from the protocol, 1 block per task), and the BF16 + GPTQ-W4 d1 BFCL runs on the 200 nmp_v1 items.
+formal2 formal stage 2, after `make_newmethod_panel.py build --model g12` and the dated manifest-sha amendment: the
+        gptq_w4_d1 cell's gates, its bank_u panel tasks f01..f0K and token scores, and (--bfcl, only if BF16 >= 10% on
+        nmp_v1, §10) the four BFCL fork tasks. Specs verbatim from `make_newmethod_panel.py spec --model g12`.
+
+usage: python3 scripts/a6000/make_tasks_g12.py {manifests|gate|formal1|formal2} [--protocol P] [--bfcl] [--write]
 """
 from __future__ import annotations
 
@@ -138,16 +145,79 @@ def gate(prio: float) -> list[dict]:
     return ts
 
 
+BLOCK_NAMES = ("f01", "f02", "f03", "f04", "f05", "f06")
+CELL = "gptq_w4_d1"
+
+
+def frozen_k(protocol: str) -> tuple[int, str]:
+    """K (number of blocks) from the dated protocol's machine-readable line `G12_FROZEN {json}`; returns (K, sha256)."""
+    p = ROOT / protocol
+    txt = p.read_text()
+    line = next(l for l in txt.splitlines() if l.startswith("G12_FROZEN "))
+    k = int(json.loads(line[len("G12_FROZEN "):])["K"])
+    assert 1 <= k <= 6
+    return k, hashlib.sha256(p.read_bytes()).hexdigest()
+
+
+def formal1(prio: float, protocol: str) -> list[dict]:
+    k, psha = frozen_k(protocol)
+    blocks = json.load(open(ROOT / "manifests/fork/dev_blocks_v1.json"))["new_blocks"]
+    note = NOTE + f": formal stage 1 (protocol {protocol} sha {psha[:12]})"
+    ts = []
+    for b in BLOCK_NAMES[:k]:
+        t = ev_tau("bf16", [{"run_id": f"a6k2_g12_bfpair_{b}", "task_file": "manifests/eval_tasks_v0.json", "nonce": blocks[b]}],
+                   prio, [], f"a6k2_g12_bfpair_{b}")
+        t["note"] = note
+        ts.append(t)
+    for arm in ("bf16", CELL):
+        rid = f"ext_g12_{arm}_bfcl_nmp1"
+        ts.append({"id": rid, "kind": "eval", "env": "bfcl", "model": "g12", "arm": ARM[arm], "ckpt": CK[arm], "domains": DOMS, "gpus": 1,
+                   "priority": prio, "deps": [], "runs": [{"run_id": rid, "task_file": "manifests/fork/newmethod_panel_v1.json", "subset": "nmp_v1"}],
+                   "note": note + ": NEWMETHOD_PANEL_PROTOCOL panel B closed-loop run (same 200 ids as nmp_v1)"})
+    return ts
+
+
+def formal2(prio: float, protocol: str, bfcl: bool) -> list[dict]:
+    import subprocess
+    import sys
+    k, psha = frozen_k(protocol)
+    sp = json.loads(subprocess.check_output([sys.executable, str(ROOT / "scripts/a6000/make_newmethod_panel.py"), "spec", "--model", "g12",
+                                             "--cell", CELL], cwd=ROOT, text=True))
+    if "<sha256" in json.dumps(sp):
+        raise SystemExit("manifests/fork/newmethod_panel_v1_g12.json not built yet")
+    strip = lambda d: {kk: v for kk, v in d.items() if not kk.startswith("_")}  # noqa: E731
+    note = NOTE + f": formal stage 2 (protocol {protocol} sha {psha[:12]})"
+    gs = fork(f"nmp_gate_same_g12_{CELL}", CELL, CELL, strip(sp["gate_same (Q determinism, foreign states)"]), prio, ["a6k2_g12_bfpair_f01"])
+    gb = fork(f"nmp_gate_bank_g12_{CELL}", "bf16", CELL, strip(sp["bank gate (BB no-op on every state)"]), prio, ["a6k2_g12_bfpair_f01"])
+    ts = [gs, gb]
+    tmpl_t = sp["panel tasks (one per block; task id nmp_tau2_<model>_<cell>_<blk>)"][0]
+    tmpl_s = sp["token scores (KLu), driver score, after each panel task"][0]
+    for b in BLOCK_NAMES[:k]:
+        spec_t = {**tmpl_t, "blocks": [b], "out": tmpl_t["out"].rsplit("/", 1)[0] + "/" + b}
+        spec_s = {**tmpl_s, "blocks": [b], "bank_out": spec_t["out"], "out": tmpl_s["out"].rsplit("/", 1)[0] + "/" + b}
+        pt = fork(f"nmp_tau2_g12_{CELL}_{b}", "bf16", CELL, spec_t, prio, [gs["id"], gb["id"], f"a6k2_g12_bfpair_{b}"])
+        st = fork(f"nmp_score_g12_{CELL}_{b}", "bf16", CELL, spec_s, prio, [pt["id"]])
+        ts += [pt, st]
+    if bfcl:
+        for kk, spec_f in zip(("base", "miss_param", "miss_func", "long_context"), sp["BFCL fork tasks (fork_ext dev, one per category)"]):
+            ts.append(fork(f"nmp_bfcl_g12_{CELL}_{kk}", "bf16", CELL, spec_f, prio, [f"ext_g12_{CELL}_bfcl_nmp1", "ext_g12_bf16_bfcl_nmp1"], env="bfcl"))
+    for t in ts:
+        t["note"] = note
+    return ts
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("mode", choices=["manifests", "gate"])
+    ap.add_argument("mode", choices=["manifests", "gate", "formal1", "formal2"])
+    ap.add_argument("--protocol", default=None, help="formal1/formal2: the dated g12 panel protocol (docs/insights/...)")
+    ap.add_argument("--bfcl", action="store_true", help="formal2: also the BFCL forks (only if BF16 >= 10%% on nmp_v1)")
     ap.add_argument("--write", action="store_true")
     ap.add_argument("--priority", type=float, default=-21)
     a = ap.parse_args()
     if a.mode == "manifests":
         manifests()
         return
-    ts = gate(a.priority)
+    ts = gate(a.priority) if a.mode == "gate" else formal1(a.priority, a.protocol) if a.mode == "formal1" else formal2(a.priority, a.protocol, a.bfcl)
     for t in ts:
         clash = [s for s in ("todo", "running", "done", "failed", "deferred") if (Q / s / f"{t['id']}.json").exists()]
         print(t["id"], t.get("gpus"), t["priority"], t["deps"], "EXISTS " + str(clash) if clash else "")
