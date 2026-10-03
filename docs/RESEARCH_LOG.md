@@ -10,6 +10,12 @@ Newest first.
 
 ---
 
+## W100z — node009 brought back with 7 of 8 GPUs (2026-10-03 15:00 PDT)
+**TL;DR** node009 had been excluded since 09-28 because the user reported "several bad GPUs"; it was sitting IDLE. A 15-min diagnostic job (bf16 matmul plus a 40 GB fill on each card) found GPU 0 (PCI 01:00.0) bad: 71 uncorrected volatile ECC errors, and the fill test never completed. GPUs 1-7 pass. The old Xid 31 (61:00, 09-23) and Xid 13/43 (a1:00, June) were application MMU faults, not hardware.
+- node.sbatch's probe now also rejects any card with uncorrected volatile ECC errors (commit 25ea657). The old 1024x1024 matmul probe would have passed GPU 0.
+- Runner job 49911 on node009 uses GPUs 1-7, with the user simulator on 2,3 (agent pairs 4-5 and 6-7, plus single GPU 1). It ends 10-06 14:30. node009 is not in autopilot.sh's NODES list; resubmit by hand if it exits.
+- node003 is still DOWN ("Node unexpectedly rebooted"; known bad card at 01:00.0). That needs IT.
+
 ## W100y — node001 diagnosed: RAM-disk (tmpfs) leak from failed tasks, not NFS (2026-10-03 14:45 PDT)
 **TL;DR** node001 had 6 infra failures on 10-03 ("vLLM server did not come up in 90 min"; processes in D state). The cause was node-local scratch, not /data: compute nodes are diskless, `/` and /tmp are tmpfs (378 G of the 755 G RAM), and it was 94% full (354 G). About 340 G was our own checkpoint builds. worker.py freed a built checkpoint only after its server came up, so every task that failed earlier left 8-62 G behind. Finished jobs' /tmp/cloq_<job> dirs were never removed either. This drove memory pressure, which stalled new builds and loads, which caused more failures.
 - Actions (user approved stopping node001's tasks):
