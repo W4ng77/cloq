@@ -2,9 +2,10 @@
 session. Docs: scripts/a6000/EXPPILOT.md. Stop: touch /data/ziyangs/cloq_work/queue/EXPPILOT_STOP.
 
   A  phase-2 release (effect-blind): for q8 / m24, once analysis/fork/newmethod/expansion_<m>.json exists with expand = true,
-     queue every missing f04-f06 panel + score task of the record's phase2_cells (q8 reference cells also get their §2.4
-     gates) through the official generator of each cell family; nothing if expand is not true. Reads only the record's
-     expand / phase2_cells / eligible fields and queue presence, never a panel outcome.
+     queue every missing f04-f06 panel + score task of the record's phase2_cells (q8 reference cells without new gates,
+     §5.5) through the official generator of each cell family, all or none: every generator is first run without --write
+     and must list every expected id. One tau2 tier for all q8 cells (§5.5: never ranked). Nothing if expand is not true.
+     Reads only the record's expand / phase2_cells / eligible fields and queue presence, never a panel outcome.
   B  analyses (login node, timeout 30 min, once each): analyze_newmethod.py --model <m> when its record exists and every
      panel + score task of the admitted cells is done (or T_deadline 2026-10-04 12:00 PDT passed); analyze_sameprec.py and
      analyze_sameprec_w3.py after the 2026-10-04 00:00 PDT freeze. Outputs + a ledger line are committed (explicit paths).
@@ -40,7 +41,7 @@ LOG, STATE, STOP = WORK / "logs/exppilot.log", WORK / "exppilot_state.json", Q /
 NM = ROOT / "analysis/fork/newmethod"
 P1, P2 = ("f01", "f02", "f03"), ("f04", "f05", "f06")
 REF = ("gptq_w4_d1", "awq_w4", "kvq_int8")               # q8 reference cells (protocol §2.5)
-TIER = {"m24": -30, "rot": -27, "kivi": -29, "ref": -27}  # tau2 tiers of the cell families
+TIER = {"m24": -30, "rot": -29, "kivi": -29, "ref": -29}  # tau2 tiers; one tier for every q8 cell (§5.5: never ranked)
 
 
 def utc() -> str:
@@ -91,8 +92,7 @@ class Pilot:
 
     @staticmethod
     def expected(m: str, c: str) -> list:
-        ids = [f"nmp_{k}_{m}_{c}_{b}" for b in P2 for k in ("tau2", "score")]
-        return ids + ([f"nmp_gate_same_{m}_{c}", f"nmp_gate_bank_{m}_{c}"] if m == "q8" and c in REF else [])
+        return [f"nmp_{k}_{m}_{c}_{b}" for b in P2 for k in ("tau2", "score")]  # reference cells: no gates (§5.5)
 
     def gen_cmd(self, m: str, c: str, idx: dict) -> list:
         fam = "m24" if m == "m24" else "ref" if c in REF else "kivi" if c.startswith("kivi") else "rot"
@@ -120,16 +120,25 @@ class Pilot:
             if m == "q8" and (bool(kivi_q) != ("kivi_k16v16" in cells) or not set(REF) <= set(cells)):
                 self.once_per(f"p2bad_{m}", 3600, f"phase 2 {m}: REFUSED, record violates A5.3 pairing or §5.5 reference cells: {cells}")
                 continue
-            for c in cells:
-                miss = [t for t in self.expected(m, c) if t not in idx]
-                if not miss:
-                    continue
-                cmd = self.gen_cmd(m, c, idx) + ([] if self.dry else ["--write"])
-                r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=600)
+            todo = [(c, miss) for c in cells if (miss := [t for t in self.expected(m, c) if t not in idx])]
+            run = lambda c, w: subprocess.run(self.gen_cmd(m, c, idx) + w, cwd=ROOT, capture_output=True, text=True,  # noqa: E731
+                                              timeout=600)
+            pre = {c: run(c, []) for c, _ in todo}  # preflight without --write: all or none (§5.5, A5.3)
+            bad = {}
+            for c, miss in todo:
+                lacks = sorted(set(miss) - set(pre[c].stdout.split()))  # the generator must list every expected id
+                if pre[c].returncode or lacks:
+                    bad[c] = (pre[c].stderr or pre[c].stdout).strip()[-160:] if pre[c].returncode else f"does not list {lacks}"
+            if bad:
+                self.once_per(f"p2pre_{m}", 3600, f"phase 2 {m}: preflight failed for {sorted(bad)}, nothing written (all or none): {bad}")
+                continue
+            for c, miss in todo:
+                cmd = self.gen_cmd(m, c, idx) + ["--write"]
                 if self.dry:
-                    self.act(f"phase 2 {m}/{c}: {len(miss)} missing -> {' '.join(cmd[1:])} --write")
-                    print("    " + (r.stdout + r.stderr).strip().replace("\n", "\n    "))
+                    self.act(f"phase 2 {m}/{c}: {len(miss)} missing -> {' '.join(cmd[1:])}")
+                    print("    " + (pre[c].stdout + pre[c].stderr).strip().replace("\n", "\n    "))
                     continue
+                r = run(c, ["--write"])
                 left = [t for t in miss if t not in F.index()]
                 msg = f"phase 2 {m}/{c}: queued {len(miss) - len(left)}/{len(miss)} via {' '.join(cmd[1:4])} rc={r.returncode}"
                 if len(left) == len(miss):  # generator refused or failed: retried every loop, logged once per hour

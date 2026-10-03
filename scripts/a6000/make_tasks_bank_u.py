@@ -9,10 +9,14 @@ B = BF16, Q = the cell's exact serving config (kvq_int8: KV INT8 hook). q4 on 1 
 to node004/005/007. Priority -17.
   --nmp-phase2 CELL ..  W100r: the q8 reference cells (gptq_w4_d1 awq_w4 kvq_int8) on the new-method panel's phase 2
                 (NEWMETHOD_PANEL_PROTOCOL §2.5, §5.5: "the reference cells run f04-f06 with the panel manifest like any other
-                cell"): both §2.4 gates (gate_same fail_loud) + f04-f06 bank_u U2B + token scores, specs verbatim from
+                cell"; all or none): f04-f06 bank_u U2B + token scores, specs verbatim from
                 `make_newmethod_panel.py spec --model q8 --cell <c> --phase 2`, Q = qrole (the Bank U serving config).
+                No gate dependency (W100r-b): §5.5 is unconditional, the §5.3 cost has no gate time, and the reference
+                cells' f01-f03 Bank U rows were admitted without nmp gates. --ref-gates adds both §2.4 gates as recorded
+                checks only (gate_same fail_loud, autopilot_retry "no"; no task depends on them; needs a main-session ruling).
                 Refused unless analysis/fork/newmethod/expansion_q8.json has expand = true and lists the cells in phase2_cells.
-usage: python scripts/a6000/make_tasks_bank_u.py (--gate | --blocks f01 [f02 ...] | --nmp-phase2 CELL ..) [--priority P] [--write]
+usage: python scripts/a6000/make_tasks_bank_u.py (--gate | --blocks f01 [f02 ...] | --nmp-phase2 CELL .. [--ref-gates])
+       [--priority P] [--write]
 """
 from __future__ import annotations
 
@@ -37,7 +41,7 @@ def qrole(m, cell):
     return {"ckpt": ck}
 
 
-def nmp_phase2(cells: list[str], prio: int) -> list[dict]:
+def nmp_phase2(cells: list[str], prio: int, gates: bool = False) -> list[dict]:
     rp = ROOT / "analysis/fork/newmethod/expansion_q8.json"
     rec = json.load(open(rp)) if rp.exists() else {}
     if rec.get("expand") is not True or not set(cells) <= set(rec.get("phase2_cells", [])):
@@ -53,10 +57,13 @@ def nmp_phase2(cells: list[str], prio: int) -> list[dict]:
         g1, g2 = f"nmp_gate_same_q8_{c}", f"nmp_gate_bank_q8_{c}"
         mk = lambda tid, b, f, deps, k: {"id": tid, "kind": "fork", "model": "q8", "gpus": 2, "node": NODES[k % 3],  # noqa: E731
                                          "priority": prio, "deps": deps, "B": b, "Q": Qr, "fork": f, "note": note}
-        T += [mk(g1, Qr, {**clean(get("gate_same")), "fail_loud": True}, [], i), mk(g2, B, clean(get("bank gate")), [], i + 1)]
+        if gates:  # recorded checks only: nothing depends on them, and a failure is never retried by the autopilot
+            ng = {"autopilot_retry": "no: recorded fail_loud check, not a dependency (W100r-b)"}
+            T += [dict(mk(g1, Qr, {**clean(get("gate_same")), "fail_loud": True}, [], i), **ng),
+                  dict(mk(g2, B, clean(get("bank gate")), [], i + 1), **ng)]
         for j, (f, s) in enumerate(zip(get("panel tasks"), get("token scores"))):
             tid = f"nmp_tau2_q8_{c}_{f['blocks'][0]}"
-            T += [mk(tid, B, clean(f), [g1, g2], i + j), mk(tid.replace("nmp_tau2_", "nmp_score_", 1), B, clean(s), [tid], i + j)]
+            T += [mk(tid, B, clean(f), [], i + j), mk(tid.replace("nmp_tau2_", "nmp_score_", 1), B, clean(s), [tid], i + j)]
         i += 1
     return T
 
@@ -67,6 +74,7 @@ def main():
     ap.add_argument("--blocks", nargs="*", default=[])
     ap.add_argument("--q0", action="store_true")
     ap.add_argument("--nmp-phase2", nargs="+", default=None, metavar="CELL")
+    ap.add_argument("--ref-gates", action="store_true", help="--nmp-phase2: add the §2.4 gates as non-blocking recorded checks")
     ap.add_argument("--priority", type=int, default=-17, help="--nmp-phase2 tasks")
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args()
@@ -101,7 +109,7 @@ def main():
                               "fork": spec, "note": "W70 Bank U Q0 controller (make_tasks_bank_u.py --q0; FORK_PROTOCOL §15 amendment 1)"})
                     i += 1
     if a.nmp_phase2:
-        T = nmp_phase2(a.nmp_phase2, a.priority)
+        T = nmp_phase2(a.nmp_phase2, a.priority, a.ref_gates)
     for t in T:
         print(t["id"], t["gpus"], t.get("node", ""), t["fork"].get("blocks"), t["deps"])
     if a.write:
