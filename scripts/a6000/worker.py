@@ -838,6 +838,16 @@ def run_calib(task, args, st: Status):
     return {"manifest": str(out)}
 
 
+def free_scratch(tid: str) -> None:
+    """W100y: free a task's node-local RAM-disk checkpoints however it ends. Exact names only (ckpt_<id>[_Q|_B][_rot]); before
+    this a failure ahead of server start-up left them behind (node001 2026-10-03: ~340 GB of tmpfs, vLLM loads stuck in D state)."""
+    scratch = Path(os.environ.get("TMPDIR", "/tmp"))
+    for sfx in ("", "_rot", "_Q", "_Q_rot", "_B", "_B_rot"):
+        d = scratch / f"ckpt_{tid}{sfx}"
+        if d.is_dir():
+            shutil.rmtree(d, ignore_errors=True)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("task")
@@ -873,6 +883,8 @@ def main():
         Path(args.task).replace(WORK / "queue/failed" / Path(args.task).name)
         st.set("failed", repr(e)[:200])
         sys.exit(1)
+    finally:
+        free_scratch(task["id"])
 
 
 if __name__ == "__main__":
