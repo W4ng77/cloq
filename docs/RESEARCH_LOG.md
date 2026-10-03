@@ -10,6 +10,14 @@ Newest first.
 
 ---
 
+## W100aa - Common-state q8 confirmatory reading (K = 6): not resolved; paper §5 updated; q8 rotation tasks unpinned (2026-10-03 16:20 PDT)
+
+**TL;DR** The once-only q8 K = 6 reading ran at 16:12 (commonstate_readings.sh). Confirmatory Pocock two-look: K(d1) = +1.0 pp (t97 [-4.2, +6.2], boot97 [-1.4, +3.5]) and K(BF16) = +0.8 pp (t97 [-2.2, +3.8], boot97 [-2.0, +3.7]), both **not resolved**. Unadjusted K(BF16) would pass TOST within ±3 pp; the confirmatory reading does not. The first look's interaction (+2.7) does not persist (-0.2 [-4.5, +4.1]). Without the 26 D2.1 states: +0.5 / +0.8, not resolved. Paper §5, the appendix and F8 now carry the K = 6 reading (commit cfcff97; check_numbers PASS; build OK).
+- Ops: 5 q8 2-GPU todo tasks (rotation phase 1: nmp_tau2_q8_spinquant_w4a4_f03, nmp_score_q8_{quarot_w4a4_f02,spinquant_w4a4_f03}; 2 pivot_q8) were pinned to node004, where pairs 4-7 are reserved for waiting m24 4-GPU tasks (noderunner reserved_big ignores relative priority). The pin was there for runner 49642 (no task gpus), which is long gone, so the pin was removed (logistics only, as COMMONSTATE D1). The noderunner priority inversion is not patched: runners are long-lived, and a restart would kill running tasks.
+- Queued a6k2_q8_gauss2_s1_rro (W100w rule; 1 airline outage episode, estimate 2.2 h, coverage only).
+
+Evidence: `analysis/fork/out/commonstate_q8ext_20261003T231159Z.{md,json}`, `paper/latex/sections/{results_r2,appendix_moved}.tex`, `paper/latex/tools/figs/make_fig_commonstate.py`, `/data/ziyangs/cloq_work/logs/commonstate_readings.log`, `queue/todo/*.json` requeue_note.
+
 ## W100z — node009 brought back with 7 of 8 GPUs (2026-10-03 15:00 PDT)
 **TL;DR** node009 had been excluded since 09-28 because the user reported "several bad GPUs"; it was sitting IDLE. A 15-min diagnostic job (bf16 matmul plus a 40 GB fill on each card) found GPU 0 (PCI 01:00.0) bad: 71 uncorrected volatile ECC errors, and the fill test never completed. GPUs 1-7 pass. The old Xid 31 (61:00, 09-23) and Xid 13/43 (a1:00, June) were application MMU faults, not hardware.
 - node.sbatch's probe now also rejects any card with uncorrected volatile ECC errors (commit 25ea657). The old 1024x1024 matmul probe would have passed GPU 0.
