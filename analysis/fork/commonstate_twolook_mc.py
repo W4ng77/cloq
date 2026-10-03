@@ -8,7 +8,10 @@ The frozen rule also needs the bootstrap interval, so its claim rates are at mos
 Pocock constants for two equally spaced looks are computed from the bivariate normal with correlation sqrt(1/2).
 
 usage: python analysis/fork/commonstate_twolook_mc.py   (needs scipy; ~20 s)
+       python analysis/fork/commonstate_twolook_mc.py --given   (deviation D2: rates conditional on the observed first look,
+           i.e. f01-f03 block values fixed at their W100b values and only f04-f06 drawn; default output unchanged)
 """
+import sys
 import numpy as np
 from scipy import optimize, stats
 
@@ -34,8 +37,29 @@ def sim(mu: float, sd: float, a_diff: float, a_eq: float, n: int, rng) -> dict:
     return out
 
 
+GIVEN = {"K[bf16]": (0.0, 2.35, 4.71), "K[d1]": (-3.53, -1.18, 3.53)}  # W100b block means (pp), commonstate_20261002T201612Z.json
+
+
+def given(a2: float, a1: float) -> None:
+    """D2: P(claim at k = 6) with the first three blocks fixed at the observed values; f04-f06 iid N(mu, sd^2)."""
+    rng, n = np.random.default_rng(20261003), 400_000
+    for key, v in GIVEN.items():
+        for mu in (0.0, 3.0, -3.0):
+            for sd in (2.0, 2.35, 3.5, 6.0):
+                x = np.hstack([np.tile(v, (n, 1)), rng.normal(mu, sd, size=(n, 3))])
+                m, se = x.mean(1), x.std(1, ddof=1) / np.sqrt(6)
+                r = {}
+                for lab, ad, ae in (("frozen", 0.05, 0.05), ("pocock", a2, a1)):
+                    r[lab] = ((np.abs(m) > stats.t.ppf(1 - ad / 2, 5) * se).mean(),
+                              ((m - stats.t.ppf(1 - ae, 5) * se > -3) & (m + stats.t.ppf(1 - ae, 5) * se < 3)).mean())
+                print(f"{key} first look {v}, f04-f06 ~ N({mu:+.0f}, {sd}): P(diff k6) frozen {r['frozen'][0]:.4f} pocock {r['pocock'][0]:.4f}; "
+                      f"P(eq k6) frozen {r['frozen'][1]:.4f} pocock {r['pocock'][1]:.4f}")
+
+
 def main():
     a2, a1 = pocock()
+    if "--given" in sys.argv[1:]:
+        return given(a2, a1)
     print(f"Pocock, 2 looks: nominal two-sided {a2:.4f} (two-sided alpha 0.05), nominal one-sided {a1:.4f} (one-sided 0.05)")
     for df in range(1, 6):
         print(f"  df={df}: t at two-sided {a2:.4f} = {stats.t.ppf(1 - a2 / 2, df):.3f}; t at one-sided {a1:.4f} = {stats.t.ppf(1 - a1, df):.3f}")

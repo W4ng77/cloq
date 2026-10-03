@@ -307,3 +307,148 @@ c73ab2eec2f14052633e0703c2f50b1df9356c8222ba2ad1c8541301948198d0 (the D1 version
 - **Analysis.** `analysis/fork/analyze_commonstate.py --design q8ext|q4` writes
   `analysis/fork/out/commonstate_<design>_<UTC>.{md,json}`. Without `--design` it gives the unchanged K = 3 q8
   analysis.
+
+---
+
+## Deviation D2 (2026-10-03 08:55 PDT, W100u-r): earlier outcomes at shared states disclosed; the two-look reading becomes confirmatory; realised-k labels; gate infrastructure stalls; owner of the readings
+
+**TL;DR**
+- A1 said it was written before any outcome it governs existed. That was wrong for 17 of the 255 q8 f04-f06 states
+  and 2 of the 255 q4 states. Other studies (SAMEPREC, dev precision fork) had already run arms of this design at
+  identical states. The same was true under v1 for 9 f01-f03 states. All are listed below.
+- The primary analysis set is unchanged. A sensitivity reading without these states is prespecified.
+- The q8 confirmatory reading is now the two-look (Pocock) reading. The frozen-level reading is reported as
+  "unadjusted", and both readings are always printed.
+- Readings are labelled with the realised k.
+- A gate task that stops without a verdict is not a gate failure.
+- The main session owns the two readings. It runs them after an acceptance-only check.
+- Written before any output of an A1 task existed (D2.7). The text above this section is unchanged and is a
+  byte-identical prefix of 24,275 bytes, sha256 dce4024597441ab874324f03eb02609364b66cf821b67826b04a39feaa7b13ee
+  (A1). Within it, the first 12,813 bytes still hash to c73ab2ee…98d0 (D1).
+
+**Why.** Review of the W100u stream on 2026-10-03, with findings 1-6. Each finding was verified against the files
+before this section was written. Nothing here depends on an outcome of an A1 task, because none existed (D2.7).
+
+### D2.1 Outcomes that already existed at states of this design (disclosure, no change to the primary set)
+- **How the overlap was found.** Each panel state was rebuilt with `cloq.fork.make_state` (CPU only) and compared
+  with every fork state file under `analysis/fork/` (holdout excluded) on nine fields: model, prompt-id sha,
+  history sha, task sha, env hash, steps and errors used, simulator seed and prompt nonce. Only state keys were
+  printed, never an outcome value.
+- **Why matching states repeat outcomes.** Equal fields mean the same state. At temperature 0, with the same
+  checkpoint (sha256) and serving stack, an arm run at that state is a replay. On the 9 f01-f03 overlaps below, a_d2 is
+  identical 9/9 and the (d2 action, d1 continuation) outcome is equal 8/9. The replays are close but not exact.
+- **q8 f04-f06: 17 of 255 states.** Two earlier studies ran arms of this design at these states:
+  - SAMEPREC q8 g2 (`analysis/fork/sameprec/q8_gptq_w4_d1_vs_d2/g2/branches.json`, 2026-10-02 05:32; B = d2,
+    Q = d1) ran the d2 action and its BQ arm, which equals this design's task-B arm (d2 action, d1 continuation).
+    13 states: aa8f53ec279cecb0, 60480b5174f79bd9, 298278765a8ad442, 6fe3965a9ba120f5 (f04); 3edf835636f8b3e1,
+    51bac08d5e802335, 12528420f37e3f1f, 0f12a15dfd08ec27, 0cd8480d59c9b650, 8471293d021afa1b (f05);
+    57b9e458c8915d20, e2f57e60669f366b, dd27a0b4cc4c75ac (f06).
+  - dev q8_gptq_w4_d1 g2 (`analysis/fork/dev/q8_gptq_w4_d1/g2`, 2026-09-30 16:17; B = BF16, Q = d1) ran a_d1 and
+    the reference arms BQ and QB. 14 states: 10 of the 13 above (all except aa8f53ec279cecb0, 3edf835636f8b3e1 and
+    0cd8480d59c9b650), plus 9a18c53c644f30fd, 049cc952fdc9d298 (f05) and 8f8f09c9c01139d0, 6cc1650b07444d67 (f06).
+  - These outcomes went into the SAMEPREC and dev readings, which were read, for example
+    `analysis/fork/out/sameprec_20261003T023857Z.md` (2026-10-02 19:38). Before this review no one knew they were
+    states of this design, and no per-state value was looked up.
+- **Y_BB at all 255 f04-f06 states was also known.** It is the outcome of the bfpair source episode, which is part
+  of the main matrix. So V(BF16, BF16), the minuend of K(BF16), was known in aggregate before A1. A1's heading
+  "q8 f04-f06 (none)" is therefore wrong. Dev AWQ and KV forks also share 7 further states, but only their BB arm
+  matches this design, so they add nothing.
+- **q4: 2 of 255 states.** SAMEPREC q4 g1 (`analysis/fork/sameprec/q4_gptq_w4_d1_vs_d2/g1`, 2026-10-02 04:47;
+  B = d2, Q = d1) ran the d2 action and the task-B arm at 635e0ee09f5bf0ae (f03 retail 34, t3) and
+  aef9a3c23e75748d (f03 airline 13, t1). A1.4 should have said so. The q4 reference arms were already known at all
+  255 states (Bank U), so the dev q4 overlaps add nothing.
+- **q8 f01-f03 (under v1): 9 states.** SAMEPREC q8 g1 (2026-10-02 05:55) had run the d2 action and the task-B arm
+  before v1 was committed (87733f7, 2026-10-02 07:33): c4209bd6e73eaf27, 2857c7a7b30fe4e5, ae8398d726bf9a2c (f01);
+  cc4156b2230c6fbf (f02); 79aa9e6a7ca99243, 1d40f5f213d18ec6, 3f0beb57c67b8233, 763a22f520eda960,
+  762a8bf4acfc1d88 (f03). The first look is unchanged. These states are disclosed here for completeness.
+- **Prespecified sensitivity reading.** The q8 readings (confirmatory and unadjusted, D2.2) are repeated on the
+  analysis set without the 26 listed q8 states (17 f04-f06 + 9 f01-f03). The q4 reading is repeated without its
+  2 listed states. Block means use the remaining rows, and the bootstrap still resamples tasks.
+  - The sensitivity reading is reported next to the primary one.
+  - If it gives a different reading, the paper says so: "this reading depends on N states whose outcomes had been
+    seen in other studies' aggregates".
+  - The lists are in `manifests/fork/commonstate_d2_v1.json`.
+
+### D2.2 Two looks: the Pocock reading becomes the confirmatory q8 reading
+- **This replaces the last bullet of A1.2 and the reporting rule of A1.3.**
+  - The confirmatory q8 reading is the two-look reading: the A1.3 rule at Pocock levels, two-sided 0.0294 for a
+    difference and one-sided 0.0304 per TOST side.
+  - The same rule at the frozen levels is reported as "unadjusted (frozen levels)".
+  - The TL;DR, the paper and every summary print both readings and the first look (k = 3, W100b), whether they agree
+    or not.
+  - The error rates A1.3 quotes stay as they are. The 0.041 is an average over every first look that made no claim.
+    It is not the rate at the first look actually observed.
+- **Why.** GPU fill proposal F1a, which A1 implements, asked for "the K = 6 reading at a split α, or labelled
+  exploratory". The observed first look was borderline: K(BF16) block means were 0, 2.35 and 4.71 pp, with boot90
+  [+0.0, +5.1].
+- **Rates conditional on the observed first look** (`analysis/fork/commonstate_twolook_mc.py --given`):
+  - f01-f03 are held at their W100b block values and f04-f06 are drawn iid N(μ, sd²) with sd 2-3.5 pp, using the
+    t criterion only.
+  - K(BF16) at μ = 0: false difference 0.084-0.113 at the frozen levels and 0.036-0.065 at Pocock.
+  - K(d1) at μ = ±3 pp: false equivalence 0.077-0.159 at the frozen levels and 0.022-0.066 at Pocock.
+  - The frozen rule also needs the bootstrap interval and the Holm p, so its rates are lower than these.
+  - Pocock does not bring the conditional rate down to the nominal level. A readout that was chosen after looking
+    at the first look cannot be fully protected, and the paper says this.
+- **Advisor sign-off.** No GPT-6.1 sign-off on the two-look handling has been recorded. This section takes the
+  stricter of the two options F1a offered. The main session records the sign-off or the advisor's objection.
+- q4 has one look and is not affected.
+
+### D2.3 Realised k and the Pocock levels when k < 6
+- Every q8 label and title states the realised k, for example "q8, k = 5 of 6 blocks (f06 excluded)". It is never a
+  fixed "K = 6" (A1.5).
+- The Pocock levels stay at 0.0294 and 0.0304 for k = 4 or 5. They were derived for looks at 3 and 6 blocks, where
+  the correlation between the looks is √(1/2). At k blocks it is √(3/k), which is higher, and for fixed critical
+  values a higher correlation lowers the overall error. The fixed levels are therefore conservative. The output
+  states this.
+
+### D2.4 Gate tasks: a stall is not a verdict
+- A gate task that ends without a driver verdict is not a gate failure. Examples: a worker hang, a node or NFS fault,
+  a server that does not start, or a task stopped by an operator.
+- After recording the cause, a human may move it back to `todo/` unchanged. `autopilot_retry` stays "no".
+- Only a driver verdict `fail`, or a canary or checkpoint mismatch (D2.5), means "q4 not admitted" (A1.4).
+- **Status at 08:47 PDT, for the record.**
+  - `cs_gate_q4_d2_d1` and `cs_ref_q8_gptq_w4_d1_f06` were claimed on node001 at 08:13:15. Their logs still hold
+    only the header line, and node001 GPUs 2-7 show 0 % utilisation with 2 MiB in use.
+  - That blocks q4 as a whole and q8 f06. This stream must not stop running work, so the stall is handed to the
+    main session and the infra session.
+
+### D2.5 Checkpoint check before the GPU-hours are spent
+- `quantize.py` changed after the last q4 and q8 c1/c2 builds (d16f4ea), so the A1 tasks are the first builds under
+  the new code.
+- **Check point.** When a server first records an A1 task's checkpoint (`logs/tasks/<id>.servers.json`), its Q (and
+  B) ckpt sha256 and canary are compared with the design manifests: `scripts/a6000/commonstate_ckpt_check.py`. The
+  first such tasks are `cs_ref_q8_gptq_w4_d1_f0*` (d1) and `cs_gate_q4_d2_bf16` (q4 d2).
+- **On a mismatch** (`--hold`), the dependent todo tasks of that design are moved to `deferred/` with a note, and the
+  main session decides what happens next.
+- This is a hold, not an admission rule. Admission stays as in A1.1.
+
+### D2.6 Who makes the once-only readings, and when
+- **Owner.** The main session makes both readings, or whoever it names in its TODO list.
+- **Acceptance check first.** `analyze_commonstate.py --design <d> --check` prints the acceptance fields only:
+  reference and d2 row counts, errors, no-ops, identity and quarantine, canaries and timing. It prints no outcome,
+  writes nothing to `out/`, and is not a reading.
+- **Repairs before the freeze.** A block that is incomplete only because of missing or errored rows is repaired
+  before the freeze:
+  - a d2 task is moved back to `todo/` unchanged, and `fork.resume: true` re-runs only the missing rows;
+  - a reference task is re-run whole, since `bank_u` has no resume.
+- **When the reading is made.** Once, at the earlier of:
+  - (a) all tasks done, the check run, and no repair pending;
+  - (b) the freeze, 2026-10-04 21:00 PDT.
+
+  It is made at the latest by 2026-10-04 23:00 PDT. The research log records when it was made and that the
+  check came first. A1.5 is otherwise unchanged: blocks finished after the freeze are excluded, and there is one run
+  per design.
+
+### D2.7 What existed when this section was hashed (2026-10-03 08:54 PDT)
+- No output of any A1 task existed. `analysis/fork/commonstate/q8/ref_d1/`, `q8/panel/*/f04-f06` and
+  `commonstate/q4/` did not exist, and no A1 task had a servers record or a done or failed record.
+- The node007 tasks were still starting servers: q4 gate bf16 had its BF16 server up at 08:47 and its d2 server
+  starting, and ref f04 and f05 were in vLLM start-up.
+- No overlap outcome in D2.1 was read for this section. Equality only (9/9 a_d2, 8/9 Y) was computed on the already
+  read f01-f03 rows.
+
+### D2.8 Files
+- `manifests/fork/commonstate_d2_v1.json` (new) records this file's sha256, the prefix chain, the state lists of
+  D2.1 and the D2.2 choice. The existing manifests are not edited.
+- `analyze_commonstate.py` accepts this file's sha256 only if its first 24,275 bytes hash to dce40245… and its first
+  12,813 bytes hash to c73ab2ee…. The `--design` modes require it.
