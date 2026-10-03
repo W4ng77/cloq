@@ -27,6 +27,8 @@ DIRS = ("todo", "running", "done", "failed", "deferred")
 STOPPED = {"pert_q4_rtn_w3_restore_early_q345", "a6k2_q32_tel_rtn_w4", "pert_q8_rtn_w3_restore_rand_attn_s3_q345"}
 NOTE_KEYS = ("deferred_note", "deferred_reason", "defer_note")
 EXCLUDE_RE = re.compile(r"ext_l8_|smoke|(^|_)l8(_|$)")
+# Lines closed by a gate verdict: their remaining deferred tasks stay deferred.
+HELD_MODELS = {"g12": "g12 not admitted (W100p gate FAIL); its gate tasks stay deferred"}
 FILL_PRIORITY = -19
 
 
@@ -140,6 +142,8 @@ def excluded(t: dict) -> str | None:
         return "stopped by main session"
     if EXCLUDE_RE.search(t["id"]):
         return "ext_l8_/smoke/l8"
+    if t.get("model") in HELD_MODELS:
+        return HELD_MODELS[t["model"]]
     if t.get("kind") == "sim":
         return "sim task"
     return None

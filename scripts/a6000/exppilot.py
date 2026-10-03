@@ -26,6 +26,7 @@ import subprocess
 import sys
 import time
 import traceback
+from collections import Counter
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -135,8 +136,63 @@ class Pilot:
                 self.act(msg + (f"; still missing {left[:3]}" if left else ""))
                 self.st["phase2"][f"{m}/{c}"] = {"at": utc(), "queued": len(miss) - len(left), "missing": left}
 
+    # ------------------------------------------------------------------ C + D: GPU fill, health
+    def fill(self, idx: dict):
+        M, live = F.models(), F.live_runners()
+        gs = F.gpu_state(live)
+        cap = {n: len(v["agent"]) for n, v in gs.items()}
+        idle = sum(len(v["idle"]) for v in gs.values())
+        dem, _ = F.demand(idx, cap, M)
+        blocked = F.failing_families()
+        for fam, n in blocked.items():
+            self.once_per(f"blk_{fam}", 7200, f"health: family {fam} has {n} failures within 2 h; not releasing it")
+        cands, skip = F.candidates(idx, cap, M, set(blocked))
+        self.st["fill_streak"] = self.st["fill_streak"] + 1 if idle > dem else 0
+        self.snap = {"idle": idle, "demand": dem, "runner_nodes": len(live), "releasable": len(cands)}
+        if self.dry:
+            self.log(f"fill: idle agent GPUs {idle} {dict((n, v['idle']) for n, v in gs.items() if v['idle'])}, runnable demand {dem} "
+                     f"GPUs; releasable deferred {[t for t, _ in cands]}; held {dict(Counter(skip.values()))}")
+        if idle > dem and (self.st["fill_streak"] >= 2 or self.dry):
+            budget, stamp = idle - dem, time.strftime("%F %T")
+            if self.dry and self.st["fill_streak"] < 2:
+                self.log(f"fill: idle {idle} > demand {dem}, streak {self.st['fill_streak']}/2; if it holds next loop:")
+            for tid, t in cands:
+                need = max(1, F.gpus_needed(t, M))
+                if need > budget or not F.place(t, need, gs):  # only onto idle cards that can actually host it
+                    continue
+                desc = f"fill: release {tid} ({need} GPU, prio {t.get('priority')} -> {F.FILL_PRIORITY}); idle {idle} demand {dem}"
+                if self.dry:
+                    self.act(desc)
+                else:
+                    try:
+                        F.release(tid, t, stamp)
+                        self.act(desc)
+                    except (OSError, FileExistsError) as e:
+                        self.log(f"fill: {tid} not released: {e!r}")
+                        continue
+                budget -= need
+        if dem == 0 and not any(v == "todo" for v in idx.values()) and not cands:
+            self.once_per("starved", 3600, f"starved: nothing runnable in todo, deferred exhausted; idle GPUs {idle}")
+
+    # ------------------------------------------------------------------ E: status paragraph
+    def summary(self, idx: dict):
+        if not self.dry and time.time() - self.st.get("last_summary", 0) < 1800:
+            return
+        n = Counter(idx.values())
+        fam = {d: Counter(F.family(t) for t, v in idx.items() if v == d).most_common(6) for d in ("running", "todo", "failed")}
+        txt = lambda c: ", ".join(f"{k} {v}" for k, v in c) or "-"  # noqa: E731
+        acts = self.st["acts"]
+        self.log(f"STATUS todo {n['todo']} running {n['running']} done {n['done']} failed {n['failed']} deferred {n['deferred']}; "
+                 f"running by family: {txt(fam['running'])}; todo: {txt(fam['todo'])}; failed: {txt(fam['failed'])}; "
+                 f"GPUs {self.snap}; fill streak {self.st['fill_streak']}; phase-2 released {sorted(self.st['phase2'])}; "
+                 f"analyses {({k: bool(v.get('ok')) for k, v in self.st['analyses'].items()})}; "
+                 f"{len(acts)} actions since last status{': ' + ' | '.join(acts[-4:]) if acts else ''}")
+        if not self.dry:
+            self.st["last_summary"], self.st["acts"] = time.time(), []
+
     def cycle(self):
-        for name, fn in (("phase2", self.phase2), ("analyses", lambda i: A.step(self, i))):
+        for name, fn in (("phase2", self.phase2), ("fill", self.fill), ("analyses", lambda i: A.step(self, i)),
+                         ("summary", self.summary)):
             try:
                 fn(F.index())
             except Exception as e:  # one failing step never stops the loop
