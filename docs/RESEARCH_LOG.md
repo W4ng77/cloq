@@ -10,6 +10,44 @@ Newest first.
 
 ---
 
+## W100r — Experiment pilot `exppilot` (12 h, unattended): effect-blind phase-2 release, once-only frozen analyses, GPU fill from deferred; built and dry-run, not started (2026-10-03 07:10 PDT)
+
+**TL;DR** `scripts/a6000/exppilot.sh [hours]` runs `exppilot.py` on the login node, default 12 h, one pass every 10 min. It is built, unit-tested and dry-run, but **not started**. Each pass does five things:
+- **(A) Phase-2 release.** Once an `expansion_<m>.json` says `expand: true`, it queues the missing f04–f06 panel and score tasks of `phase2_cells` through each cell family's own generator. It reads only `expand`, `phase2_cells` and `eligible` from the record, never an outcome.
+- **(B) Analyses.** It runs `analyze_newmethod.py` per model once, after the model's record exists and every admitted panel and score task is done, or at T_deadline. It runs `analyze_sameprec.py` and `analyze_sameprec_w3.py` once after the 10-04 00:00 PDT freeze. Outputs and a ledger line are committed with explicit paths.
+- **(C) GPU fill.** It releases deferred tasks at −19 when idle agent GPUs exceed runnable demand for two loops.
+- **(D) Health.** It logs when the queue is starved and holds any task family that keeps failing.
+- **(E) Status.** It logs a status paragraph every 30 min.
+
+- **Generators (phase-2 support where missing).**
+  - New options: `make_tasks_rotpanel.py --panel --phase 2`, `make_tasks_kivi.py --phase 2` (the `_fx` gate dependencies) and `make_tasks_bank_u.py --nmp-phase2` (the q8 reference cells `gptq_w4_d1`, `awq_w4`, `kvq_int8`).
+  - m24 uses `make_tasks_m24.py panel --phase 2` from W100o.
+  - All of them refuse unless the record has `expand: true` and lists the cell.
+  - At phase 1, the generated specs equal the queued tasks field for field (`quarot_w4`, `spinquant_w4a4`, `kivi_k16v16`).
+- **Design decisions (for review).**
+  1. The q8 reference cells get both §2.4 gates before their f04–f06 tasks (`gate_same` with `fail_loud`). The reason is §2.5: "run f04–f06 with the panel manifest like any other cell". They never had nmp gates, because their f01–f03 come from Bank U.
+  2. No protocol note is written. §5.6 only requires the record to exist before phase 2 is queued, and editing the protocol would break the `PROTOCOL_SHA256` guard.
+  3. Priority tiers: m24 −30, rotation −27, KIVI −29, reference −27. Score tasks use the cell's phase-1 score tier (m24 −26, k2v2/k4v4 −24).
+  4. The analysis trigger waits for the record's `eligible` cells (phase 1 and their BFCL forks) and for the `phase2_cells` (phase 2). A registered cell that was ineligible at the decision is not waited for.
+  5. The fill never releases:
+     - main-session stops, or a task with "stopped" in `deferred_note`, `deferred_reason` or `defer_note`. This also covers `fork_stress_q{4,8}_rtn_w3`, which were split into shards;
+     - l8, smoke and sim tasks;
+     - g12 tasks (W100p: gate FAIL, the three gate tasks stay deferred);
+     - tasks with unmet dependencies.
+     It also releases only onto idle cards that can host the task (node pin, NVLink pairs).
+- **Dry run, 2026-10-03 07:04 PDT.**
+  - m24 phase 2 is already fully queued (W100o), so A had nothing to do. q8 has no record yet; T_decide is 20:00 PDT.
+  - Analysis of m24 waits on 18 of 32 tasks. SAMEPREC waits for the freeze.
+  - Idle agent GPUs: 2. Runnable demand: 50 GPUs, mostly m24 4-GPU forks waiting for NVLink pairs. So nothing is released.
+  - Releasable deferred tasks: `a6k2_q4_awq_w3_qx`, `a6k2_w2p_q4_rtn_w2_q3`, `a6k2_det_q4_kvq_int4_rot_b`. Held: 42 l8, 7 stopped, 3 g12, 1 sim.
+- **Tests.**
+  - Phase 2 with a fake q8 record: the pilot picks the right generator and tiers per family.
+  - `release()` on a scratch queue: atomic, `fail_loud` set, a second release refused.
+  - Analysis run and commit against a scratch git repo with a bare remote: only the pilot's files are committed, another session's staged file stays staged, it pushes, and no second run happens.
+  - `analyze_newmethod.py --selftest` under the pilot's env command.
+- **Open.** The pilot is not started. Starting it needs a session or user decision: `setsid nohup scripts/a6000/exppilot.sh 12 >/dev/null 2>&1 &`.
+- **Evidence.** `scripts/a6000/{exppilot.py,exppilot_fill.py,exppilot_analysis.py,exppilot.sh,EXPPILOT.md}`, `scripts/a6000/{make_tasks_rotpanel,make_tasks_kivi,make_tasks_bank_u}.py`. Commits 93e898b, b603a74, 3e6815c, 96d441b, edad697.
+
 ## W100o - m24 phase 2 (f04-f06) queued for both cells per expansion_m24.json; m24 token-score failures were score_driver.render() calling HF-only tokenizer methods on the Mistral renderer (not TOOL_START); fixed model-gated, all 6 phase-1 score tasks requeued (2026-10-03 07:05 PDT)
 **TL;DR** The expansion record (written 2026-10-03 11:53Z: expand true, phase2_cells `rtn_w4`, `gptq_w4_d1`, no m24 reference cells, projected wall 4.6 h) had no phase-2 tasks behind it. They are now queued, all or none (§5.5): 6 `nmp_tau2_m24_*_f0{4,5,6}` at -30 and 6 `nmp_score_m24_*_f0{4,5,6}` at -26. Gates are not re-run. All 6 phase-1 score tasks had failed (the "running" f02 attempt failed at 06:47:39, 30 s before the fix landed), each after one autopilot retry, with `ok 0/85` and `prompt sha ok 0/85`.
 - **Root cause (from `token_scores/m24_*/f0k/score_summary.json` `missing[].reason`):** `prep error AttributeError("'MistralChatRender' object has no attribute 'get_vocab'")` on all 83 population rows; the other 2 are the manifest-missing rows. `score_driver.render()` assumed an HF tokenizer in two places:
