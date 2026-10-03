@@ -10,6 +10,17 @@ Newest first.
 
 ---
 
+## W100t — Ops 2026-10-03 07:45 PDT: user approved all five W100q decisions ("都做"); doomed q32 telecom task stopped; freeze times unified
+**TL;DR** The user approved F1a, F1b, the m24 parse-error amendment, stopping a6k2_q32_tel_rtn_w3, and F3; each is being carried out separately (W100u+). This entry records the stop and the freeze definitions.
+- **Stopped `a6k2_q32_tel_rtn_w3`** (node001 GPUs 6,7) with SIGINT so the worker cleaned up its vLLM server. It had 7 agent-side 600 s timeouts, so it would fail on completion, and it would end after the freeze (W100q). Moved to deferred/ with `autopilot_retry: no` and a deferred_note. Its sibling a6k2_q32_tel_rtn_w4 was stopped for the same reason on 10-02.
+- **Freeze times (binding, unified):**
+  - The **evidence freeze** is 2026-10-05 00:00 Toronto (EDT) = **2026-10-04 21:00 PDT**, per TODO_v2 and NEWMETHOD_PANEL_PROTOCOL §5.4. No new GPU result enters the paper after it.
+  - The **SAMEPREC final-prefix freeze** is **2026-10-04 00:00 PDT** (the "10-03" date in SAMEPREC_PROTOCOL; T_FREEZE in analyze_sameprec.py and exppilot_analysis.py). The final analysis reads a snapshot at that instant and takes the longest complete common prefix.
+  - **NEWMETHOD T_deadline** stays 2026-10-04 12:00 PDT (§5.4).
+  - Earlier main-session messages said "10-05 00:00 PDT"; that was wrong and is superseded here.
+- exppilot (W100r/W100r-b, fbdf8c4) runs until 2026-10-05 06:00 PDT; GPU fill after the evidence freeze does not feed the paper.
+- Evidence: queue/deferred/a6k2_q32_tel_rtn_w3.json; docs/insights/GPU_FILL_PROPOSAL_20261003.md.
+
 ## W100r-b - exppilot review fixes: fill only from a user allowlist, per-node demand, q8 phase 2 all or none with one tier and no reference-cell gates, q8 analysis held for F1a, run-window report; not started (2026-10-03 07:35 PDT)
 
 **TL;DR** Independent reviewers sent 18 findings on the W100r pilot. The 13 distinct defects were all confirmed in the code and fixed; the other 5 duplicate them. The pilot is still **not started**.
