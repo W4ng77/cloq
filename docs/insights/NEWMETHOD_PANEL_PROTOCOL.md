@@ -558,3 +558,96 @@ Scheduler commands (one per model, unchanged otherwise):
 ### A5.5 Analysis script
 
 `analysis/fork/analyze_newmethod.py`: `PROTOCOL_SHA256` = this file's new sha256 (same commit). Nothing else changes.
+
+---
+
+## Amendment A6 (2026-10-03 08:16 PDT, W100v): a fork-branch arm error caused by the agent's own message is a failure (Y = 0); the strict analysis as preregistered becomes a labelled sensitivity
+
+**TL;DR** In the τ² panel (A), an arm whose branch stopped because the harness could not accept a message the agent model itself generated is scored Y = 0, as end-to-end evaluation scores the same failure. Every other arm error stays missing and still fails its block (§7, A3.3). This is the primary rule for every panel model (q8 and m24) and every cell. The analysis without A6 is reported beside it as the labelled sensitivity "strict as preregistered". The user approved this on 2026-10-03 ("都做"; W100q decision 2, W100t).
+
+Status when this was written (before the commit that carries it):
+- **m24 phase 2:** no `nmp_tau2_m24_*_f0{4,5,6}` task had finished. `gptq_w4_d1` f04 was running; `gptq_w4_d1` f05, f06 and `rtn_w4` f04 to f06 were in todo. None of their outputs had been opened.
+- **q8 new-method cells:** 22 `nmp_tau2_q8_*` phase-1 tasks were done, `spinquant_w4a4` f01 was running and f03 in todo. Their outputs exist, but no analysis of them had been run or read. No `analysis/fork/out/newmethod_q8_*` exists, and exppilot holds the q8 analysis until `queue/EXPPILOT_GO_newmethod_q8`. The only fields read from them were effect-blind summary fields: the expansion tool's (A5.2) and exppilot's `budget_ok` scan.
+- **No q8 expansion record** (`expansion_q8.json`) existed.
+
+### A6.1 Why
+
+- **End-to-end rule.** `scripts/a6000/worker.py` (`classify`) labels an episode that ends on the agent's own malformed output `agent_parse_error` (W27, W99p) or `agent_empty_output` (W92). `analysis/insights/iter_2/common.py` (`AGENT_SIDE`) then scores it as a task failure, not as missing.
+- **The fork already follows it twice.** A source episode that ended this way is a valid failure, Y_QQ = 0 (`fork_driver.search_task`, W10/W70). A branch that overflows the context window is Y = 0 (`cloq/fork.py::run_branch`).
+- **The gap.** `run_branch` converts only `ContextWindowExceeded`. Any other exception returns `{"error": repr(e)}`, so the arm is Y = None and A3.3 fails the whole (cell, block). The same failure by the same model is therefore a task failure end to end but a missing outcome in a fork branch.
+- **Why it matters.** Under deterministic protocol A the error recurs on a re-run, and A3.3 forbids retries. Leaving it missing drops exactly the states where the agent's own output failed, so the missingness depends on the outcome being measured.
+
+### A6.2 The class scored Y = 0
+
+An arm is an **agent-output error** iff all three hold:
+1. **Record.** Its branch record (`branches/<state_key>.json`, key = the arm) has an `error` field and no `infra_cause`.
+2. **Type and message.** The error (the `repr` of the exception that `run_branch` caught from the tau2 orchestrator) matches one of:
+
+| Id | Exception (`repr` prefix; either quote style) | Raised by | What the agent produced | End-to-end precedent |
+|---|---|---|---|---|
+| S1 | `InvalidFunctionCallException('Function name was ` (mistral_common) | mistral_common's instruct validator, `_validate_function_call`, which checks the function name of an **assistant** tool call. It runs while the agent renders its next request (`cloq.context_policy` → `cloq.mistral_render`) | a tool call with an empty or invalid function name | W99p (`worker.classify`, "Function name was … must be a-z") |
+| S3 | `ValueError('AssistantMessage must have either content or tool_calls` (tau2) | tau2's orchestrator, `agent_msg.validate()` on the message the agent just returned | an empty message (no content, no tool call) | W92 (`agent_empty_output`) |
+
+3. **Origin in the branch.** The record's `n_decisions` ≥ 1, so the branch logged at least one agent decision (the forced action) before the error. The stored history h_t cannot be the source of the bad message: every message in it was rendered without error at the source's decision t, and the same prompt ids are checked per state (`Q_prompt_ok`). The offending message is therefore the forced action (a_B or a_Q, each a model's own output) or a decision of the continuing controller.
+
+- **Reused arms.** An arm reused from an arm in this class (`arm_source` `reuse=XX`, the §2.3 identity under protocol A) takes the same value.
+- **Everything else stays missing,** and is never imputed. This covers:
+  - transport and server errors (for example litellm `APIConnectionError`, `Timeout`, `InternalServerError`), and every `BadRequestError`;
+  - harness errors (`KeyError`, `AssertionError`, `IndexError`, state restoration);
+  - environment and tool errors;
+  - user-simulator errors, including `UserMessage must have …`;
+  - errors whose type does not identify an agent message, so the record cannot establish their origin: `JSONDecodeError` and the pydantic `validation error for ToolCall`. End to end, `worker.classify` also treats `JSONDecodeError` as an outage;
+  - S1 or S3 with `n_decisions` 0;
+  - row-level errors (the shadow or the state construction failed), prompt-id mismatches and manifest-missing rows.
+- **W27's several-tool-calls refusal is not in the class.** It comes from the Llama-3.1 template and cannot arise with the Qwen3 or Mistral templates of the panel models. It would stay missing.
+- The class reads only the error record. It does not depend on the arm, the cell or any Y.
+
+### A6.3 Rules
+
+- **Primary.** Arms in the A6.2 class enter with Y = 0. A state whose four arms are then defined is complete. Everything else in §7/A3.3 is unchanged:
+  - any other arm error, missing record or missing arm fails the block for that cell;
+  - nothing else is imputed;
+  - there are no retries.
+- **The A3.3 sensitivities** (complete case; m24 actual available rows) use the A6 scoring.
+- **Sensitivity "strict as preregistered".** This is §7/A3.3 without A6: every arm error fails its block. It is reported next to the primary with:
+  - admitted blocks per cell;
+  - per-cell estimates;
+  - every contrast;
+  - its own Holm-adjusted primary family.
+- **Reporting.** For each (cell, block), the report gives:
+  - the number of states and arms scored Y = 0 under A6, with the signature and the task;
+  - the arm errors that stayed missing, with the exception type.
+- **Scope.** Panel A (τ²), q8 and m24, every cell including the q8 reference cells.
+- **Unchanged:**
+  - Panel B (BFCL): `analyze_ext` excludes an item with a branch error, and items have no strict-block rule;
+  - expansion (§5, A5), which reads no outcome;
+  - the A3 mask, the manifests, the queued tasks and the Holm families.
+
+### A6.4 Disclosure (binding wording)
+
+- **m24 phase 1 (f01 to f03): post hoc.** The arm errors that A6 reclassifies were seen before this rule (W100s budget audit, `analysis/fork/out/m24_budget_audit_20261003T1354Z.md`). The phase-1 interim estimates had also been read (W100s).
+  - On that record A6 scores 4 arms in 3 population states as Y = 0, all S1:
+    - `rtn_w4` f01 retail:51, QB and QQ;
+    - `rtn_w4` f02 retail:95, QQ;
+    - `gptq_w4_d1` f01 airline:2, BQ (empty name).
+  - The `rtn_w4` f03 airline:13 BQ arm (`JSONDecodeError`, a masked task) stays missing.
+- **m24 phase 2 and the q8 new-method cells: fixed before reading.** The rule was fixed before any of their τ² panel outcomes was read (status above). For q8 phase 1 the outputs already existed when the rule was fixed.
+- **q8 reference cells (`gptq_w4_d1`, `awq_w4`, `kvq_int8`), f01 to f03: not blind.** Their Bank U U2B rows had been analysed before: in the main study's Bank U analyses, and for `gptq_w4_d1` and `awq_w4` in `analysis/fork/out/q8ref_w4_nmp_20261003T140825Z` (W100s).
+- **Rationale.** Consistency with the end-to-end scoring of the same model-caused failure (W27, W92, W99p), and with the fork's own treatment of source episodes and branch overflow (W10, W70). The rule was not chosen for its effect on any estimate. The strict analysis as preregistered is always reported beside it.
+- **Paper wording.** "A branch that ended because the harness could not accept the agent's own message (an empty or invalid tool name, or an empty message) is scored as a failure, as in end-to-end evaluation. This rule was added after the Mistral phase-1 results had been read; the analysis without it is reported alongside."
+
+### A6.5 Recording check (no driver change)
+
+- `run_branch` stores `error: repr(e)` untruncated and `n_decisions` in `branches/<state_key>.json`. It has done so since d1d2a6d, before Bank U, and the code path is the same for every model, so the type and the full message are available for every panel and reference row.
+- `bank_rows.jsonl` keeps only `"error: " + repr[:120]` in `arm_source`. The analysis therefore reads the branch record.
+- A6.2 needs no traceback, because the S1/S3 exception types are raised only by validators of agent messages. So `cloq/fork.py` and `fork_driver.py` are unchanged.
+
+### A6.6 Analysis script
+
+`analysis/fork/analyze_newmethod.py` was changed in the same commit:
+- `PROTOCOL_SHA256` = this file's new sha256;
+- `A6_SIGNATURES`, `a6_class` and `a6_resolve` implement A6.2;
+- `load_tau2(..., a6=False)`: the default is the loader exactly as before. `main()` loads with `a6=True` for the primary;
+- `strict_prereg` gives the sensitivity. `main()` asserts that it equals a load without A6, state by state;
+- `a6_report` gives the per-block counts (JSON `tau2.a6`, markdown section). `--dry` prints the counts and the admitted blocks under both rules;
+- `--selftest` covers A6 on synthetic error records.

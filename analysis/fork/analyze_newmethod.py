@@ -13,6 +13,9 @@ Panel A (tau2, U2B ordinary states on the BF16 trajectory; fork_driver mode bank
           uniformly, all cells and blocks); strict blocks then need all 83; the actual-available-rows analysis (all
           non-missing rows per block, unmasked) is reported alongside, labelled sensitivity
           phase-2 blocks (f04-f06) only if analysis/fork/newmethod/expansion_<model>.json says expand = true
+          amendment A6 (primary, every model and cell): an arm error raised on the agent model's own generated message
+          (A6_SIGNATURES, read from branches/<state_key>.json; >= 1 branch decision) is Y = 0 as end-to-end; every other
+          arm error stays missing; 'strict as preregistered' (no A6) is reported alongside, labelled sensitivity
   stats   analyze_dev.effects + analyze_ghf.add_E (imported), plus D_cc = Y_QB - Y_BB, damage_cc, gain_cc, M_cc;
           all-state task-equal means (analyze_dev.Boot.task_mean: t over block means primary for k < 10, block bootstrap
           alongside, crossed task x block secondary); conditional on an action difference (Boot.ratio, non-exact states)
@@ -57,8 +60,9 @@ PROTOCOL = ROOT / "docs/insights/NEWMETHOD_PANEL_PROTOCOL.md"
 # Amendment A3 (W100e-b, 2026-10-02): was c6603f90... (A2); m24 83-task analysis mask, M1 contrast.
 # Amendment A4 (W99t-b, 2026-10-02): was da8b69ba... (A3); kivi_k16v16 kernel-path control, KIVI _fx gates, k4v4 secondary.
 # Amendment A5 (W100g, 2026-10-02): was 0dc3143e... (A4); expansion decision: registered cells, KIVI _fx gates, fixed population, KIVI pairing, frozen snapshot.
-PROTOCOL_SHA256 = "f9f8b3a5cfbbf9c068425d7dc2adbd69ae26b7229f3eb2b387d6bdcca7a0bf22"
-# Amendment A6.2 (W100v; inert until main() passes a6=True): exception signatures raised only by validating an AGENT message (repr as cloq/fork.py::run_branch records
+# Amendment A6 (W100v, 2026-10-03): was f9f8b3a5... (A5); fork-branch arm errors on the agent's own output scored Y = 0.
+PROTOCOL_SHA256 = "73bf5538e9316c5c695fc9441115e44e795095b88f1986c4379d8ad9f226d7b5"
+# Amendment A6.2 (W100v): exception signatures raised only by validating an AGENT message (repr as cloq/fork.py::run_branch records
 # it); S1 = mistral_common's check of an assistant tool call's function name (W99p), S3 = tau2's agent_msg.validate() on an
 # empty agent message (W92). Either quote style (repr switches to " when the message contains ').
 A6_SIGNATURES = (("invalid_function_name", re.compile(r"""^InvalidFunctionCallException\(['"]Function name was """)),
@@ -564,12 +568,18 @@ def main():
     pop, excluded = population(a.model, man)
     n_tasks = len(pop)
     t0 = time.time()
-    raw, tlog = load_tau2(a.model, man, blocks, only)
+    raw, tlog = load_tau2(a.model, man, blocks, only, a6=True)  # amendment A6: primary
+    pre = strict_prereg(raw)  # A6.3 sensitivity; must equal the loader without A6 unit by unit (A6 touches nothing else)
+    raw0, _ = load_tau2(a.model, man, blocks, only)
+    sig = lambda R_: {c: [(u["state_key"], "excluded" in u, u.get("Y")) for u in us] for c, us in R_.items()}  # noqa: E731
+    assert sig(pre) == sig(raw0), "A6: strict-as-preregistered view differs from the loader without A6"
+    a6rep = a6_report(raw, pop)
     cells, blocks_info, cc_cells, avail_cells = apply_population(raw, pop, n_tasks)
+    pcells, pblocks, _, _ = apply_population(pre, pop, n_tasks)
     bcells, blog = load_bfcl(a.model, man, only)
     if a.dry:
         print(json.dumps({"guard": g, "restrict": restrict, "population": {"n_tasks": n_tasks, "excluded_by_mask": excluded}, "not_run": NOT_RUN, "tau2_blocks": blocks_info, "tau2_log": tlog, "bfcl_log": blog,
-                          "expansion_ok": expansion_ok(a.model)}, indent=1, default=str))
+                          "expansion_ok": expansion_ok(a.model), "a6": a6rep, "tau2_blocks_strict_prereg": pblocks}, indent=1, default=str))
         return
     R = {"guard": g, "script_sha256": sha(Path(__file__)), "git": subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip(),
          "restrict": restrict, "B": a.B, "seed": AD.SEED, "not_run": NOT_RUN, "expansion_ok": expansion_ok(a.model), "tau2": {"population": {"n_tasks": n_tasks, "excluded_by_mask": excluded,
@@ -584,14 +594,15 @@ def main():
         if excluded and avail_cells[c]:
             R["tau2"]["sensitivity_available_rows"][c] = {"label": "SENSITIVITY: actual available rows (non-missing four-arm rows per block, no mask, no strictness)",
                                                           **{k: v for k, v in tau2_cell(avail_cells[c], a.B).items() if k in ("n_states", "k_blocks", "all_states_pp")}}
-    con = {}
-    for lab, x, y in CT["primary"] + CT["secondary"]:
-        if lab == "P3" and not cells.get("kivi_k2v2") and cells.get("kivi_k4v4"):
-            x = "kivi_k4v4"  # protocol §1: gate fallback
-        con[lab] = tau2_contrast(cells[x], cells[y], a.B) if cells.get(x) and cells.get(y) else {"not_estimable": "cell not admitted", "cells": [x, y]}
-        con[lab]["cells"] = [x, y]
+    con, R["tau2"]["holm_primary_D_cc"] = tau2_contrasts(cells, CT, a.B)
     R["tau2"]["contrasts"] = con
-    R["tau2"]["holm_primary_D_cc"] = holm({lab: con[lab].get("D_cc", {}).get("t_p_two_sided") for lab, _, _ in CT["primary"] if "D_cc" in con[lab]})
+    R["tau2"]["a6"] = {"rule": "amendment A6: arm errors on the agent's own message (A6_SIGNATURES, >= 1 branch decision) scored Y = 0",
+                       "per_cell_block": a6rep}
+    pcon, phl = tau2_contrasts(pcells, CT, a.B)
+    R["tau2"]["sensitivity_strict_prereg"] = {"label": "SENSITIVITY: strict as preregistered (§7/A3.3 without A6: every arm error fails its block)",
+                                              "blocks": pblocks, "contrasts": pcon, "holm_primary_D_cc": phl,
+                                              "cells": {c: {k: v for k, v in tau2_cell(us, a.B).items() if k in ("n_states", "k_blocks", "all_states_pp")}
+                                                        for c, us in sorted(pcells.items()) if us}}
     if excluded:
         sc = {}
         for lab, x, y in CT["primary"]:
@@ -636,6 +647,18 @@ def markdown(R: dict, jp: Path) -> str:
             L.append(f"| {lab} | {' − '.join(x['cells'])} | {','.join(x['common_blocks'])} | {f(x['D_cc'])} | {f(x['G'])} | {x['D_cc'].get('t_p_two_sided')} | {R['tau2']['holm_primary_D_cc'].get(lab, '–')} |")
         else:
             L.append(f"| {lab} | {' − '.join(x['cells'])} | – | {x.get('not_estimable')} | | | |")
+    a6 = R["tau2"].get("a6", {}).get("per_cell_block", {})
+    L += ["", "## Amendment A6: arm errors on the agent's own message scored Y = 0", "",
+          "| cell | block | states Y=0 | arms Y=0 (+ reused) | signatures | arm errors still missing | states |", "|---|---|---|---|---|---|---|"]
+    L += [f"| {c} | {b} | {r['states_reclassified']} | {r['arms_reclassified']} (+{r['arms_reused']}) | {r['by_signature'] or '–'} | "
+          f"{r['states_still_missing']} {r['missing_reasons'] or ''} | {'; '.join(r['states'])} |" for c, bs in a6.items() for b, r in bs.items()] or ["| – | | 0 | 0 | | 0 | |"]
+    ps = R["tau2"].get("sensitivity_strict_prereg", {})
+    L += ["", "SENSITIVITY, strict as preregistered (§7/A3.3 without A6): admitted blocks "
+          + "; ".join(f"{c} {','.join(b for b, i in bi.items() if i['admitted']) or 'none'}" for c, bi in ps.get("blocks", {}).items()), "",
+          "| id | cells | blocks | ΔD_cc | t p | Holm |", "|---|---|---|---|---|---|"]
+    L += [f"| {lab} | {' − '.join(x['cells'])} | {','.join(x.get('common_blocks', [])) or '–'} | "
+          + (f"{f(x['D_cc'])} | {x['D_cc'].get('t_p_two_sided')} | {ps['holm_primary_D_cc'].get(lab, '–')} |" if "D_cc" in x else f"{x.get('not_estimable')} | | |")
+          for lab, x in ps.get("contrasts", {}).items()]
     L += ["", "## BFCL (200 panel items), all items", "", "| cell | items | div | D_cc | G | M | M_cc |", "|---|---|---|---|---|---|---|"]
     for c, r in R["bfcl"].get("cells", {}).items():
         s = r["all_items_pp"]
