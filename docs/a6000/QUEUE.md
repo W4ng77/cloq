@@ -1,9 +1,10 @@
-# A6000 queue snapshot (2026-10-03 11:41:46 PDT)
+# A6000 queue snapshot (2026-10-03 12:13:46 PDT)
 
-## running (25)
+## running (24)
 
 - `a6k2_q14_kvq_int3_rro`
 - `a6k2_q32_gauss3_s1_rro`
+- `a6k2_q32_gauss3_s2_rro`
 - `a6k2_q4_gauss2_s1_redo`
 - `a6k2_q4_gauss3_s1_redo`
 - `a6k2_q4_gauss3_s2_redo`
@@ -14,7 +15,6 @@
 - `a6k2_q8_gauss3_s2_redo`
 - `a6k2_q8_kvq_int3`
 - `a6k2_q8_kvq_int4`
-- `cs_gate_q4_d2_d1`
 - `cs_q8_d2_d1_f04`
 - `cs_q8_d2_d1_f05`
 - `cs_ref_q8_gptq_w4_d1_f06`
@@ -24,11 +24,10 @@
 - `pert_q4_gptq_w3_resid_a2_q345_rro`
 - `pert_q4_rtn_w3_resid_a2_q345`
 - `pert_q4_rtn_w3_restore_rand_attn_s3_q345_rro`
-- `pert_q4_rtn_w3_restore_rand_mlp_s3_q345_rro`
 - `pert_q8_gptq_w3_resid_a2_q345`
 - `pert_q8_rtn_w3_resid_a2_q345`
 
-## failed (15)
+## failed (17)
 
 - `a6k2_q14_gauss3_s1` · RuntimeError('run a6k2_q14_gauss3_s1/airline: 2 infrastructure_error episodes (outage)')
 - `a6k2_q14_gauss3_s1_rro` · RuntimeError('vLLM agent server did not come up in 90 min')
@@ -40,11 +39,13 @@
 - `a6k2_q32_rtn_w3` · RuntimeError('run a6k2_q32_rtn_w3_q2/airline: 12 infrastructure_error episodes (outage)')
 - `a6k2_smoke_l8` · RuntimeError('run a6k2_smoke_l8/retail: 5 infrastructure_error episodes')
 - `a6k2_smoke_m24` · RuntimeError('vLLM agent server exited during startup')
+- `cs_gate_q4_d2_d1` · RuntimeError('fork B server did not come up in 90 min')
 - `ext_l8_gptq_w4_d1_bfcl_smoke_l8g_sc` · RuntimeError("checkpoint build failed ({'kind': 'gptq', 'wbits': 4, 'calib': 'manifests/a6k2/l8/calib_fp_traj_c1.json'}) rc=1")
 - `kivi_gate_q8` · RuntimeError('cmd failed rc=-9')
 - `pert_q4_gptq_w3_resid_a2_q345` · RuntimeError('run a6k2_pert_q4_gptq_w3_resid_a2_q3/airline: 1 infrastructure_error episodes (outage)')
 - `pert_q4_rtn_w3_restore_rand_attn_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_attn_s3_q3/airline: 1 infrastructure_error episodes (outage)')
 - `pert_q4_rtn_w3_restore_rand_mlp_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_mlp_s3_q3/retail: 1 infrastructure_error episodes (outage)')
+- `pert_q4_rtn_w3_restore_rand_mlp_s3_q345_rro` · RuntimeError('vLLM agent server did not come up in 90 min')
 
 ## done (1295)
 
@@ -249,9 +250,8 @@
 - `a6k2_q32_gauss0.1_s2` · 25 min · node007
 - `a6k2_q32_gauss0.3_s1` · 35 min · node007
 
-## todo (32)
+## todo (31)
 
-- `a6k2_q32_gauss3_s2_rro`
 - `a6k2_q32_rtn_w3_rro`
 - `cs_q4_d2_bf16_f01`
 - `cs_q4_d2_bf16_f02`
