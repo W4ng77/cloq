@@ -10,6 +10,23 @@ Newest first.
 
 ---
 
+## W100m — Paper: abstract and §4 restated on the Holm W4 G−H family without a model regularity; Fig. 2 split into main (four W4 cells + pool, Holm-consistent intervals) and supplementary panels (2026-10-02 PDT)
+**TL;DR** GPT-6.1 fixes, all from existing data.
+- **Abstract.** The sentence now reads: "On the fixed task pool, action replacement outperforms continuation takeover for both Qwen3-8B W4 methods (by 2.9 and 3.4 pp; Holm-adjusted p = .013 and .012 across four comparisons). Qwen3-4B point estimates favor continuation takeover, but neither contrast is significant. All four new-task intervals include zero, limiting this exploratory finding to the fixed task pool." The 4B values stay in the text and the figure.
+- **§4** has the new subheading "Paired comparisons distinguish upgrade modes". It states three cautions:
+  - 8B significant and 4B non-significant is not a significant model difference, and the cells select different states;
+  - G−H > 0 is not G > 0;
+  - all four crossed intervals include 0.
+- **Model-regularity sweep.** "Varies with the model", "differs by configuration" and similar wording is removed from the abstract, intro, §4 and discussion.
+- **Fig. 2 (F9, `make_fig_modes.py`).**
+  - Top: the four core W4 cells plus the pool, with the axis fitted to their intervals. In the G−H panel, thick is the plain 95% t interval and thin the Holm-consistent Bonferroni 98.75% interval, both from `ghf_multiplicity_20261001T225727Z.json`; filled markers are Holm-significant, open ones are not.
+  - Bottom: q8 RTN-W3 and q14 BFCL on their own scale, marked as supplementary.
+  - Asserts: the Holm p-values, q4 GPTQ plain-excludes / Bonferroni-includes 0, and that the multiplicity estimates match ghf. `provenance.json` is updated.
+- **Page budget.** Trimmed the duplicate end-to-end sentence in the Discussion, the "Read with §5" sentence in §6, and the §7 intro.
+- **Build:** Limitations at the top of p. 9; `check_numbers.py` PASS (3137 numbers); 0 undefined refs, 0 overfull boxes.
+
+Evidence: `paper/latex/sections/{abstract,introduction,results_r1,results_r3,results_r4,discussion}.tex`, `paper/latex/tools/figs/make_fig_modes.py`, `paper/latex/figures/{f9_upgrade_modes.pdf,provenance.json}`.
+
 ## W100l — Paper: "which upgrade mode produces net gain" re-anchored on the preregistered W4 G−H multiplicity family; recommendations paragraph (2026-10-02 PDT)
 **TL;DR** The abstract and the §4 Fig. 2 text now lead with the four core W4 G−H contrasts. Values are from `analysis/fork/out/ghf_multiplicity_20261001T225727Z.md`: fixed task pool, t over blocks, Holm m = 4.
 - q8 GPTQ-W4 +2.9 (p_holm .013) and q8 AWQ-W4 +3.4 (.012): replacing the action beats taking over the continuation.
