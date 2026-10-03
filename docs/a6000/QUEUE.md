@@ -1,17 +1,14 @@
-# A6000 queue snapshot (2026-10-02 17:06:01 PDT)
+# A6000 queue snapshot (2026-10-02 17:36:05 PDT)
 
-## running (22)
+## running (20)
 
-- `a6k2_q14_kvq_int3`
 - `a6k2_q32_tel_rtn_w3`
 - `a6k2_q32_tel_rtn_w4`
 - `fork_repair_q4_rtn_w3`
 - `fork_sameprec_q8_g3`
 - `fork_sameprec_q8_g6`
-- `fork_sameprec_w3_q8_q4`
 - `fork_sameprec_w3_q8_q5`
 - `nmp_gate_same_q8_kivi_k2v2_fx`
-- `nmp_tau2_q8_kivi_k2v2_f01`
 - `nmp_tau2_q8_kivi_k2v2_f02`
 - `nmp_tau2_q8_kivi_k2v2_f03`
 - `pert_q4_gptq_w3_resid_a2_q345`
@@ -22,8 +19,9 @@
 - `pert_q4_rtn_w3_restore_rand_third_s1_q345`
 - `pert_q4_rtn_w3_restore_rand_third_s2_q345`
 - `pert_q4_rtn_w3_restore_rand_third_s3_q345`
-- `pert_q8_awq_w4_restore_rand_third_s2_fdev`
 - `pert_q8_awq_w4_restore_rand_third_s3_fdev`
+- `pert_q8_gptq_w3_resid_a2_q345`
+- `pert_q8_rtn_w3_resid_a0.25_q345`
 
 ## failed (9)
 
@@ -37,7 +35,7 @@
 - `kivi_gate_q8` · RuntimeError('cmd failed rc=-9')
 - `pert_q4_rtn_w3_restore_rand_mlp_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_mlp_s3_q3/retail: 1 infrastructure_error episodes (outage)')
 
-## done (1113)
+## done (1116)
 
 - `a6k2_det_q14_x1_awq_a` · 11 min · node005
 - `a6k2_det_q14_x1_awq_b` · 54 min · node004
@@ -240,8 +238,9 @@
 - `a6k2_q32_ol_gauss0.03_s2` · 26 min · node007
 - `a6k2_q32_ol_gauss0.03_s3` · 24 min · node005
 
-## todo (112)
+## todo (111)
 
+- `a6k2_q14_kvq_int3`
 - `a6k2_q14_tel_gauss0.1_s1`
 - `a6k2_q14_tel_gauss1_s1`
 - `a6k2_q14_tel_gptq_w3`
@@ -315,8 +314,6 @@
 - `nmp_tau2_q8_kivi_k16v16_f01`
 - `nmp_tau2_q8_kivi_k16v16_f02`
 - `nmp_tau2_q8_kivi_k16v16_f03`
-- `pert_q8_gptq_w3_resid_a2_q345`
-- `pert_q8_rtn_w3_resid_a0.25_q345`
 - `pert_q8_rtn_w3_resid_a2_q345`
 - `pert_q8_rtn_w3_restore_rand_attn_s2_q345`
 - `pert_q8_rtn_w3_restore_rand_attn_s3_q345`
