@@ -734,3 +734,69 @@ Status when written:
   - m24 f01-f03: the prospective view equals strict (rtn {f03}, gptq {f02, f03}); the plus view equals the primary, because the `JSONDecodeError` arm is in masked airline:13.
   - q8: every view equals the primary.
   - `--selftest` passes.
+
+---
+
+## Amendment A7 (2026-10-03 16:50 PDT, W100ab): one controlled re-run of q8 τ² arm errors that are not the agent's own output; the P3 fallback fires only on a gate failure
+
+**TL;DR** The 31 q8 phase-1 τ² arms that stopped on a server-side error (kivi_k2v2 f01–f03: 10 `Timeout`; kivi_k4v4 f01: 12 `InternalServerError`; spinquant_w4a4 f01: 9 `Timeout`) get one controlled re-run each. The state, the current actions, the checkpoint, the kernel and every token and step budget are unchanged. Only the named arms run, one state at a time, and the original records are never modified. Arms whose failure the serving logs show to be an outage are re-run once. For timeouts with no established cause, the re-run at concurrency 1 is the low-concurrency diagnosis, and a rule fixed here decides how it is used. An arm that fails again stays missing. The primary analysis merges the re-run arms; the pre-re-run analysis and the strict analysis as preregistered are reported next to it. P3 never switches to kivi_k4v4 because kivi_k2v2 lacks τ² blocks: §1's fallback is for a gate failure, and kivi_k2v2 passed its gates.
+
+**Why, and approval.** E1.5 left these arms missing and asked for a dated amendment before the q8 analysis is read. GPT-6.1 (2026-10-03, relayed by the user) approved one controlled recovery under the conditions in A7.2–A7.4. The text above this section is unchanged and is a byte-identical prefix (sha256 b306cc70ebfca526472e519baa32f5ed7f698e953711f88eb987a9bc6e61771c, the A6.E1 version).
+
+**What was known when this section was written.**
+- The errored arms, their error strings, `n_decisions` and blocks. These were read from `branches/<state_key>.json` error fields only. Block admission counts were also known (`analyze_newmethod.py --dry`).
+- No q8 new-method outcome, contrast or effect has been computed. The exppilot holds the q8 analysis until `queue/EXPPILOT_GO_newmethod_q8` exists, and it does not exist. `expansion_q8.json` has not been written.
+- m24 has no arm error outside the A6/A6.E1 agent-output classes (InvalidFunctionCallException, and JSONDecodeError on the agent's own tool-call arguments). A7 does not apply to m24.
+- E1.5 counted 2 spinquant_w4a4 f01 timeouts while that block was still running. The finished block has 9. A7 covers all 9: applying the rule to the KIVI cells alone would be a selective repair.
+
+### A7.1 Scope
+- Every q8 τ² panel arm (phase 1, f01–f03) that recorded an error which is neither A6 nor A6.E1 agent output, as of this section: 31 arms in 5 blocks (state_key arm):
+  - kivi_k2v2 f01 (1): 1bdc433905484e8d QQ
+  - kivi_k2v2 f02 (4): 02dde73dfe90f6f6 QQ, 0f51e0c84a65cf7f BQ, 21f3a2013895739f BQ, e553e7972e96416c BQ
+  - kivi_k2v2 f03 (5): 01a17956873df0ef QQ, b6a3454a4e6f976a QQ, dbdc689a3751d9dd QQ, f2b0916c7aa6d021 BQ, f2b0916c7aa6d021 QQ
+  - kivi_k4v4 f01 (12): 22e5640e91897669 QQ, 3b1c207abdf8ef45 QQ, 87c2005e50647c84 QQ, 95d6b21e8fc7af2b BB, 95d6b21e8fc7af2b BQ, 95d6b21e8fc7af2b QB, 95d6b21e8fc7af2b QQ, 961ad5dfd79a5dee QQ, 9749f30f7ffd3c41 BB, 9749f30f7ffd3c41 QQ, 9a48c111a1211c17 QQ, dcd3f47a56a2faba QQ
+  - spinquant_w4a4 f01 (9): 197f61e9d1573be3 QB, 1bdc433905484e8d QQ, 27b52ac1d2cc9ec6 QQ, 2b7e8183406b2144 QB, 33b049d3a313a14f QQ, 9749f30f7ffd3c41 BQ, 9749f30f7ffd3c41 QQ, a42e6f98f2baa960 QQ, f01a1f21e0c452e7 QQ
+  `analysis/fork/kivi_recovery/failed_arms.json` carries the same list with the A7.2 classes.
+- The same rule applies to such an arm error in any q8 τ² panel block finished before the evidence freeze, 2026-10-04 21:00 PDT. A re-run must finish by then. An arm not re-run by then stays missing.
+
+### A7.2 Classification, from the serving logs only, before any re-run
+A read-only audit of the agent B, agent Q and user-simulator logs (`analysis/fork/kivi_recovery/FORENSICS.md`) gives each arm exactly one class:
+- **service_failure_verified**: a log line shows that the serving process the failing request went to was down, crashing, restarting or refusing connections in the arm's time window. The arm is re-run once.
+- **timeout_cause_not_established**: there is no such line. The re-run below is the low-concurrency diagnosis: the arm is replayed at concurrency 1, and the per-request prompt tokens, completion tokens, finish_reason and wall seconds are recorded. An arm cannot be diagnosed without a closed-loop replay, so the diagnosis is the re-run, and its use is fixed here, effect-blind:
+  - the arm completes with no timeout: the original timeout is attributed to serving load and the outcome enters the repaired analysis;
+  - any request times out again: the arm stays missing, labelled "persistent timeout", and its timing is reported.
+- **other**: stays missing and is reported.
+
+No outcome is read for the classification.
+
+### A7.3 Re-run conditions (mode `bank_u_arms`, `scripts/a6000/fork_driver.py`)
+- **State.** It is rebuilt from the frozen manifest row. It must equal the original row on state_id, history_sha, prompt_ids_sha and steps_left; otherwise the state is refused and stays missing.
+- **Current actions.** These are the original row's recorded a_B and a_Q, never regenerated. The Q shadow action is regenerated once as a check only (`shadow_identical`, reported) and never used.
+- **Servers.** The re-run task copies the original task's B and Q roles verbatim: checkpoint, serve_env, KIVI or rotation hook flags. The worker's canary and fingerprint checks apply. max_tokens, the 600 s request timeout, the step budget and the simulator seed are unchanged.
+- **Once.** Each arm runs once, one state at a time (concurrency 1), with tag suffix `-rr1`.
+- **Records.** The original block (`bank_rows.jsonl`, `branches/`, `bank_summary.json`) is only read. Outputs go to `analysis/fork/newmethod/tau2_recovery/q8_<cell>/<blk>/rr1/` (`recovery_rows.jsonl`, `branches/`, `recovery_summary.json`).
+- **A second failure.** An arm that errors again stays missing. Under A6 its new error is classified like any arm error, from the re-run branch record.
+
+### A7.4 Analysis (`analysis/fork/analyze_newmethod.py`)
+- **Primary:** A6 with the A7 re-run arms merged (`a7_apply`). A reused arm (`reuse=XX`) takes XX's new value.
+- **Reported next to it, each with its own Holm family:**
+  - "before the A7 re-run": the A6 primary as of b306cc70;
+  - "strict as preregistered": no A6, no A7;
+  - the A6.E1 sensitivities, with A7.
+- The report lists, per cell and block, the arms re-run, completed and failed again, their A7.2 class and `shadow_identical`. Holm families, contrasts and margins are unchanged.
+
+### A7.5 P3
+- §1's fallback (kivi_k4v4 replaces kivi_k2v2) is defined for a §2.4 gate failure. kivi_k2v2 passed its gates (`nmp_gate_bank_q8_kivi_k2v2_fx`, `nmp_gate_same_q8_kivi_k2v2_fx` done; A4.2, A5.1). The script had fired the fallback whenever kivi_k2v2 had no admitted τ² unit. It now fires only on a recorded gate failure (`P3_K2V2_GATE_FAILED = False`).
+- If kivi_k2v2 has no admitted block after A7, P3 is "not estimable" and kivi_k4v4 stays the secondary K2.
+
+### A7.6 Expansion is unaffected
+- A5.2 does not read arm errors, so A7 cannot change any cell's phase-2 eligibility. A7 tasks are not phase-1 tasks.
+- A written expansion record is never changed. This section was committed before `expansion_q8.json` existed.
+
+### A7.7 Disclosure (binding wording)
+"A7 was adopted after the arm errors and their counts per block had been seen (W100v, E1.5) and before any q8 new-method outcome or effect had been computed. One re-run per failed arm, under the original state, actions, checkpoint, kernel and budgets; arms that failed again stay missing; the analysis before the re-run and the strict analysis as preregistered are reported."
+
+### A7.8 Files
+- `scripts/a6000/fork_driver.py`: `bank_u_arms`.
+- `analysis/fork/analyze_newmethod.py`: `a7_apply`, `a7_records`, `load_tau2(recovery=)`, the `prerecovery` view, `P3_K2V2_GATE_FAILED`, and `PROTOCOL_SHA256` = this file's new sha256 (same commit).
+- `analysis/fork/kivi_recovery/{failed_arms.json, FORENSICS.md}` (A7.2; committed before any re-run task is queued).

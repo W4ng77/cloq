@@ -796,6 +796,76 @@ def bank_u(spec, bases, user_base, servers, out):
     return res
 
 
+def bank_u_arms(spec, bases, user_base, servers, out):
+    """NEWMETHOD_PANEL_PROTOCOL A7 (W100ab): ONE controlled re-run of named failed arms of a finished bank_u block (U2B rows).
+    The original block (bank_rows.jsonl, branches/, bank_summary.json under spec src_out) is only read. The state is rebuilt
+    from the frozen manifest row and must equal the original row (state_id, history_sha, prompt_ids_sha, steps_left); the
+    current actions are the original row's recorded a_B / a_Q, never regenerated; only the named arms run, once, under this
+    task's own servers (same checkpoint, serve_env, max_tokens, steps budget, simulator seed). The Q shadow action is
+    regenerated once as a check only (shadow_identical), never used. Each arm's decisions keep n_prompt_tokens,
+    n_completion_tokens, finish_reason and wall_seconds per request (the low-concurrency timing diagnosis of A7.2)."""
+    import hashlib as _h
+    man_path, src = ROOT / spec["manifest"], ROOT / spec["src_out"]
+    man_sha = _h.sha256(man_path.read_bytes()).hexdigest()
+    if man_sha != spec["manifest_sha256"]:
+        raise SystemExit(f"bank_u_arms: manifest sha {man_sha} != frozen {spec['manifest_sha256']}")
+    if (ROOT / spec["out"]).resolve() == src.resolve():
+        raise SystemExit("bank_u_arms: out must differ from src_out (the original block is never written)")
+    man = {r["state_key"]: r for r in json.loads(man_path.read_text())["rows"]
+           if r["model"] == spec["model"] and r["block"] == spec["block"] and r["sub"] == "U2B"}
+    orig = {x["state_key"]: x for x in map(json.loads, filter(str.strip, (src / "bank_rows.jsonl").read_text().splitlines()))}
+    want: dict = {}
+    for sk, arm in spec["arms"]:
+        want.setdefault(sk, []).append(arm)
+    for sk, arms in want.items():  # refuse anything that is not a recorded failed arm of this block
+        old = json.loads((src / "branches" / f"{sk}.json").read_text())
+        for arm in arms:
+            if not (str(orig[sk]["arm_source"].get(arm, "")).startswith("error") and "error" in old.get(arm, {})):
+                raise SystemExit(f"bank_u_arms: {sk} {arm} is not a failed arm of {src}")
+    blocks, sfx = {}, spec.get("tag_suffix", "rr1")
+
+    def one(sk):
+        r, x = man[sk], orig[sk]
+        k = (r["source_run"], r["domain"])
+        if k not in blocks:
+            blocks[k] = F.Block(ROOT, *k)
+        st = F.make_state(blocks[k], r["task_id"], r["t"])
+        same = {"state_id": st["state_id"] == x["state_id"], "history_sha": st["history_sha"] == x["history_sha"],
+                "prompt_ids_sha": st["q_decision"]["prompt_ids_sha"] == x["prompt_ids_sha"], "steps_left": st["budget"]["steps_left"] == x["steps_left"]}
+        rec = {"state_key": sk, "cell": spec["cell"], "block": spec["block"], "domain": r["domain"], "arms": want[sk], "state_identical": same}
+        if not all(same.values()):
+            return {**rec, "missing_reason": f"state differs from the original row {same}"}
+        tagb = f"bu-{spec['cell']}-{sk}"
+        a_q2, _ = F.shadow(st, bases["Q"], f"{tagb}-sQ-{sfx}")
+        rec["shadow_identical"] = F.canon_msg(a_q2) == F.canon_msg(x["a_Q"])
+        st["a_B"], st["a_Q"] = {"message": x["a_B"]}, {"message": x["a_Q"]}
+        res = {arm: F.run_branch(st, arm[0], arm[1], bases, user_base, f"{tagb}-{arm}-{sfx}") for arm in want[sk]}
+        rec.update(Y={a: None if "error" in b else _y(r["domain"], b) for a, b in res.items()},
+                   arm_source={a: "rerun" if "error" not in b else f"error: {b['error'][:120]}" for a, b in res.items()},
+                   budget_ok={a: budget_check(st, b)["ok"] for a, b in res.items() if "error" not in b},
+                   durations={a: b.get("duration") for a, b in res.items()})
+        dump(out / "branches" / f"{sk}.json", res)
+        return rec
+
+    t0 = time.time()
+    with ThreadPoolExecutor(spec.get("concurrency", 1)) as ex:
+        recs = list(ex.map(lambda sk: _safe(one, sk), sorted(want)))
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "recovery_rows.jsonl").write_text("".join(json.dumps(x, ensure_ascii=False, default=str) + "\n" for x in recs))
+    ok = [x for x in recs if "Y" in x]
+    res = {"protocol": "NEWMETHOD_PANEL_PROTOCOL A7 (one controlled re-run of named failed arms)", "manifest_sha256": man_sha, "spec": spec,
+           "servers": servers, "src_out": spec["src_out"], "n_states": len(recs), "n_arms": sum(len(v) for v in want.values()),
+           "n_arms_recovered": sum(1 for x in ok for v in x["arm_source"].values() if v == "rerun"),
+           "n_arms_failed_again": sum(1 for x in ok for v in x["arm_source"].values() if v != "rerun"),
+           "n_state_refused": sum(1 for x in recs if "missing_reason" in x), "n_errors": sum(1 for x in recs if "error" in x),
+           "shadow_identical": sum(1 for x in ok if x.get("shadow_identical")), "budget_ok": all(all(x["budget_ok"].values()) for x in ok),
+           "seconds": time.time() - t0}
+    dump(out / "recovery_summary.json", res)
+    log(f"bank_u_arms {spec['model']}:{spec['cell']} {spec['block']}: recovered {res['n_arms_recovered']}/{res['n_arms']}, "
+        f"failed again {res['n_arms_failed_again']}, refused {res['n_state_refused']}, shadow identical {res['shadow_identical']}/{len(ok)}")
+    return res
+
+
 def _user_protocol(st: dict, br: dict) -> dict:
     """W90 acceptance checks on one branch run with a user_llm override (cloq/user_llm.py records every user call)."""
     from tau2.runner.build import build_environment, build_user
@@ -1603,7 +1673,7 @@ def main():
     bases = {"B": a.b_base, "Q": a.q_base}
     out = ROOT / spec["out"]
     out.mkdir(parents=True, exist_ok=True)
-    fn = {"gate": gate, "gate_same": gate_same, "search": search_mode, "branches": branches_mode, "dev": dev_mode, "pivot_arms": pivot_arms, "bank_u": bank_u, "bank_u_q0": bank_u_q0, "repair": repair_mode, "simctrl": simctrl,
+    fn = {"gate": gate, "gate_same": gate_same, "search": search_mode, "branches": branches_mode, "dev": dev_mode, "pivot_arms": pivot_arms, "bank_u": bank_u, "bank_u_arms": bank_u_arms, "bank_u_q0": bank_u_q0, "repair": repair_mode, "simctrl": simctrl,
           "simctrl_p": simctrl_p, "commonstate": commonstate}[spec["mode"]]
     r = fn(spec, bases, a.user_base, servers, out)
     v = r.get("verdict")

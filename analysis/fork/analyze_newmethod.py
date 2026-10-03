@@ -65,7 +65,7 @@ PROTOCOL = ROOT / "docs/insights/NEWMETHOD_PANEL_PROTOCOL.md"
 # Amendment A5 (W100g, 2026-10-02): was 0dc3143e... (A4); expansion decision: registered cells, KIVI _fx gates, fixed population, KIVI pairing, frozen snapshot.
 # Amendment A6 (W100v, 2026-10-03): was f9f8b3a5... (A5); fork-branch arm errors on the agent's own output scored Y = 0.
 # Amendment A6.E1 (W100v-e, 2026-10-03): was 73bf5538... (A6); corrections, A6-prospective and tool-call-parse sensitivities.
-PROTOCOL_SHA256 = "b306cc70ebfca526472e519baa32f5ed7f698e953711f88eb987a9bc6e61771c"
+PROTOCOL_SHA256 = "ba743ceed731a09a9f0c50579f4507a1f6125a7bc9ea22456386e398aee16aa0"  # A7 (W100ab)
 # Amendment A6.2 (W100v): exception signatures raised only by validating an AGENT message (repr as cloq/fork.py::run_branch records
 # it); S1 = mistral_common's check of an assistant tool call's function name (W99p), S3 = tau2's agent_msg.validate() on an
 # empty agent message (W92). Either quote style (repr switches to " when the message contains ').
@@ -93,6 +93,9 @@ NOT_RUN = {"spinquant_w4": "retired (amendment A1.1)", "spinqoff_w4": "not built
 # Primary contrast family (protocol §7 as amended by A1.2). P3's KIVI cell falls back to kivi_k4v4 only if kivi_k2v2 is not
 # admitted (gate). P1 confound (named): calibration data differ (WikiText-2 vs calib_fp_traj_c1).
 PRIMARY = [("P1", "quarot_w4", "gptq_w4_d1"), ("P2", "spinquant_w4a4", "quarot_w4a4"), ("P3", "kivi_k2v2", "kvq_int8")]
+# A7.5: kivi_k2v2 passed its §2.4 gates (the _fx re-runs, A4.2/A5.1), so the §1 gate fallback to kivi_k4v4 cannot fire. If
+# kivi_k2v2 has no admitted τ² block, P3 is "not estimable"; kivi_k4v4 stays the secondary K2.
+P3_K2V2_GATE_FAILED = False
 BFCL_PRIMARY = [("P1", "quarot_w4", "gptq_w4_d1"), ("P2", "spinquant_w4a4", "quarot_w4a4"), ("P3", "kivi_k2v2", "kvq_int4")]
 SECONDARY = [("T1", "quarot_w4", "quarot_w16"), ("T2", "spinquant_w4a4", "spinquant_w16"), ("T3", "quarot_w4a4", "quarot_w16"),
              ("K2", "kivi_k4v4", "kvq_int8")]
@@ -212,7 +215,7 @@ def a6_resolve(x: dict, branches: dict, plus: bool = False, domain: str | None =
 def strict_prereg(raw: dict) -> dict:
     """A6.3 sensitivity 'strict as preregistered': every unit that A6 completed is excluded again, exactly as without A6."""
     drop = ("Y", "E", "exact", "category", "a6")
-    return {c: [{**{k: v for k, v in u.items() if k not in drop}, "excluded": "arm missing"} if "a6" in u else u for u in us]
+    return {c: [{**{k: v for k, v in u.items() if k not in drop + ("a7",)}, "excluded": "arm missing"} if "a6" in u or "a7" in u else u for u in us]
             for c, us in raw.items()}
 
 
@@ -267,19 +270,47 @@ def expansion_ok(model: str) -> bool:
     return p.exists() and json.loads(p.read_text()).get("expand") is True
 
 
+def a7_apply(x: dict, rec: dict, branches: dict) -> tuple[dict, dict, dict]:
+    """A7.3: the bank row with the A7 re-run arms merged (completed or failed again; a reused arm 'reuse=XX' takes XX's new
+    value), its branch records with the re-run records in place of the failed ones, and the per-arm A7 record."""
+    x, br, a7 = {**x, "Y": dict(x.get("Y") or {}), "arm_source": dict(x.get("arm_source") or {})}, dict(branches), {}
+    for a in rec.get("arms", []) if "Y" in rec else []:
+        x["Y"][a], x["arm_source"][a], br[a] = rec["Y"][a], rec["arm_source"][a], rec["branches"].get(a, br.get(a))
+        a7[a] = "rerun" if rec["arm_source"][a] == "rerun" else "failed again"
+    for a in ARMS4:
+        s_ = str(x["arm_source"].get(a, ""))
+        if s_.startswith("reuse=") and s_[6:] in a7:
+            x["Y"][a] = x["Y"][s_[6:]]
+    return x, br, a7
+
+
+def a7_records(model: str, cell: str, blk: str) -> dict:
+    """A7: re-run records of one panel block (analysis/fork/newmethod/tau2_recovery/<model>_<cell>/<blk>/rr1), by state_key."""
+    d = no_holdout(NM / "tau2_recovery" / f"{model}_{cell}" / blk / "rr1")
+    if not (d / "recovery_summary.json").exists():
+        return {}
+    out = {}
+    for x in map(json.loads, filter(str.strip, (d / "recovery_rows.jsonl").read_text().splitlines())):
+        p = d / "branches" / f"{x['state_key']}.json"
+        out[x["state_key"]] = {**x, "branches": json.loads(p.read_text()) if p.exists() else {}}
+    return out
+
+
 def load_tau2(model: str, man: dict, blocks: set | None = None, only: set | None = None, a6: bool = False,
-              views: dict | None = None) -> tuple[dict, dict]:
+              views: dict | None = None, recovery: bool = False) -> tuple[dict, dict]:
     """blocks / only (--blocks / --cells): restrict what is loaded; a cell outside `only` is never opened. Default: all.
     a6 (amendment A6; main() passes True for the primary): a row whose only gap is arm errors is completed by a6_resolve
     from its branch records; default False = the loader exactly as before A6 (strict as preregistered).
     views (A6.E1; main() only): filled from the SAME read (same finished blocks, row bytes and branch records) with the units
-    under the other rules: 'strict' (a6 False) and 'plus' (A6 + the A6.E1 class). Default None: nothing else changes."""
+    under the other rules: 'strict' (a6 False) and 'plus' (A6 + the A6.E1 class). Default None: nothing else changes.
+    recovery (amendment A7; main() passes True): panel rows take their A7 re-run arms (a7_apply); 'strict' and the view
+    'prerecovery' (the A6 primary before A7) never do. Default False: the loader exactly as before A7."""
     rows = {r["state_key"]: r for r in man["rows"]}
     allow2 = expansion_ok(model)
     cells: dict = defaultdict(list)
     log: dict = defaultdict(list)
     if views is not None:
-        views.update(strict=defaultdict(list), plus=defaultdict(list))
+        views.update(strict=defaultdict(list), plus=defaultdict(list), prerecovery=defaultdict(list))
 
     def unit(x: dict, base: dict, rule, branches) -> dict:
         u = dict(base)
@@ -309,6 +340,7 @@ def load_tau2(model: str, man: dict, blocks: set | None = None, only: set | None
         if s["noop"]["n_pass"] != s["noop"]["n"]:
             log[cell].append(f"{blk}: QUARANTINED (no-op {s['noop']})")
             return
+        rec7 = a7_records(model, cell, blk) if recovery and src == "panel" else {}
         for line in (d / "bank_rows.jsonl").read_text().splitlines():
             if not line.strip():
                 continue
@@ -322,10 +354,17 @@ def load_tau2(model: str, man: dict, blocks: set | None = None, only: set | None
             base = {"cell": cell, "block": blk, "phase": r["phase"], "task": f"{r['domain']}|{r['task_id']}", "state_key": r["state_key"],
                     "domain": r["domain"], "div": True, "source": src}
             branches = _branches(d, x["state_key"])
-            cells[cell].append(unit(x, base, a6, branches))
+            r7 = rec7.get(x["state_key"]) if src == "panel" else None
+            if r7:
+                xr, br7, a7 = a7_apply(x, r7, branches())
+                u = unit(xr, base, a6, lambda: br7)
+                cells[cell].append({**u, "a7": a7} if "excluded" not in u else {**u, "a7_missing": a7})
+            else:
+                cells[cell].append(unit(x, base, a6, branches))
             if views is not None:
-                for name, rule in (("strict", False), ("plus", "plus")):
-                    views[name][cell].append(unit(x, base, rule, branches))
+                views["strict"][cell].append(unit(x, base, False, branches))
+                views["prerecovery"][cell].append(unit(x, base, a6, branches))
+                views["plus"][cell].append(unit(xr, base, "plus", lambda: br7) if r7 else unit(x, base, "plus", branches))
 
     def _branches(d: Path, sk: str):
         memo: list = []  # the branch record is read at most once per row and shared by every rule
@@ -357,7 +396,7 @@ def load_tau2(model: str, man: dict, blocks: set | None = None, only: set | None
                 continue  # a panel-run reference block takes precedence (not expected for f01-f03)
             take(cell, blk, no_holdout(ROOT / "analysis/fork/bank_u" / f"{model}_{cell}" / blk), "bank_u", BANK_U_SHA256)
     if views is not None:
-        views.update({k: dict(views[k]) for k in ("strict", "plus")})
+        views.update({k: dict(views[k]) for k in ("strict", "plus", "prerecovery")})
     return dict(cells), dict(log)
 
 
@@ -470,8 +509,8 @@ def tau2_contrasts(cells: dict, CT: dict, B: int) -> tuple[dict, dict]:
     """Primary + secondary contrasts on admitted units and the Holm-adjusted primary family (t p on D_cc)."""
     con = {}
     for lab, x, y in CT["primary"] + CT["secondary"]:
-        if lab == "P3" and not cells.get("kivi_k2v2") and cells.get("kivi_k4v4"):
-            x = "kivi_k4v4"  # protocol §1: gate fallback
+        if lab == "P3" and P3_K2V2_GATE_FAILED and cells.get("kivi_k4v4"):
+            x = "kivi_k4v4"  # protocol §1: gate fallback, on a §2.4 gate failure only (A7.5); never for missing τ² blocks
         con[lab] = tau2_contrast(cells[x], cells[y], B) if cells.get(x) and cells.get(y) else {"not_estimable": "cell not admitted", "cells": [x, y]}
         con[lab]["cells"] = [x, y]
     return con, holm({lab: con[lab].get("D_cc", {}).get("t_p_two_sided") for lab, _, _ in CT["primary"] if "D_cc" in con[lab]})
@@ -622,7 +661,7 @@ def main():
     n_tasks = len(pop)
     t0 = time.time()
     views: dict = {}  # A6.E1: every rule from ONE read, so a block finishing mid-run cannot make the views differ
-    raw, tlog = load_tau2(a.model, man, blocks, only, a6=True, views=views)  # amendment A6: primary
+    raw, tlog = load_tau2(a.model, man, blocks, only, a6=True, views=views, recovery=True)  # amendments A6 + A7: primary
     pre = strict_prereg(raw)  # A6.3 sensitivity; must equal the loader without A6 unit by unit (A6 touches nothing else)
     raw0 = views["strict"]
     sig = lambda R_: {c: [(u["state_key"], "excluded" in u, u.get("Y")) for u in us] for c, us in R_.items()}  # noqa: E731
@@ -634,7 +673,8 @@ def main():
     E1 = {"sensitivity_a6_prospective": ("SENSITIVITY: A6 prospective only (A6.E1: strict on m24 phase 1 and q8 Bank U reference rows)",
                                          a6_prospective(raw, a.model)),
           "sensitivity_a6_plus_toolcall_parse": ("SENSITIVITY: A6 + agent tool-call argument parse failures (A6.E1: JSONDecodeError, "
-                                                 ">= 1 branch decision, retail/airline) scored Y = 0", views["plus"])}
+                                                 ">= 1 branch decision, retail/airline) scored Y = 0", views["plus"]),
+          "sensitivity_pre_recovery": ("SENSITIVITY: before the A7 re-run of failed arms (the A6 primary as of b306cc70)", views["prerecovery"])}
     E1p = {k: apply_population(v, pop, n_tasks)[:2] for k, (_, v) in E1.items()}
     bcells, blog = load_bfcl(a.model, man, only)
     if a.dry:
@@ -659,6 +699,15 @@ def main():
     R["tau2"]["contrasts"] = con
     R["tau2"]["a6"] = {"rule": "amendment A6: arm errors on the agent's own message (A6_SIGNATURES, >= 1 branch decision) scored Y = 0",
                        "per_cell_block": a6rep}
+    a7rep: dict = {}  # A7: re-run arms merged into the primary, by cell and block
+    for c, us in sorted(raw.items()):
+        for u in us:
+            for a_, how in {**u.get("a7", {}), **u.get("a7_missing", {})}.items():
+                r_ = a7rep.setdefault(c, {}).setdefault(u["block"], {"rerun": 0, "failed again": 0, "states_completed": 0, "states_still_missing": 0})
+                r_[how] += 1
+            if u.get("a7") or u.get("a7_missing"):
+                a7rep[c][u["block"]]["states_completed" if "a7" in u else "states_still_missing"] += 1
+    R["tau2"]["a7"] = {"rule": "amendment A7: one controlled re-run of named failed arms (tau2_recovery/<model>_<cell>/<blk>/rr1)", "per_cell_block": a7rep}
     pcon, phl = tau2_contrasts(pcells, CT, a.B)
     R["tau2"]["sensitivity_strict_prereg"] = {"label": "SENSITIVITY: strict as preregistered (§7/A3.3 without A6: every arm error fails its block)",
                                               "blocks": pblocks, "contrasts": pcon, "holm_primary_D_cc": phl,
@@ -720,9 +769,13 @@ def markdown(R: dict, jp: Path) -> str:
           "| cell | block | states Y=0 | arms Y=0 (+ reused) | signatures; producer | arm errors still missing | states |", "|---|---|---|---|---|---|---|"]
     L += [f"| {c} | {b} | {r['states_reclassified']} | {r['arms_reclassified']} (+{r['arms_reused']}) | {r['by_signature'] or '–'}; {r.get('by_producer') or '–'} | "
           f"{r['states_still_missing']} {r['missing_reasons'] or ''} | {'; '.join(r['states'])} |" for c, bs in a6.items() for b, r in bs.items()] or ["| – | | 0 | 0 | | 0 | |"]
+    L += ["", "## Amendment A7: re-run arms merged into the primary", "", "| cell | block | arms re-run (completed) | failed again | states completed | still missing |", "|---|---|---|---|---|---|"]
+    L += [f"| {c} | {b} | {r['rerun']} | {r['failed again']} | {r['states_completed']} | {r['states_still_missing']} |"
+          for c, bs in R["tau2"]["a7"]["per_cell_block"].items() for b, r in bs.items()] or ["| – | | 0 | 0 | 0 | 0 |"]
     for key, title in (("sensitivity_strict_prereg", "SENSITIVITY, strict as preregistered (§7/A3.3 without A6)"),
                        ("sensitivity_a6_prospective", "SENSITIVITY, A6 prospective only (A6.E1)"),
-                       ("sensitivity_a6_plus_toolcall_parse", "SENSITIVITY, A6 + agent tool-call parse failures (A6.E1)")):
+                       ("sensitivity_a6_plus_toolcall_parse", "SENSITIVITY, A6 + agent tool-call parse failures (A6.E1)"),
+                       ("sensitivity_pre_recovery", "SENSITIVITY, before the A7 re-run of failed arms")):
         ps = R["tau2"].get(key, {})
         L += ["", f"{title}: admitted blocks "
               + "; ".join(f"{c} {','.join(b for b, i in bi.items() if i['admitted']) or 'none'}" for c, bi in ps.get("blocks", {}).items()), "",
@@ -797,7 +850,13 @@ def selftest(B: int) -> None:
     assert con["common_blocks"] == ["f01", "f02"] and con["n_states"] == 166, con.get("common_blocks")
     sens = tau2_contrast(avail["gptq_w4_d1"], avail["rtn_w4"], B, match_tasks=True)
     assert sens["common_blocks"] == ["f01", "f02", "f03"]
-    print(json.dumps({"selftest": "PASS", "population": len(pop), "excluded": exc, "blocks": info,
+    # A7: a re-run arm completes a row and a reused arm follows it; a failed-again arm stays missing; the input row is untouched
+    x7 = {"Y": {"BB": 1, "BQ": None, "QB": 0, "QQ": None}, "arm_source": {"BB": "run", "BQ": "reuse=QQ", "QB": "run", "QQ": "error: Timeout"}}
+    xr, _, a7 = a7_apply(x7, {"arms": ["QQ"], "Y": {"QQ": 1}, "arm_source": {"QQ": "rerun"}, "branches": {}}, {})
+    assert xr["Y"] == {"BB": 1, "BQ": 1, "QB": 0, "QQ": 1} and a7 == {"QQ": "rerun"} and x7["Y"]["QQ"] is None
+    xr, _, a7 = a7_apply(x7, {"arms": ["QQ"], "Y": {"QQ": None}, "arm_source": {"QQ": "error: Timeout"}, "branches": {}}, {})
+    assert xr["Y"]["QQ"] is None and xr["Y"]["BQ"] is None and a7 == {"QQ": "failed again"}
+    print(json.dumps({"selftest": "PASS", "a7": "PASS", "population": len(pop), "excluded": exc, "blocks": info,
                       "rtn_w4_states": r1["n_states"], "M1_common_blocks": con["common_blocks"], "M1_n_states": con["n_states"],
                       "sensitivity_n_states": sens["n_states"], "a6": "PASS", "strict_prereg_blocks": pinfo}, indent=1, default=str))
 
