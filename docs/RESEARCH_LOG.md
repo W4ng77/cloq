@@ -10,6 +10,27 @@ Newest first.
 
 ---
 
+## W100k — Paper: fixed main line ("task benefit depends on which step is upgraded and who executes afterwards; whole-model swaps mix these effects; same-state crossed interventions measure them separately"); attribution wording removed; paired differences for the mode examples (2026-10-02 PDT)
+**TL;DR** GPT-6.1 review of cloq-paper 35d1003, final fixes, all from existing data.
+- **Attribution wording.** The same-precision substitution no longer "checks which consequences are attributable to precision". It now "tests whether turnover and continuation dependence require a higher bit width, and benchmarks BF16 substitution against a fixed-precision alternative".
+  - §5 states that the two first-divergence designs may select different states, so shared and exclusive flips cannot be split into effects caused and not caused by precision.
+  - The §5 title is now "Does an Upgrade Need a Higher Bit Width?".
+  - The sweep covered the abstract, intro, contributions, §5 and the discussion.
+- **Paired differences** (source values; they match GPT's numbers).
+  - q8 RTN-W3: G−H −15.7 [−27.5, −3.9], i.e. H−G +15.7 [+3.9, +27.5]; t over three blocks. Source: `ghf_20261001T211519Z.md` §1.
+  - q14 BFCL: G−H +5.3 [+2.3, +8.4]. Source: `ext_q14_20261002T085647Z.md` §2.
+  - q14 complementarity: H +0.4 [−1.1, +1.9]; F−G +3.4 [+1.3, +5.6].
+  - The text says once that F has the largest point estimate in both examples and that no compute-cost comparison exists, so no cost-optimal mode is established.
+  - "Which mode pays" is now "which upgrade mode produces net task gain" everywhere.
+- **Intro shared-core reference.** It now leads with the task-propensity-preserving null (107 vs 76 [69, 84], within-task block shuffle). The independence expectation (30) is in §5, labelled with its assumption.
+- **Contributions** are exactly two:
+  - (1) an executable same-state intervention protocol (action, continuation, joint, plus same-precision reference);
+  - (2) the empirical structure (gains two-sided and execution-dependent; sensitivity signals find changes but do not yet reliably select net-beneficial substitutions).
+- **§7** framing: numerical quality (QuaRot/SpinQuant), cache location (KIVI), model family (Mistral).
+- **Build:** 24 pp, Limitations on p. 8, 0 undefined refs, 0 overfull boxes; `check_numbers.py` PASS (3137 numbers).
+
+Evidence: `paper/latex/sections/{abstract,introduction,results_r1,results_r2,results_r3,results_r4,discussion}.tex`, `paper/latex/main.pdf`.
+
 ## W100j — Paper revised after the GPT-6.1 review (NAACL-main borderline): contribution re-centred on same-state measurement of upgrade modes; G/H/F figure in the main text; §5 set structure foregrounded; §7 rewritten as question-and-test items (2026-10-02 PDT)
 **TL;DR** Main changes:
 - **Re-centred contribution.** The abstract, intro and contributions now lead with what is distinctive: separate the current action from the subsequent execution, measure upgrade value on the same frozen state, and use a same-precision substitution to check attribution. "Changing outcomes ≠ improving them" is kept, but as a subordinate point.
