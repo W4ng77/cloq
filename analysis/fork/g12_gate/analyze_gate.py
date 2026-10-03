@@ -43,7 +43,8 @@ def wilson(k: int, n: int) -> list:
     return [round(c - h, 4), round(c + h, 4)]
 
 
-MARKUP = ("<|tool_call>", "<tool_call|>", "<|channel>", "<channel|>", "<|tool_response>")
+MARKUP = ("<|tool_call>", "<tool_call|>", "<|tool_response>", "<|tool>")  # unparsed tool-call markup (parser error)
+CHANNEL = ("<|channel>", "<channel|>")  # the template's empty thought channel, emitted by the model after a tool response
 NAME_OK = re.compile(r"^[a-zA-Z0-9_-]{1,64}$")  # the function-name rule mistral_common enforces when re-rendering a turn
 
 
@@ -103,6 +104,9 @@ def tau_run(rid: str) -> dict:
             "prompt_ids_from_server": sum(bool(d_.get("prompt_ids_from_server")) for d_ in dec),
             "prompt_ids_match_local": sum(d_.get("prompt_ids_match_local") is True for d_ in dec),
             "content_with_tool_markup": sum(any(m in str(d_.get("content") or "") for m in MARKUP) for d_ in dec),
+            "content_with_empty_thought_channel": sum(str(d_.get("content") or "").startswith("<|channel>thought\n<channel|>") for d_ in dec),
+            "content_with_nonempty_thought": sum(any(m in str(d_.get("content") or "") for m in CHANNEL)
+                                                 and not str(d_.get("content") or "").startswith("<|channel>thought\n<channel|>") for d_ in dec),
             "finish_length": sum(d_.get("finish_reason") == "length" for d_ in dec),
             "infra_causes": json.load(open(rd / "infra_causes.json")) if (rd / "infra_causes.json").exists() else {},
             "episode_seconds_median": S.median([t["duration"] for t in tr if t.get("duration")]) if tr else None,
@@ -162,12 +166,23 @@ def fork_verdict(sub: str) -> dict | None:
         p = G / sub / name
         if p.exists():
             g = json.load(open(p))
-            return {"file": str(p.relative_to(ROOT)), "verdict": g.get("verdict")}
+            out = {"file": str(p.relative_to(ROOT)), "verdict": g.get("verdict")}
+            for lab in ("idcheck_Q", "idcheck_B"):  # identity probe: n_match / n (all required)
+                if g.get(lab):
+                    out[lab] = f"{g[lab]['n_match']}/{g[lab]['n']}"
+            st = g.get("states") or []
+            out["q_replay_at_state_ok"] = f"{sum(all((x.get('q_replay') or {}).values()) for x in st)}/{len(st)}"
+            out["a_noop_QQ_ok"] = f"{sum(bool((x.get('a_noop_QQ') or {}).get('ok')) for x in st)}/{len(st)}"
+            bb = g.get("a_noop_BB") or []
+            out["a_noop_BB_ok"] = f"{sum(bool((x.get('noop') or {}).get('ok')) for x in bb)}/{len(bb)}"
+            iso = g.get("c_isolation") or []
+            out["c_isolation_ok"] = f"{sum(bool(x.get('ok')) for x in iso)}/{len(iso)}"
+            return out
     return None
 
 
 def qrec(tid: str) -> dict:
-    for s in ("done", "failed", "running", "todo"):
+    for s in ("done", "failed", "running", "todo", "deferred"):
         p = QD / s / f"{tid}.json"
         if p.exists():
             t = json.load(open(p))
@@ -203,10 +218,12 @@ def main():
     s["capability"] = cap
     s["invalid_tool_names"] = invalid_name_rates()
     s["forks"] = {k: fork_verdict(k) for k in ("tau2_rtn_w4", "tau2_same_rtn_w4", "bfcl_rtn_w4", "bfcl_same_rtn_w4")}
+    dp = G / "det_probe.json"  # g12_det_probe (W100n): fresh BF16 servers re-generating recorded decisions
+    s["det_probe"] = json.load(open(dp))["summary"] if dp.exists() else None
     s["queue"] = {t: qrec(t) for t in ("a6k2_g12_bf16_gate", "a6k2_g12_rtn_w4_gate", "ext_g12_bf16_bfcl_gate_g12",
                                        "ext_g12_rtn_w4_bfcl_gate_g12", "fork_gate_g12_rtn_w4", "fork_gate_same_g12_rtn_w4",
                                        "fork_ext_gate_g12_rtn_w4_bfcl", "fork_ext_gate_same_g12_rtn_w4_bfcl", "a6k2_g12_bf16_cal",
-                                       "a6k2_g12_calib_c1", "a6k2_g12_gptq_w4_d1_gate")}
+                                       "a6k2_g12_calib_c1", "a6k2_g12_gptq_w4_d1_gate", "g12_det_probe")}
     (G / "gate_summary.json").write_text(json.dumps(s, indent=1) + "\n")
     print(json.dumps({"capability": cap, "invalid_tool_names": s["invalid_tool_names"], "forks": s["forks"], "queue": s["queue"]}, indent=1))
 

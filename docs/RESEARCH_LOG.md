@@ -10,6 +10,25 @@ Newest first.
 
 ---
 
+## W100p — g12 (Gemma-4-12B-it) gate verdict: FAIL on replay (check 3); measurable but not replayable under the frozen serving stack; no formal g12 task queued (2026-10-03 07:00 PDT)
+**TL;DR** g12 is measurable but its replays are not reproducible, so it is not admitted as a second family. The protocol cannot measure its same-state divergences. This is a valid paper result, like l8, which failed the capability floor.
+- **Passing checks.**
+  - 1, serving: every server came up after the r1 fix.
+  - 2, tool protocol: local == server prompt ids on 230/230 BF16 and 237/237 RTN-W4 τ² decisions, with 0 parser errors and 0 infrastructure errors. BFCL: 0 parser errors and 0 calls to tools not offered.
+  - 5, BF16 floor: τ² 8/20 = 40% and BFCL 8/20 = 40%, both ≥ 10%.
+  - 6, disjointness: holds.
+- **Check 3 fails.** The τ² fork gate gives idcheck Q 9/16 and B 12/16, Q replay at state 6/8, QQ no-op 1/8, BB no-op 0/4 and isolation 2/4, with 0 state or branch errors.
+  - Tool-call decisions regenerate exactly (17/17). Long text replies mostly do not (4/15).
+  - Determinism probe: one server answering one request at a time is deterministic (22/22). With prefix caching off, concurrent prefill changes 9/22 outputs, so `VLLM_BATCH_INVARIANT=1` does not make Gemma 4's prefill batch-invariant. No tested flag set reproduces the records (best 16/22).
+- **Why FAIL.** The mechanism is not identified; code reading excludes TRITON_ATTN's split-KV path. A fix is new serving work beyond the 6 h cap, which expired at 04:27, so the gate closes as FAIL. Check 4 and the BFCL fork gates are moot and were not run.
+- **Compute:** 8.0 of the 24 GPU-h cap.
+- **Other notes.**
+  - 63/230 BF16 τ² decisions start with the template's empty thought channel in user-facing content. Under the frozen wording of check 2 this is not a tool-call parser error. The analysis script's `MARKUP`/`CHANNEL` split was made after outcomes existed, so both counts are reported.
+  - The three remaining gate tasks have been in `queue/deferred/` since 01:44, 40 min after the idcheck failure, and stay there.
+  - `make_tasks_g12.py` now sets `fail_loud` on every gate_same spec.
+
+Evidence: `analysis/fork/g12_gate/{GATE.md,gate_summary.json,det_probe.json,analyze_gate.py,tau2_rtn_w4/gate.json}`, `scripts/a6000/{make_tasks_g12,g12_det_probe}.py`, `manifests/a6k2/g12/{calib_fp_traj_c1,row_manifest_fp_traj_c1}.json`, `/data/ziyangs/cloq_work/logs/tasks/fork_gate_g12_rtn_w4.log` (cluster), queue `done/{a6k2_g12_*,ext_g12_*,fork_gate_g12_rtn_w4,g12_det_probe}.json`, `deferred/{fork_gate_same_g12_rtn_w4,fork_ext_gate_g12_rtn_w4_bfcl,fork_ext_gate_same_g12_rtn_w4_bfcl}.json`.
+
 ## W100n — g12 (google/gemma-4-12B-it) second-family gate: protocol frozen, gate queued at −21; no g12 outcome yet (2026-10-02 22:42 PDT)
 **TL;DR** A time-boxed second-family gate (GPT-6.1 approved; ≤ 6 h engineering from 22:27, ≤ 24 GPU-h) for Gemma 4 12B, reusing the m24 pipeline. Model pinned at 707f0a3b…, served text-only (the 666 `model.language_model.*` tensors byte-identical, as `Gemma4ForCausalLM`, the class vLLM's own multimodal wrapper builds), official template, vLLM `gemma4` tool parser, thinking off. B = BF16, Q = RTN-W4 g128 (`cloq.compress`, 328 linears). Admission = measurable and replayable only: exact tool protocol, state/budget restore, QQ/BB no-ops, same-checkpoint control, and BF16 success ≥ 10% on τ² and on BFCL (the floor that failed l8). Frozen hash-selected gate samples are disjoint from the formal panels. 11 tasks queued at −21.
 - **Rendering.** vLLM detects the `openai` content format for the Gemma 4 template, so the server renders content as text parts (the system turn gains a trailing space). Local rendering emulates exactly that step, for Gemma-4 ids only (`cloq/context_policy.py::_openai_parts`); it gives the same message list as `vllm…parse_chat_messages` on a tool-call conversation.

@@ -116,6 +116,8 @@ def ev_bfcl(arm: str, subset: str, prio: float, deps: list[str]) -> dict:
 
 
 def fork(tid: str, b: str, q: str, spec: dict, prio: float, deps: list[str], env: str | None = None) -> dict:
+    if spec.get("mode") == "gate_same":  # W100e-c / 9ddb588: a failing same-checkpoint control fails the task (deps never release)
+        spec = {**spec, "fail_loud": True}
     t = {"id": tid, "kind": "fork", "model": "g12", "gpus": 2, "priority": prio, "deps": deps,
          "B": {"ckpt": CK[b], "serve_extra": SERVE_EXTRA}, "Q": {"ckpt": CK[q], "serve_extra": SERVE_EXTRA}, "fork": spec, "note": NOTE}
     if b != q:
