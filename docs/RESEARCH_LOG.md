@@ -10,6 +10,49 @@ Newest first.
 
 ---
 
+## W100am - GPT 10-04 rulings: no "re-roll" reframe; outcome classes with paired intervals; the W100aj null reading corrected; holdout no-op audit approved; abstract and main line rewritten (2026-10-04 07:50 PDT)
+
+**TL;DR**
+- **Ruling (GPT, 10-04).** The paper is not rewritten as "BF16 behaves like a re-roll and the continuation does not matter". The main line is fixed as three separately measured questions: how sensitive the outcome is to a local replacement, how much net value a specific upgrade mode brings, and how much more a higher-precision replacement provides than a same-precision one.
+- **W100aj reading corrected.**
+  - Per cell, off − E0 = P(k=2)[P(rev | k=2) − 1/3]. So 26.9 < 28.4 says only that strict reversals are rarer than under a uniform permutation of branch labels given k.
+  - It does not imply that the continuation controller is irrelevant (that needs Y_BB = Y_BQ and Y_QB = Y_QQ) or that I = 0. A success threshold on exactly additive action and continuation scores already produces 1000 (only BB succeeds).
+  - "Outcomes are mainly action-determined" holds only on the k = 2 subset (13.8% of W4 divergent states).
+  - The 0.17 is an exploratory one-way ICC estimate. The shared nonce (block) main effect is not separated, so the rest is not "noise".
+  - The holdout only-QQ enrichment is a diagnostic clue, not evidence of a design flaw.
+- **New analysis** `analysis/fork/outcome_classes.py` (EXPLORATORY). W4 pool, equal-weight cells, 5576 states, K = 20; intervals are fixed pool / new tasks (crossed):
+
+  | Quantity | Estimate | Fixed pool | New tasks |
+  |---|---|---|---|
+  | act_any (action changes the outcome under some continuation) | 34.9 | [33.6, 36.0] | [28.8, 41.0] |
+  | cont_any (continuation changes it under some action) | 29.6 | [28.5, 30.7] | [24.2, 35.3] |
+  | gap | +5.2 | [+4.4, +6.1] | [+3.1, +7.7] |
+  | joint rescue (1000) | 4.0 | [3.5, 4.5] | [2.7, 5.3] |
+  | rescue undone (BQ = 1, QQ = 0, BB = 0) | 4.8 | [4.1, 5.4] | [3.2, 6.5] |
+
+  - The gap equals action only (7.9) minus continuation only (2.7), so it comes from k = 2 states alone. The two shares overlap exactly on the off-diagonal states (26.9).
+  - Classes: unchanged 62.4, action only 7.9, continuation only 2.7, one arm differs 23.8, strict reversal 3.2.
+  - The gap is not general: telecom +0.1 [−2.1, +2.4]; q8 RTN-W3 −7.8. In the ALFWorld and BFCL KV4 cells Q is at the success floor.
+  - Count-weighted row totals reproduce the reviewer's 34.8 / 29.8.
+  - Verification (workflow wf_bcbcbdb2-acb, two independent agents): all 45 groups × statistics reproduce from counts16. The crossed intervals match an independent implementation, which reproduces ghf's crossed off-diagonal interval exactly. counts16 is identical to offdiag_null. The fixes they asked for (crossed interval, identity statement, labels) are in the second run.
+- **Holdout no-op audit.** Approved by GPT and running (wf_4e53f7e5-347).
+  - New script `analysis/fork/holdout_noop_audit.py`. It runs on dev first, then opens the holdout once, and outputs only consistency booleans and category counts.
+  - It checks whether the frozen 135/0 no-op count covers every state the fixed rule made eligible (noncomputable ones included), and whether the original QQ and the re-run arms use the same telecom official reward rule.
+  - The holdout stays out of the abstract until the audit is done.
+- **Paper.**
+  - Abstract: the reviewer's version (147 words; model named Mistral-Small-3.2-24B).
+  - Introduction: the three questions, retitled findings, Mistral added (model-card citation).
+  - §4: new paragraph "Which intervention changes the outcome". The 26.9% is now read as an operational count, not as evidence of an interaction mechanism.
+  - New Appendix `app:offdiag`: class table, label-permutation reference, k = 2 scope, independent-state p-values, ICC wording.
+  - §7: states the Bank U U2B state source. Mistral "first divergent action" → ordinary BF16-sourced states. Discussion ¶1 rewritten.
+  - Checks: check_numbers PASS (3893); tectonic 0 overfull, 0 undefined.
+  - **Length:** the main text now runs to p. 9 (Discussion p. 9, Limitations p. 10). The 8-page cut is the next step.
+- **HF (W100al).** The overflow org is ChangXWLab, not changquant.
+  - Backfill, one-step and qwen4b are uploaded and verified twice (229/229 data files sha-identical; nothing uses them). Their local copies are deleted, about 41 GiB, which frees on 10-05 at 12:00.
+  - llama3 part 2 waits for the 12:00 snapshot release.
+
+Evidence: `analysis/fork/out/outcome_classes_20261004T143614Z.{md,json}` (first run `..._20261004T141846Z`), `analysis/fork/out/offdiag_null_20261004T030949Z.{md,json}`, `paper/latex/sections/{abstract,introduction,results_r1,results_r4,discussion,appendix}.tex`, `docs/a6000/CKPT_OFFLOAD_20261003.md`, `/home/ziyangs/cloq_offload_20261003/{offload_cq_*.json,delete_cq_local_20261004.json}`.
+
 ## W100ak - Ops 21:00: q8 GO guard bug fixed; node008 simulator relieved for the k4v4 A7 re-run (user-approved stop of 2 coverage tasks) (2026-10-03 21:05 PDT)
 
 **TL;DR**
@@ -25,6 +68,8 @@ Newest first.
 Evidence: `/data/ziyangs/cloq_work/logs/go_q8.log`, `queue/deferred/a6k2_q4_kvq_int{3,4}.json`, `gpumon/node008.jsonl`, `analysis/fork/newmethod/tau2_recovery/q8_kivi_k2v2/f03/rr1/recovery_summary.json`.
 
 ## W100aj - Off-diagonal null (EXPLORATORY): never above chance; the structure is action-side; possible holdout replay gap (only-QQ enrichment in q8 holdout) needs authorised check (2026-10-03 20:25 PDT)
+
+> **Reading corrected by W100am (GPT 10-04).** Falling below E0 means only that strict reversals are rarer than under random labels; it does not mean the continuation is irrelevant. "Action-side" holds on the k = 2 subset only. The 17% is an exploratory one-way ICC estimate. The holdout enrichment is a diagnostic clue, not a design flaw.
 
 **TL;DR** (5a3b17c, `analysis/fork/offdiag_null.py`, `out/offdiag_null_20261004T030949Z.md`; post hoc). Reproduction is exact: the analyze_ghf unit digests match, and the per-cell shares 29.33 / 25.05 / 30.47 / 22.88 are reproduced. Results:
 

@@ -120,6 +120,46 @@ Table~\ref{tab:ghf-crossed} gives the new-task intervals for Table~\ref{tab:ghf}
 \input{sections/gen_patterns}
 \input{sections/gen_ghf_crossed}
 
+\section{Outcome Classes and a Label-Permutation Reference} % nocheck: heading
+\label{app:offdiag}
+
+Everything in this section is exploratory and post hoc. It uses the four outcomes of each divergent state in the order BB, BQ, QB, QQ; $k$ is the number of successful arms.
+
+\paragraph{Five classes.} The 16 patterns fall into five classes: unchanged (\texttt{0000}, \texttt{1111}); action only (\texttt{1100}, \texttt{0011}: the outcome follows the action under both continuations); continuation only (\texttt{1010}, \texttt{0101}); one arm differs from the other three ($k$ odd); strict reversal (\texttt{1001}, \texttt{0110}). % nocheck: pattern labels
+Changing the action changes the outcome under at least one continuation exactly in the action-only, one-arm and reversal classes, and changing the continuation exactly in the continuation-only, one-arm and reversal classes. Both change it exactly on the off-diagonal states, so the two shares overlap and must not be added, and their gap equals action only minus continuation only: it comes from $k=2$ states alone and restates the $k=2$ arrangement below on all divergent states. Two named patterns follow the upgrade modes: joint rescue (\texttt{1000}: only the joint upgrade succeeds) and rescue undone ($\YY{BQ}=1$, $\YY{QQ}=0$, $\YY{BB}=0$: B's action rescues under Q's continuation and B's takeover of the continuation undoes it). % nocheck: definitions
+Table~\ref{tab:classes} gives the shares. The action-side gap holds in the \tautwo{} retail/airline W4 and KV8 pools, in the same-precision fork and in BFCL, but not in telecom, and it turns negative in q8 RTN-W3; in ALFWorld and BFCL KV4 cells (not shown) Q almost never succeeds, so continuation-only states dominate there mechanically. % src: analysis/fork/out/outcome_classes_20261004T143614Z.md
+
+\begin{table*}[t]
+\centering\scriptsize
+\setlength{\tabcolsep}{3pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lrrrrrrrrrrr@{}}
+\toprule
+Group & states & action changes & continuation changes & gap (pp) & unch. & act.\ only & cont.\ only & one arm & rev. & joint resc. & resc.\ undone \\
+\midrule
+\tautwo{} W4 pool (4 cells) & 5576 & 34.9 [33.6, 36.0] & 29.6 [28.5, 30.7] & $+5.2$ [$+4.4$, $+6.1$] & 62.4 & 7.9 & 2.7 & 23.8 & 3.2 & 4.0 & 4.8 \\
+\tautwo{} KV8 pool & 1448 & 26.8 [25.0, 28.6] & 17.0 [14.9, 19.1] & $+9.8$ [$+8.0$, $+11.6$] & 71.5 & 11.6 & 1.7 & 14.1 & 1.2 & 3.0 & 2.3 \\
+Telecom q8 W4 pool & 957 & 22.1 [18.2, 25.9] & 21.9 [17.8, 26.1] & $+0.1$ [$-2.1$, $+2.4$] & 74.8 & 3.2 & 3.1 & 18.1 & 0.7 & 3.2 & 4.2 \\
+Same-precision W4 (Q$'$ as B) & 784 & 33.5 [29.8, 37.1] & 28.7 [24.8, 32.2] & $+4.9$ [$+2.9$, $+6.9$] & 64.0 & 7.4 & 2.5 & 22.5 & 3.6 & 2.3 & 5.8 \\
+BF16, same blocks & 784 & 35.1 [32.6, 37.4] & 27.8 [23.8, 31.6] & $+7.3$ [$+4.9$, $+9.7$] & 62.0 & 10.2 & 2.9 & 22.4 & 2.6 & 5.0 & 3.8 \\
+q8 RTN-W3$^s$ & 255 & 29.8 [28.1, 31.5] & 37.6 [26.0, 49.3] & $-7.8$ [$-18.1$, $+2.4$] & 61.6 & 0.8 & 8.6 & 28.6 & 0.4 & 12.6 & 0.8 \\
+BFCL W4 pool$^b$ & 2296 & 18.4 [16.4, 20.5] & 11.2 [9.8, 12.6] & $+7.2$ [$+5.8$, $+8.7$] & 80.8 & 8.1 & 0.8 & 9.8 & 0.5 & 2.4 & 1.4 \\
+ALFWorld q8 W4 pool$^b$ & 234 & 44.9 [38.3, 52.4] & 41.5 [34.3, 49.4] & $+3.4$ [$-1.8$, $+8.4$] & 50.0 & 8.5 & 5.1 & 33.4 & 3.0 & 9.4 & 5.5 \\
+\bottomrule
+\end{tabular}}
+\caption{Which intervention changes the outcome, in \% of divergent states (pools: equal weight per cell). ``Action changes'': the outcome changes with the action under at least one continuation; ``continuation changes'': with the continuation controller under at least one action; gap = action only $-$ continuation only. Fixed-pool 95\% intervals (block bootstrap; $^s$stress cell, $t$ over three blocks; $^b$one run per item, item bootstrap). Same-precision rows: Q$'$, a second GPTQ checkpoint of the same bit width, in the B role, and BF16 on the same blocks. New-task (crossed) intervals for the \tautwo{} W4 pool are in \S\ref{sec:value}.} % src: analysis/fork/out/outcome_classes_20261004T143614Z.md
+\label{tab:classes}
+\end{table*}
+
+\paragraph{A label-permutation reference.} Given $k$, assigning the four outcomes to the four arms uniformly at random gives the off-diagonal share $E_0=P(k\ \mathrm{odd})+P(k=2)/3$. In every cell the observed share minus $E_0$ equals $P(k=2)\,[P(\mathrm{reversal}\mid k=2)-1/3]$, so it can depart from $E_0$ only through strict reversals. In the W4 pool the share is 26.9\% against $E_0=28.4\%$ ($-1.4$ [$-1.8$, $-1.0$]\pp{}; KV8: 15.3 against 18.9\%), because reversals are 23.6\% [19.2, 28.3] of $k=2$ states instead of one third. % src: analysis/fork/out/offdiag_null_20261004T030949Z.md
+This shows only that strict reversals are rarer than under random labelling. It does not show that the continuation controller is irrelevant, which would require $\YY{BB}=\YY{BQ}$ and $\YY{QB}=\YY{QQ}$, or that the interaction is zero: the reference itself allows $I\neq0$ in most arrangements. Conversely, an off-diagonal state does not show a distinct interaction mechanism: if an arm succeeds when an action score plus a continuation score exceeds a threshold, exactly additive scores can make only BB succeed (\texttt{1000}), although they never produce a strict reversal. % nocheck: argument
+
+\paragraph{The $k=2$ arrangement.} At $k=2$ the two successes share the action in 56.4\% of W4 states and 80.3\% of KV8 states, against one third under random labelling. A statement that outcomes are mainly determined by the action holds only within this subset, which is 13.8\% (W4) and 14.5\% (KV8) of divergent states. % src: analysis/fork/out/offdiag_null_20261004T030949Z.json (groups.pool W4:all, pool KV8:all: P(act|k=2)); analysis/fork/out/outcome_classes_20261004T143614Z.md
+
+\paragraph{Tests that treat states as independent.} Ignoring task and block clustering, the reversal share at $k=2$ differs from one third (exact binomial $p=8.5\cdot10^{-9}$ for W4, $5.7\cdot10^{-17}$ for KV8), and the $k=2$ arrangement differs from uniform (Monte Carlo multinomial $p<10^{-4}$, the resolution of $R=20000$ draws). States of one task and one block are correlated, so these $p$-values overstate the evidence; the main text relies on block and crossed intervals. % src: analysis/fork/out/offdiag_null_20261004T030949Z.md
+
+\paragraph{Task share of variance.} An exploratory one-way ICC estimate with tasks as groups (moment estimator, not truncated) puts 0.17 [0.12, 0.22] of the state-level variance of $I$ at the task level in the W4 pool (task bootstrap) and 0.00 in the KV8 pool. It does not separate a shared nonce (block) main effect, so the remainder cannot be called random noise. % src: analysis/fork/out/offdiag_null_20261004T030949Z.md
+
 \section{Supplementary Four-Branch Analyses}
 \label{app:r2supp}
 
