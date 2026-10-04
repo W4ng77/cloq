@@ -797,7 +797,9 @@ def bank_u(spec, bases, user_base, servers, out):
 
 
 def bank_u_arms(spec, bases, user_base, servers, out):
-    """NEWMETHOD_PANEL_PROTOCOL A7 (W100ab): ONE controlled re-run of named failed arms of a finished bank_u block (U2B rows).
+    """NEWMETHOD_PANEL_PROTOCOL A7 (W100ab): ONE controlled re-run of named failed arms of a finished bank_u block (U2B rows;
+    spec subs widens it). W100ae: with spec reuse_rerun, also a reused arm ('reuse=XX' on an exact_agreement row) is measured,
+    for rows whose canonically equal actions render to different tokens (reuse audit); orig_Y / orig_arm_source are kept.
     The original block (bank_rows.jsonl, branches/, bank_summary.json under spec src_out) is only read. The state is rebuilt
     from the frozen manifest row and must equal the original row (state_id, history_sha, prompt_ids_sha, steps_left); the
     current actions are the original row's recorded a_B / a_Q, never regenerated; only the named arms run, once, under this
@@ -812,16 +814,19 @@ def bank_u_arms(spec, bases, user_base, servers, out):
     if (ROOT / spec["out"]).resolve() == src.resolve():
         raise SystemExit("bank_u_arms: out must differ from src_out (the original block is never written)")
     man = {r["state_key"]: r for r in json.loads(man_path.read_text())["rows"]
-           if r["model"] == spec["model"] and r["block"] == spec["block"] and r["sub"] == "U2B"}
+           if r["model"] == spec["model"] and r["block"] == spec["block"] and r["sub"] in spec.get("subs", ["U2B"])}
     orig = {x["state_key"]: x for x in map(json.loads, filter(str.strip, (src / "bank_rows.jsonl").read_text().splitlines()))}
     want: dict = {}
     for sk, arm in spec["arms"]:
         want.setdefault(sk, []).append(arm)
-    for sk, arms in want.items():  # refuse anything that is not a recorded failed arm of this block
+    for sk, arms in want.items():  # refuse anything that is not a recorded failed arm (or, with reuse_rerun, a reused arm)
         old = json.loads((src / "branches" / f"{sk}.json").read_text())
         for arm in arms:
-            if not (str(orig[sk]["arm_source"].get(arm, "")).startswith("error") and "error" in old.get(arm, {})):
-                raise SystemExit(f"bank_u_arms: {sk} {arm} is not a failed arm of {src}")
+            how = str(orig[sk]["arm_source"].get(arm, ""))
+            failed = how.startswith("error") and "error" in old.get(arm, {})
+            reused = spec.get("reuse_rerun") and how.startswith("reuse=") and orig[sk].get("exact_agreement") is True  # W100ae
+            if not (failed or reused):
+                raise SystemExit(f"bank_u_arms: {sk} {arm} is not a failed{' or reused' if spec.get('reuse_rerun') else ''} arm of {src}")
     blocks, sfx = {}, spec.get("tag_suffix", "rr1")
 
     def one(sk):
@@ -838,6 +843,9 @@ def bank_u_arms(spec, bases, user_base, servers, out):
         tagb = f"bu-{spec['cell']}-{sk}"
         a_q2, _ = F.shadow(st, bases["Q"], f"{tagb}-sQ-{sfx}")
         rec["shadow_identical"] = F.canon_msg(a_q2) == F.canon_msg(x["a_Q"])
+        rec["raw_identical_actions"] = json.dumps(x["a_B"], sort_keys=False) == json.dumps(x["a_Q"], sort_keys=False)  # reuse audit: key order counts
+        rec["orig_arm_source"] = {a: x["arm_source"].get(a) for a in want[sk]}
+        rec["orig_Y"] = {a: (x.get("Y") or {}).get(a) for a in want[sk]}
         st["a_B"], st["a_Q"] = {"message": x["a_B"]}, {"message": x["a_Q"]}
         res = {arm: F.run_branch(st, arm[0], arm[1], bases, user_base, f"{tagb}-{arm}-{sfx}") for arm in want[sk]}
         rec.update(Y={a: None if "error" in b else _y(r["domain"], b) for a, b in res.items()},
