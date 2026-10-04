@@ -10,6 +10,19 @@ Newest first.
 
 ---
 
+## W100ae - GPT 10-03 rulings executed: A7.E1 (spinquant f01 re-run), E1.5 corrected, E1.7 closed; reuse audit 1/4114; q4 wording (2026-10-03 18:00 PDT)
+
+**TL;DR**
+- **A7.E1** (861ebff, protocol sha 3bd7ef33). The 9 spinquant_w4a4 f01 arms (class other, user-simulator overload) are re-run once under the A7.3 conditions. The task names a simulator with no backlog (node001:8000) through a new optional task `user_base` field in worker.py. E1.5 is corrected: user-simulator timeouts attributed by elimination; 9 arms, not 2 (interim) and not 11. kivi_k2v2's 10 remain Q-server timeouts, cause not established. **E1.7 is closed:** S3 and the q8 scope of A6 are kept, as GPT confirmed earlier.
+- **A7 progress.** kivi_k2v2 f01: 1/1 arm completed at concurrency 1, no timeout, 802 s; shadow identical; budget ok. The other 4 tasks are running.
+- **Reuse audit** (f2ff9e7, CPU). 4,114 equality-based reuse rows (8,044 reused arms) across 86 output directories were rendered with each model's own template and tokenizer. **One row** is canonically equal but token-different: q4_awq_w4 f01 airline:30 t = 6, key order in `flights[0]`. Its QB=reuse=BB and BQ=reuse=QQ were never measured. GPTQ reference rows: 0 such rows (q4 290, q8 349, ref_d1 137). Token-score ids agree on 3,470 of 3,471 rows that are decidable.
+  - Queued `reusefix_ru1_q4_awq_w4_f01`: `bank_u_arms` with `reuse_rerun` (607a132) measures BQ and QB once, keeps orig_Y and orig_arm_source, and leaves the originals read-only.
+  - Downstream consumers are analyze_bank_u (out/bank_u_f01*, cited in appendix L278-330, appendix_moved L50-68, results_r1 L27) and analyze_token_mech (appendix_moved L73-77, results_r3 L13, appendix L317). A before/after diff follows the measurement.
+  - spinquant_w4a4 f03 has to be re-scanned once it lands.
+- **q4 wording** (34ffcc9; errata E-3): "semantically identical after parsing, but a different token sequence (key order)". The coincident block means are not zero variance. E-2's Bank U statement is limited to the checked GPTQ arms. The q4 quarantine and k = 2 stand.
+
+Evidence: `docs/insights/NEWMETHOD_PANEL_PROTOCOL.md` (A7.E1), `analysis/fork/reuse_audit/{REUSE_AUDIT.md, reuse_flagged.json}`, `docs/insights/COMMONSTATE_ERRATA.md` (E-3), `analysis/fork/newmethod/tau2_recovery/q8_kivi_k2v2/f01/rr1/recovery_summary.json`.
+
 ## W100ad - q4 common-state reading (k = 2, not resolved); the f01 quarantine was a canonical-equality artifact; m24 phase-2 audit passed (2026-10-03 17:40 PDT)
 
 **TL;DR**
