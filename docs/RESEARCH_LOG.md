@@ -10,6 +10,27 @@ Newest first.
 
 ---
 
+## W100an - Holdout QQ no-op acceptance audit (GPT-authorised): the frozen 135/0 covers every eligible state; all checks pass; no section-4 repair (2026-10-04 08:25 PDT)
+
+**TL;DR** (b2bdad5, `analysis/fork/holdout_noop_audit.py`, `out/holdout_noop_audit_20261004T152207Z.md`; run once on the holdout after a dev dry run and code review)
+- **Coverage.** 1224 search rows (36 cell-blocks × 34 tasks):
+  - 20 have no divergence and 2 are search-excluded (the known structural pair). 1202 states are divergent.
+  - The fixed rule (`fork_driver.py:1538`, sha256('noop|' + state_id), noop_frac 0.1) selects exactly 135, and these are exactly the QQ re-run set.
+  - Of the 135, 0 are missing, 0 errored, 0 were excluded before the check and 0 are noncomputable. No non-eligible state has a QQ.
+- **Checks.** All 13 are True on all 135: suffix, prompt ids, termination, outcome, budget counters, reward, db_match, official_reward, final env hash vs a strict tau2 replay of the original, replay vs live, init hash, history prefix, budget_check.
+  - The frozen count had used only the first five.
+- **Evaluation rule.** Y_QQ (original) and BB/BQ/QB all use official_reward == 1.0, produced by the same evaluator path (evaluate_simulation ALL_IGNORE_BASIS → basis_reward).
+  - The basis formula recomputed from stored reward_info reproduces official_reward for the original and every arm on all 1202 states.
+  - db_match and the raw reward are never used.
+- **Inputs.** Byte-identical to `holdout_confirm_20261002T012353Z`: same loader file digest, dirs, snapshot and prereg sha.
+- **Reading (GPT's rule).** The audit passes, so the pre-registered holdout result stands as reported. The only-QQ enrichment is not explained by an acceptance failure. As the reviewer noted, it is compatible with real upgrades that damage the original policy.
+- **Protocol note for GPT.** The 2 search-excluded units carry the "decision/trajectory count mismatch N vs 0" signature, which dev repaired by re-execution (W70; 11/11 reproduced). Prereg §4.3(b)'s "cannot be repaired" is therefore doubtful for them.
+  - Re-running them would be a post hoc sensitivity analysis, not a §4 repair. Not done.
+- **Leakage control.** Outputs carry only booleans, counts, closed-vocabulary labels and hashes, enforced by `leak()`, which uses sys.exit, not assert.
+  - The compliance reviewer blocked one version that emitted outcome-derived disagreement counts. It was fixed before the holdout run.
+
+Evidence: `analysis/fork/out/holdout_noop_audit_20261004T152207Z.{md,json}`, `..._DRYRUN_DEV_20261004T151852Z.{md,json}`, workflow wf_4e53f7e5-347 (author, two code reviews, fix, run, result review).
+
 ## W100am - GPT 10-04 rulings: no "re-roll" reframe; outcome classes with paired intervals; the W100aj null reading corrected; holdout no-op audit approved; abstract and main line rewritten (2026-10-04 07:50 PDT)
 
 **TL;DR**
