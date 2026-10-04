@@ -19,3 +19,15 @@ The earlier "8/9" compared this design's Y, the DB success, with SAMEPREC's τ²
   - `analysis/fork/commonstate_replay_check/{REPLAY_8of9.md, replay_8of9.json}`;
   - `analysis/fork/commonstate/q8/panel/d2_d1/f03/branches/79aa9e6a7ca99243.json`;
   - `analysis/fork/sameprec/q8_gptq_w4_d1_vs_d2/g1/branches/5859e02aecc11d39.json`.
+
+## E-2 (2026-10-03 17:35 PDT, W100ad): why q4 f01 was quarantined: a canonical-equality artifact, not non-determinism (no rule change)
+
+**TL;DR** One state removed q4 f01 under the frozen §4 block quarantine: 7411758182009c20 (airline 30, t = 6). It failed one implicit identity check in each panel task. Its d2 action has the same tokens as a_BF16 and a_d1 except for the key order inside `arguments.flights[0]`. `canon_msg` compares parsed arguments as dicts and ignores key order, so the implicit checks applied. The chat template renders the keys in their original order, so the next prompt differs: 24 permuted positions out of 7,016. The continuation therefore could not be a replay.
+
+- **Serving was deterministic.** No-op re-runs passed 15/15 and QQ re-runs 18/18. The d2 actions were identical on two GPUs at 85/85 states. Up to decision 7, every prompt, tool output and environment hash matched. A CPU tokenizer check reproduces both recorded hashes from the key swap.
+- **Acceptance across all common-state tasks (q4 + q8, gate + panel):**
+  - implicit + reference identity checks: 1,238/1,240 passed (99.84%, Wilson 95% [99.41, 99.96]). Both failures are this state, one per task;
+  - every implicit check with a token-identical action passed (869/869);
+  - d2 replay 1,578/1,578; cross-task a_d2 789/789.
+- **The rule worked as written.** §2 states the precondition as canonical equality, and §4 quarantines on any failure, so removing f01 was correct. The q4 reading (k = 2) stands as produced. Bank U reuse uses the same equality, but no canonically-equal yet token-different pair occurs there (0 of 776), so no reference reuse is affected.
+- **Evidence:** `analysis/fork/commonstate_replay_check/{Q4_F01_IDENTITY.md, q4_f01_identity.json}`; `analysis/fork/out/commonstate_q4_20261004T001159Z.md`.

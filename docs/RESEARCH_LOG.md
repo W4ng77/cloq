@@ -10,6 +10,28 @@ Newest first.
 
 ---
 
+## W100ad - q4 common-state reading (k = 2, not resolved); the f01 quarantine was a canonical-equality artifact; m24 phase-2 audit passed (2026-10-03 17:40 PDT)
+
+**TL;DR**
+- **q4 reading** (once-only, 17:12, `analysis/fork/out/commonstate_q4_20261004T001159Z.md`): f01 was quarantined, leaving k = 2 and 170 states.
+  - K(d1) = -1.2 pp (boot95 [-5.9, +3.5]); K(BF16) = -2.4 pp ([-6.5, +1.2]). Both are not resolved.
+  - The t interval has df 1. For K(d1) it collapses to a point, because the two block means are equal.
+- **Why f01 was quarantined.** At one state (7411758182009c20, airline 30, t = 6) the d2 action differed from a_BF16 and a_d1 only in JSON key order. `canon_msg` ignores key order, so the implicit checks applied, but the template renders the order, so the next prompt differed.
+  - Serving was deterministic.
+  - Identity checks overall: 1,238/1,240 passed (both failures are this state); 869/869 for token-identical actions.
+  - The frozen rule worked as written, and there is no rule change. The note is in COMMONSTATE_ERRATA E-2.
+- **Paper:** the q4 result is in §5 and the appendix, with the identity counts.
+- **m24 phase-2 audit** (b768dac, effect-blind):
+  - all 1,130 branch budgets recount exactly;
+  - rtn_w4 f04 is not admitted under A6 (JSONDecodeError airline:10, missing by the rule fixed at 08:56);
+  - primary M1 blocks are f01-f03, f05 and f06 (k = 5); strict k = 3; "A6 + parse" k = 6.
+- **Before GO m24:**
+  - 7 score tasks must finish;
+  - two independent reviews;
+  - E1.7 (S3 and the q8 scope of A6) needs confirmation.
+
+Evidence: `analysis/fork/commonstate_replay_check/{Q4_F01_IDENTITY.md, q4_f01_identity.json}`, `docs/insights/COMMONSTATE_ERRATA.md`, `analysis/fork/out/m24_budget_audit_phase2_20261004T0017Z.{md,json}`, `paper/latex/sections/{results_r2,appendix_moved}.tex`.
+
 ## W100ac - A7 forensics and re-runs queued; the D2.1 "8/9" replay mismatch was a metric mix-up (9/9 byte-identical); paper replay claim scoped (2026-10-03 17:05 PDT)
 
 **TL;DR**

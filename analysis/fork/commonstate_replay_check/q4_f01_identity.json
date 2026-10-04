@@ -1,0 +1,1097 @@
+{
+ "id": "q4_f01_identity",
+ "written": "2026-10-03 PDT (CPU only, read-only investigation)",
+ "tldr": "Block f01 of the q4 common-state reading was quarantined by ONE state, 7411758182009c20 (airline task 30, t = 6, source a6k2_q4_bfpair_f01), failing the implicit identity in both tasks. a_d2 is a different token sequence from a_BF16 and a_d1: the same 96 tokens except that the keys of the nested flights[0] object come in a different order (d2: flight_number, origin, destination, date; BF16 and d1: flight_number, date, origin, destination). canon_msg compares parsed arguments as Python dicts, which ignores key order, so a_d2 counted as canonically equal and the implicit checks applied. The chat template renders arguments in insertion order, so the t = 7 prompt differs in 24 of 7,016 token positions: 600f0c14 vs 211d510b. Re-tokenizing with the swapped order reproduces both recorded hashes exactly, and the continuations are therefore not replays. Every serving-side check at this state passed, so this is not numerical non-determinism. It is a comparison artifact: the precondition of the check is canonical equality, which is weaker than token or render identity. Under the frozen rule the quarantine was correctly triggered. Identity checks over all q4+q8 common-state tasks (gate + panel): implicit 869/871, reference re-runs 369/369, together 1,238/1,240 (99.84 %, Wilson 95 % [99.41, 99.96]). d2 replay 1,578/1,578, cross-task a_d2 789/789. Both failures are this one state.",
+ "state": {
+  "state_key": "7411758182009c20",
+  "design": "q4",
+  "block": "f01",
+  "sub": "U2B",
+  "domain": "airline",
+  "task_id": "30",
+  "t": 6,
+  "n_decisions": 8,
+  "source_run": "a6k2_q4_bfpair_f01",
+  "state_id": "cd60502b67ee8ae5",
+  "history_sha": "f89bcc6dea82f6f0bd82269aa99c3ca7197c60bfd4afee0a0770b881724940ee",
+  "prompt_ids_sha_h_t": "6da19502ad35b98b336611c5c689865ff4c94650d59b0b19414679c2b1fa311e",
+  "n_prompt_tokens_h_t": 6629,
+  "env_hash_init": "124e39a664b56402bcd09cb8a6a9cece6acb8462337c969799d5658e3250f263",
+  "steps_left": 187,
+  "ref_same_all_true": true,
+  "in_gate": false,
+  "in_D2_1_overlap_list": false
+ },
+ "failed_checks": [
+  {
+   "task": "cs_q4_d2_bf16_f01",
+   "file": "analysis/fork/commonstate/q4/panel/d2_bf16/f01/cs_rows.jsonl",
+   "arm": "QB (a_d2 forced, BF16 continuation)",
+   "check": "implicit_vs_orig (implicit A: a_d2 = a_BF16 canonical -> arm must equal the original suffix; fork_driver.noop_check)",
+   "failed_fields": [
+    "suffix_messages",
+    "prompt_token_ids"
+   ],
+   "first_prompt_mismatch": 1,
+   "passed_fields": [
+    "termination",
+    "reward",
+    "db_match",
+    "official_reward",
+    "budget_final",
+    "env_hash_final_vs_orig_replay",
+    "env_hash_replay_vs_live",
+    "env_hash_init",
+    "history_prefix"
+   ],
+   "n_prompts": 2,
+   "n_prompts_orig": 2,
+   "suffix_sha": {
+    "arm": "5255114bbb86674a4054e1b8bf78efe387e539465df6774d3ea4ab6b65fc1447",
+    "orig": "04645bb9e37f468e6685ef841a527f5a4903aee4090c5b1de8215a7cf5b0d80e"
+   }
+  },
+  {
+   "task": "cs_q4_d2_d1_f01",
+   "file": "analysis/fork/commonstate/q4/panel/d2_d1/f01/cs_rows.jsonl",
+   "arm": "BQ (a_d2 forced, d1 continuation)",
+   "check": "implicit_vs_refQQ (implicit B: a_d2 = a_d1 canonical -> arm must equal reference QQ; cloq.fork.branch_signature)",
+   "branch_signature_fields_differing": [
+    "suffix_sha",
+    "prompts[1]",
+    "completions[0]"
+   ],
+   "branch_signature_fields_equal": [
+    "prompts[0]",
+    "termination",
+    "reward",
+    "db_match",
+    "official_reward",
+    "env_hash_final",
+    "steps",
+    "errors"
+   ],
+   "suffix_sha": {
+    "arm": "048868017cece79b8cc4875c613a401a8d9da7919cc7b10cd3ddb38d9ff655e2",
+    "refQQ": "ba9a92d635c05bf7523376ddf42c9ba74b66258cc69cc8fd19ca0f1667447c6c"
+   },
+   "Y_ref": 0,
+   "Y_new": 0
+  }
+ ],
+ "cross_task_a_d2_identity_this_state": {
+  "ok": true,
+  "a_d2_completion_ids_sha_both_tasks": "6d8416af6ac0808f0dc232f3487248104af09e0bfb86b77bc6eadb86bbaa40a2",
+  "d2_replay_checks_both_tasks": {
+   "prompt_ok": true,
+   "replay_prompt_ok": true,
+   "replay_completion_ok": true,
+   "replay_action_ok": true
+  }
+ },
+ "agreement_flags_this_state": {
+  "vs_bf16": {
+   "exact": true,
+   "completion_ids_equal": false,
+   "category": "same"
+  },
+  "vs_d1": {
+   "exact": true,
+   "category": "same"
+  },
+  "bf16_vs_d1": {
+   "exact": true,
+   "category": "same"
+  }
+ },
+ "first_divergence": {
+  "where": "decision t+1 = 7, prompt token ids (the first prompt that contains the forced action rendered in history)",
+  "side": "none of agent-server numerics / user simulator / environment: the forced action a_d2 itself differs at the token level from a_BF16 and a_d1 (key order of arguments.flights[0]); canonical comparison hides it",
+  "a_BF16_and_a_d1_flights0_key_order": [
+   "flight_number",
+   "date",
+   "origin",
+   "destination"
+  ],
+  "a_d2_flights0_key_order": [
+   "flight_number",
+   "origin",
+   "destination",
+   "date"
+  ],
+  "decision_6_forced_prompt_equal_all": true,
+  "tool_message_t6_canonical_equal_all": true,
+  "prompt_t7": {
+   "orig_BF16": "211d510be400b5edf84ac19247343e572dbf6ac2b0970f0d0944d1bf946652df",
+   "refQQ": "211d510be400b5edf84ac19247343e572dbf6ac2b0970f0d0944d1bf946652df",
+   "armA": "600f0c14030fd1ac803e5e55e846e5f75e6e9293e0f42fe56dbbfc64ee65b073",
+   "armB": "600f0c14030fd1ac803e5e55e846e5f75e6e9293e0f42fe56dbbfc64ee65b073",
+   "n_tokens_all": 7016
+  }
+ },
+ "mechanism_reproduction": {
+  "method": "CPU, Qwen3-4B-Instruct-2507 tokenizer @ cdbee75f (local snapshot): decode the recorded BF16 t=7 prompt ids (roundtrip re-encode equal), swap the flights[0] key order inside the last <tool_call>, re-encode; and the same swap on the recorded BF16 t=6 completion ids",
+  "roundtrip_equal": true,
+  "reconstructed_t7_prompt_sha": "600f0c14030fd1ac803e5e55e846e5f75e6e9293e0f42fe56dbbfc64ee65b073",
+  "matches_recorded_arm_prompt": true,
+  "token_positions_differing": 24,
+  "token_diff_range": [
+   6679,
+   6704
+  ],
+  "reconstructed_a_d2_completion_sha": "6d8416af6ac0808f0dc232f3487248104af09e0bfb86b77bc6eadb86bbaa40a2",
+  "matches_recorded_a_d2": true,
+  "a_BF16_completion_sha": "d6e6dd397b5db605…",
+  "n_completion_tokens": {
+   "a_BF16": 96,
+   "a_d2": 96
+  }
+ },
+ "bf16_margin_at_key_order_token": {
+  "source": "runs/a6k2_q4_bfpair_f01/airline/decisions.jsonl task 30 decision 6",
+  "token_index": 50,
+  "token": "date",
+  "logit_margin_top1_top2": 0.25,
+  "logprob": -0.5759,
+  "note": "the smallest margin of the 96-token decision (min_margin 0.25); runner-up token id not recorded"
+ },
+ "decisions": [
+  {
+   "idx": 6,
+   "what": "forced action",
+   "orig_BB": "a_BF16 completion d6e6dd39…, 96 tok, tool_calls",
+   "refQQ": "a_d1 forced (render = a_BF16)",
+   "armA": "a_d2 forced (render differs)",
+   "armB": "a_d2 forced (render differs)",
+   "prompt_sha_all": "6da19502…"
+  },
+  {
+   "idx": "tool",
+   "what": "tool output update_reservation_flights",
+   "canonical_equal_all_four": true,
+   "canon_sha": "5c4f01f85392…"
+  },
+  {
+   "idx": 7,
+   "what": "agent text",
+   "orig_BB": {
+    "prompt": "211d510b…",
+    "completion": "cdf11590…",
+    "n_tok": 172,
+    "finish": "stop",
+    "refund_stated": "$207"
+   },
+   "armA_BF16": {
+    "prompt": "600f0c14…",
+    "completion": "62019699…",
+    "n_tok": 170,
+    "finish": "stop",
+    "refund_stated": "$207",
+    "server": "node007 GPU2 :8103"
+   },
+   "refQQ_d1": {
+    "prompt": "211d510b…",
+    "completion": "a5909e94…",
+    "n_tok": 173,
+    "finish": "stop",
+    "refund_stated": "$198"
+   },
+   "armB_d1": {
+    "prompt": "600f0c14…",
+    "completion": "9e0007aa…",
+    "n_tok": 174,
+    "finish": "stop",
+    "refund_stated": "$198",
+    "server": "node007 GPU7 :8208"
+   }
+  },
+  {
+   "idx": "user",
+   "what": "user simulator",
+   "orig_BB": "###STOP###",
+   "armA": "###STOP###",
+   "refQQ": "###STOP###",
+   "armB": "Thank you for the update. I appreciate the help. ###STOP###",
+   "note": "downstream of the decision-7 divergence; the user simulator is never called before it"
+  }
+ ],
+ "outcome_fields_all_equal": {
+  "termination": "user_stop",
+  "reward": 0.0,
+  "db_match": false,
+  "official_reward": 0.0,
+  "Y": 0,
+  "steps_final": 17,
+  "errors_final": 0,
+  "env_hash_final": "11f99847b8fb988ddafc840bfaf28d5077fe1c6c7039dfdc8f7fd649c7e120fd"
+ },
+ "serving": {
+  "armA": {
+   "task": "cs_q4_d2_bf16_f01",
+   "node": "node007",
+   "slurm_job": "49864",
+   "gpu": "2 (B and Q share it, gpu_util 0.44 each)",
+   "task_window_pdt": "2026-10-03 14:50:50 - 15:33:03",
+   "row_time_pdt": "15:22:09 - 15:22:39 (branch 30.3 s)",
+   "B_bf16": {
+    "port": 8103,
+    "pid": 536577,
+    "effective_config_sha": "efce043e33600dcc",
+    "canary": "c7343b60da095480",
+    "canary_ref_ok": true
+   },
+   "Q_d2": {
+    "port": 8203,
+    "pid": 536980,
+    "effective_config_sha": "861413c546616bf9",
+    "ckpt_sha256": "21c0934ebc352f27dff546001c5ffab549fda4b513649e0666eeb0e35dde5fce",
+    "canary": "a0fb6c52f4eb27fd",
+    "storage": "GPTQ W4 g128 act_order, fake-quant bf16"
+   },
+   "load_vllm_log": {
+    "B_running_15:21:30-15:22:40": "4-7",
+    "B_waiting": 0,
+    "Q_running": "0-2",
+    "Q_waiting": 0,
+    "task_max_running_B_Q": [
+     8,
+     4
+    ],
+    "task_max_waiting": 0
+   }
+  },
+  "armB": {
+   "task": "cs_q4_d2_d1_f01",
+   "node": "node007",
+   "slurm_job": "49864",
+   "gpu": "7 (B and Q share it, gpu_util 0.44 each)",
+   "task_window_pdt": "2026-10-03 15:33:09 - 16:12:12",
+   "row_time_pdt": "16:00:22 - 16:00:43 (branch 21.4 s)",
+   "B_d2": {
+    "port": 8108,
+    "pid": 543831,
+    "effective_config_sha": "861413c546616bf9",
+    "ckpt_sha256": "21c0934e…",
+    "canary": "a0fb6c52f4eb27fd"
+   },
+   "Q_d1": {
+    "port": 8208,
+    "pid": 544148,
+    "effective_config_sha": "29ba0176bfc6a4e0",
+    "ckpt_sha256": "e6c24bc24d5d2729f0ae2de9cbcee08d7291a829cdc3d1eb2d48fefd1a9605a1",
+    "canary": "a72b3da03409576e"
+   },
+   "load_vllm_log": {
+    "Q_running_15:59:50-16:00:50": "4-7",
+    "Q_waiting": 0,
+    "B_running": "0-3",
+    "B_waiting": 0,
+    "task_max_running_B_Q": [
+     6,
+     8
+    ],
+    "task_max_waiting": 0
+   }
+  },
+  "orig_BF16_source": {
+   "run": "a6k2_q4_bfpair_f01",
+   "node": "node003",
+   "slurm_job": "49694",
+   "started_utc": "2026-09-30T03:20:33Z",
+   "agent_api": "127.0.0.1:8006",
+   "vllm": "0.29.0+cu129",
+   "torch": "2.13.0+cu129",
+   "transformers": "5.17.0",
+   "tau2_commit": "2174a603",
+   "cloq_commit": "b7734750"
+  },
+  "ref_QQ": {
+   "task": "bank_u_q4_gptq_w4_d1_f01",
+   "node": "node001",
+   "slurm_job": "49727",
+   "gpu": "7",
+   "port": 8208,
+   "effective_config_sha": "29ba0176bfc6a4e0",
+   "ckpt_sha256": "e6c24bc2…",
+   "canary": "a72b3da03409576e",
+   "a_Q_time": "2026-10-01T01:22:24",
+   "d1_running_01:22-01:25": "0-2",
+   "waiting": 0
+  },
+  "numerics_env_all": {
+   "VLLM_BATCH_INVARIANT": "1",
+   "VLLM_USE_FLASHINFER_SAMPLER": "0",
+   "TORCHINDUCTOR_DETERMINISTIC": "1"
+  },
+  "vllm_new_arms": "0.29.0",
+  "tp": 1,
+  "user_simulator": "node-local 127.0.0.1:8000 served as 'user' (Qwen3-30B-A3B, TP=2); gpumon node007 port 8000 in armA window: run <=3, wait <=7 (3 samples); not involved before the first divergence",
+  "gpumon_note": "gpumon/node007.jsonl does not list the fork ports 81xx/82xx; their load is from the vLLM loggers lines in logs/tasks/cs_q4_d2_*_f01.{B,Q}.vllm.log"
+ },
+ "determinism_envelope": {
+  "source": "analysis/status/gpu_fill_20261003/rerun_premise_det.json",
+  "entry": "a6k2_det_q4",
+  "covers": "dense Qwen3 BF16 path, TP=1",
+  "result": "257/257 decisions bit-exact (prompt, completion, logprobs), running_max 16/15, waiting_max 0/1",
+  "inside": true,
+  "why": "BF16 and GPTQ fake-quant-bf16 checkpoints run the same dense BF16 kernels at TP=1 with the same numerics env and vLLM 0.29.0; fork servers ran with running <= 8 and waiting 0",
+  "in_task_evidence": "same tasks: BB no-ops 15/15 (A), QQ re-runs 18/18 (B), d2 replay 85/85 in each, a_d2 identical across GPU 2 and GPU 7 for 85/85"
+ },
+ "same_task_other_blocks": [
+  {
+   "block": "f02",
+   "state_key": "df711b812ccd1f91",
+   "t": 4,
+   "a_d2": "text, differs from a_BF16 and a_d1",
+   "implicit": "not applicable",
+   "ref_rerun_QQ": true,
+   "cross_task": true
+  },
+  {
+   "block": "f03",
+   "state_key": "b28e295c4a9ce066",
+   "t": 1,
+   "a_d2": "get_reservation_details, token-identical to a_BF16",
+   "implicit_vs_orig": true,
+   "implicit_vs_refQQ": true,
+   "cross_task": true
+  }
+ ],
+ "canonical_equal_but_render_different": {
+  "common_state_rows_checked": 1578,
+  "rows_found": 4,
+  "distinct_states": 1,
+  "state": "7411758182009c20",
+  "note": "in each task this state's a_d2 is canonical-equal to both a_BF16 and a_d1 but renders differently from both. Every other canonical match (vs_bf16 and vs_d1) is render-identical, and on vs_bf16 also completion-id identical.",
+  "implicit_checks_with_render_identical_action": [
+   869,
+   869
+  ],
+  "implicit_checks_with_render_different_action": [
+   0,
+   2
+  ],
+  "bank_u_reference_rows_audit": {
+   "q4_gptq_w4_d1_f01_f03": {
+    "rows": 570,
+    "exact": 290,
+    "render_diff": 0
+   },
+   "q8_gptq_w4_d1_f01_f03": {
+    "rows": 570,
+    "exact": 349,
+    "render_diff": 0
+   },
+   "commonstate_q8_ref_d1_f04_f06": {
+    "rows": 255,
+    "exact": 137,
+    "render_diff": 0
+   },
+   "note": "bank_u reuse (QB=BB, BQ=QQ) is also decided by canon_msg equality; no reference reuse is affected"
+  }
+ },
+ "acceptance_counts": {
+  "by_design_phase": {
+   "q4/gate": {
+    "implicit": [
+     18,
+     18
+    ],
+    "implicit_vs_orig": [
+     9,
+     9
+    ],
+    "implicit_vs_refQQ": [
+     9,
+     9
+    ],
+    "ref_noop_BB": [
+     12,
+     12
+    ],
+    "ref_rerun_QQ": [
+     12,
+     12
+    ],
+    "ref_rerun": [
+     24,
+     24
+    ],
+    "d2_replay": [
+     24,
+     24
+    ],
+    "cross_task_a_d2": [
+     12,
+     12
+    ],
+    "rows": 24,
+    "rows_with_identity_check": [
+     24,
+     24
+    ]
+   },
+   "q4/panel": {
+    "implicit": [
+     275,
+     277
+    ],
+    "implicit_vs_orig": [
+     139,
+     140
+    ],
+    "implicit_vs_refQQ": [
+     136,
+     137
+    ],
+    "ref_noop_BB": [
+     49,
+     49
+    ],
+    "ref_rerun_QQ": [
+     58,
+     58
+    ],
+    "ref_rerun": [
+     107,
+     107
+    ],
+    "d2_replay": [
+     510,
+     510
+    ],
+    "cross_task_a_d2": [
+     255,
+     255
+    ],
+    "rows": 510,
+    "rows_with_identity_check": [
+     327,
+     329
+    ]
+   },
+   "q8/gate": {
+    "implicit": [
+     9,
+     9
+    ],
+    "implicit_vs_orig": [
+     4,
+     4
+    ],
+    "implicit_vs_refQQ": [
+     5,
+     5
+    ],
+    "ref_noop_BB": [
+     12,
+     12
+    ],
+    "ref_rerun_QQ": [
+     12,
+     12
+    ],
+    "ref_rerun": [
+     24,
+     24
+    ],
+    "d2_replay": [
+     24,
+     24
+    ],
+    "cross_task_a_d2": [
+     12,
+     12
+    ],
+    "rows": 24,
+    "rows_with_identity_check": [
+     24,
+     24
+    ]
+   },
+   "q8/panel": {
+    "implicit": [
+     567,
+     567
+    ],
+    "implicit_vs_orig": [
+     292,
+     292
+    ],
+    "implicit_vs_refQQ": [
+     275,
+     275
+    ],
+    "ref_noop_BB": [
+     102,
+     102
+    ],
+    "ref_rerun_QQ": [
+     112,
+     112
+    ],
+    "ref_rerun": [
+     214,
+     214
+    ],
+    "d2_replay": [
+     1020,
+     1020
+    ],
+    "cross_task_a_d2": [
+     510,
+     510
+    ],
+    "rows": 1020,
+    "rows_with_identity_check": [
+     668,
+     668
+    ]
+   }
+  },
+  "totals": {
+   "implicit": [
+    869,
+    871
+   ],
+   "ref_rerun": [
+    369,
+    369
+   ],
+   "implicit_plus_ref": [
+    1238,
+    1240
+   ],
+   "implicit_plus_ref_rate": 0.99839,
+   "implicit_plus_ref_wilson95": [
+    0.9941,
+    0.9996
+   ],
+   "q4_implicit_plus_ref": [
+    424,
+    426
+   ],
+   "q8_implicit_plus_ref": [
+    814,
+    814
+   ],
+   "rows_with_any_identity_check": [
+    1043,
+    1045
+   ],
+   "d2_replay": [
+    1578,
+    1578
+   ],
+   "cross_task_a_d2": [
+    789,
+    789
+   ],
+   "gate_vs_panel_a_d2_same_state": [
+    48,
+    48
+   ],
+   "gate_vs_panel_Y_equal": [
+    48,
+    48
+   ],
+   "q8_ref_d1_bank_u_BB_noops_f04_f06": [
+    33,
+    33
+   ]
+  },
+  "failures": "both = state 7411758182009c20 (q4 f01), one per task"
+ },
+ "verdict": "Not numerical non-determinism and not a recording gap. At this state every serving and environment check reproduced. The prompt at h_t is equal. a_d2 replays bit-exactly on its own server and is identical across the two tasks (GPU 2 vs GPU 7). The tool output, the final DB hash, the budget and every outcome field equal the original and the reference. In the same tasks the BB no-ops (15/15) and the QQ re-runs (18/18) are byte-exact. The q4 BF16 TP=1 path is inside the verified 257/257 envelope at running <= 8 and waiting 0. The failure is a comparison artifact of the implicit-identity precondition. The d2 checkpoint deterministically emits the four keys of arguments.flights[0] in a different order. BF16's logit margin at that token is 0.25, the smallest of the decision, so this is a near-tie flipped by the d2 weights. canon_msg treats the reordered dict as equal, but the chat template renders insertion order, so the continuation conditions on a different prompt, 24 tokens permuted, and produces different text. The protocol states the precondition as canonical equality (§2 'Implicit identity'), so both checks applied and failed on suffix and prompt identity. §4 'Block quarantine' removes the block on any failed implicit identity. The quarantine of f01 was correctly triggered under the frozen rule.",
+ "evidence_paths": [
+  "analysis/fork/commonstate/q4/panel/d2_bf16/f01/{cs_rows.jsonl,cs_summary.json,branches/7411758182009c20.json,rows/7411758182009c20.json}",
+  "analysis/fork/commonstate/q4/panel/d2_d1/f01/{cs_rows.jsonl,cs_summary.json,branches/7411758182009c20.json,rows/7411758182009c20.json}",
+  "analysis/fork/bank_u/q4_gptq_w4_d1/f01/{bank_rows.jsonl,bank_summary.json,branches/7411758182009c20.json}",
+  "runs/a6k2_q4_bfpair_f01/airline/{decisions.jsonl,trajectory.jsonl,environment.json,config.json}",
+  "analysis/fork/out/commonstate_q4_20261004T001159Z.{md,json}",
+  "/data/ziyangs/cloq_work/queue/done/cs_q4_d2_bf16_f01.json",
+  "/data/ziyangs/cloq_work/queue/done/cs_q4_d2_d1_f01.json",
+  "/data/ziyangs/cloq_work/queue/done/bank_u_q4_gptq_w4_d1_f01.json",
+  "/data/ziyangs/cloq_work/logs/tasks/cs_q4_d2_{bf16,d1}_f01.{B,Q}.vllm.log",
+  "/data/ziyangs/cloq_work/gpumon/node007.jsonl",
+  "analysis/status/gpu_fill_20261003/rerun_premise_det.json",
+  "scripts/a6000/fork_driver.py (commonstate L1281-1453, noop_check L272, bank_u exact L729)",
+  "cloq/fork.py (canon_msg L68, run_branch L539, branch_signature L657)",
+  "cloq/context_policy.py (render_prompt_ids, template_view)",
+  "docs/insights/COMMONSTATE_SOURCES_PROTOCOL.md (§2 Implicit identity, §4 Block quarantine, A1.4)"
+ ],
+ "per_task_counts": [
+  {
+   "design": "q4",
+   "phase": "gate",
+   "type": "d2_bf16",
+   "block": null,
+   "path": "analysis/fork/commonstate/q4/gate/d2_bf16/cs_rows.jsonl",
+   "rows": 12,
+   "ok": 12,
+   "d2_replay_checked": 12,
+   "d2_replay_pass": 12,
+   "implicit_n": 9,
+   "implicit_vs_orig_n": 9,
+   "implicit_pass": 9,
+   "implicit_vs_orig_pass": 9,
+   "ref_n": 12,
+   "ref_noop_BB_n": 12,
+   "ref_pass": 12,
+   "ref_noop_BB_pass": 12,
+   "exact_vs_bf16": 9,
+   "exact_vs_d1": 9
+  },
+  {
+   "design": "q4",
+   "phase": "panel",
+   "type": "d2_bf16",
+   "block": "f01",
+   "path": "analysis/fork/commonstate/q4/panel/d2_bf16/f01/cs_rows.jsonl",
+   "rows": 85,
+   "ok": 85,
+   "d2_replay_checked": 85,
+   "d2_replay_pass": 85,
+   "implicit_n": 49,
+   "implicit_vs_orig_n": 49,
+   "implicit_pass": 48,
+   "implicit_vs_orig_pass": 48,
+   "exact_vs_bf16": 49,
+   "exact_vs_d1": 45,
+   "ref_n": 15,
+   "ref_noop_BB_n": 15,
+   "ref_pass": 15,
+   "ref_noop_BB_pass": 15,
+   "implicit_fail": 1,
+   "implicit_vs_orig_fail": 1,
+   "exact_vs_bf16_render_diff": 1,
+   "exact_vs_d1_render_diff": 1,
+   "exact_vs_bf16_completion_ids_diff": 1
+  },
+  {
+   "design": "q4",
+   "phase": "panel",
+   "type": "d2_bf16",
+   "block": "f02",
+   "path": "analysis/fork/commonstate/q4/panel/d2_bf16/f02/cs_rows.jsonl",
+   "rows": 85,
+   "ok": 85,
+   "d2_replay_checked": 85,
+   "d2_replay_pass": 85,
+   "implicit_n": 44,
+   "implicit_vs_orig_n": 44,
+   "implicit_pass": 44,
+   "implicit_vs_orig_pass": 44,
+   "exact_vs_bf16": 44,
+   "exact_vs_d1": 46,
+   "ref_n": 15,
+   "ref_noop_BB_n": 15,
+   "ref_pass": 15,
+   "ref_noop_BB_pass": 15
+  },
+  {
+   "design": "q4",
+   "phase": "panel",
+   "type": "d2_bf16",
+   "block": "f03",
+   "path": "analysis/fork/commonstate/q4/panel/d2_bf16/f03/cs_rows.jsonl",
+   "rows": 85,
+   "ok": 85,
+   "d2_replay_checked": 85,
+   "d2_replay_pass": 85,
+   "implicit_n": 47,
+   "implicit_vs_orig_n": 47,
+   "implicit_pass": 47,
+   "implicit_vs_orig_pass": 47,
+   "exact_vs_bf16": 47,
+   "exact_vs_d1": 46,
+   "ref_n": 19,
+   "ref_noop_BB_n": 19,
+   "ref_pass": 19,
+   "ref_noop_BB_pass": 19
+  },
+  {
+   "design": "q4",
+   "phase": "gate",
+   "type": "d2_d1",
+   "block": null,
+   "path": "analysis/fork/commonstate/q4/gate/d2_d1/cs_rows.jsonl",
+   "rows": 12,
+   "ok": 12,
+   "d2_replay_checked": 12,
+   "d2_replay_pass": 12,
+   "implicit_n": 9,
+   "implicit_vs_refQQ_n": 9,
+   "implicit_pass": 9,
+   "implicit_vs_refQQ_pass": 9,
+   "ref_n": 12,
+   "ref_rerun_QQ_n": 12,
+   "ref_pass": 12,
+   "ref_rerun_QQ_pass": 12,
+   "exact_vs_bf16": 9,
+   "exact_vs_d1": 9
+  },
+  {
+   "design": "q4",
+   "phase": "panel",
+   "type": "d2_d1",
+   "block": "f01",
+   "path": "analysis/fork/commonstate/q4/panel/d2_d1/f01/cs_rows.jsonl",
+   "rows": 85,
+   "ok": 85,
+   "d2_replay_checked": 85,
+   "d2_replay_pass": 85,
+   "implicit_n": 45,
+   "implicit_vs_refQQ_n": 45,
+   "implicit_pass": 44,
+   "implicit_vs_refQQ_pass": 44,
+   "exact_vs_bf16": 49,
+   "exact_vs_d1": 45,
+   "ref_n": 18,
+   "ref_rerun_QQ_n": 18,
+   "ref_pass": 18,
+   "ref_rerun_QQ_pass": 18,
+   "implicit_fail": 1,
+   "implicit_vs_refQQ_fail": 1,
+   "exact_vs_bf16_render_diff": 1,
+   "exact_vs_d1_render_diff": 1,
+   "exact_vs_bf16_completion_ids_diff": 1
+  },
+  {
+   "design": "q4",
+   "phase": "panel",
+   "type": "d2_d1",
+   "block": "f02",
+   "path": "analysis/fork/commonstate/q4/panel/d2_d1/f02/cs_rows.jsonl",
+   "rows": 85,
+   "ok": 85,
+   "d2_replay_checked": 85,
+   "d2_replay_pass": 85,
+   "implicit_n": 46,
+   "implicit_vs_refQQ_n": 46,
+   "implicit_pass": 46,
+   "implicit_vs_refQQ_pass": 46,
+   "exact_vs_bf16": 44,
+   "exact_vs_d1": 46,
+   "ref_n": 22,
+   "ref_rerun_QQ_n": 22,
+   "ref_pass": 22,
+   "ref_rerun_QQ_pass": 22
+  },
+  {
+   "design": "q4",
+   "phase": "panel",
+   "type": "d2_d1",
+   "block": "f03",
+   "path": "analysis/fork/commonstate/q4/panel/d2_d1/f03/cs_rows.jsonl",
+   "rows": 85,
+   "ok": 85,
+   "d2_replay_checked": 85,
+   "d2_replay_pass": 85,
+   "implicit_n": 46,
+   "implicit_vs_refQQ_n": 46,
+   "implicit_pass": 46,
+   "implicit_vs_refQQ_pass": 46,
+   "exact_vs_bf16": 47,
+   "exact_vs_d1": 46,
+   "ref_n": 18,
+   "ref_rerun_QQ_n": 18,
+   "ref_pass": 18,
+   "ref_rerun_QQ_pass": 18
+  },
+  {
+   "design": "q8",
+   "phase": "gate",
+   "type": "d2_bf16",
+   "block": null,
+   "path": "analysis/fork/commonstate/q8/gate/d2_bf16/cs_rows.jsonl",
+   "rows": 12,
+   "ok": 12,
+   "d2_replay_checked": 12,
+   "d2_replay_pass": 12,
+   "ref_n": 12,
+   "ref_noop_BB_n": 12,
+   "ref_pass": 12,
+   "ref_noop_BB_pass": 12,
+   "implicit_n": 4,
+   "implicit_vs_orig_n": 4,
+   "implicit_pass": 4,
+   "implicit_vs_orig_pass": 4,
+   "exact_vs_bf16": 4,
+   "exact_vs_d1": 5
+  },
+  {
+   "design": "q8",
+   "phase": "panel",
+   "type": "d2_bf16",
+   "block": "f01",
+   "path": "analysis/fork/commonstate/q8/panel/d2_bf16/f01/cs_rows.jsonl",
+   "rows": 85,
+   "ok": 85,
+   "d2_replay_checked": 85,
+   "d2_replay_pass": 85,
+   "implicit_n": 55,
+   "implicit_vs_orig_n": 55,
+   "implicit_pass": 55,
+   "implicit_vs_orig_pass": 55,
+   "ref_n": 22,
+   "ref_noop_BB_n": 22,
+   "ref_pass": 22,
+   "ref_noop_BB_pass": 22,
+   "exact_vs_bf16": 55,
+   "exact_vs_d1": 53
+  },
+  {
+   "design": "q8",
+   "phase": "panel",
+   "type": "d2_bf16",
+   "block": "f02",
+   "path": "analysis/fork/commonstate/q8/panel/d2_bf16/f02/cs_rows.jsonl",
+   "rows": 85,
+   "ok": 85,
+   "d2_replay_checked": 85,
+   "d2_replay_pass": 85,
+   "implicit_n": 48,
+   "implicit_vs_orig_n": 48,
+   "implicit_pass": 48,
+   "implicit_vs_orig_pass": 48,
+   "exact_vs_bf16": 48,
+   "exact_vs_d1": 48,
+   "ref_n": 15,
+   "ref_noop_BB_n": 15,
+   "ref_pass": 15,
+   "ref_noop_BB_pass": 15
+  },
+  {
+   "design": "q8",
+   "phase": "panel",
+   "type": "d2_bf16",
+   "block": "f03",
+   "path": "analysis/fork/commonstate/q8/panel/d2_bf16/f03/cs_rows.jsonl",
+   "rows": 85,
+   "ok": 85,
+   "d2_replay_checked": 85,
+   "d2_replay_pass": 85,
+   "implicit_n": 42,
+   "implicit_vs_orig_n": 42,
+   "implicit_pass": 42,
+   "implicit_vs_orig_pass": 42,
+   "exact_vs_bf16": 42,
+   "exact_vs_d1": 41,
+   "ref_n": 23,
+   "ref_noop_BB_n": 23,
+   "ref_pass": 23,
+   "ref_noop_BB_pass": 23
+  },
+  {
+   "design": "q8",
+   "phase": "panel",
+   "type": "d2_bf16",
+   "block": "f04",
+   "path": "analysis/fork/commonstate/q8/panel/d2_bf16/f04/cs_rows.jsonl",
+   "rows": 85,
+   "ok": 85,
+   "d2_replay_checked": 85,
+   "d2_replay_pass": 85,
+   "implicit_n": 47,
+   "implicit_vs_orig_n": 47,
+   "implicit_pass": 47,
+   "implicit_vs_orig_pass": 47,
+   "exact_vs_bf16": 47,
+   "exact_vs_d1": 47,
+   "ref_n": 13,
+   "ref_noop_BB_n": 13,
+   "ref_pass": 13,
+   "ref_noop_BB_pass": 13
+  },
+  {
+   "design": "q8",
+   "phase": "panel",
+   "type": "d2_bf16",
+   "block": "f05",
+   "path": "analysis/fork/commonstate/q8/panel/d2_bf16/f05/cs_rows.jsonl",
+   "rows": 85,
+   "ok": 85,
+   "d2_replay_checked": 85,
+   "d2_replay_pass": 85,
+   "implicit_n": 52,
+   "implicit_vs_orig_n": 52,
+   "implicit_pass": 52,
+   "implicit_vs_orig_pass": 52,
+   "exact_vs_bf16": 52,
+   "exact_vs_d1": 44,
+   "ref_n": 11,
+   "ref_noop_BB_n": 11,
+   "ref_pass": 11,
+   "ref_noop_BB_pass": 11
+  },
+  {
+   "design": "q8",
+   "phase": "panel",
+   "type": "d2_bf16",
+   "block": "f06",
+   "path": "analysis/fork/commonstate/q8/panel/d2_bf16/f06/cs_rows.jsonl",
+   "rows": 85,
+   "ok": 85,
+   "d2_replay_checked": 85,
+   "d2_replay_pass": 85,
+   "implicit_n": 48,
+   "implicit_vs_orig_n": 48,
+   "implicit_pass": 48,
+   "implicit_vs_orig_pass": 48,
+   "exact_vs_bf16": 48,
+   "exact_vs_d1": 42,
+   "ref_n": 18,
+   "ref_noop_BB_n": 18,
+   "ref_pass": 18,
+   "ref_noop_BB_pass": 18
+  },
+  {
+   "design": "q8",
+   "phase": "gate",
+   "type": "d2_d1",
+   "block": null,
+   "path": "analysis/fork/commonstate/q8/gate/d2_d1/cs_rows.jsonl",
+   "rows": 12,
+   "ok": 12,
+   "d2_replay_checked": 12,
+   "d2_replay_pass": 12,
+   "ref_n": 12,
+   "ref_rerun_QQ_n": 12,
+   "ref_pass": 12,
+   "ref_rerun_QQ_pass": 12,
+   "implicit_n": 5,
+   "implicit_vs_refQQ_n": 5,
+   "implicit_pass": 5,
+   "implicit_vs_refQQ_pass": 5,
+   "exact_vs_bf16": 4,
+   "exact_vs_d1": 5
+  },
+  {
+   "design": "q8",
+   "phase": "panel",
+   "type": "d2_d1",
+   "block": "f01",
+   "path": "analysis/fork/commonstate/q8/panel/d2_d1/f01/cs_rows.jsonl",
+   "rows": 85,
+   "ok": 85,
+   "d2_replay_checked": 85,
+   "d2_replay_pass": 85,
+   "ref_n": 19,
+   "ref_rerun_QQ_n": 19,
+   "ref_pass": 19,
+   "ref_rerun_QQ_pass": 19,
+   "exact_vs_bf16": 55,
+   "implicit_n": 53,
+   "implicit_vs_refQQ_n": 53,
+   "implicit_pass": 53,
+   "implicit_vs_refQQ_pass": 53,
+   "exact_vs_d1": 53
+  },
+  {
+   "design": "q8",
+   "phase": "panel",
+   "type": "d2_d1",
+   "block": "f02",
+   "path": "analysis/fork/commonstate/q8/panel/d2_d1/f02/cs_rows.jsonl",
+   "rows": 85,
+   "ok": 85,
+   "d2_replay_checked": 85,
+   "d2_replay_pass": 85,
+   "ref_n": 18,
+   "ref_rerun_QQ_n": 18,
+   "ref_pass": 18,
+   "ref_rerun_QQ_pass": 18,
+   "exact_vs_bf16": 48,
+   "implicit_n": 48,
+   "implicit_vs_refQQ_n": 48,
+   "implicit_pass": 48,
+   "implicit_vs_refQQ_pass": 48,
+   "exact_vs_d1": 48
+  },
+  {
+   "design": "q8",
+   "phase": "panel",
+   "type": "d2_d1",
+   "block": "f03",
+   "path": "analysis/fork/commonstate/q8/panel/d2_d1/f03/cs_rows.jsonl",
+   "rows": 85,
+   "ok": 85,
+   "d2_replay_checked": 85,
+   "d2_replay_pass": 85,
+   "implicit_n": 41,
+   "implicit_vs_refQQ_n": 41,
+   "implicit_pass": 41,
+   "implicit_vs_refQQ_pass": 41,
+   "exact_vs_bf16": 42,
+   "exact_vs_d1": 41,
+   "ref_n": 19,
+   "ref_rerun_QQ_n": 19,
+   "ref_pass": 19,
+   "ref_rerun_QQ_pass": 19
+  },
+  {
+   "design": "q8",
+   "phase": "panel",
+   "type": "d2_d1",
+   "block": "f04",
+   "path": "analysis/fork/commonstate/q8/panel/d2_d1/f04/cs_rows.jsonl",
+   "rows": 85,
+   "ok": 85,
+   "d2_replay_checked": 85,
+   "d2_replay_pass": 85,
+   "ref_n": 19,
+   "ref_rerun_QQ_n": 19,
+   "ref_pass": 19,
+   "ref_rerun_QQ_pass": 19,
+   "implicit_n": 47,
+   "implicit_vs_refQQ_n": 47,
+   "implicit_pass": 47,
+   "implicit_vs_refQQ_pass": 47,
+   "exact_vs_bf16": 47,
+   "exact_vs_d1": 47
+  },
+  {
+   "design": "q8",
+   "phase": "panel",
+   "type": "d2_d1",
+   "block": "f05",
+   "path": "analysis/fork/commonstate/q8/panel/d2_d1/f05/cs_rows.jsonl",
+   "rows": 85,
+   "ok": 85,
+   "d2_replay_checked": 85,
+   "d2_replay_pass": 85,
+   "ref_n": 21,
+   "ref_rerun_QQ_n": 21,
+   "ref_pass": 21,
+   "ref_rerun_QQ_pass": 21,
+   "implicit_n": 44,
+   "implicit_vs_refQQ_n": 44,
+   "implicit_pass": 44,
+   "implicit_vs_refQQ_pass": 44,
+   "exact_vs_bf16": 52,
+   "exact_vs_d1": 44
+  },
+  {
+   "design": "q8",
+   "phase": "panel",
+   "type": "d2_d1",
+   "block": "f06",
+   "path": "analysis/fork/commonstate/q8/panel/d2_d1/f06/cs_rows.jsonl",
+   "rows": 85,
+   "ok": 85,
+   "d2_replay_checked": 85,
+   "d2_replay_pass": 85,
+   "implicit_n": 42,
+   "implicit_vs_refQQ_n": 42,
+   "implicit_pass": 42,
+   "implicit_vs_refQQ_pass": 42,
+   "ref_n": 16,
+   "ref_rerun_QQ_n": 16,
+   "ref_pass": 16,
+   "ref_rerun_QQ_pass": 16,
+   "exact_vs_bf16": 48,
+   "exact_vs_d1": 42
+  }
+ ]
+}
