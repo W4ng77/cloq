@@ -1,8 +1,7 @@
-# A6000 queue snapshot (2026-10-04 07:49:17 PDT)
+# A6000 queue snapshot (2026-10-04 08:19:21 PDT)
 
-## running (12)
+## running (11)
 
-- `a6k2_q32_rtn_w3_rro`
 - `a6k2_q4_gauss2_s1_redo_rro`
 - `a6k2_q4_gauss3_s1_redo`
 - `a6k2_q4_gauss3_s2_redo`
@@ -15,7 +14,7 @@
 - `pert_q4_rtn_w3_resid_a2_q345`
 - `pert_q8_rtn_w3_resid_a2_q345`
 
-## failed (17)
+## failed (18)
 
 - `a6k2_q14_gauss3_s1` · RuntimeError('run a6k2_q14_gauss3_s1/airline: 2 infrastructure_error episodes (outage)')
 - `a6k2_q14_gauss3_s2` · RuntimeError('run a6k2_q14_gauss3_s2/airline: 3 infrastructure_error episodes (outage)')
@@ -23,6 +22,7 @@
 - `a6k2_q32_gauss3_s1` · RuntimeError('run a6k2_q32_gauss3_s1/airline: 2 infrastructure_error episodes (outage)')
 - `a6k2_q32_gauss3_s2` · RuntimeError('run a6k2_q32_gauss3_s2/retail: 3 infrastructure_error episodes (outage)')
 - `a6k2_q32_rtn_w3` · RuntimeError('run a6k2_q32_rtn_w3_q2/airline: 12 infrastructure_error episodes (outage)')
+- `a6k2_q32_rtn_w3_rro` · RuntimeError('run a6k2_q32_rtn_w3_q1/retail: 18 infrastructure_error episodes (outage)')
 - `a6k2_q4_gauss2_s1_redo` · RuntimeError('run a6k2_q4_gauss2_s1/retail: 1 infrastructure_error episodes (outage)')
 - `a6k2_q8_gauss2_s1` · RuntimeError('run a6k2_q8_gauss2_s1/airline: 1 infrastructure_error episodes (outage)')
 - `a6k2_q8_kvq_int4` · RuntimeError('run a6k2_q8_kvq_int4_q2/airline: 8 infrastructure_error episodes (outage)')
