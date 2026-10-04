@@ -10,6 +10,22 @@ Newest first.
 
 ---
 
+## W100aj - Off-diagonal null (EXPLORATORY): never above chance; the structure is action-side; possible holdout replay gap (only-QQ enrichment in q8 holdout) needs authorised check (2026-10-03 20:25 PDT)
+
+**TL;DR** (5a3b17c, `analysis/fork/offdiag_null.py`, `out/offdiag_null_20261004T030949Z.md`; post hoc). Reproduction is exact: the analyze_ghf unit digests match, and the per-cell shares 29.33 / 25.05 / 30.47 / 22.88 are reproduced. Results:
+
+- **The off-diagonal share is never above chance.** Against the exchangeable-branch null E0 (k kept), 30 of 45 groups are below it and none above. W4 pool: 26.9 vs 28.4, -1.4 [-1.8, -1.0] pp. KV8: 15.3 vs 18.9, -3.6 [-4.5, -2.8]. The same holds for BFCL, ALFWorld, telecom dev and the same-precision fork.
+- **The off-diagonal share is mostly arithmetic.** obs - E0 = P(k=2)(P(rev|k=2) - 1/3). Odd-k states contribute 23.8 of the 26.9 points. Strict reversals are 23.6% [19.2, 28.3] of k=2 states, against 33% by chance.
+- **The structure is on the action side.** In k=2 states, the two successes share the action 56% of the time (W4) and 80% (KV8), against 33% by chance.
+  - A reproducible task component accounts for 17% [12, 22] of var(I) in W4 and 0 in KV8.
+  - In the q8 W4 pool, "only BB succeeds" is enriched (142/414, p < 1e-4).
+- **Possible design flaw in the holdout.** In q8 holdout k=1 states, "only QQ succeeds" is 30/60 and 40/86, against 25% by chance (count test p < 1e-4; task clustering ignored, counts only). QQ is the one arm taken from the original episode rather than re-executed.
+  - q4 holdout is 23.4% (normal); telecom dev q8 is 31.0% [24.9, 35.4]; dev W4 is 23.4%.
+  - If the original episodes and the re-executed branches differ systematically in the q8 holdout, the pre-registered holdout G_all (-4.57) is biased negative.
+  - The holdout outputs in analysis/fork/out hold no per-task no-op records. Checking QQ no-op replay agreement requires reading acceptance metadata under analysis/fork/holdout/, which the standing rule forbids outside the prereg scripts. **The user/GPT must authorise it before the holdout appears in the abstract.**
+
+Evidence: `analysis/fork/out/offdiag_null_20261004T030949Z.{md,json}` (holdout_counts_only from `out/holdout_r2_posthoc_20261002T024414Z.json`).
+
 ## W100ai - q8 acceptance: reviews A and B give a conditional GO (no blocking issue); pre-read fixes A7.E2; automatic GO once A7 finishes (2026-10-03 20:15 PDT)
 
 **TL;DR** Both independent q8 reviews give a conditional GO after the two running A7 tasks finish:
