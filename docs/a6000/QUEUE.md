@@ -1,6 +1,6 @@
-# A6000 queue snapshot (2026-10-04 12:21:38 PDT)
+# A6000 queue snapshot (2026-10-04 12:52:06 PDT)
 
-## running (12)
+## running (10)
 
 - `a6k2_q4_gauss3_s1_redo`
 - `a6k2_q4_gauss3_s2_redo`
@@ -12,8 +12,6 @@
 - `a6k2_q8_kvq_int4_rro`
 - `pert_q4_rtn_w3_resid_a2_q345`
 - `pert_q8_rtn_w3_resid_a2_q345`
-- `pivot_q8_rtn_w3_early__middle`
-- `pivot_q8_rtn_w3_rand_attn_s1__rand_mlp_s1`
 
 ## failed (18)
 
@@ -36,7 +34,7 @@
 - `pert_q4_rtn_w3_restore_rand_mlp_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_mlp_s3_q3/retail: 1 infrastructure_error episodes (outage)')
 - `pert_q8_gptq_w3_resid_a2_q345` · RuntimeError('run a6k2_pert_q8_gptq_w3_resid_a2_q4/airline: 9 infrastructure_error episodes (outage)')
 
-## done (1347)
+## done (1349)
 
 - `a6k2_det_q14_x1_awq_a` · 11 min · node005
 - `a6k2_det_q14_x1_awq_b` · 54 min · node004
