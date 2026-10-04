@@ -1,22 +1,20 @@
-# A6000 queue snapshot (2026-10-04 03:48:50 PDT)
+# A6000 queue snapshot (2026-10-04 04:18:53 PDT)
 
-## running (13)
+## running (11)
 
 - `a6k2_q14_kvq_int3_rro`
-- `a6k2_q32_gauss3_s1_rro`
 - `a6k2_q32_rtn_w3_rro`
 - `a6k2_q4_gauss3_s1_redo`
 - `a6k2_q4_gauss3_s2_redo`
 - `a6k2_q8_gauss3_s1`
 - `a6k2_q8_gauss3_s2_redo`
 - `a6k2_q8_kvq_int3`
-- `a6k2_q8_kvq_int4`
 - `fork_repair_q4_rtn_w3`
 - `pert_q4_rtn_w3_resid_a2_q345`
 - `pert_q8_gptq_w3_resid_a2_q345`
 - `pert_q8_rtn_w3_resid_a2_q345`
 
-## failed (15)
+## failed (16)
 
 - `a6k2_q14_gauss3_s1` · RuntimeError('run a6k2_q14_gauss3_s1/airline: 2 infrastructure_error episodes (outage)')
 - `a6k2_q14_gauss3_s2` · RuntimeError('run a6k2_q14_gauss3_s2/airline: 3 infrastructure_error episodes (outage)')
@@ -26,6 +24,7 @@
 - `a6k2_q32_rtn_w3` · RuntimeError('run a6k2_q32_rtn_w3_q2/airline: 12 infrastructure_error episodes (outage)')
 - `a6k2_q4_gauss2_s1_redo` · RuntimeError('run a6k2_q4_gauss2_s1/retail: 1 infrastructure_error episodes (outage)')
 - `a6k2_q8_gauss2_s1` · RuntimeError('run a6k2_q8_gauss2_s1/airline: 1 infrastructure_error episodes (outage)')
+- `a6k2_q8_kvq_int4` · RuntimeError('run a6k2_q8_kvq_int4_q2/airline: 8 infrastructure_error episodes (outage)')
 - `a6k2_smoke_l8` · RuntimeError('run a6k2_smoke_l8/retail: 5 infrastructure_error episodes')
 - `a6k2_smoke_m24` · RuntimeError('vLLM agent server exited during startup')
 - `ext_l8_gptq_w4_d1_bfcl_smoke_l8g_sc` · RuntimeError("checkpoint build failed ({'kind': 'gptq', 'wbits': 4, 'calib': 'manifests/a6k2/l8/calib_fp_traj_c1.json'}) rc=1")
@@ -34,7 +33,7 @@
 - `pert_q4_rtn_w3_restore_rand_attn_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_attn_s3_q3/airline: 1 infrastructure_error episodes (outage)')
 - `pert_q4_rtn_w3_restore_rand_mlp_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_mlp_s3_q3/retail: 1 infrastructure_error episodes (outage)')
 
-## done (1343)
+## done (1344)
 
 - `a6k2_det_q14_x1_awq_a` · 11 min · node005
 - `a6k2_det_q14_x1_awq_b` · 54 min · node004
