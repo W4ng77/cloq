@@ -10,6 +10,18 @@ Newest first.
 
 ---
 
+## W100af - Disk purge before the 00:00 snapshot (2026-10-03 19:00 PDT)
+
+**TL;DR** Deleted 83 G of regenerable data at 18:57 (usedds 565 G -> 482 G):
+- pip caches: 2.5 + 3.2 G;
+- naacl2027 pip and conda caches: 3.3 + 1.2 G;
+- the HF original of Mistral-Small-3.2-24B: 45 G. m24 is served and quantized from `ckpt_cache/m24_textonly_v1` through models.json `src_path`;
+- three unused ckpt_cache base builds (q4_gptq x2, q8_awq): 29.8 G.
+
+Deleted data was referenced by the 10-03 00:00 and 12:00 snapshots, so it frees at **10-05 00:00**. Data deleted after tonight's 00:00 snapshot would free only at 10-05 12:00 or later. A one-shot `tools/midnight_purge.sh` therefore runs at 23:40. It deletes Qwen3-14B (28 G), Qwen3-32B (62 G), m24_textonly_v1 (44 G) and the remaining 3 base builds (30.7 G) only if no running, todo or parked task needs them; otherwise it keeps them and logs why. Untouched: runs/, analysis/, queue state, sotaquant (152 G) and naacl2027 envs/HF (other projects, pending the user's decision).
+
+Evidence: `/data/ziyangs/cloq_work/logs/purge_20261003.log`, `/data/ziyangs/cloq_work/tools/midnight_purge.sh`.
+
 ## W100ae - GPT 10-03 rulings executed: A7.E1 (spinquant f01 re-run), E1.5 corrected, E1.7 closed; reuse audit 1/4114; q4 wording (2026-10-03 18:00 PDT)
 
 **TL;DR**
