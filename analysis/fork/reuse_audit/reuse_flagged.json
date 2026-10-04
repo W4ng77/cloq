@@ -1,0 +1,172 @@
+[
+ {
+  "directory": "analysis/fork/bank_u/q4_awq_w4/f01",
+  "file": "analysis/fork/bank_u/q4_awq_w4/f01/bank_rows.jsonl",
+  "producer_mode": "bank_u (scripts/a6000/fork_driver.py bank_u, exact at L729, reuse at L733-750)",
+  "bank_task_id": "bank_u_q4_awq_w4_f01",
+  "bank_task_json": "/data/ziyangs/cloq_work/queue/done/bank_u_q4_awq_w4_f01.json",
+  "state_key": "7411758182009c20",
+  "state_id": "cd60502b67ee8ae5",
+  "sub": "U2B",
+  "model": "q4",
+  "model_hf": "Qwen/Qwen3-4B-Instruct-2507@cdbee75f17c01a7cc42f958dc650907174af0554",
+  "cell": "awq_w4",
+  "block": "f01",
+  "domain": "airline",
+  "task_id": "30",
+  "task": "airline:30",
+  "t": 6,
+  "n_decisions": 8,
+  "source_run": "a6k2_q4_bfpair_f01",
+  "exact_agreement": true,
+  "agreement_category": "same",
+  "reused_arms": {
+   "QB": "reuse=BB",
+   "BQ": "reuse=QQ"
+  },
+  "reused_arms_text": "QB=reuse=BB, BQ=reuse=QQ",
+  "arm_source": {
+   "QQ": "run",
+   "BB": "orig",
+   "QB": "reuse=BB",
+   "BQ": "reuse=QQ"
+  },
+  "Y": {
+   "QQ": 0,
+   "BB": 0,
+   "QB": 0,
+   "BQ": 0
+  },
+  "difference": {
+   "nature": "key_order",
+   "path": "tool_calls[0].arguments.flights[0]",
+   "a_B_order": [
+    "flight_number",
+    "date",
+    "origin",
+    "destination"
+   ],
+   "a_Q_order": [
+    "flight_number",
+    "origin",
+    "destination",
+    "date"
+   ],
+   "tool_name": "update_reservation_flights",
+   "whitespace": "none (arguments are parsed dicts; the template re-serialises them)",
+   "number_or_type_format": "none",
+   "content": "equal (null)",
+   "tool_call_id": "differs (random vLLM ids chatcmpl-tool-b2789a0f... vs chatcmpl-tool-b60419d1...), not rendered by the Qwen3 template"
+  },
+  "token_evidence": {
+   "minimal_render": {
+    "n_tokens": [
+     119,
+     119
+    ],
+    "n_diff_positions": 24,
+    "diff_span": [
+     59,
+     84
+    ],
+    "seg_a_B": "date\": \"2024-05-19\", \"origin\": \"LAS\", \"destination\": \"IAH",
+    "seg_a_Q": "origin\": \"LAS\", \"destination\": \"IAH\", \"date\": \"2024-05-19",
+    "sha_a_B": "0fb786bfc790d028b93aa422cdceed31f267c66fd32cc665d37338f932763ff1",
+    "sha_a_Q": "b09c37632233a30672f7ce43a0900eb4bb2ac1ecc8dc749b5324608537606f4b"
+   },
+   "next_prompt_full_context": {
+    "decision": 7,
+    "after_a_B": {
+     "prompt_ids_sha": "211d510be400b5edf84ac19247343e572dbf6ac2b0970f0d0944d1bf946652df",
+     "n_tokens": 7016,
+     "source": "runs/a6k2_q4_bfpair_f01/airline/decisions.jsonl task 30 decision 7 (orig BB)"
+    },
+    "after_a_Q": {
+     "prompt_ids_sha": "600f0c14030fd1ac803e5e55e846e5f75e6e9293e0f42fe56dbbfc64ee65b073",
+     "n_tokens": 7016,
+     "source": "analysis/fork/bank_u/q4_awq_w4/f01/branches/7411758182009c20.json QQ decisions[1]"
+    }
+   },
+   "token_scores_crosscheck": {
+    "file": "analysis/fork/token_scores/q4_awq_w4/f01/scores.jsonl.gz",
+    "same_ids": false,
+    "a_B_template_eq_generated": true,
+    "a_Q_template_eq_generated": true,
+    "len_ids": [
+     96,
+     96
+    ]
+   },
+   "known_mechanism": "analysis/fork/commonstate_replay_check/Q4_F01_IDENTITY.md (same 4-key swap, same two decision-7 prompt hashes)"
+  },
+  "validation_coverage": {
+   "noop_sample": false,
+   "checks": {
+    "Q_prompt_ok": true
+   },
+   "noop_note": "not a noop sample: BB = orig (the BF16 source run) was not re-run; no noop sample can test a reuse anyway (it re-runs the original arm, not the reused one)",
+   "q0_subsample": false,
+   "simctrl_unit": false,
+   "reuse_rerun_task_in_queue": "none found (queue todo/running/done/failed/deferred, scan 2026-10-03 PDT)",
+   "render_identical_measured_arm": {
+    "for": "QB (a_Q forced, BF16 continues)",
+    "file": "analysis/fork/commonstate/q4/panel/d2_bf16/f01/cs_rows.jsonl (arm QB, a_src = a_d2)",
+    "why": "a_d2 has the identical ordered arguments and content as this row's a_Q; its decision-7 prompt is 600f0c14..., the same as this row's QQ arm",
+    "Y": 0
+   },
+   "BQ_measured": "no (a_BF16 forced, AWQ continues was never run)"
+  },
+  "downstream_consumers": [
+   {
+    "script": "analysis/fork/analyze_bank_u.py",
+    "reads": "analysis/fork/bank_u/q4_awq_w4/f01/bank_rows.jsonl (native four arms, U2B)",
+    "how": "row enters q4:awq_w4:U2B per-state contrasts (r, d, M, G, A, C, I, H, F), the exact-agreement rate (counted as exact), the class composition (counted as an identical action), and the cross-cell shared-state co-flip count (q4 U2B, f01)",
+    "outputs": [
+     "analysis/fork/out/bank_u_f01_20261001T134456Z.{json,md}",
+     "analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.{json,md}"
+    ],
+    "paper": [
+     "paper/latex/sections/appendix.tex L278 (exact agreement 0.43-0.83: counted as exact), L282 (native estimates table, q4 AWQ-W4 U2B), L301 and L317 (class composition: counted as an identical action without outcome change), L330 (shared fragility on the 255 shared q4 U2B states: its AWQ flip status is fixed by the reuse)",
+     "paper/latex/sections/appendix_moved.tex L50 (Bank U turnover), L51 ('Identical actions never change the outcome': the row is in the identical class and its BQ/QB are reused, not measured), L53 and L68 (differing-row and outcome-changing counts: it is counted as neither)",
+     "paper/latex/sections/results_r1.tex L27 (Bank U turnover, W4 cells, U1 and U2B)",
+     "paper/latex/check_numbers.py source list (bank_u_f01_20261001T134456Z.md, R3 Bank U)",
+     "not via §4 (appendix.tex L322, appendix_moved.tex L54): the content split covers class (ii) text differences only"
+    ]
+   },
+   {
+    "script": "analysis/fork/analyze_token_mech.py",
+    "reads": "analysis/fork/token_scores/q4_awq_w4/f01/scores.jsonl.gz (Y copied from the bank row; G = Y_BQ - Y_QQ at L99)",
+    "how": "unit (q4, awq_w4, U2B, f01 development) with exact = same_ids = false and exact_canon = true: a 'differing' unit whose flip label G = Y_BQ - Y_QQ is fixed by BQ = reuse=QQ; listed in units[143] of both outputs (div_cls tool_arg, 'origin|date')",
+    "outputs": [
+     "analysis/fork/out/token_mech_20261001T185031Z.{json,md}",
+     "analysis/fork/out/token_mech_20261002T003130Z.{json,md} (f01 sections; the §3 validation is U1 f02/f03 and does not contain it)"
+    ],
+    "paper": [
+     "paper/latex/sections/appendix_moved.tex L73 (1140 rows, 58 flips), L75, L77",
+     "paper/latex/sections/results_r3.tex L13",
+     "paper/latex/sections/appendix.tex L317 (token_mech flips: 58)"
+    ]
+   },
+   {
+    "script": "analysis/fork/analyze_ghf.py",
+    "reads": "bank_summary.json + bank_rows.jsonl (row counts only)",
+    "how": "coverage matrix counts the row as ok; no outcome used",
+    "outputs": [
+     "analysis/fork/out/ghf_20261001T211519Z.{json,md} (coverage section)"
+    ],
+    "paper": [
+     "paper/latex/sections/appendix.tex L257 (coverage table; counts only)"
+    ]
+   }
+  ],
+  "not_consumed_by": [
+   "bank_u_q0 / Q0 analysis: the state is not in the Q0 subsample (q0 = false; absent from analysis/fork/bank_u/q0/q4_awq_w4/f01/q0_rows.jsonl)",
+   "simctrl (manifests/fork/simctrl_v1.json): state not among the units",
+   "oracle_trigger.py: U1 f02/f03 only",
+   "analyze_commonstate.py: q4 design reads the bank_u/q4_gptq_w4_d1 reference rows (render-identical at this state), never q4_awq_w4",
+   "analyze_newmethod.py: q8 reference cells and newmethod cells only",
+   "sameprec_split.py: links gptq_w4_d1 states only",
+   "noop counts cited at appendix.tex L23: the row is not a noop sample"
+  ]
+ }
+]
