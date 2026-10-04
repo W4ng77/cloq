@@ -77,38 +77,172 @@
    "pass": true
   },
   "sp": {
-   "checks": {},
-   "missing": [
-    "validation outputs"
-   ],
-   "pass": false
+   "checks": {
+    "T1_ppl_w16a16_vs_bf16": {
+     "ppl": 9.652249739659972,
+     "bf16": 9.726081733250279,
+     "ok": true
+    },
+    "T2_act_flip_w16a16": {
+     "value": 0.0025,
+     "ok": true
+    },
+    "T3_first_kl_w16a16": {
+     "value": 0.0019545994660921983,
+     "ok": true
+    },
+    "T4_hf_invariance_fp32": {
+     "value": 0.99755859375,
+     "mean_abs_dlp": 0.003999916836619377,
+     "quarot": 0.99560546875,
+     "quarot_mean_abs_dlp": 0.004474681802093983,
+     "ok": true,
+     "bf16": {
+      "positions": 2048,
+      "top1_agreement": 0.98291015625,
+      "mean_abs_dlogprob_top1": 0.02447764202952385,
+      "max_abs_dlogprob_top1": 0.7922072410583496
+     }
+    },
+    "D1_det_sp_w16a16": {
+     "n": 8,
+     "batch_eq_alone": 8,
+     "prefixhit_eq_alone": 8,
+     "ids_only_batch_eq": 8,
+     "mean_len": 41.5,
+     "ok": true
+    },
+    "D1_det_sp_w4a4": {
+     "n": 8,
+     "batch_eq_alone": 8,
+     "prefixhit_eq_alone": 8,
+     "ids_only_batch_eq": 8,
+     "mean_len": 47.875,
+     "ok": true
+    },
+    "D2_chunk_sp_w4a4": {
+     "eq": 8,
+     "n": 8,
+     "ok": true
+    },
+    "D3_causal_sp_w4a4": {
+     "rows": [
+      {
+       "n_prefix": 1500,
+       "n_full": 2600,
+       "identical_positions": 1500,
+       "n_positions": 1500
+      },
+      {
+       "n_prefix": 1500,
+       "n_full": 2600,
+       "identical_positions": 1500,
+       "n_positions": 1500
+      },
+      {
+       "n_prefix": 1500,
+       "n_full": 2600,
+       "identical_positions": 1500,
+       "n_positions": 1500
+      }
+     ],
+     "ok": true
+    },
+    "P1_ppl_w4a4": {
+     "spinquant": 9.062769640341179,
+     "quarot": 11.289971167189613,
+     "ok": true
+    },
+    "P2_ppl_w16a4": {
+     "spinquant": 8.752804751078703,
+     "quarot": 11.071900669236665,
+     "ok": true
+    },
+    "R1_throughput": {
+     "bf16_gen_tok_s": 61.5,
+     "cell_gen_tok_s": 76.2,
+     "ok": true
+    }
+   },
+   "missing": [],
+   "pass": true
   }
  },
  "cells": {
   "quarot_w4": {
-   "gate_same": null,
-   "bank_done": false,
-   "pass": false
+   "gate_same": {
+    "b_same_ckpt": true,
+    "n_states": 6,
+    "n_errors": 0,
+    "domains": [
+     "airline",
+     "retail"
+    ],
+    "idcheck": true,
+    "pass": true
+   },
+   "bank_done": true,
+   "pass": true
   },
   "quarot_w16": {
-   "gate_same": null,
-   "bank_done": false,
-   "pass": false
+   "gate_same": {
+    "b_same_ckpt": true,
+    "n_states": 6,
+    "n_errors": 0,
+    "domains": [
+     "airline",
+     "retail"
+    ],
+    "idcheck": true,
+    "pass": true
+   },
+   "bank_done": true,
+   "pass": true
   },
   "quarot_w4a4": {
-   "gate_same": null,
-   "bank_done": false,
-   "pass": false
+   "gate_same": {
+    "b_same_ckpt": true,
+    "n_states": 6,
+    "n_errors": 0,
+    "domains": [
+     "airline",
+     "retail"
+    ],
+    "idcheck": true,
+    "pass": true
+   },
+   "bank_done": true,
+   "pass": true
   },
   "spinquant_w16": {
-   "gate_same": null,
-   "bank_done": false,
-   "pass": false
+   "gate_same": {
+    "b_same_ckpt": true,
+    "n_states": 6,
+    "n_errors": 0,
+    "domains": [
+     "airline",
+     "retail"
+    ],
+    "idcheck": true,
+    "pass": true
+   },
+   "bank_done": true,
+   "pass": true
   },
   "spinquant_w4a4": {
-   "gate_same": null,
-   "bank_done": false,
-   "pass": false
+   "gate_same": {
+    "b_same_ckpt": true,
+    "n_states": 6,
+    "n_errors": 0,
+    "domains": [
+     "airline",
+     "retail"
+    ],
+    "idcheck": true,
+    "pass": true
+   },
+   "bank_done": true,
+   "pass": true
   }
  }
 }
