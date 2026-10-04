@@ -1,16 +1,15 @@
-# A6000 queue snapshot (2026-10-04 16:23:08 PDT)
+# A6000 queue snapshot (2026-10-04 16:53:12 PDT)
 
-## running (7)
+## running (6)
 
 - `a6k2_q4_gauss3_s1_redo`
 - `a6k2_q4_gauss3_s2_redo`
 - `a6k2_q4_kvq_int3`
 - `a6k2_q4_kvq_int4`
-- `a6k2_q8_kvq_int3`
 - `pert_q4_rtn_w3_resid_a2_q345`
 - `pert_q8_rtn_w3_resid_a2_q345`
 
-## failed (19)
+## failed (20)
 
 - `a6k2_q14_gauss3_s1` · RuntimeError('run a6k2_q14_gauss3_s1/airline: 2 infrastructure_error episodes (outage)')
 - `a6k2_q14_gauss3_s2` · RuntimeError('run a6k2_q14_gauss3_s2/airline: 3 infrastructure_error episodes (outage)')
@@ -22,6 +21,7 @@
 - `a6k2_q4_gauss2_s1_redo` · RuntimeError('run a6k2_q4_gauss2_s1/retail: 1 infrastructure_error episodes (outage)')
 - `a6k2_q8_gauss2_s1` · RuntimeError('run a6k2_q8_gauss2_s1/airline: 1 infrastructure_error episodes (outage)')
 - `a6k2_q8_gauss3_s2_redo` · RuntimeError('run a6k2_q8_gauss3_s2/airline: 1 infrastructure_error episodes (outage)')
+- `a6k2_q8_kvq_int3` · RuntimeError('run a6k2_q8_kvq_int3_q2/airline: 15 infrastructure_error episodes (outage)')
 - `a6k2_q8_kvq_int4` · RuntimeError('run a6k2_q8_kvq_int4_q2/airline: 8 infrastructure_error episodes (outage)')
 - `a6k2_smoke_l8` · RuntimeError('run a6k2_smoke_l8/retail: 5 infrastructure_error episodes')
 - `a6k2_smoke_m24` · RuntimeError('vLLM agent server exited during startup')
