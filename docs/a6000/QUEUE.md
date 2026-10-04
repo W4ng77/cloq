@@ -1,14 +1,18 @@
-# A6000 queue snapshot (2026-10-04 05:49:03 PDT)
+# A6000 queue snapshot (2026-10-04 06:19:06 PDT)
 
-## running (11)
+## running (15)
 
 - `a6k2_q14_kvq_int3_rro`
 - `a6k2_q32_rtn_w3_rro`
+- `a6k2_q4_gauss2_s1_redo_rro`
 - `a6k2_q4_gauss3_s1_redo`
 - `a6k2_q4_gauss3_s2_redo`
+- `a6k2_q4_kvq_int3`
+- `a6k2_q4_kvq_int4`
 - `a6k2_q8_gauss3_s1`
 - `a6k2_q8_gauss3_s2_redo`
 - `a6k2_q8_kvq_int3`
+- `a6k2_q8_kvq_int4_rro`
 - `fork_repair_q4_rtn_w3`
 - `pert_q4_rtn_w3_resid_a2_q345`
 - `pert_q8_gptq_w3_resid_a2_q345`
