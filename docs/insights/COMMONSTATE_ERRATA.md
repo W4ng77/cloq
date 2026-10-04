@@ -31,3 +31,10 @@ The earlier "8/9" compared this design's Y, the DB success, with SAMEPREC's τ²
   - d2 replay 1,578/1,578; cross-task a_d2 789/789.
 - **The rule worked as written.** §2 states the precondition as canonical equality, and §4 quarantines on any failure, so removing f01 was correct. The q4 reading (k = 2) stands as produced. Bank U reuse uses the same equality, but no canonically-equal yet token-different pair occurs there (0 of 776), so no reference reuse is affected.
 - **Evidence:** `analysis/fork/commonstate_replay_check/{Q4_F01_IDENTITY.md, q4_f01_identity.json}`; `analysis/fork/out/commonstate_q4_20261004T001159Z.md`.
+
+## E-3 (2026-10-03 18:00 PDT, W100ae): wording of E-2, and its Bank U statement narrowed
+
+- **Wording.** In E-2, read "the d2 action is semantically identical to a_BF16 and a_d1 after parsing, but its token sequence differs by the key order inside `arguments.flights[0]`". Do not read it as "token-identical except for key order". Likewise, the two equal q4 K(d1) block means are a coincidence of two values. They are not a precise measurement and do not mean zero variance.
+- **Bank U.** E-2's "no canonically-equal yet token-different pair occurs there (0 of 776)" holds only for the GPTQ reference arms that were checked. It does not cover AWQ. At the same state (q4 f01, airline:30, t = 6), `analysis/fork/bank_u/q4_awq_w4/f01/bank_rows.jsonl` records `exact_agreement = true`, `QB = reuse=BB` and `BQ = reuse=QQ`, so those two cross arms were never measured.
+- **Follow-up (W100ae).** A CPU scan of every equality-based reuse pair, then a one-time measurement of each flagged reused arm (`bank_u_arms`, `reuse_rerun`; originals kept), with before/after outcomes reported. The scan output goes to `analysis/fork/reuse_audit/`.
+- **Unchanged.** This is a local measurement correction. The common-state q4 quarantine and the k = 2 reading stand.
