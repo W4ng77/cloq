@@ -98,7 +98,10 @@ PRIMARY = [("P1", "quarot_w4", "gptq_w4_d1"), ("P2", "spinquant_w4a4", "quarot_w
 P3_K2V2_GATE_FAILED = False
 BFCL_PRIMARY = [("P1", "quarot_w4", "gptq_w4_d1"), ("P2", "spinquant_w4a4", "quarot_w4a4"), ("P3", "kivi_k2v2", "kvq_int4")]
 SECONDARY = [("T1", "quarot_w4", "quarot_w16"), ("T2", "spinquant_w4a4", "spinquant_w16"), ("T3", "quarot_w4a4", "quarot_w16"),
-             ("K2", "kivi_k4v4", "kvq_int8")]
+             ("K2", "kivi_k4v4", "kvq_int8"),
+             # A4.4 (W100ah: implemented before any q8 read; q8 acceptance audit 20261004T0226Z item 6.3): quantization effect net
+             # of the KIVI kernel path, D_cc on the same states, reported with intervals; no Holm family (P3 unchanged)
+             ("A44_k2", "kivi_k2v2", "kivi_k16v16"), ("A44_k4", "kivi_k4v4", "kivi_k16v16")]
 # Amendment A3: m24 (second family) cells and contrast. One primary contrast per panel (Holm over one = unadjusted):
 # M1 gptq_w4_d1 - rtn_w4 on tau2 D_cc (t over block-mean differences, blocks complete in both cells) and on BFCL D_cc_all.
 M24_CELLS = ("rtn_w4", "gptq_w4_d1")

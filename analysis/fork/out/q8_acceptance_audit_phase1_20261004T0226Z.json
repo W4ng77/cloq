@@ -1,0 +1,6844 @@
+{
+ "title": "q8 new-method panel phase-1 acceptance audit (effect-blind, CPU, read-only)",
+ "utc": "20261004T0226Z",
+ "repo_head": "e30be4d",
+ "guard": {
+  "protocol_sha256": "3bd7ef3301b62a9a4688be8b10405ce1f58157ae2327324cd06dbc4ead5ba8f6",
+  "manifest": "manifests/fork/newmethod_panel_v1.json",
+  "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+ },
+ "code_sha256_prefix": {
+  "scripts/a6000/fork_driver.py": "740ff1b80f2aedd2",
+  "cloq/fork.py": "0a731c366c4f004e",
+  "analysis/fork/analyze_newmethod.py": "4deda9bbfef31e36",
+  "scripts/a6000/exppilot_analysis.py": "2d31adb67b108aea"
+ },
+ "effect_blind": "No Y, reward, db_match or official_reward value is aggregated or reported. Y read only as `is None`. Disclosure: during schema inspection one branch record's outcome fields (one arm of one quarot_w4 f01 state) were displayed once and not used; termination reasons of the 17 recovered A7 arms were read for the term_consistent check only.",
+ "expansion_q8": {
+  "expand": false,
+  "written_utc": "2026-10-04T02:08:29Z",
+  "trigger": "all phase-1 tasks finished",
+  "consequence": "q8 is f01-f03 only; k <= 3 per cell"
+ },
+ "sources": {
+  "a6k2_q8_bfpair_f01|airline": {
+   "traj_eq": true,
+   "dec_eq": true,
+   "max_steps": 200,
+   "max_errors": 10
+  },
+  "a6k2_q8_bfpair_f01|retail": {
+   "traj_eq": true,
+   "dec_eq": true,
+   "max_steps": 200,
+   "max_errors": 10
+  },
+  "a6k2_q8_bfpair_f02|airline": {
+   "traj_eq": true,
+   "dec_eq": true,
+   "max_steps": 200,
+   "max_errors": 10
+  },
+  "a6k2_q8_bfpair_f02|retail": {
+   "traj_eq": true,
+   "dec_eq": true,
+   "max_steps": 200,
+   "max_errors": 10
+  },
+  "a6k2_q8_bfpair_f03|airline": {
+   "traj_eq": true,
+   "dec_eq": true,
+   "max_steps": 200,
+   "max_errors": 10
+  },
+  "a6k2_q8_bfpair_f03|retail": {
+   "traj_eq": true,
+   "dec_eq": true,
+   "max_steps": 200,
+   "max_errors": 10
+  }
+ },
+ "blocks": [
+  {
+   "cell": "quarot_w4",
+   "block": "f01",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_quarot_w4/f01",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 6,
+     "n_pass": 6
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 177,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 6,
+    "n_pass": 6
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "quarot_w4",
+    "blocks": [
+     "f01"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_quarot_w4/f01"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 177,
+    "completed": 177,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 177,
+    "recomputed_check_eq_stored": 177,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "81ba3f64026092ba",
+     "ckpt_sha256": "47b31ea7eb0d9ebedfe0831795fd3da8747c19bdce939fb89ce775d382eba9a7",
+     "effective_config_sha": "b5540961c5364ba8",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "quarot",
+      "wbits": 4,
+      "wmethod": "gptq",
+      "seed": 0
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node004"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "quarot_w4",
+   "block": "f02",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_quarot_w4/f02",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 7,
+     "n_pass": 7
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 194,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 7,
+    "n_pass": 7
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "quarot_w4",
+    "blocks": [
+     "f02"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_quarot_w4/f02"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 194,
+    "completed": 194,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 194,
+    "recomputed_check_eq_stored": 194,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "81ba3f64026092ba",
+     "ckpt_sha256": "47b31ea7eb0d9ebedfe0831795fd3da8747c19bdce939fb89ce775d382eba9a7",
+     "effective_config_sha": "b5540961c5364ba8",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "quarot",
+      "wbits": 4,
+      "wmethod": "gptq",
+      "seed": 0
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://node002:8000/v1",
+    "host": "node005"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "quarot_w4",
+   "block": "f03",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_quarot_w4/f03",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 7,
+     "n_pass": 7
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 186,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 7,
+    "n_pass": 7
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "quarot_w4",
+    "blocks": [
+     "f03"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_quarot_w4/f03"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 186,
+    "completed": 186,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 186,
+    "recomputed_check_eq_stored": 186,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "81ba3f64026092ba",
+     "ckpt_sha256": "47b31ea7eb0d9ebedfe0831795fd3da8747c19bdce939fb89ce775d382eba9a7",
+     "effective_config_sha": "b5540961c5364ba8",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "quarot",
+      "wbits": 4,
+      "wmethod": "gptq",
+      "seed": 0
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node007"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "quarot_w4a4",
+   "block": "f01",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_quarot_w4a4/f01",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 7,
+     "n_pass": 7
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 208,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 7,
+    "n_pass": 7
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "quarot_w4a4",
+    "blocks": [
+     "f01"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_quarot_w4a4/f01"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 208,
+    "completed": 208,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 208,
+    "recomputed_check_eq_stored": 208,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "6cf36eeb857d100f",
+     "ckpt_sha256": "47b31ea7eb0d9ebedfe0831795fd3da8747c19bdce939fb89ce775d382eba9a7",
+     "effective_config_sha": "1394dbd2d2d212dd",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "quarot",
+      "wbits": 4,
+      "wmethod": "gptq",
+      "seed": 0
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node007"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "quarot_w4a4",
+   "block": "f02",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_quarot_w4a4/f02",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 11,
+     "n_pass": 11
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 200,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 11,
+    "n_pass": 11
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "quarot_w4a4",
+    "blocks": [
+     "f02"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_quarot_w4a4/f02"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 200,
+    "completed": 200,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 200,
+    "recomputed_check_eq_stored": 200,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "6cf36eeb857d100f",
+     "ckpt_sha256": "47b31ea7eb0d9ebedfe0831795fd3da8747c19bdce939fb89ce775d382eba9a7",
+     "effective_config_sha": "1394dbd2d2d212dd",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "quarot",
+      "wbits": 4,
+      "wmethod": "gptq",
+      "seed": 0
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://node006:8000/v1",
+    "host": "node004"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "quarot_w4a4",
+   "block": "f03",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_quarot_w4a4/f03",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 13,
+     "n_pass": 13
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 220,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 13,
+    "n_pass": 13
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "quarot_w4a4",
+    "blocks": [
+     "f03"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_quarot_w4a4/f03"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 220,
+    "completed": 220,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 220,
+    "recomputed_check_eq_stored": 220,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "6cf36eeb857d100f",
+     "ckpt_sha256": "47b31ea7eb0d9ebedfe0831795fd3da8747c19bdce939fb89ce775d382eba9a7",
+     "effective_config_sha": "1394dbd2d2d212dd",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "quarot",
+      "wbits": 4,
+      "wmethod": "gptq",
+      "seed": 0
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node005"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "quarot_w16",
+   "block": "f01",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_quarot_w16/f01",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 7,
+     "n_pass": 7
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 118,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 7,
+    "n_pass": 7
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "quarot_w16",
+    "blocks": [
+     "f01"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_quarot_w16/f01"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 118,
+    "completed": 118,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 118,
+    "recomputed_check_eq_stored": 118,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "03a0c46a81e17258",
+     "ckpt_sha256": "70ef81208f3b87f6e05a5ff41064a0bf9496fc7da59debbca992810f0e8b14aa",
+     "effective_config_sha": "51f39e04d46c8cb4",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "quarot",
+      "wbits": 16,
+      "seed": 0
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node005"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "quarot_w16",
+   "block": "f02",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_quarot_w16/f02",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 8,
+     "n_pass": 8
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 133,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 8,
+    "n_pass": 8
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "quarot_w16",
+    "blocks": [
+     "f02"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_quarot_w16/f02"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 133,
+    "completed": 133,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 133,
+    "recomputed_check_eq_stored": 133,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "03a0c46a81e17258",
+     "ckpt_sha256": "70ef81208f3b87f6e05a5ff41064a0bf9496fc7da59debbca992810f0e8b14aa",
+     "effective_config_sha": "51f39e04d46c8cb4",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "quarot",
+      "wbits": 16,
+      "seed": 0
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node007"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "quarot_w16",
+   "block": "f03",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_quarot_w16/f03",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 9,
+     "n_pass": 9
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 122,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 9,
+    "n_pass": 9
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "quarot_w16",
+    "blocks": [
+     "f03"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_quarot_w16/f03"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 122,
+    "completed": 122,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 122,
+    "recomputed_check_eq_stored": 122,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "03a0c46a81e17258",
+     "ckpt_sha256": "70ef81208f3b87f6e05a5ff41064a0bf9496fc7da59debbca992810f0e8b14aa",
+     "effective_config_sha": "51f39e04d46c8cb4",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "quarot",
+      "wbits": 16,
+      "seed": 0
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node004"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "spinquant_w4a4",
+   "block": "f01",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_spinquant_w4a4/f01",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 6,
+     "n_pass": 6
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 202,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 6,
+    "n_pass": 6
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "spinquant_w4a4",
+    "blocks": [
+     "f01"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_spinquant_w4a4/f01"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 8
+   },
+   "branches": {
+    "attempted": 211,
+    "completed": 202,
+    "arm_errors": 9,
+    "recount_indep_eq_stored_eq_live": 202,
+    "recomputed_check_eq_stored": 202,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "66028ece4c06573c",
+     "ckpt_sha256": "b7223e201cbdb2509422f5fb06bf1d694e89b5cb29b34459d6bee0f5ce67368c",
+     "effective_config_sha": "f32980982246866d",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "spinquant",
+      "wbits": 4,
+      "seed": 0,
+      "rotations": "/data/ziyangs/cloq_work/rot/spinquant_q8_a4_s0/R.pt",
+      "rotations_sha256": "1f1719b58be67060acbb25426d16c2ee877ca2e519e4ca6676a9fb83fec3f5ed",
+      "wmethod": "gptq"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node005"
+   },
+   "reused_arms_inheriting_an_error": [
+    {
+     "state_key": "a42e6f98f2baa960",
+     "arm": "BQ",
+     "reuse_of": "QQ"
+    }
+   ]
+  },
+  {
+   "cell": "spinquant_w4a4",
+   "block": "f02",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_spinquant_w4a4/f02",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 10,
+     "n_pass": 10
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 207,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 10,
+    "n_pass": 10
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "spinquant_w4a4",
+    "blocks": [
+     "f02"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_spinquant_w4a4/f02"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 207,
+    "completed": 207,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 207,
+    "recomputed_check_eq_stored": 207,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "66028ece4c06573c",
+     "ckpt_sha256": "b7223e201cbdb2509422f5fb06bf1d694e89b5cb29b34459d6bee0f5ce67368c",
+     "effective_config_sha": "f32980982246866d",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "spinquant",
+      "wbits": 4,
+      "seed": 0,
+      "rotations": "/data/ziyangs/cloq_work/rot/spinquant_q8_a4_s0/R.pt",
+      "rotations_sha256": "1f1719b58be67060acbb25426d16c2ee877ca2e519e4ca6676a9fb83fec3f5ed",
+      "wmethod": "gptq"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node007"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "spinquant_w4a4",
+   "block": "f03",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_spinquant_w4a4/f03",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 9,
+     "n_pass": 9
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 208,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 9,
+    "n_pass": 9
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "spinquant_w4a4",
+    "blocks": [
+     "f03"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_spinquant_w4a4/f03"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 208,
+    "completed": 208,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 208,
+    "recomputed_check_eq_stored": 208,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "66028ece4c06573c",
+     "ckpt_sha256": "b7223e201cbdb2509422f5fb06bf1d694e89b5cb29b34459d6bee0f5ce67368c",
+     "effective_config_sha": "f32980982246866d",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "spinquant",
+      "wbits": 4,
+      "seed": 0,
+      "rotations": "/data/ziyangs/cloq_work/rot/spinquant_q8_a4_s0/R.pt",
+      "rotations_sha256": "1f1719b58be67060acbb25426d16c2ee877ca2e519e4ca6676a9fb83fec3f5ed",
+      "wmethod": "gptq"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node006"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "spinquant_w16",
+   "block": "f01",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_spinquant_w16/f01",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 6,
+     "n_pass": 6
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 111,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 6,
+    "n_pass": 6
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "spinquant_w16",
+    "blocks": [
+     "f01"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_spinquant_w16/f01"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 111,
+    "completed": 111,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 111,
+    "recomputed_check_eq_stored": 111,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "0858c5d540ef4202",
+     "ckpt_sha256": "89e0b413a716eeb2b392eb8042520782839f8d628611d3febaef47b8f7f8665a",
+     "effective_config_sha": "98fab69714560be3",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "spinquant",
+      "wbits": 16,
+      "seed": 0,
+      "rotations": "/data/ziyangs/cloq_work/rot/spinquant_q8_a4_s0/R.pt",
+      "rotations_sha256": "1f1719b58be67060acbb25426d16c2ee877ca2e519e4ca6676a9fb83fec3f5ed"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://node006:8000/v1",
+    "host": "node004"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "spinquant_w16",
+   "block": "f02",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_spinquant_w16/f02",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 10,
+     "n_pass": 10
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 127,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 10,
+    "n_pass": 10
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "spinquant_w16",
+    "blocks": [
+     "f02"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_spinquant_w16/f02"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 127,
+    "completed": 127,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 127,
+    "recomputed_check_eq_stored": 127,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "0858c5d540ef4202",
+     "ckpt_sha256": "89e0b413a716eeb2b392eb8042520782839f8d628611d3febaef47b8f7f8665a",
+     "effective_config_sha": "98fab69714560be3",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "spinquant",
+      "wbits": 16,
+      "seed": 0,
+      "rotations": "/data/ziyangs/cloq_work/rot/spinquant_q8_a4_s0/R.pt",
+      "rotations_sha256": "1f1719b58be67060acbb25426d16c2ee877ca2e519e4ca6676a9fb83fec3f5ed"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node005"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "spinquant_w16",
+   "block": "f03",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_spinquant_w16/f03",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 9,
+     "n_pass": 9
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 122,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 9,
+    "n_pass": 9
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "spinquant_w16",
+    "blocks": [
+     "f03"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_spinquant_w16/f03"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 122,
+    "completed": 122,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 122,
+    "recomputed_check_eq_stored": 122,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "0858c5d540ef4202",
+     "ckpt_sha256": "89e0b413a716eeb2b392eb8042520782839f8d628611d3febaef47b8f7f8665a",
+     "effective_config_sha": "98fab69714560be3",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "spinquant",
+      "wbits": 16,
+      "seed": 0,
+      "rotations": "/data/ziyangs/cloq_work/rot/spinquant_q8_a4_s0/R.pt",
+      "rotations_sha256": "1f1719b58be67060acbb25426d16c2ee877ca2e519e4ca6676a9fb83fec3f5ed"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node007"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "kivi_k2v2",
+   "block": "f01",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_kivi_k2v2/f01",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 15,
+     "n_pass": 15
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 201,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 15,
+    "n_pass": 15
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "kivi_k2v2",
+    "blocks": [
+     "f01"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_kivi_k2v2/f01"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 1
+   },
+   "branches": {
+    "attempted": 202,
+    "completed": 201,
+    "arm_errors": 1,
+    "recount_indep_eq_stored_eq_live": 201,
+    "recomputed_check_eq_stored": 201,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "60cac990145b1cca",
+     "ckpt_sha256": null,
+     "effective_config_sha": "485c96e5d1e91943",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "bf16"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://node004:8000/v1",
+    "host": "node008"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "kivi_k2v2",
+   "block": "f02",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_kivi_k2v2/f02",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 9,
+     "n_pass": 9
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 188,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 9,
+    "n_pass": 9
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "kivi_k2v2",
+    "blocks": [
+     "f02"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_kivi_k2v2/f02"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 4
+   },
+   "branches": {
+    "attempted": 192,
+    "completed": 188,
+    "arm_errors": 4,
+    "recount_indep_eq_stored_eq_live": 188,
+    "recomputed_check_eq_stored": 188,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "60cac990145b1cca",
+     "ckpt_sha256": null,
+     "effective_config_sha": "485c96e5d1e91943",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "bf16"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://node005:8000/v1",
+    "host": "node001"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "kivi_k2v2",
+   "block": "f03",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_kivi_k2v2/f03",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 8,
+     "n_pass": 8
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 196,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 8,
+    "n_pass": 8
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "kivi_k2v2",
+    "blocks": [
+     "f03"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_kivi_k2v2/f03"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 4
+   },
+   "branches": {
+    "attempted": 201,
+    "completed": 196,
+    "arm_errors": 5,
+    "recount_indep_eq_stored_eq_live": 196,
+    "recomputed_check_eq_stored": 196,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "60cac990145b1cca",
+     "ckpt_sha256": null,
+     "effective_config_sha": "485c96e5d1e91943",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "bf16"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node005"
+   },
+   "reused_arms_inheriting_an_error": [
+    {
+     "state_key": "01a17956873df0ef",
+     "arm": "BQ",
+     "reuse_of": "QQ"
+    }
+   ]
+  },
+  {
+   "cell": "kivi_k4v4",
+   "block": "f01",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_kivi_k4v4/f01",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 7,
+     "n_pass": 7
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 128,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 7,
+    "n_pass": 7
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "kivi_k4v4",
+    "blocks": [
+     "f01"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_kivi_k4v4/f01"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 8
+   },
+   "branches": {
+    "attempted": 140,
+    "completed": 128,
+    "arm_errors": 12,
+    "recount_indep_eq_stored_eq_live": 128,
+    "recomputed_check_eq_stored": 128,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "27dfdf096d5093af",
+     "ckpt_sha256": null,
+     "effective_config_sha": "da5099eb5f25a262",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "bf16"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://node004:8000/v1",
+    "host": "node006"
+   },
+   "reused_arms_inheriting_an_error": [
+    {
+     "state_key": "3b1c207abdf8ef45",
+     "arm": "BQ",
+     "reuse_of": "QQ"
+    },
+    {
+     "state_key": "22e5640e91897669",
+     "arm": "BQ",
+     "reuse_of": "QQ"
+    },
+    {
+     "state_key": "9a48c111a1211c17",
+     "arm": "BQ",
+     "reuse_of": "QQ"
+    },
+    {
+     "state_key": "87c2005e50647c84",
+     "arm": "BQ",
+     "reuse_of": "QQ"
+    },
+    {
+     "state_key": "dcd3f47a56a2faba",
+     "arm": "BQ",
+     "reuse_of": "QQ"
+    },
+    {
+     "state_key": "9749f30f7ffd3c41",
+     "arm": "QB",
+     "reuse_of": "BB"
+    },
+    {
+     "state_key": "9749f30f7ffd3c41",
+     "arm": "BQ",
+     "reuse_of": "QQ"
+    },
+    {
+     "state_key": "961ad5dfd79a5dee",
+     "arm": "BQ",
+     "reuse_of": "QQ"
+    }
+   ]
+  },
+  {
+   "cell": "kivi_k4v4",
+   "block": "f02",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_kivi_k4v4/f02",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 6,
+     "n_pass": 6
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 135,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 6,
+    "n_pass": 6
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "kivi_k4v4",
+    "blocks": [
+     "f02"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_kivi_k4v4/f02"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 135,
+    "completed": 135,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 135,
+    "recomputed_check_eq_stored": 135,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "27dfdf096d5093af",
+     "ckpt_sha256": null,
+     "effective_config_sha": "da5099eb5f25a262",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "bf16"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node005"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "kivi_k4v4",
+   "block": "f03",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_kivi_k4v4/f03",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 9,
+     "n_pass": 9
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 156,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 9,
+    "n_pass": 9
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "kivi_k4v4",
+    "blocks": [
+     "f03"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_kivi_k4v4/f03"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 156,
+    "completed": 156,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 156,
+    "recomputed_check_eq_stored": 156,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "27dfdf096d5093af",
+     "ckpt_sha256": null,
+     "effective_config_sha": "da5099eb5f25a262",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "bf16"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node007"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "kivi_k16v16",
+   "block": "f01",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_kivi_k16v16/f01",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 9,
+     "n_pass": 9
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 122,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 9,
+    "n_pass": 9
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "kivi_k16v16",
+    "blocks": [
+     "f01"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_kivi_k16v16/f01"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 122,
+    "completed": 122,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 122,
+    "recomputed_check_eq_stored": 122,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "e5487ba6b887d132",
+     "ckpt_sha256": null,
+     "effective_config_sha": "852b477acbf58b01",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "bf16"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node005"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "kivi_k16v16",
+   "block": "f02",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_kivi_k16v16/f02",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 4,
+     "n_pass": 4
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 111,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 4,
+    "n_pass": 4
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "kivi_k16v16",
+    "blocks": [
+     "f02"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_kivi_k16v16/f02"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 111,
+    "completed": 111,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 111,
+    "recomputed_check_eq_stored": 111,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "e5487ba6b887d132",
+     "ckpt_sha256": null,
+     "effective_config_sha": "852b477acbf58b01",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "bf16"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://node005:8000/v1",
+    "host": "node006"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "kivi_k16v16",
+   "block": "f03",
+   "source": "newmethod panel",
+   "dir": "analysis/fork/newmethod/tau2/q8_kivi_k16v16/f03",
+   "bank_summary": {
+    "n_rows": 85,
+    "n_ok": 85,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 9,
+     "n_pass": 9
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 120,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "u2b_noop": {
+    "n": 9,
+    "n_pass": 9
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/newmethod_panel_v1.json",
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+    "model": "q8",
+    "cell": "kivi_k16v16",
+    "blocks": [
+     "f03"
+    ],
+    "subs": [
+     "U2B"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/newmethod/tau2/q8_kivi_k16v16/f03"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 120,
+    "completed": 120,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 120,
+    "recomputed_check_eq_stored": 120,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "e5487ba6b887d132",
+     "ckpt_sha256": null,
+     "effective_config_sha": "852b477acbf58b01",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "bf16"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://node005:8000/v1",
+    "host": "node001"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "gptq_w4_d1",
+   "block": "f01",
+   "source": "Bank U reference (U2B rows only)",
+   "dir": "analysis/fork/bank_u/q8_gptq_w4_d1/f01",
+   "bank_summary": {
+    "n_rows": 190,
+    "n_ok": 190,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 25,
+     "n_pass": 25
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 327,
+    "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907"
+   },
+   "u2b_noop": {
+    "n": 18,
+    "n_pass": 18
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/bank_u_v1.json",
+    "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907",
+    "model": "q8",
+    "cell": "gptq_w4_d1",
+    "blocks": [
+     "f01"
+    ],
+    "subs": [
+     "U1",
+     "U2B",
+     "U2Q"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/bank_u/q8_gptq_w4_d1/f01"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 159,
+    "completed": 159,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 159,
+    "recomputed_check_eq_stored": 159,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "a9f812fb17241b72",
+     "ckpt_sha256": "6ee628e67194f0c073cb8efe917eaa083fe53281f507a48b1d6146f636e10d70",
+     "effective_config_sha": "cd7c70f5e9fe40d4",
+     "hook_version": null,
+     "max_model_len": 33792,
+     "hook_ok": null,
+     "ckpt": {
+      "kind": "gptq",
+      "wbits": 4,
+      "calib": "manifests/a6k2/q8/calib_fp_traj_c1.json"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node004"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "gptq_w4_d1",
+   "block": "f02",
+   "source": "Bank U reference (U2B rows only)",
+   "dir": "analysis/fork/bank_u/q8_gptq_w4_d1/f02",
+   "bank_summary": {
+    "n_rows": 190,
+    "n_ok": 190,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 17,
+     "n_pass": 17
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 373,
+    "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907"
+   },
+   "u2b_noop": {
+    "n": 9,
+    "n_pass": 9
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/bank_u_v1.json",
+    "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907",
+    "model": "q8",
+    "cell": "gptq_w4_d1",
+    "blocks": [
+     "f02"
+    ],
+    "subs": [
+     "U1",
+     "U2B",
+     "U2Q"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/bank_u/q8_gptq_w4_d1/f02"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 164,
+    "completed": 164,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 164,
+    "recomputed_check_eq_stored": 164,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "a9f812fb17241b72",
+     "ckpt_sha256": "6ee628e67194f0c073cb8efe917eaa083fe53281f507a48b1d6146f636e10d70",
+     "effective_config_sha": "cd7c70f5e9fe40d4",
+     "hook_version": null,
+     "max_model_len": 33792,
+     "hook_ok": null,
+     "ckpt": {
+      "kind": "gptq",
+      "wbits": 4,
+      "calib": "manifests/a6k2/q8/calib_fp_traj_c1.json"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node004"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "gptq_w4_d1",
+   "block": "f03",
+   "source": "Bank U reference (U2B rows only)",
+   "dir": "analysis/fork/bank_u/q8_gptq_w4_d1/f03",
+   "bank_summary": {
+    "n_rows": 190,
+    "n_ok": 190,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 16,
+     "n_pass": 16
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 370,
+    "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907"
+   },
+   "u2b_noop": {
+    "n": 5,
+    "n_pass": 5
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/bank_u_v1.json",
+    "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907",
+    "model": "q8",
+    "cell": "gptq_w4_d1",
+    "blocks": [
+     "f03"
+    ],
+    "subs": [
+     "U1",
+     "U2B",
+     "U2Q"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/bank_u/q8_gptq_w4_d1/f03"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 180,
+    "completed": 180,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 180,
+    "recomputed_check_eq_stored": 180,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "a9f812fb17241b72",
+     "ckpt_sha256": "6ee628e67194f0c073cb8efe917eaa083fe53281f507a48b1d6146f636e10d70",
+     "effective_config_sha": "cd7c70f5e9fe40d4",
+     "hook_version": null,
+     "max_model_len": 33792,
+     "hook_ok": null,
+     "ckpt": {
+      "kind": "gptq",
+      "wbits": 4,
+      "calib": "manifests/a6k2/q8/calib_fp_traj_c1.json"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node004"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "awq_w4",
+   "block": "f01",
+   "source": "Bank U reference (U2B rows only)",
+   "dir": "analysis/fork/bank_u/q8_awq_w4/f01",
+   "bank_summary": {
+    "n_rows": 190,
+    "n_ok": 190,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 16,
+     "n_pass": 16
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 388,
+    "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907"
+   },
+   "u2b_noop": {
+    "n": 10,
+    "n_pass": 10
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/bank_u_v1.json",
+    "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907",
+    "model": "q8",
+    "cell": "awq_w4",
+    "blocks": [
+     "f01"
+    ],
+    "subs": [
+     "U1",
+     "U2B",
+     "U2Q"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/bank_u/q8_awq_w4/f01"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 177,
+    "completed": 177,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 177,
+    "recomputed_check_eq_stored": 177,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "db76cab1da9700d1",
+     "ckpt_sha256": "9ce71e4aa7a5b1afcb2a1358e16e673e62313f32e8ca8877d22b87b3622135d9",
+     "effective_config_sha": "b8608c0732512633",
+     "hook_version": null,
+     "max_model_len": 33792,
+     "hook_ok": null,
+     "ckpt": {
+      "kind": "awq",
+      "wbits": 4,
+      "calib": "manifests/a6k2/q8/calib_fp_traj_c1.json"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node005"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "awq_w4",
+   "block": "f02",
+   "source": "Bank U reference (U2B rows only)",
+   "dir": "analysis/fork/bank_u/q8_awq_w4/f02",
+   "bank_summary": {
+    "n_rows": 190,
+    "n_ok": 190,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 17,
+     "n_pass": 17
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 427,
+    "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907"
+   },
+   "u2b_noop": {
+    "n": 6,
+    "n_pass": 6
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/bank_u_v1.json",
+    "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907",
+    "model": "q8",
+    "cell": "awq_w4",
+    "blocks": [
+     "f02"
+    ],
+    "subs": [
+     "U1",
+     "U2B",
+     "U2Q"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/bank_u/q8_awq_w4/f02"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 181,
+    "completed": 181,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 181,
+    "recomputed_check_eq_stored": 181,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "db76cab1da9700d1",
+     "ckpt_sha256": "9ce71e4aa7a5b1afcb2a1358e16e673e62313f32e8ca8877d22b87b3622135d9",
+     "effective_config_sha": "b8608c0732512633",
+     "hook_version": null,
+     "max_model_len": 33792,
+     "hook_ok": null,
+     "ckpt": {
+      "kind": "awq",
+      "wbits": 4,
+      "calib": "manifests/a6k2/q8/calib_fp_traj_c1.json"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://node001:8000/v1",
+    "host": "node005"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "awq_w4",
+   "block": "f03",
+   "source": "Bank U reference (U2B rows only)",
+   "dir": "analysis/fork/bank_u/q8_awq_w4/f03",
+   "bank_summary": {
+    "n_rows": 190,
+    "n_ok": 190,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 19,
+     "n_pass": 19
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 429,
+    "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907"
+   },
+   "u2b_noop": {
+    "n": 10,
+    "n_pass": 10
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/bank_u_v1.json",
+    "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907",
+    "model": "q8",
+    "cell": "awq_w4",
+    "blocks": [
+     "f03"
+    ],
+    "subs": [
+     "U1",
+     "U2B",
+     "U2Q"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/bank_u/q8_awq_w4/f03"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 189,
+    "completed": 189,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 189,
+    "recomputed_check_eq_stored": 189,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "db76cab1da9700d1",
+     "ckpt_sha256": "9ce71e4aa7a5b1afcb2a1358e16e673e62313f32e8ca8877d22b87b3622135d9",
+     "effective_config_sha": "b8608c0732512633",
+     "hook_version": null,
+     "max_model_len": 33792,
+     "hook_ok": null,
+     "ckpt": {
+      "kind": "awq",
+      "wbits": 4,
+      "calib": "manifests/a6k2/q8/calib_fp_traj_c1.json"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://node001:8000/v1",
+    "host": "node005"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "kvq_int8",
+   "block": "f01",
+   "source": "Bank U reference (U2B rows only)",
+   "dir": "analysis/fork/bank_u/q8_kvq_int8/f01",
+   "bank_summary": {
+    "n_rows": 190,
+    "n_ok": 190,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 15,
+     "n_pass": 15
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 301,
+    "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907"
+   },
+   "u2b_noop": {
+    "n": 5,
+    "n_pass": 5
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/bank_u_v1.json",
+    "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907",
+    "model": "q8",
+    "cell": "kvq_int8",
+    "blocks": [
+     "f01"
+    ],
+    "subs": [
+     "U1",
+     "U2B",
+     "U2Q"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/bank_u/q8_kvq_int8/f01"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 118,
+    "completed": 118,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 118,
+    "recomputed_check_eq_stored": 118,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "18f22e1d2cfbc1f3",
+     "ckpt_sha256": null,
+     "effective_config_sha": "85d54c1985196e20",
+     "hook_version": "ca3e42d2ba543122",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "bf16"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node007"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "kvq_int8",
+   "block": "f02",
+   "source": "Bank U reference (U2B rows only)",
+   "dir": "analysis/fork/bank_u/q8_kvq_int8/f02",
+   "bank_summary": {
+    "n_rows": 190,
+    "n_ok": 190,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 18,
+     "n_pass": 18
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 322,
+    "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907"
+   },
+   "u2b_noop": {
+    "n": 8,
+    "n_pass": 8
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/bank_u_v1.json",
+    "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907",
+    "model": "q8",
+    "cell": "kvq_int8",
+    "blocks": [
+     "f02"
+    ],
+    "subs": [
+     "U1",
+     "U2B",
+     "U2Q"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/bank_u/q8_kvq_int8/f02"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 133,
+    "completed": 133,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 133,
+    "recomputed_check_eq_stored": 133,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "18f22e1d2cfbc1f3",
+     "ckpt_sha256": null,
+     "effective_config_sha": "85d54c1985196e20",
+     "hook_version": "ca3e42d2ba543122",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "bf16"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://node001:8000/v1",
+    "host": "node007"
+   },
+   "reused_arms_inheriting_an_error": []
+  },
+  {
+   "cell": "kvq_int8",
+   "block": "f03",
+   "source": "Bank U reference (U2B rows only)",
+   "dir": "analysis/fork/bank_u/q8_kvq_int8/f03",
+   "bank_summary": {
+    "n_rows": 190,
+    "n_ok": 190,
+    "n_missing": 0,
+    "n_errors": 0,
+    "noop": {
+     "n": 15,
+     "n_pass": 15
+    },
+    "budget_ok": true,
+    "gate_pass": true,
+    "n_branches_run": 307,
+    "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907"
+   },
+   "u2b_noop": {
+    "n": 8,
+    "n_pass": 8
+   },
+   "spec": {
+    "mode": "bank_u",
+    "manifest": "manifests/fork/bank_u_v1.json",
+    "manifest_sha256": "e236ee6483e723ffe8acd743ff2f5af8c1f92b49a39a7e721359c960ee12a907",
+    "model": "q8",
+    "cell": "kvq_int8",
+    "blocks": [
+     "f03"
+    ],
+    "subs": [
+     "U1",
+     "U2B",
+     "U2Q"
+    ],
+    "noop_frac": 0.1,
+    "concurrency": 8,
+    "out": "analysis/fork/bank_u/q8_kvq_int8/f03"
+   },
+   "rows": {
+    "u2b_rows": 85,
+    "row_set_eq_manifest": true,
+    "row_fields_eq_manifest": 85,
+    "Q_prompt_ok": 85,
+    "row_missing": 0,
+    "row_error": 0,
+    "branch_files": 85,
+    "rows_with_an_undefined_arm": 0
+   },
+   "branches": {
+    "attempted": 133,
+    "completed": 133,
+    "arm_errors": 0,
+    "recount_indep_eq_stored_eq_live": 133,
+    "recomputed_check_eq_stored": 133,
+    "sentinels": 0,
+    "mismatches": 0,
+    "budget_ok_false": 0,
+    "prefix_ok_not_true": 0,
+    "env_hash_init_not_ok": 0,
+    "counters_tau2_default_not_00": 0,
+    "term_inconsistent": 0
+   },
+   "restoration": {
+    "restored_eq_200_minus_steps_left": 85,
+    "state_id_recomputed_eq": 85,
+    "history_sha_recomputed_eq": 85,
+    "rows": 85
+   },
+   "servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "canary_ref_ok": true,
+     "max_model_len": 33792
+    },
+    "Q": {
+     "canary": "18f22e1d2cfbc1f3",
+     "ckpt_sha256": null,
+     "effective_config_sha": "85d54c1985196e20",
+     "hook_version": "ca3e42d2ba543122",
+     "max_model_len": 33792,
+     "hook_ok": true,
+     "ckpt": {
+      "kind": "bf16"
+     }
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node004"
+   },
+   "reused_arms_inheriting_an_error": []
+  }
+ ],
+ "totals": {
+  "panel": {
+   "blocks": 24,
+   "rows": 2040,
+   "attempted": 3923,
+   "completed": 3892,
+   "arm_errors": 31,
+   "recount_match": 3892,
+   "recomputed_check_eq_stored": 3892,
+   "sentinels": 0,
+   "mismatches": 0,
+   "budget_ok_false": 0,
+   "restored_ok": 2040,
+   "endings_pooled_all_cells_arms": {
+    "user_stop": 3546,
+    "max_steps": 192,
+    "too_many_errors": 154
+   }
+  },
+  "reference_u2b": {
+   "blocks": 9,
+   "rows": 765,
+   "attempted": 1434,
+   "completed": 1434,
+   "arm_errors": 0,
+   "recount_match": 1434,
+   "sentinels": 0,
+   "mismatches": 0,
+   "budget_ok_false": 0,
+   "restored_ok": 765,
+   "endings_pooled": {
+    "user_stop": 1343,
+    "max_steps": 47,
+    "too_many_errors": 44
+   }
+  },
+  "a7_recovered_arms": {
+   "recovered": 17,
+   "recount_match": 17,
+   "recomputed_check_ok": 17
+  },
+  "total_recount_mismatches": 0
+ },
+ "arm_errors": [
+  {
+   "cell": "spinquant_w4a4",
+   "block": "f01",
+   "task": "retail:7",
+   "state_id": "eaee7db48334a362",
+   "state_key": "a42e6f98f2baa960",
+   "t": 10,
+   "arm": "QQ",
+   "n_decisions": 80,
+   "error_prefix": "litellm.Timeout: Timeout Error: Hosted_vllmException - litellm.Timeout: Connection timed out after 600.0 seconds.",
+   "infra_cause": null,
+   "restored_budget": [
+    21,
+    3
+   ],
+   "steps_left": 179,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A7_class_failed_arms_json": "other",
+   "A7_server": "user_simulator node005:8000 (Qwen3-30B-A3B-Instruct-2507, node005 job 49863) (inferred by elimination + backlog)",
+   "reused_by": [
+    "BQ"
+   ],
+   "row_record_written": "2026-10-03 08:13:02 PDT"
+  },
+  {
+   "cell": "spinquant_w4a4",
+   "block": "f01",
+   "task": "airline:23",
+   "state_id": "a685598be7e1adf8",
+   "state_key": "9749f30f7ffd3c41",
+   "t": 14,
+   "arm": "BQ",
+   "n_decisions": 29,
+   "error_prefix": "litellm.Timeout: Timeout Error: Hosted_vllmException - litellm.Timeout: Connection timed out after 600.0 seconds.",
+   "infra_cause": null,
+   "restored_budget": [
+    29,
+    3
+   ],
+   "steps_left": 171,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A7_class_failed_arms_json": "other",
+   "A7_server": "user_simulator node005:8000 (Qwen3-30B-A3B-Instruct-2507, node005 job 49863) (inferred by elimination + backlog)",
+   "reused_by": [],
+   "row_record_written": "2026-10-03 11:04:14 PDT"
+  },
+  {
+   "cell": "spinquant_w4a4",
+   "block": "f01",
+   "task": "airline:23",
+   "state_id": "a685598be7e1adf8",
+   "state_key": "9749f30f7ffd3c41",
+   "t": 14,
+   "arm": "QQ",
+   "n_decisions": 11,
+   "error_prefix": "litellm.Timeout: Timeout Error: Hosted_vllmException - litellm.Timeout: Connection timed out after 600.0 seconds.",
+   "infra_cause": null,
+   "restored_budget": [
+    29,
+    3
+   ],
+   "steps_left": 171,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A7_class_failed_arms_json": "other",
+   "A7_server": "user_simulator node005:8000 (Qwen3-30B-A3B-Instruct-2507, node005 job 49863) (inferred by elimination + backlog)",
+   "reused_by": [],
+   "row_record_written": "2026-10-03 11:04:14 PDT"
+  },
+  {
+   "cell": "spinquant_w4a4",
+   "block": "f01",
+   "task": "airline:32",
+   "state_id": "f86f175588c35058",
+   "state_key": "1bdc433905484e8d",
+   "t": 0,
+   "arm": "QQ",
+   "n_decisions": 21,
+   "error_prefix": "litellm.Timeout: Timeout Error: Hosted_vllmException - litellm.Timeout: Connection timed out after 600.0 seconds.",
+   "infra_cause": null,
+   "restored_budget": [
+    1,
+    0
+   ],
+   "steps_left": 199,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A7_class_failed_arms_json": "other",
+   "A7_server": "user_simulator node005:8000 (Qwen3-30B-A3B-Instruct-2507, node005 job 49863) (inferred by elimination + backlog)",
+   "reused_by": [],
+   "row_record_written": "2026-10-03 10:02:02 PDT"
+  },
+  {
+   "cell": "spinquant_w4a4",
+   "block": "f01",
+   "task": "airline:33",
+   "state_id": "80354008b603149d",
+   "state_key": "197f61e9d1573be3",
+   "t": 9,
+   "arm": "QB",
+   "n_decisions": 4,
+   "error_prefix": "litellm.Timeout: Timeout Error: Hosted_vllmException - litellm.Timeout: Connection timed out after 600.0 seconds.",
+   "infra_cause": null,
+   "restored_budget": [
+    19,
+    1
+   ],
+   "steps_left": 181,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A7_class_failed_arms_json": "other",
+   "A7_server": "user_simulator node005:8000 (Qwen3-30B-A3B-Instruct-2507, node005 job 49863) (inferred by elimination + backlog)",
+   "reused_by": [],
+   "row_record_written": "2026-10-03 09:31:23 PDT"
+  },
+  {
+   "cell": "spinquant_w4a4",
+   "block": "f01",
+   "task": "airline:4",
+   "state_id": "594c3d42cba195d4",
+   "state_key": "33b049d3a313a14f",
+   "t": 7,
+   "arm": "QQ",
+   "n_decisions": 3,
+   "error_prefix": "litellm.Timeout: Timeout Error: Hosted_vllmException - litellm.Timeout: Connection timed out after 600.0 seconds.",
+   "infra_cause": null,
+   "restored_budget": [
+    15,
+    1
+   ],
+   "steps_left": 185,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A7_class_failed_arms_json": "other",
+   "A7_server": "user_simulator node005:8000 (Qwen3-30B-A3B-Instruct-2507, node005 job 49863) (inferred by elimination + backlog)",
+   "reused_by": [],
+   "row_record_written": "2026-10-03 08:22:53 PDT"
+  },
+  {
+   "cell": "spinquant_w4a4",
+   "block": "f01",
+   "task": "airline:45",
+   "state_id": "cbb0710ba23034f6",
+   "state_key": "2b7e8183406b2144",
+   "t": 9,
+   "arm": "QB",
+   "n_decisions": 5,
+   "error_prefix": "litellm.Timeout: Timeout Error: Hosted_vllmException - litellm.Timeout: Connection timed out after 600.0 seconds.",
+   "infra_cause": null,
+   "restored_budget": [
+    19,
+    2
+   ],
+   "steps_left": 181,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A7_class_failed_arms_json": "other",
+   "A7_server": "user_simulator node005:8000 (Qwen3-30B-A3B-Instruct-2507, node005 job 49863) (inferred by elimination + backlog)",
+   "reused_by": [],
+   "row_record_written": "2026-10-03 10:34:10 PDT"
+  },
+  {
+   "cell": "spinquant_w4a4",
+   "block": "f01",
+   "task": "airline:47",
+   "state_id": "e5057ccaebb0e3c4",
+   "state_key": "27b52ac1d2cc9ec6",
+   "t": 4,
+   "arm": "QQ",
+   "n_decisions": 2,
+   "error_prefix": "litellm.Timeout: Timeout Error: Hosted_vllmException - litellm.Timeout: Connection timed out after 600.0 seconds.",
+   "infra_cause": null,
+   "restored_budget": [
+    9,
+    0
+   ],
+   "steps_left": 191,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A7_class_failed_arms_json": "other",
+   "A7_server": "user_simulator node005:8000 (Qwen3-30B-A3B-Instruct-2507, node005 job 49863) (inferred by elimination + backlog)",
+   "reused_by": [],
+   "row_record_written": "2026-10-03 10:53:37 PDT"
+  },
+  {
+   "cell": "spinquant_w4a4",
+   "block": "f01",
+   "task": "airline:8",
+   "state_id": "1099d55256ce3e93",
+   "state_key": "f01a1f21e0c452e7",
+   "t": 17,
+   "arm": "QQ",
+   "n_decisions": 3,
+   "error_prefix": "litellm.Timeout: Timeout Error: Hosted_vllmException - litellm.Timeout: Connection timed out after 600.0 seconds.",
+   "infra_cause": null,
+   "restored_budget": [
+    35,
+    5
+   ],
+   "steps_left": 165,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A7_class_failed_arms_json": "other",
+   "A7_server": "user_simulator node005:8000 (Qwen3-30B-A3B-Instruct-2507, node005 job 49863) (inferred by elimination + backlog)",
+   "reused_by": [],
+   "row_record_written": "2026-10-03 11:25:03 PDT"
+  },
+  {
+   "cell": "kivi_k2v2",
+   "block": "f01",
+   "task": "airline:32",
+   "state_id": "f86f175588c35058",
+   "state_key": "1bdc433905484e8d",
+   "t": 0,
+   "arm": "QQ",
+   "n_decisions": 5,
+   "error_prefix": "litellm.Timeout: Timeout Error: Hosted_vllmException - litellm.Timeout: Connection timed out after 600.0 seconds.",
+   "infra_cause": null,
+   "restored_budget": [
+    1,
+    0
+   ],
+   "steps_left": 199,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A7_class_failed_arms_json": "timeout_cause_not_established",
+   "A7_server": "agent Q server (inferred by elimination)",
+   "reused_by": [],
+   "row_record_written": "2026-10-02 16:43:09 PDT"
+  },
+  {
+   "cell": "kivi_k2v2",
+   "block": "f02",
+   "task": "retail:45",
+   "state_id": "117c4af65b63c160",
+   "state_key": "02dde73dfe90f6f6",
+   "t": 1,
+   "arm": "QQ",
+   "n_decisions": 12,
+   "error_prefix": "litellm.Timeout: Timeout Error: Hosted_vllmException - litellm.Timeout: Connection timed out after 600.0 seconds.",
+   "infra_cause": null,
+   "restored_budget": [
+    3,
+    1
+   ],
+   "steps_left": 197,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A7_class_failed_arms_json": "timeout_cause_not_established",
+   "A7_server": "agent Q server (inferred by elimination)",
+   "reused_by": [],
+   "row_record_written": "2026-10-02 14:58:46 PDT"
+  },
+  {
+   "cell": "kivi_k2v2",
+   "block": "f02",
+   "task": "retail:89",
+   "state_id": "126227df20440fd0",
+   "state_key": "21f3a2013895739f",
+   "t": 4,
+   "arm": "BQ",
+   "n_decisions": 3,
+   "error_prefix": "litellm.Timeout: Timeout Error: Hosted_vllmException - litellm.Timeout: Connection timed out after 600.0 seconds.",
+   "infra_cause": null,
+   "restored_budget": [
+    9,
+    0
+   ],
+   "steps_left": 191,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A7_class_failed_arms_json": "timeout_cause_not_established",
+   "A7_server": "agent Q server (inferred by elimination)",
+   "reused_by": [],
+   "row_record_written": "2026-10-02 15:36:19 PDT"
+  },
+  {
+   "cell": "kivi_k2v2",
+   "block": "f02",
+   "task": "airline:13",
+   "state_id": "c879a930acdf56a3",
+   "state_key": "e553e7972e96416c",
+   "t": 1,
+   "arm": "BQ",
+   "n_decisions": 5,
+   "error_prefix": "litellm.Timeout: Timeout Error: Hosted_vllmException - litellm.Timeout: Connection timed out after 600.0 seconds.",
+   "infra_cause": null,
+   "restored_budget": [
+    3,
+    0
+   ],
+   "steps_left": 197,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A7_class_failed_arms_json": "timeout_cause_not_established",
+   "A7_server": "agent Q server (inferred by elimination)",
+   "reused_by": [],
+   "row_record_written": "2026-10-02 16:51:22 PDT"
+  },
+  {
+   "cell": "kivi_k2v2",
+   "block": "f02",
+   "task": "airline:17",
+   "state_id": "e4316db42ec85699",
+   "state_key": "0f51e0c84a65cf7f",
+   "t": 1,
+   "arm": "BQ",
+   "n_decisions": 15,
+   "error_prefix": "litellm.Timeout: Timeout Error: Hosted_vllmException - litellm.Timeout: Connection timed out after 600.0 seconds.",
+   "infra_cause": null,
+   "restored_budget": [
+    3,
+    1
+   ],
+   "steps_left": 197,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A7_class_failed_arms_json": "timeout_cause_not_established",
+   "A7_server": "agent Q server (inferred by elimination)",
+   "reused_by": [],
+   "row_record_written": "2026-10-02 16:53:30 PDT"
+  },
+  {
+   "cell": "kivi_k2v2",
+   "block": "f03",
+   "task": "retail:21",
+   "state_id": "3c8d26ee46be1777",
+   "state_key": "dbdc689a3751d9dd",
+   "t": 15,
+   "arm": "QQ",
+   "n_decisions": 5,
+   "error_prefix": "litellm.Timeout: Timeout Error: Hosted_vllmException - litellm.Timeout: Connection timed out after 600.0 seconds.",
+   "infra_cause": null,
+   "restored_budget": [
+    31,
+    3
+   ],
+   "steps_left": 169,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A7_class_failed_arms_json": "timeout_cause_not_established",
+   "A7_server": "agent Q server (inferred by elimination)",
+   "reused_by": [],
+   "row_record_written": "2026-10-02 14:40:08 PDT"
+  },
+  {
+   "cell": "kivi_k2v2",
+   "block": "f03",
+   "task": "retail:99",
+   "state_id": "4d75cc34ced03e65",
+   "state_key": "f2b0916c7aa6d021",
+   "t": 2,
+   "arm": "BQ",
+   "n_decisions": 26,
+   "error_prefix": "litellm.Timeout: Timeout Error: Hosted_vllmException - litellm.Timeout: Connection timed out after 600.0 seconds.",
+   "infra_cause": null,
+   "restored_budget": [
+    5,
+    0
+   ],
+   "steps_left": 195,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A7_class_failed_arms_json": "timeout_cause_not_established",
+   "A7_server": "agent Q server (inferred by elimination)",
+   "reused_by": [],
+   "row_record_written": "2026-10-02 18:08:17 PDT"
+  },
+  {
+   "cell": "kivi_k2v2",
+   "block": "f03",
+   "task": "retail:99",
+   "state_id": "4d75cc34ced03e65",
+   "state_key": "f2b0916c7aa6d021",
+   "t": 2,
+   "arm": "QQ",
+   "n_decisions": 20,
+   "error_prefix": "litellm.Timeout: Timeout Error: Hosted_vllmException - litellm.Timeout: Connection timed out after 600.0 seconds.",
+   "infra_cause": null,
+   "restored_budget": [
+    5,
+    0
+   ],
+   "steps_left": 195,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A7_class_failed_arms_json": "timeout_cause_not_established",
+   "A7_server": "agent Q server (inferred by elimination)",
+   "reused_by": [],
+   "row_record_written": "2026-10-02 18:08:17 PDT"
+  },
+  {
+   "cell": "kivi_k2v2",
+   "block": "f03",
+   "task": "airline:14",
+   "state_id": "288d9e5ca142ebbf",
+   "state_key": "01a17956873df0ef",
+   "t": 51,
+   "arm": "QQ",
+   "n_decisions": 31,
+   "error_prefix": "litellm.Timeout: Timeout Error: Hosted_vllmException - litellm.Timeout: Connection timed out after 600.0 seconds.",
+   "infra_cause": null,
+   "restored_budget": [
+    103,
+    1
+   ],
+   "steps_left": 97,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A7_class_failed_arms_json": "timeout_cause_not_established",
+   "A7_server": "agent Q server (inferred by elimination)",
+   "reused_by": [
+    "BQ"
+   ],
+   "row_record_written": "2026-10-02 16:59:50 PDT"
+  },
+  {
+   "cell": "kivi_k2v2",
+   "block": "f03",
+   "task": "airline:19",
+   "state_id": "e556b95d4409db12",
+   "state_key": "b6a3454a4e6f976a",
+   "t": 0,
+   "arm": "QQ",
+   "n_decisions": 11,
+   "error_prefix": "litellm.Timeout: Timeout Error: Hosted_vllmException - litellm.Timeout: Connection timed out after 600.0 seconds.",
+   "infra_cause": null,
+   "restored_budget": [
+    1,
+    0
+   ],
+   "steps_left": 199,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.Timeout"
+   ],
+   "A7_class_failed_arms_json": "timeout_cause_not_established",
+   "A7_server": "agent Q server (inferred by elimination)",
+   "reused_by": [],
+   "row_record_written": "2026-10-02 17:15:31 PDT"
+  },
+  {
+   "cell": "kivi_k4v4",
+   "block": "f01",
+   "task": "retail:27",
+   "state_id": "a00bc87c213e2f45",
+   "state_key": "3b1c207abdf8ef45",
+   "t": 7,
+   "arm": "QQ",
+   "n_decisions": 68,
+   "error_prefix": "litellm.InternalServerError: InternalServerError: Hosted_vllmException - [Errno 111] Connection refused",
+   "infra_cause": null,
+   "restored_budget": [
+    15,
+    3
+   ],
+   "steps_left": 185,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A7_class_failed_arms_json": "service_failure_verified",
+   "A7_server": "user_simulator node004:8000 (Qwen3-30B-A3B-Instruct-2507, node004 job 49862)",
+   "reused_by": [
+    "BQ"
+   ],
+   "row_record_written": "2026-10-02 21:29:18 PDT"
+  },
+  {
+   "cell": "kivi_k4v4",
+   "block": "f01",
+   "task": "airline:14",
+   "state_id": "ff2d571c8f3f4a33",
+   "state_key": "22e5640e91897669",
+   "t": 42,
+   "arm": "QQ",
+   "n_decisions": 25,
+   "error_prefix": "litellm.InternalServerError: InternalServerError: Hosted_vllmException - [Errno 111] Connection refused",
+   "infra_cause": null,
+   "restored_budget": [
+    85,
+    1
+   ],
+   "steps_left": 115,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A7_class_failed_arms_json": "service_failure_verified",
+   "A7_server": "user_simulator node004:8000 (Qwen3-30B-A3B-Instruct-2507, node004 job 49862)",
+   "reused_by": [
+    "BQ"
+   ],
+   "row_record_written": "2026-10-02 21:30:36 PDT"
+  },
+  {
+   "cell": "kivi_k4v4",
+   "block": "f01",
+   "task": "airline:17",
+   "state_id": "1331726099e2a98f",
+   "state_key": "9a48c111a1211c17",
+   "t": 3,
+   "arm": "QQ",
+   "n_decisions": 14,
+   "error_prefix": "litellm.InternalServerError: InternalServerError: Hosted_vllmException - [Errno 111] Connection refused",
+   "infra_cause": null,
+   "restored_budget": [
+    7,
+    1
+   ],
+   "steps_left": 193,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A7_class_failed_arms_json": "service_failure_verified",
+   "A7_server": "user_simulator node004:8000 (Qwen3-30B-A3B-Instruct-2507, node004 job 49862)",
+   "reused_by": [
+    "BQ"
+   ],
+   "row_record_written": "2026-10-02 21:33:40 PDT"
+  },
+  {
+   "cell": "kivi_k4v4",
+   "block": "f01",
+   "task": "airline:18",
+   "state_id": "2c892c0b761ea21a",
+   "state_key": "87c2005e50647c84",
+   "t": 16,
+   "arm": "QQ",
+   "n_decisions": 10,
+   "error_prefix": "litellm.InternalServerError: InternalServerError: Hosted_vllmException - [Errno 111] Connection refused",
+   "infra_cause": null,
+   "restored_budget": [
+    33,
+    3
+   ],
+   "steps_left": 167,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A7_class_failed_arms_json": "service_failure_verified",
+   "A7_server": "user_simulator node004:8000 (Qwen3-30B-A3B-Instruct-2507, node004 job 49862)",
+   "reused_by": [
+    "BQ"
+   ],
+   "row_record_written": "2026-10-02 21:29:26 PDT"
+  },
+  {
+   "cell": "kivi_k4v4",
+   "block": "f01",
+   "task": "airline:2",
+   "state_id": "cfcfc369835184e6",
+   "state_key": "dcd3f47a56a2faba",
+   "t": 9,
+   "arm": "QQ",
+   "n_decisions": 10,
+   "error_prefix": "litellm.InternalServerError: InternalServerError: Hosted_vllmException - [Errno 111] Connection refused",
+   "infra_cause": null,
+   "restored_budget": [
+    19,
+    1
+   ],
+   "steps_left": 181,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A7_class_failed_arms_json": "service_failure_verified",
+   "A7_server": "user_simulator node004:8000 (Qwen3-30B-A3B-Instruct-2507, node004 job 49862)",
+   "reused_by": [
+    "BQ"
+   ],
+   "row_record_written": "2026-10-02 21:29:40 PDT"
+  },
+  {
+   "cell": "kivi_k4v4",
+   "block": "f01",
+   "task": "airline:23",
+   "state_id": "a685598be7e1adf8",
+   "state_key": "9749f30f7ffd3c41",
+   "t": 14,
+   "arm": "BB",
+   "n_decisions": 2,
+   "error_prefix": "litellm.InternalServerError: InternalServerError: Hosted_vllmException - [Errno 111] Connection refused",
+   "infra_cause": null,
+   "restored_budget": [
+    29,
+    3
+   ],
+   "steps_left": 171,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A7_class_failed_arms_json": "service_failure_verified",
+   "A7_server": "user_simulator node004:8000 (Qwen3-30B-A3B-Instruct-2507, node004 job 49862)",
+   "reused_by": [
+    "QB"
+   ],
+   "row_record_written": "2026-10-02 21:31:13 PDT"
+  },
+  {
+   "cell": "kivi_k4v4",
+   "block": "f01",
+   "task": "airline:23",
+   "state_id": "a685598be7e1adf8",
+   "state_key": "9749f30f7ffd3c41",
+   "t": 14,
+   "arm": "QQ",
+   "n_decisions": 2,
+   "error_prefix": "litellm.InternalServerError: InternalServerError: Hosted_vllmException - [Errno 111] Connection refused",
+   "infra_cause": null,
+   "restored_budget": [
+    29,
+    3
+   ],
+   "steps_left": 171,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A7_class_failed_arms_json": "service_failure_verified",
+   "A7_server": "user_simulator node004:8000 (Qwen3-30B-A3B-Instruct-2507, node004 job 49862)",
+   "reused_by": [
+    "BQ"
+   ],
+   "row_record_written": "2026-10-02 21:31:13 PDT"
+  },
+  {
+   "cell": "kivi_k4v4",
+   "block": "f01",
+   "task": "airline:28",
+   "state_id": "78718f7e53c790fa",
+   "state_key": "961ad5dfd79a5dee",
+   "t": 5,
+   "arm": "QQ",
+   "n_decisions": 1,
+   "error_prefix": "litellm.InternalServerError: InternalServerError: Hosted_vllmException - [Errno 111] Connection refused",
+   "infra_cause": null,
+   "restored_budget": [
+    11,
+    0
+   ],
+   "steps_left": 189,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A7_class_failed_arms_json": "service_failure_verified",
+   "A7_server": "user_simulator node004:8000 (Qwen3-30B-A3B-Instruct-2507, node004 job 49862)",
+   "reused_by": [
+    "BQ"
+   ],
+   "row_record_written": "2026-10-02 21:31:00 PDT"
+  },
+  {
+   "cell": "kivi_k4v4",
+   "block": "f01",
+   "task": "airline:3",
+   "state_id": "9ac2b2e65295f4a7",
+   "state_key": "95d6b21e8fc7af2b",
+   "t": 3,
+   "arm": "BB",
+   "n_decisions": 1,
+   "error_prefix": "litellm.InternalServerError: InternalServerError: Hosted_vllmException - [Errno 111] Connection refused",
+   "infra_cause": null,
+   "restored_budget": [
+    7,
+    1
+   ],
+   "steps_left": 193,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A7_class_failed_arms_json": "service_failure_verified",
+   "A7_server": "user_simulator node004:8000 (Qwen3-30B-A3B-Instruct-2507, node004 job 49862)",
+   "reused_by": [],
+   "row_record_written": "2026-10-02 21:32:27 PDT"
+  },
+  {
+   "cell": "kivi_k4v4",
+   "block": "f01",
+   "task": "airline:3",
+   "state_id": "9ac2b2e65295f4a7",
+   "state_key": "95d6b21e8fc7af2b",
+   "t": 3,
+   "arm": "BQ",
+   "n_decisions": 1,
+   "error_prefix": "litellm.InternalServerError: InternalServerError: Hosted_vllmException - [Errno 111] Connection refused",
+   "infra_cause": null,
+   "restored_budget": [
+    7,
+    1
+   ],
+   "steps_left": 193,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A7_class_failed_arms_json": "service_failure_verified",
+   "A7_server": "user_simulator node004:8000 (Qwen3-30B-A3B-Instruct-2507, node004 job 49862)",
+   "reused_by": [],
+   "row_record_written": "2026-10-02 21:32:27 PDT"
+  },
+  {
+   "cell": "kivi_k4v4",
+   "block": "f01",
+   "task": "airline:3",
+   "state_id": "9ac2b2e65295f4a7",
+   "state_key": "95d6b21e8fc7af2b",
+   "t": 3,
+   "arm": "QB",
+   "n_decisions": 2,
+   "error_prefix": "litellm.InternalServerError: InternalServerError: Hosted_vllmException - [Errno 111] Connection refused",
+   "infra_cause": null,
+   "restored_budget": [
+    7,
+    1
+   ],
+   "steps_left": 193,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A7_class_failed_arms_json": "service_failure_verified",
+   "A7_server": "user_simulator node004:8000 (Qwen3-30B-A3B-Instruct-2507, node004 job 49862)",
+   "reused_by": [],
+   "row_record_written": "2026-10-02 21:32:27 PDT"
+  },
+  {
+   "cell": "kivi_k4v4",
+   "block": "f01",
+   "task": "airline:3",
+   "state_id": "9ac2b2e65295f4a7",
+   "state_key": "95d6b21e8fc7af2b",
+   "t": 3,
+   "arm": "QQ",
+   "n_decisions": 2,
+   "error_prefix": "litellm.InternalServerError: InternalServerError: Hosted_vllmException - [Errno 111] Connection refused",
+   "infra_cause": null,
+   "restored_budget": [
+    7,
+    1
+   ],
+   "steps_left": 193,
+   "probe": {
+    "counters_tau2": [
+     0,
+     0
+    ],
+    "to_role": "agent"
+   },
+   "A6_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A6E1_plus_class": [
+    "missing",
+    "litellm.InternalServerError"
+   ],
+   "A7_class_failed_arms_json": "service_failure_verified",
+   "A7_server": "user_simulator node004:8000 (Qwen3-30B-A3B-Instruct-2507, node004 job 49862)",
+   "reused_by": [],
+   "row_record_written": "2026-10-02 21:32:27 PDT"
+  }
+ ],
+ "a7_coverage": {
+  "every_non_agent_arm_error_in_failed_arms_json": true,
+  "n": 31,
+  "failed_arms_json_entries_not_found": [],
+  "spinquant_w4a4_f03_arm_errors": 0
+ },
+ "a7_tasks": {
+  "a7_rr1_q8_kivi_k2v2_f01": {
+   "task": "a7_rr1_q8_kivi_k2v2_f01",
+   "queue": "done",
+   "created": "2026-10-03 16:57:32",
+   "finished_utc": "2026-10-04 00:15:14",
+   "seconds": 948.2561089992523,
+   "host": "node007",
+   "user_base": null,
+   "arms": [
+    [
+     "1bdc433905484e8d",
+     "QQ"
+    ]
+   ],
+   "concurrency": 1,
+   "src_out": "analysis/fork/newmethod/tau2/q8_kivi_k2v2/f01",
+   "out": "analysis/fork/newmethod/tau2_recovery/q8_kivi_k2v2/f01/rr1",
+   "manifest_sha_ok": true,
+   "a7_expect": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "ckpt_sha256": null,
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "hook_version": null
+    },
+    "Q": {
+     "canary": "60cac990145b1cca",
+     "ckpt_sha256": null,
+     "effective_config_sha": "485c96e5d1e91943",
+     "hook_version": "30020b7507a4fa7a"
+    }
+   },
+   "spec_tag_suffix": "rr1",
+   "servers_json": {
+    "path": "/data/ziyangs/cloq_work/logs/tasks/a7_rr1_q8_kivi_k2v2_f01.servers.json",
+    "cmp": {
+     "B.canary": {
+      "servers_json": "e340c7991fa5bc08",
+      "a7_expect": "e340c7991fa5bc08",
+      "orig_block": "e340c7991fa5bc08"
+     },
+     "B.ckpt_sha256": {
+      "servers_json": null,
+      "a7_expect": null,
+      "orig_block": null
+     },
+     "B.effective_config_sha": {
+      "servers_json": "0d4bf272db1da1c5",
+      "a7_expect": "0d4bf272db1da1c5",
+      "orig_block": "0d4bf272db1da1c5"
+     },
+     "B.hook_version": {
+      "servers_json": null,
+      "a7_expect": null,
+      "orig_block": null
+     },
+     "Q.canary": {
+      "servers_json": "60cac990145b1cca",
+      "a7_expect": "60cac990145b1cca",
+      "orig_block": "60cac990145b1cca"
+     },
+     "Q.ckpt_sha256": {
+      "servers_json": null,
+      "a7_expect": null,
+      "orig_block": null
+     },
+     "Q.effective_config_sha": {
+      "servers_json": "485c96e5d1e91943",
+      "a7_expect": "485c96e5d1e91943",
+      "orig_block": "485c96e5d1e91943"
+     },
+     "Q.hook_version": {
+      "servers_json": "30020b7507a4fa7a",
+      "a7_expect": "30020b7507a4fa7a",
+      "orig_block": "30020b7507a4fa7a"
+     }
+    },
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node007",
+    "B_canary_ref_ok": true,
+    "Q_hook_ok": true,
+    "max_model_len": [
+     33792,
+     33792
+    ],
+    "Q_ckpt_eq_task": true,
+    "Q_serve_env_eq_task": true,
+    "Q_serve_env_eq_orig": true,
+    "Q_ckpt_eq_orig": true
+   },
+   "has_summary": true,
+   "summary": {
+    "n_states": 1,
+    "n_arms": 1,
+    "n_arms_recovered": 1,
+    "n_arms_failed_again": 0,
+    "n_state_refused": 0,
+    "n_errors": 0,
+    "shadow_identical": 1,
+    "budget_ok": true,
+    "seconds": 802.1429896354675,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "summary_servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "ckpt_sha256": null,
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "hook_version": null,
+     "max_model_len": 33792,
+     "canary_ref_ok": true,
+     "ckpt": {
+      "kind": "bf16"
+     },
+     "serve_env": {},
+     "hook_ok": null
+    },
+    "Q": {
+     "canary": "60cac990145b1cca",
+     "ckpt_sha256": null,
+     "effective_config_sha": "485c96e5d1e91943",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "canary_ref_ok": null,
+     "ckpt": {
+      "kind": "bf16"
+     },
+     "serve_env": {
+      "CLOQ_PYHOOKS": "1",
+      "CLOQ_KIVI_KBITS": "2",
+      "CLOQ_KIVI_VBITS": "2",
+      "CLOQ_KIVI_GROUP": "32",
+      "CLOQ_KIVI_RESID": "128"
+     },
+     "hook_ok": true
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node007"
+   },
+   "arms_status": [
+    {
+     "state_key": "1bdc433905484e8d",
+     "arm": "QQ",
+     "task": "airline:32",
+     "a7_class": "timeout_cause_not_established",
+     "branch_written_utc": "2026-10-04 00:15:01",
+     "status": "recovered",
+     "recount": {
+      "live": [
+       47,
+       1
+      ],
+      "stored": [
+       47,
+       1
+      ],
+      "indep": [
+       47,
+       1
+      ],
+      "match": true,
+      "recomputed_ok": true,
+      "term_ok": true,
+      "prefix_ok": true,
+      "env_hash_init_ok": true,
+      "counters_default": [
+       0,
+       0
+      ],
+      "to_role": "agent"
+     },
+     "max_wall_seconds": 307.6130545139313,
+     "n_decisions": 23,
+     "stored_budget_ok": true,
+     "row": {
+      "state_identical": {
+       "state_id": true,
+       "history_sha": true,
+       "prompt_ids_sha": true,
+       "steps_left": true
+      },
+      "shadow_identical": true,
+      "missing_reason": null,
+      "error": null,
+      "raw_identical_actions": null
+     },
+     "row_arm_source": "rerun"
+    }
+   ]
+  },
+  "a7_rr1_q8_kivi_k2v2_f02": {
+   "task": "a7_rr1_q8_kivi_k2v2_f02",
+   "queue": "done",
+   "created": "2026-10-03 16:57:32",
+   "finished_utc": "2026-10-04 00:54:09",
+   "seconds": 3078.5105278491974,
+   "host": "node001",
+   "user_base": null,
+   "arms": [
+    [
+     "02dde73dfe90f6f6",
+     "QQ"
+    ],
+    [
+     "0f51e0c84a65cf7f",
+     "BQ"
+    ],
+    [
+     "21f3a2013895739f",
+     "BQ"
+    ],
+    [
+     "e553e7972e96416c",
+     "BQ"
+    ]
+   ],
+   "concurrency": 1,
+   "src_out": "analysis/fork/newmethod/tau2/q8_kivi_k2v2/f02",
+   "out": "analysis/fork/newmethod/tau2_recovery/q8_kivi_k2v2/f02/rr1",
+   "manifest_sha_ok": true,
+   "a7_expect": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "ckpt_sha256": null,
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "hook_version": null
+    },
+    "Q": {
+     "canary": "60cac990145b1cca",
+     "ckpt_sha256": null,
+     "effective_config_sha": "485c96e5d1e91943",
+     "hook_version": "30020b7507a4fa7a"
+    }
+   },
+   "spec_tag_suffix": "rr1",
+   "servers_json": {
+    "path": "/data/ziyangs/cloq_work/logs/tasks/a7_rr1_q8_kivi_k2v2_f02.servers.json",
+    "cmp": {
+     "B.canary": {
+      "servers_json": "e340c7991fa5bc08",
+      "a7_expect": "e340c7991fa5bc08",
+      "orig_block": "e340c7991fa5bc08"
+     },
+     "B.ckpt_sha256": {
+      "servers_json": null,
+      "a7_expect": null,
+      "orig_block": null
+     },
+     "B.effective_config_sha": {
+      "servers_json": "0d4bf272db1da1c5",
+      "a7_expect": "0d4bf272db1da1c5",
+      "orig_block": "0d4bf272db1da1c5"
+     },
+     "B.hook_version": {
+      "servers_json": null,
+      "a7_expect": null,
+      "orig_block": null
+     },
+     "Q.canary": {
+      "servers_json": "60cac990145b1cca",
+      "a7_expect": "60cac990145b1cca",
+      "orig_block": "60cac990145b1cca"
+     },
+     "Q.ckpt_sha256": {
+      "servers_json": null,
+      "a7_expect": null,
+      "orig_block": null
+     },
+     "Q.effective_config_sha": {
+      "servers_json": "485c96e5d1e91943",
+      "a7_expect": "485c96e5d1e91943",
+      "orig_block": "485c96e5d1e91943"
+     },
+     "Q.hook_version": {
+      "servers_json": "30020b7507a4fa7a",
+      "a7_expect": "30020b7507a4fa7a",
+      "orig_block": "30020b7507a4fa7a"
+     }
+    },
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node001",
+    "B_canary_ref_ok": true,
+    "Q_hook_ok": true,
+    "max_model_len": [
+     33792,
+     33792
+    ],
+    "Q_ckpt_eq_task": true,
+    "Q_serve_env_eq_task": true,
+    "Q_serve_env_eq_orig": true,
+    "Q_ckpt_eq_orig": true
+   },
+   "has_summary": true,
+   "summary": {
+    "n_states": 4,
+    "n_arms": 4,
+    "n_arms_recovered": 4,
+    "n_arms_failed_again": 0,
+    "n_state_refused": 0,
+    "n_errors": 0,
+    "shadow_identical": 4,
+    "budget_ok": true,
+    "seconds": 2921.9818596839905,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "summary_servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "ckpt_sha256": null,
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "hook_version": null,
+     "max_model_len": 33792,
+     "canary_ref_ok": true,
+     "ckpt": {
+      "kind": "bf16"
+     },
+     "serve_env": {},
+     "hook_ok": null
+    },
+    "Q": {
+     "canary": "60cac990145b1cca",
+     "ckpt_sha256": null,
+     "effective_config_sha": "485c96e5d1e91943",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "canary_ref_ok": null,
+     "ckpt": {
+      "kind": "bf16"
+     },
+     "serve_env": {
+      "CLOQ_PYHOOKS": "1",
+      "CLOQ_KIVI_KBITS": "2",
+      "CLOQ_KIVI_VBITS": "2",
+      "CLOQ_KIVI_GROUP": "32",
+      "CLOQ_KIVI_RESID": "128"
+     },
+     "hook_ok": true
+    },
+    "same_effective_config": false,
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node001"
+   },
+   "arms_status": [
+    {
+     "state_key": "02dde73dfe90f6f6",
+     "arm": "QQ",
+     "task": "retail:45",
+     "a7_class": "timeout_cause_not_established",
+     "branch_written_utc": "2026-10-04 00:16:08",
+     "status": "recovered",
+     "recount": {
+      "live": [
+       37,
+       6
+      ],
+      "stored": [
+       37,
+       6
+      ],
+      "indep": [
+       37,
+       6
+      ],
+      "match": true,
+      "recomputed_ok": true,
+      "term_ok": true,
+      "prefix_ok": true,
+      "env_hash_init_ok": true,
+      "counters_default": [
+       0,
+       0
+      ],
+      "to_role": "agent"
+     },
+     "max_wall_seconds": 313.6166126728058,
+     "n_decisions": 17,
+     "stored_budget_ok": true,
+     "row": {
+      "state_identical": {
+       "state_id": true,
+       "history_sha": true,
+       "prompt_ids_sha": true,
+       "steps_left": true
+      },
+      "shadow_identical": true,
+      "missing_reason": null,
+      "error": null,
+      "raw_identical_actions": null
+     },
+     "row_arm_source": "rerun"
+    },
+    {
+     "state_key": "0f51e0c84a65cf7f",
+     "arm": "BQ",
+     "task": "airline:17",
+     "a7_class": "timeout_cause_not_established",
+     "branch_written_utc": "2026-10-04 00:42:35",
+     "status": "recovered",
+     "recount": {
+      "live": [
+       59,
+       3
+      ],
+      "stored": [
+       59,
+       3
+      ],
+      "indep": [
+       59,
+       3
+      ],
+      "match": true,
+      "recomputed_ok": true,
+      "term_ok": true,
+      "prefix_ok": true,
+      "env_hash_init_ok": true,
+      "counters_default": [
+       0,
+       0
+      ],
+      "to_role": "agent"
+     },
+     "max_wall_seconds": 524.6806466579437,
+     "n_decisions": 28,
+     "stored_budget_ok": true,
+     "row": {
+      "state_identical": {
+       "state_id": true,
+       "history_sha": true,
+       "prompt_ids_sha": true,
+       "steps_left": true
+      },
+      "shadow_identical": true,
+      "missing_reason": null,
+      "error": null,
+      "raw_identical_actions": null
+     },
+     "row_arm_source": "rerun"
+    },
+    {
+     "state_key": "21f3a2013895739f",
+     "arm": "BQ",
+     "task": "retail:89",
+     "a7_class": "timeout_cause_not_established",
+     "branch_written_utc": "2026-10-04 00:48:13",
+     "status": "recovered",
+     "recount": {
+      "live": [
+       27,
+       0
+      ],
+      "stored": [
+       27,
+       0
+      ],
+      "indep": [
+       27,
+       0
+      ],
+      "match": true,
+      "recomputed_ok": true,
+      "term_ok": true,
+      "prefix_ok": true,
+      "env_hash_init_ok": true,
+      "counters_default": [
+       0,
+       0
+      ],
+      "to_role": "agent"
+     },
+     "max_wall_seconds": 197.2183723449707,
+     "n_decisions": 9,
+     "stored_budget_ok": true,
+     "row": {
+      "state_identical": {
+       "state_id": true,
+       "history_sha": true,
+       "prompt_ids_sha": true,
+       "steps_left": true
+      },
+      "shadow_identical": true,
+      "missing_reason": null,
+      "error": null,
+      "raw_identical_actions": null
+     },
+     "row_arm_source": "rerun"
+    },
+    {
+     "state_key": "e553e7972e96416c",
+     "arm": "BQ",
+     "task": "airline:13",
+     "a7_class": "timeout_cause_not_established",
+     "branch_written_utc": "2026-10-04 00:54:00",
+     "status": "recovered",
+     "recount": {
+      "live": [
+       21,
+       0
+      ],
+      "stored": [
+       21,
+       0
+      ],
+      "indep": [
+       21,
+       0
+      ],
+      "match": true,
+      "recomputed_ok": true,
+      "term_ok": true,
+      "prefix_ok": true,
+      "env_hash_init_ok": true,
+      "counters_default": [
+       0,
+       0
+      ],
+      "to_role": "agent"
+     },
+     "max_wall_seconds": 158.8080906867981,
+     "n_decisions": 9,
+     "stored_budget_ok": true,
+     "row": {
+      "state_identical": {
+       "state_id": true,
+       "history_sha": true,
+       "prompt_ids_sha": true,
+       "steps_left": true
+      },
+      "shadow_identical": true,
+      "missing_reason": null,
+      "error": null,
+      "raw_identical_actions": null
+     },
+     "row_arm_source": "rerun"
+    }
+   ]
+  },
+  "a7_rr1_q8_spinquant_w4a4_f01": {
+   "task": "a7_rr1_q8_spinquant_w4a4_f01",
+   "queue": "done",
+   "created": "2026-10-03 17:45:01",
+   "finished_utc": "2026-10-04 02:29:31",
+   "seconds": 6257.386109828949,
+   "host": "node008",
+   "user_base": "http://node001:8000/v1",
+   "arms": [
+    [
+     "197f61e9d1573be3",
+     "QB"
+    ],
+    [
+     "1bdc433905484e8d",
+     "QQ"
+    ],
+    [
+     "27b52ac1d2cc9ec6",
+     "QQ"
+    ],
+    [
+     "2b7e8183406b2144",
+     "QB"
+    ],
+    [
+     "33b049d3a313a14f",
+     "QQ"
+    ],
+    [
+     "9749f30f7ffd3c41",
+     "BQ"
+    ],
+    [
+     "9749f30f7ffd3c41",
+     "QQ"
+    ],
+    [
+     "a42e6f98f2baa960",
+     "QQ"
+    ],
+    [
+     "f01a1f21e0c452e7",
+     "QQ"
+    ]
+   ],
+   "concurrency": 1,
+   "src_out": "analysis/fork/newmethod/tau2/q8_spinquant_w4a4/f01",
+   "out": "analysis/fork/newmethod/tau2_recovery/q8_spinquant_w4a4/f01/rr1",
+   "manifest_sha_ok": true,
+   "a7_expect": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "ckpt_sha256": null,
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "hook_version": null
+    },
+    "Q": {
+     "canary": "66028ece4c06573c",
+     "ckpt_sha256": "b7223e201cbdb2509422f5fb06bf1d694e89b5cb29b34459d6bee0f5ce67368c",
+     "effective_config_sha": "f32980982246866d",
+     "hook_version": "30020b7507a4fa7a"
+    }
+   },
+   "spec_tag_suffix": "rr1",
+   "servers_json": {
+    "path": "/data/ziyangs/cloq_work/logs/tasks/a7_rr1_q8_spinquant_w4a4_f01.servers.json",
+    "cmp": {
+     "B.canary": {
+      "servers_json": "e340c7991fa5bc08",
+      "a7_expect": "e340c7991fa5bc08",
+      "orig_block": "e340c7991fa5bc08"
+     },
+     "B.ckpt_sha256": {
+      "servers_json": null,
+      "a7_expect": null,
+      "orig_block": null
+     },
+     "B.effective_config_sha": {
+      "servers_json": "0d4bf272db1da1c5",
+      "a7_expect": "0d4bf272db1da1c5",
+      "orig_block": "0d4bf272db1da1c5"
+     },
+     "B.hook_version": {
+      "servers_json": null,
+      "a7_expect": null,
+      "orig_block": null
+     },
+     "Q.canary": {
+      "servers_json": "66028ece4c06573c",
+      "a7_expect": "66028ece4c06573c",
+      "orig_block": "66028ece4c06573c"
+     },
+     "Q.ckpt_sha256": {
+      "servers_json": "b7223e201cbdb2509422f5fb06bf1d694e89b5cb29b34459d6bee0f5ce67368c",
+      "a7_expect": "b7223e201cbdb2509422f5fb06bf1d694e89b5cb29b34459d6bee0f5ce67368c",
+      "orig_block": "b7223e201cbdb2509422f5fb06bf1d694e89b5cb29b34459d6bee0f5ce67368c"
+     },
+     "Q.effective_config_sha": {
+      "servers_json": "f32980982246866d",
+      "a7_expect": "f32980982246866d",
+      "orig_block": "f32980982246866d"
+     },
+     "Q.hook_version": {
+      "servers_json": "30020b7507a4fa7a",
+      "a7_expect": "30020b7507a4fa7a",
+      "orig_block": "30020b7507a4fa7a"
+     }
+    },
+    "user_base": "http://node001:8000/v1",
+    "host": "node008",
+    "B_canary_ref_ok": true,
+    "Q_hook_ok": true,
+    "max_model_len": [
+     33792,
+     33792
+    ],
+    "Q_ckpt_eq_task": true,
+    "Q_serve_env_eq_task": true,
+    "Q_serve_env_eq_orig": true,
+    "Q_ckpt_eq_orig": true
+   },
+   "has_summary": true,
+   "summary": {
+    "n_states": 8,
+    "n_arms": 9,
+    "n_arms_recovered": 9,
+    "n_arms_failed_again": 0,
+    "n_state_refused": 0,
+    "n_errors": 0,
+    "shadow_identical": 8,
+    "budget_ok": true,
+    "seconds": 4708.959494590759,
+    "manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201"
+   },
+   "summary_servers": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "ckpt_sha256": null,
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "hook_version": null,
+     "max_model_len": 33792,
+     "canary_ref_ok": true,
+     "ckpt": {
+      "kind": "bf16"
+     },
+     "serve_env": {},
+     "hook_ok": null
+    },
+    "Q": {
+     "canary": "66028ece4c06573c",
+     "ckpt_sha256": "b7223e201cbdb2509422f5fb06bf1d694e89b5cb29b34459d6bee0f5ce67368c",
+     "effective_config_sha": "f32980982246866d",
+     "hook_version": "30020b7507a4fa7a",
+     "max_model_len": 33792,
+     "canary_ref_ok": null,
+     "ckpt": {
+      "kind": "spinquant",
+      "wbits": 4,
+      "seed": 0,
+      "rotations": "/data/ziyangs/cloq_work/rot/spinquant_q8_a4_s0/R.pt",
+      "rotations_sha256": "1f1719b58be67060acbb25426d16c2ee877ca2e519e4ca6676a9fb83fec3f5ed",
+      "wmethod": "gptq"
+     },
+     "serve_env": {
+      "CLOQ_PYHOOKS": "1",
+      "CLOQ_AQ_BITS": "4",
+      "CLOQ_AQ_FMT": "sym_quarot",
+      "CLOQ_AQ_CLIP": "0.9",
+      "CLOQ_AQ_HAD": "quarot",
+      "CLOQ_KVQ_BITS": "16",
+      "CLOQ_KVQ_ROT": "qk",
+      "CLOQ_KVQ_FMT": "quarot",
+      "CLOQ_KVQ_KCLIP": "0.95",
+      "CLOQ_KVQ_VCLIP": "0.95"
+     },
+     "hook_ok": true
+    },
+    "same_effective_config": false,
+    "user_base": "http://node001:8000/v1",
+    "host": "node008"
+   },
+   "arms_status": [
+    {
+     "state_key": "197f61e9d1573be3",
+     "arm": "QB",
+     "task": "airline:33",
+     "a7_class": "other",
+     "branch_written_utc": "2026-10-04 01:12:44",
+     "status": "recovered",
+     "recount": {
+      "live": [
+       45,
+       2
+      ],
+      "stored": [
+       45,
+       2
+      ],
+      "indep": [
+       45,
+       2
+      ],
+      "match": true,
+      "recomputed_ok": true,
+      "term_ok": true,
+      "prefix_ok": true,
+      "env_hash_init_ok": true,
+      "counters_default": [
+       0,
+       0
+      ],
+      "to_role": "agent"
+     },
+     "max_wall_seconds": 14.433918476104736,
+     "n_decisions": 13,
+     "stored_budget_ok": true,
+     "row": {
+      "state_identical": {
+       "state_id": true,
+       "history_sha": true,
+       "prompt_ids_sha": true,
+       "steps_left": true
+      },
+      "shadow_identical": true,
+      "missing_reason": null,
+      "error": null,
+      "raw_identical_actions": false
+     },
+     "row_arm_source": "rerun"
+    },
+    {
+     "state_key": "1bdc433905484e8d",
+     "arm": "QQ",
+     "task": "airline:32",
+     "a7_class": "other",
+     "branch_written_utc": "2026-10-04 01:20:41",
+     "status": "recovered",
+     "recount": {
+      "live": [
+       69,
+       5
+      ],
+      "stored": [
+       69,
+       5
+      ],
+      "indep": [
+       69,
+       5
+      ],
+      "match": true,
+      "recomputed_ok": true,
+      "term_ok": true,
+      "prefix_ok": true,
+      "env_hash_init_ok": true,
+      "counters_default": [
+       0,
+       0
+      ],
+      "to_role": "agent"
+     },
+     "max_wall_seconds": 34.2586829662323,
+     "n_decisions": 34,
+     "stored_budget_ok": true,
+     "row": {
+      "state_identical": {
+       "state_id": true,
+       "history_sha": true,
+       "prompt_ids_sha": true,
+       "steps_left": true
+      },
+      "shadow_identical": true,
+      "missing_reason": null,
+      "error": null,
+      "raw_identical_actions": false
+     },
+     "row_arm_source": "rerun"
+    },
+    {
+     "state_key": "27b52ac1d2cc9ec6",
+     "arm": "QQ",
+     "task": "airline:47",
+     "a7_class": "other",
+     "branch_written_utc": "2026-10-04 01:20:50",
+     "status": "recovered",
+     "recount": {
+      "live": [
+       13,
+       0
+      ],
+      "stored": [
+       13,
+       0
+      ],
+      "indep": [
+       13,
+       0
+      ],
+      "match": true,
+      "recomputed_ok": true,
+      "term_ok": true,
+      "prefix_ok": true,
+      "env_hash_init_ok": true,
+      "counters_default": [
+       0,
+       0
+      ],
+      "to_role": "agent"
+     },
+     "max_wall_seconds": 2.9610190391540527,
+     "n_decisions": 2,
+     "stored_budget_ok": true,
+     "row": {
+      "state_identical": {
+       "state_id": true,
+       "history_sha": true,
+       "prompt_ids_sha": true,
+       "steps_left": true
+      },
+      "shadow_identical": true,
+      "missing_reason": null,
+      "error": null,
+      "raw_identical_actions": false
+     },
+     "row_arm_source": "rerun"
+    },
+    {
+     "state_key": "2b7e8183406b2144",
+     "arm": "QB",
+     "task": "airline:45",
+     "a7_class": "other",
+     "branch_written_utc": "2026-10-04 01:22:42",
+     "status": "recovered",
+     "recount": {
+      "live": [
+       41,
+       3
+      ],
+      "stored": [
+       41,
+       3
+      ],
+      "indep": [
+       41,
+       3
+      ],
+      "match": true,
+      "recomputed_ok": true,
+      "term_ok": true,
+      "prefix_ok": true,
+      "env_hash_init_ok": true,
+      "counters_default": [
+       0,
+       0
+      ],
+      "to_role": "agent"
+     },
+     "max_wall_seconds": 19.420337915420532,
+     "n_decisions": 11,
+     "stored_budget_ok": true,
+     "row": {
+      "state_identical": {
+       "state_id": true,
+       "history_sha": true,
+       "prompt_ids_sha": true,
+       "steps_left": true
+      },
+      "shadow_identical": true,
+      "missing_reason": null,
+      "error": null,
+      "raw_identical_actions": false
+     },
+     "row_arm_source": "rerun"
+    },
+    {
+     "state_key": "33b049d3a313a14f",
+     "arm": "QQ",
+     "task": "airline:4",
+     "a7_class": "other",
+     "branch_written_utc": "2026-10-04 01:23:31",
+     "status": "recovered",
+     "recount": {
+      "live": [
+       23,
+       1
+      ],
+      "stored": [
+       23,
+       1
+      ],
+      "indep": [
+       23,
+       1
+      ],
+      "match": true,
+      "recomputed_ok": true,
+      "term_ok": true,
+      "prefix_ok": true,
+      "env_hash_init_ok": true,
+      "counters_default": [
+       0,
+       0
+      ],
+      "to_role": "agent"
+     },
+     "max_wall_seconds": 10.79138708114624,
+     "n_decisions": 4,
+     "stored_budget_ok": true,
+     "row": {
+      "state_identical": {
+       "state_id": true,
+       "history_sha": true,
+       "prompt_ids_sha": true,
+       "steps_left": true
+      },
+      "shadow_identical": true,
+      "missing_reason": null,
+      "error": null,
+      "raw_identical_actions": false
+     },
+     "row_arm_source": "rerun"
+    },
+    {
+     "state_key": "9749f30f7ffd3c41",
+     "arm": "BQ",
+     "task": "airline:23",
+     "a7_class": "other",
+     "branch_written_utc": "2026-10-04 01:56:21",
+     "status": "recovered",
+     "recount": {
+      "live": [
+       200,
+       8
+      ],
+      "stored": [
+       200,
+       8
+      ],
+      "indep": [
+       200,
+       8
+      ],
+      "match": true,
+      "recomputed_ok": true,
+      "term_ok": true,
+      "prefix_ok": true,
+      "env_hash_init_ok": true,
+      "counters_default": [
+       0,
+       0
+      ],
+      "to_role": "agent"
+     },
+     "max_wall_seconds": 12.278094291687012,
+     "n_decisions": 86,
+     "stored_budget_ok": true,
+     "row": {
+      "state_identical": {
+       "state_id": true,
+       "history_sha": true,
+       "prompt_ids_sha": true,
+       "steps_left": true
+      },
+      "shadow_identical": true,
+      "missing_reason": null,
+      "error": null,
+      "raw_identical_actions": false
+     },
+     "row_arm_source": "rerun"
+    },
+    {
+     "state_key": "9749f30f7ffd3c41",
+     "arm": "QQ",
+     "task": "airline:23",
+     "a7_class": "other",
+     "branch_written_utc": "2026-10-04 01:56:21",
+     "status": "recovered",
+     "recount": {
+      "live": [
+       200,
+       3
+      ],
+      "stored": [
+       200,
+       3
+      ],
+      "indep": [
+       200,
+       3
+      ],
+      "match": true,
+      "recomputed_ok": true,
+      "term_ok": true,
+      "prefix_ok": true,
+      "env_hash_init_ok": true,
+      "counters_default": [
+       0,
+       0
+      ],
+      "to_role": "agent"
+     },
+     "max_wall_seconds": 4.778546571731567,
+     "n_decisions": 86,
+     "stored_budget_ok": true,
+     "row": {
+      "state_identical": {
+       "state_id": true,
+       "history_sha": true,
+       "prompt_ids_sha": true,
+       "steps_left": true
+      },
+      "shadow_identical": true,
+      "missing_reason": null,
+      "error": null,
+      "raw_identical_actions": false
+     },
+     "row_arm_source": "rerun"
+    },
+    {
+     "state_key": "a42e6f98f2baa960",
+     "arm": "QQ",
+     "task": "retail:7",
+     "a7_class": "other",
+     "branch_written_utc": "2026-10-04 02:28:16",
+     "status": "recovered",
+     "recount": {
+      "live": [
+       200,
+       4
+      ],
+      "stored": [
+       200,
+       4
+      ],
+      "indep": [
+       200,
+       4
+      ],
+      "match": true,
+      "recomputed_ok": true,
+      "term_ok": true,
+      "prefix_ok": true,
+      "env_hash_init_ok": true,
+      "counters_default": [
+       0,
+       0
+      ],
+      "to_role": "agent"
+     },
+     "max_wall_seconds": 26.44749903678894,
+     "n_decisions": 90,
+     "stored_budget_ok": true,
+     "row": {
+      "state_identical": {
+       "state_id": true,
+       "history_sha": true,
+       "prompt_ids_sha": true,
+       "steps_left": true
+      },
+      "shadow_identical": true,
+      "missing_reason": null,
+      "error": null,
+      "raw_identical_actions": false
+     },
+     "row_arm_source": "rerun"
+    },
+    {
+     "state_key": "f01a1f21e0c452e7",
+     "arm": "QQ",
+     "task": "airline:8",
+     "a7_class": "other",
+     "branch_written_utc": "2026-10-04 02:29:17",
+     "status": "recovered",
+     "recount": {
+      "live": [
+       49,
+       8
+      ],
+      "stored": [
+       49,
+       8
+      ],
+      "indep": [
+       49,
+       8
+      ],
+      "match": true,
+      "recomputed_ok": true,
+      "term_ok": true,
+      "prefix_ok": true,
+      "env_hash_init_ok": true,
+      "counters_default": [
+       0,
+       0
+      ],
+      "to_role": "agent"
+     },
+     "max_wall_seconds": 13.700110912322998,
+     "n_decisions": 7,
+     "stored_budget_ok": true,
+     "row": {
+      "state_identical": {
+       "state_id": true,
+       "history_sha": true,
+       "prompt_ids_sha": true,
+       "steps_left": true
+      },
+      "shadow_identical": true,
+      "missing_reason": null,
+      "error": null,
+      "raw_identical_actions": false
+     },
+     "row_arm_source": "rerun"
+    }
+   ]
+  },
+  "a7_rr1_q8_kivi_k2v2_f03": {
+   "task": "a7_rr1_q8_kivi_k2v2_f03",
+   "queue": "running",
+   "created": "2026-10-03 16:57:32",
+   "finished_utc": null,
+   "seconds": null,
+   "host": null,
+   "user_base": null,
+   "arms": [
+    [
+     "01a17956873df0ef",
+     "QQ"
+    ],
+    [
+     "b6a3454a4e6f976a",
+     "QQ"
+    ],
+    [
+     "dbdc689a3751d9dd",
+     "QQ"
+    ],
+    [
+     "f2b0916c7aa6d021",
+     "BQ"
+    ],
+    [
+     "f2b0916c7aa6d021",
+     "QQ"
+    ]
+   ],
+   "concurrency": 1,
+   "src_out": "analysis/fork/newmethod/tau2/q8_kivi_k2v2/f03",
+   "out": "analysis/fork/newmethod/tau2_recovery/q8_kivi_k2v2/f03/rr1",
+   "manifest_sha_ok": true,
+   "a7_expect": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "ckpt_sha256": null,
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "hook_version": null
+    },
+    "Q": {
+     "canary": "60cac990145b1cca",
+     "ckpt_sha256": null,
+     "effective_config_sha": "485c96e5d1e91943",
+     "hook_version": "30020b7507a4fa7a"
+    }
+   },
+   "spec_tag_suffix": "rr1",
+   "servers_json": {
+    "path": "/data/ziyangs/cloq_work/logs/tasks/a7_rr1_q8_kivi_k2v2_f03.servers.json",
+    "cmp": {
+     "B.canary": {
+      "servers_json": "e340c7991fa5bc08",
+      "a7_expect": "e340c7991fa5bc08",
+      "orig_block": "e340c7991fa5bc08"
+     },
+     "B.ckpt_sha256": {
+      "servers_json": null,
+      "a7_expect": null,
+      "orig_block": null
+     },
+     "B.effective_config_sha": {
+      "servers_json": "0d4bf272db1da1c5",
+      "a7_expect": "0d4bf272db1da1c5",
+      "orig_block": "0d4bf272db1da1c5"
+     },
+     "B.hook_version": {
+      "servers_json": null,
+      "a7_expect": null,
+      "orig_block": null
+     },
+     "Q.canary": {
+      "servers_json": "60cac990145b1cca",
+      "a7_expect": "60cac990145b1cca",
+      "orig_block": "60cac990145b1cca"
+     },
+     "Q.ckpt_sha256": {
+      "servers_json": null,
+      "a7_expect": null,
+      "orig_block": null
+     },
+     "Q.effective_config_sha": {
+      "servers_json": "485c96e5d1e91943",
+      "a7_expect": "485c96e5d1e91943",
+      "orig_block": "485c96e5d1e91943"
+     },
+     "Q.hook_version": {
+      "servers_json": "30020b7507a4fa7a",
+      "a7_expect": "30020b7507a4fa7a",
+      "orig_block": "30020b7507a4fa7a"
+     }
+    },
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node007",
+    "B_canary_ref_ok": true,
+    "Q_hook_ok": true,
+    "max_model_len": [
+     33792,
+     33792
+    ],
+    "Q_ckpt_eq_task": true,
+    "Q_serve_env_eq_task": true,
+    "Q_serve_env_eq_orig": true,
+    "Q_ckpt_eq_orig": true
+   },
+   "has_summary": false,
+   "arms_status": [
+    {
+     "state_key": "01a17956873df0ef",
+     "arm": "QQ",
+     "task": "airline:14",
+     "a7_class": "timeout_cause_not_established",
+     "branch_written_utc": "2026-10-04 01:22:32",
+     "status": "failed again",
+     "error": "litellm.Timeout: Timeout Error: Hosted_vllmException - litellm.Timeout: Connection timed out after 600.0 seconds.",
+     "n_decisions": 31,
+     "a6": [
+      "missing",
+      "litellm.Timeout"
+     ],
+     "a6_plus": [
+      "missing",
+      "litellm.Timeout"
+     ]
+    },
+    {
+     "state_key": "b6a3454a4e6f976a",
+     "arm": "QQ",
+     "task": "airline:19",
+     "a7_class": "timeout_cause_not_established",
+     "branch_written_utc": "2026-10-04 01:28:37",
+     "status": "recovered",
+     "recount": {
+      "live": [
+       29,
+       0
+      ],
+      "stored": [
+       29,
+       0
+      ],
+      "indep": [
+       29,
+       0
+      ],
+      "match": true,
+      "recomputed_ok": true,
+      "term_ok": true,
+      "prefix_ok": true,
+      "env_hash_init_ok": true,
+      "counters_default": [
+       0,
+       0
+      ],
+      "to_role": "agent"
+     },
+     "max_wall_seconds": 172.322124004364,
+     "n_decisions": 14,
+     "stored_budget_ok": null
+    },
+    {
+     "state_key": "dbdc689a3751d9dd",
+     "arm": "QQ",
+     "task": "retail:21",
+     "a7_class": "timeout_cause_not_established",
+     "branch_written_utc": "2026-10-04 01:56:01",
+     "status": "recovered",
+     "recount": {
+      "live": [
+       85,
+       10
+      ],
+      "stored": [
+       85,
+       10
+      ],
+      "indep": [
+       85,
+       10
+      ],
+      "match": true,
+      "recomputed_ok": true,
+      "term_ok": true,
+      "prefix_ok": true,
+      "env_hash_init_ok": true,
+      "counters_default": [
+       0,
+       0
+      ],
+      "to_role": "agent"
+     },
+     "max_wall_seconds": 470.82477593421936,
+     "n_decisions": 27,
+     "stored_budget_ok": null
+    },
+    {
+     "state_key": "f2b0916c7aa6d021",
+     "arm": "BQ",
+     "task": "retail:99",
+     "a7_class": "timeout_cause_not_established",
+     "status": "pending (no branch record yet)"
+    },
+    {
+     "state_key": "f2b0916c7aa6d021",
+     "arm": "QQ",
+     "task": "retail:99",
+     "a7_class": "timeout_cause_not_established",
+     "status": "pending (no branch record yet)"
+    }
+   ]
+  },
+  "a7_rr1_q8_kivi_k4v4_f01": {
+   "task": "a7_rr1_q8_kivi_k4v4_f01",
+   "queue": "running",
+   "created": "2026-10-03 16:57:32",
+   "finished_utc": null,
+   "seconds": null,
+   "host": null,
+   "user_base": null,
+   "arms": [
+    [
+     "22e5640e91897669",
+     "QQ"
+    ],
+    [
+     "3b1c207abdf8ef45",
+     "QQ"
+    ],
+    [
+     "87c2005e50647c84",
+     "QQ"
+    ],
+    [
+     "95d6b21e8fc7af2b",
+     "BB"
+    ],
+    [
+     "95d6b21e8fc7af2b",
+     "BQ"
+    ],
+    [
+     "95d6b21e8fc7af2b",
+     "QB"
+    ],
+    [
+     "95d6b21e8fc7af2b",
+     "QQ"
+    ],
+    [
+     "961ad5dfd79a5dee",
+     "QQ"
+    ],
+    [
+     "9749f30f7ffd3c41",
+     "BB"
+    ],
+    [
+     "9749f30f7ffd3c41",
+     "QQ"
+    ],
+    [
+     "9a48c111a1211c17",
+     "QQ"
+    ],
+    [
+     "dcd3f47a56a2faba",
+     "QQ"
+    ]
+   ],
+   "concurrency": 1,
+   "src_out": "analysis/fork/newmethod/tau2/q8_kivi_k4v4/f01",
+   "out": "analysis/fork/newmethod/tau2_recovery/q8_kivi_k4v4/f01/rr1",
+   "manifest_sha_ok": true,
+   "a7_expect": {
+    "B": {
+     "canary": "e340c7991fa5bc08",
+     "ckpt_sha256": null,
+     "effective_config_sha": "0d4bf272db1da1c5",
+     "hook_version": null
+    },
+    "Q": {
+     "canary": "27dfdf096d5093af",
+     "ckpt_sha256": null,
+     "effective_config_sha": "da5099eb5f25a262",
+     "hook_version": "30020b7507a4fa7a"
+    }
+   },
+   "spec_tag_suffix": "rr1",
+   "servers_json": {
+    "path": "/data/ziyangs/cloq_work/logs/tasks/a7_rr1_q8_kivi_k4v4_f01.servers.json",
+    "cmp": {
+     "B.canary": {
+      "servers_json": "e340c7991fa5bc08",
+      "a7_expect": "e340c7991fa5bc08",
+      "orig_block": "e340c7991fa5bc08"
+     },
+     "B.ckpt_sha256": {
+      "servers_json": null,
+      "a7_expect": null,
+      "orig_block": null
+     },
+     "B.effective_config_sha": {
+      "servers_json": "0d4bf272db1da1c5",
+      "a7_expect": "0d4bf272db1da1c5",
+      "orig_block": "0d4bf272db1da1c5"
+     },
+     "B.hook_version": {
+      "servers_json": null,
+      "a7_expect": null,
+      "orig_block": null
+     },
+     "Q.canary": {
+      "servers_json": "27dfdf096d5093af",
+      "a7_expect": "27dfdf096d5093af",
+      "orig_block": "27dfdf096d5093af"
+     },
+     "Q.ckpt_sha256": {
+      "servers_json": null,
+      "a7_expect": null,
+      "orig_block": null
+     },
+     "Q.effective_config_sha": {
+      "servers_json": "da5099eb5f25a262",
+      "a7_expect": "da5099eb5f25a262",
+      "orig_block": "da5099eb5f25a262"
+     },
+     "Q.hook_version": {
+      "servers_json": "30020b7507a4fa7a",
+      "a7_expect": "30020b7507a4fa7a",
+      "orig_block": "30020b7507a4fa7a"
+     }
+    },
+    "user_base": "http://127.0.0.1:8000/v1",
+    "host": "node008",
+    "B_canary_ref_ok": true,
+    "Q_hook_ok": true,
+    "max_model_len": [
+     33792,
+     33792
+    ],
+    "Q_ckpt_eq_task": true,
+    "Q_serve_env_eq_task": true,
+    "Q_serve_env_eq_orig": true,
+    "Q_ckpt_eq_orig": true
+   },
+   "has_summary": false,
+   "arms_status": [
+    {
+     "state_key": "22e5640e91897669",
+     "arm": "QQ",
+     "task": "airline:14",
+     "a7_class": "service_failure_verified",
+     "branch_written_utc": "2026-10-04 01:23:12",
+     "status": "recovered",
+     "recount": {
+      "live": [
+       200,
+       1
+      ],
+      "stored": [
+       200,
+       1
+      ],
+      "indep": [
+       200,
+       1
+      ],
+      "match": true,
+      "recomputed_ok": true,
+      "term_ok": true,
+      "prefix_ok": true,
+      "env_hash_init_ok": true,
+      "counters_default": [
+       0,
+       0
+      ],
+      "to_role": "agent"
+     },
+     "max_wall_seconds": 193.32746267318726,
+     "n_decisions": 58,
+     "stored_budget_ok": null
+    },
+    {
+     "state_key": "3b1c207abdf8ef45",
+     "arm": "QQ",
+     "task": "retail:27",
+     "a7_class": "service_failure_verified",
+     "status": "pending (no branch record yet)"
+    },
+    {
+     "state_key": "87c2005e50647c84",
+     "arm": "QQ",
+     "task": "airline:18",
+     "a7_class": "service_failure_verified",
+     "status": "pending (no branch record yet)"
+    },
+    {
+     "state_key": "95d6b21e8fc7af2b",
+     "arm": "BB",
+     "task": "airline:3",
+     "a7_class": "service_failure_verified",
+     "status": "pending (no branch record yet)"
+    },
+    {
+     "state_key": "95d6b21e8fc7af2b",
+     "arm": "BQ",
+     "task": "airline:3",
+     "a7_class": "service_failure_verified",
+     "status": "pending (no branch record yet)"
+    },
+    {
+     "state_key": "95d6b21e8fc7af2b",
+     "arm": "QB",
+     "task": "airline:3",
+     "a7_class": "service_failure_verified",
+     "status": "pending (no branch record yet)"
+    },
+    {
+     "state_key": "95d6b21e8fc7af2b",
+     "arm": "QQ",
+     "task": "airline:3",
+     "a7_class": "service_failure_verified",
+     "status": "pending (no branch record yet)"
+    },
+    {
+     "state_key": "961ad5dfd79a5dee",
+     "arm": "QQ",
+     "task": "airline:28",
+     "a7_class": "service_failure_verified",
+     "status": "pending (no branch record yet)"
+    },
+    {
+     "state_key": "9749f30f7ffd3c41",
+     "arm": "BB",
+     "task": "airline:23",
+     "a7_class": "service_failure_verified",
+     "status": "pending (no branch record yet)"
+    },
+    {
+     "state_key": "9749f30f7ffd3c41",
+     "arm": "QQ",
+     "task": "airline:23",
+     "a7_class": "service_failure_verified",
+     "status": "pending (no branch record yet)"
+    },
+    {
+     "state_key": "9a48c111a1211c17",
+     "arm": "QQ",
+     "task": "airline:17",
+     "a7_class": "service_failure_verified",
+     "status": "pending (no branch record yet)"
+    },
+    {
+     "state_key": "dcd3f47a56a2faba",
+     "arm": "QQ",
+     "task": "airline:2",
+     "a7_class": "service_failure_verified",
+     "status": "pending (no branch record yet)"
+    }
+   ]
+  }
+ },
+ "a7_status_summary": {
+  "recovered": 17,
+  "failed_again": 1,
+  "pending": 13,
+  "failed_again_detail": {
+   "cell": "kivi_k2v2",
+   "block": "f03",
+   "state_key": "01a17956873df0ef",
+   "task": "airline:14",
+   "t": 51,
+   "arm": "QQ",
+   "n_decisions_original": 31,
+   "n_decisions_rerun": 31,
+   "error": "litellm.Timeout (600 s), 4 attempts",
+   "attempt_starts_pdt": [
+    "17:42:37",
+    "17:52:37",
+    "18:02:37",
+    "18:12:37"
+   ],
+   "final_error_pdt": "2026-10-03 18:22:32",
+   "Q_server_during_attempts": {
+    "running_reqs": 1,
+    "waiting_reqs": 0,
+    "generation_tok_s_median": 1.1,
+    "generation_tok_s_range": [
+     0.2,
+     2.2
+    ],
+    "kv_cache_usage_pct": 17.7,
+    "approx_tokens_decoded_all_attempts": 2544
+   },
+   "A7.2_label": "persistent timeout (stays missing)",
+   "reused_BQ_also_missing": true
+  }
+ },
+ "server_identity_a7": {
+  "a7_rr1_q8_kivi_k2v2_f01": {
+   "servers_json_eq_a7_expect_all": true,
+   "servers_json_eq_original_block_all": true,
+   "finished": true
+  },
+  "a7_rr1_q8_kivi_k2v2_f02": {
+   "servers_json_eq_a7_expect_all": true,
+   "servers_json_eq_original_block_all": true,
+   "finished": true
+  },
+  "a7_rr1_q8_spinquant_w4a4_f01": {
+   "servers_json_eq_a7_expect_all": true,
+   "servers_json_eq_original_block_all": true,
+   "finished": true
+  },
+  "a7_rr1_q8_kivi_k2v2_f03": {
+   "servers_json_eq_a7_expect_all": true,
+   "servers_json_eq_original_block_all": true,
+   "finished": false
+  },
+  "a7_rr1_q8_kivi_k4v4_f01": {
+   "servers_json_eq_a7_expect_all": true,
+   "servers_json_eq_original_block_all": true,
+   "finished": false
+  }
+ },
+ "a7_conditions_recovered_arms": {
+  "state_identical": "13/13 rows of the 3 finished tasks (state_id, history_sha, prompt_ids_sha, steps_left)",
+  "shadow_identical": "13/13 (finished tasks)",
+  "forced_action_eq_recorded": "17/17",
+  "prefix_ok": "17/17",
+  "env_hash_init_ok": "17/17",
+  "sim_seed_eq_original": "17/17 (15 vs original run arms, 2 vs the source trajectory seed)",
+  "task_roles_eq_original_task": "5/5 tasks (B and Q verbatim)",
+  "concurrency": 1,
+  "spinquant_user_base": "http://node001:8000/v1 (A7.E1)"
+ },
+ "dry_admission": {
+  "tau2_blocks": {
+   "kivi_k16v16": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "kivi_k2v2": {
+    "f01": true,
+    "f02": true,
+    "f03": false
+   },
+   "kivi_k4v4": {
+    "f01": false,
+    "f02": true,
+    "f03": true
+   },
+   "quarot_w16": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "quarot_w4": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "quarot_w4a4": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "spinquant_w16": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "spinquant_w4a4": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "gptq_w4_d1": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "awq_w4": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "kvq_int8": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   }
+  },
+  "tau2_blocks_strict_prereg": {
+   "kivi_k16v16": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "kivi_k2v2": {
+    "f01": false,
+    "f02": false,
+    "f03": false
+   },
+   "kivi_k4v4": {
+    "f01": false,
+    "f02": true,
+    "f03": true
+   },
+   "quarot_w16": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "quarot_w4": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "quarot_w4a4": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "spinquant_w16": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "spinquant_w4a4": {
+    "f01": false,
+    "f02": true,
+    "f03": true
+   },
+   "gptq_w4_d1": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "awq_w4": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "kvq_int8": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   }
+  },
+  "tau2_blocks_a6_prospective": {
+   "kivi_k16v16": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "kivi_k2v2": {
+    "f01": true,
+    "f02": true,
+    "f03": false
+   },
+   "kivi_k4v4": {
+    "f01": false,
+    "f02": true,
+    "f03": true
+   },
+   "quarot_w16": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "quarot_w4": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "quarot_w4a4": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "spinquant_w16": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "spinquant_w4a4": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "gptq_w4_d1": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "awq_w4": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "kvq_int8": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   }
+  },
+  "tau2_blocks_a6_plus_toolcall_parse": {
+   "kivi_k16v16": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "kivi_k2v2": {
+    "f01": true,
+    "f02": true,
+    "f03": false
+   },
+   "kivi_k4v4": {
+    "f01": false,
+    "f02": true,
+    "f03": true
+   },
+   "quarot_w16": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "quarot_w4": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "quarot_w4a4": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "spinquant_w16": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "spinquant_w4a4": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "gptq_w4_d1": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "awq_w4": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "kvq_int8": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   }
+  },
+  "tau2_blocks_pre_recovery": {
+   "kivi_k16v16": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "kivi_k2v2": {
+    "f01": false,
+    "f02": false,
+    "f03": false
+   },
+   "kivi_k4v4": {
+    "f01": false,
+    "f02": true,
+    "f03": true
+   },
+   "quarot_w16": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "quarot_w4": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "quarot_w4a4": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "spinquant_w16": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "spinquant_w4a4": {
+    "f01": false,
+    "f02": true,
+    "f03": true
+   },
+   "gptq_w4_d1": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "awq_w4": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   },
+   "kvq_int8": {
+    "f01": true,
+    "f02": true,
+    "f03": true
+   }
+  }
+ },
+ "dry_incomplete_tasks": {
+  "tau2_blocks": {
+   "kivi_k16v16": {},
+   "kivi_k2v2": {
+    "f03": [
+     "airline|14",
+     "airline|19",
+     "retail|21",
+     "retail|99"
+    ]
+   },
+   "kivi_k4v4": {
+    "f01": [
+     "airline|14",
+     "airline|17",
+     "airline|18",
+     "airline|2",
+     "airline|23",
+     "airline|28",
+     "airline|3",
+     "retail|27"
+    ]
+   },
+   "quarot_w16": {},
+   "quarot_w4": {},
+   "quarot_w4a4": {},
+   "spinquant_w16": {},
+   "spinquant_w4a4": {},
+   "gptq_w4_d1": {},
+   "awq_w4": {},
+   "kvq_int8": {}
+  },
+  "tau2_blocks_strict_prereg": {
+   "kivi_k16v16": {},
+   "kivi_k2v2": {
+    "f01": [
+     "airline|32"
+    ],
+    "f02": [
+     "airline|13",
+     "airline|17",
+     "retail|45",
+     "retail|89"
+    ],
+    "f03": [
+     "airline|14",
+     "airline|19",
+     "retail|21",
+     "retail|99"
+    ]
+   },
+   "kivi_k4v4": {
+    "f01": [
+     "airline|14",
+     "airline|17",
+     "airline|18",
+     "airline|2",
+     "airline|23",
+     "airline|28",
+     "airline|3",
+     "retail|27"
+    ]
+   },
+   "quarot_w16": {},
+   "quarot_w4": {},
+   "quarot_w4a4": {},
+   "spinquant_w16": {},
+   "spinquant_w4a4": {
+    "f01": [
+     "airline|23",
+     "airline|32",
+     "airline|33",
+     "airline|4",
+     "airline|45",
+     "airline|47",
+     "airline|8",
+     "retail|7"
+    ]
+   },
+   "gptq_w4_d1": {},
+   "awq_w4": {},
+   "kvq_int8": {}
+  },
+  "tau2_blocks_a6_prospective": {
+   "kivi_k16v16": {},
+   "kivi_k2v2": {
+    "f03": [
+     "airline|14",
+     "airline|19",
+     "retail|21",
+     "retail|99"
+    ]
+   },
+   "kivi_k4v4": {
+    "f01": [
+     "airline|14",
+     "airline|17",
+     "airline|18",
+     "airline|2",
+     "airline|23",
+     "airline|28",
+     "airline|3",
+     "retail|27"
+    ]
+   },
+   "quarot_w16": {},
+   "quarot_w4": {},
+   "quarot_w4a4": {},
+   "spinquant_w16": {},
+   "spinquant_w4a4": {},
+   "gptq_w4_d1": {},
+   "awq_w4": {},
+   "kvq_int8": {}
+  },
+  "tau2_blocks_a6_plus_toolcall_parse": {
+   "kivi_k16v16": {},
+   "kivi_k2v2": {
+    "f03": [
+     "airline|14",
+     "airline|19",
+     "retail|21",
+     "retail|99"
+    ]
+   },
+   "kivi_k4v4": {
+    "f01": [
+     "airline|14",
+     "airline|17",
+     "airline|18",
+     "airline|2",
+     "airline|23",
+     "airline|28",
+     "airline|3",
+     "retail|27"
+    ]
+   },
+   "quarot_w16": {},
+   "quarot_w4": {},
+   "quarot_w4a4": {},
+   "spinquant_w16": {},
+   "spinquant_w4a4": {},
+   "gptq_w4_d1": {},
+   "awq_w4": {},
+   "kvq_int8": {}
+  },
+  "tau2_blocks_pre_recovery": {
+   "kivi_k16v16": {},
+   "kivi_k2v2": {
+    "f01": [
+     "airline|32"
+    ],
+    "f02": [
+     "airline|13",
+     "airline|17",
+     "retail|45",
+     "retail|89"
+    ],
+    "f03": [
+     "airline|14",
+     "airline|19",
+     "retail|21",
+     "retail|99"
+    ]
+   },
+   "kivi_k4v4": {
+    "f01": [
+     "airline|14",
+     "airline|17",
+     "airline|18",
+     "airline|2",
+     "airline|23",
+     "airline|28",
+     "airline|3",
+     "retail|27"
+    ]
+   },
+   "quarot_w16": {},
+   "quarot_w4": {},
+   "quarot_w4a4": {},
+   "spinquant_w16": {},
+   "spinquant_w4a4": {
+    "f01": [
+     "airline|23",
+     "airline|32",
+     "airline|33",
+     "airline|4",
+     "airline|45",
+     "airline|47",
+     "airline|8",
+     "retail|7"
+    ]
+   },
+   "gptq_w4_d1": {},
+   "awq_w4": {},
+   "kvq_int8": {}
+  }
+ },
+ "dry_a6_report": {
+  "kivi_k2v2": {
+   "f03": {
+    "states_reclassified": 0,
+    "arms_reclassified": 0,
+    "arms_reused": 0,
+    "by_signature": {},
+    "by_producer": {},
+    "states_still_missing": 4,
+    "missing_reasons": {
+     "litellm.Timeout": 5
+    },
+    "states": [
+     "retail:21 missing QQ",
+     "retail:99 missing BQ,QQ",
+     "airline:14 missing QQ",
+     "airline:19 missing QQ"
+    ]
+   }
+  },
+  "kivi_k4v4": {
+   "f01": {
+    "states_reclassified": 0,
+    "arms_reclassified": 0,
+    "arms_reused": 0,
+    "by_signature": {},
+    "by_producer": {},
+    "states_still_missing": 8,
+    "missing_reasons": {
+     "litellm.InternalServerError": 12
+    },
+    "states": [
+     "retail:27 missing QQ",
+     "airline:14 missing QQ",
+     "airline:17 missing QQ",
+     "airline:18 missing QQ",
+     "airline:2 missing QQ",
+     "airline:23 missing BB,QQ",
+     "airline:28 missing QQ",
+     "airline:3 missing BB,BQ,QB,QQ"
+    ]
+   }
+  }
+ },
+ "dry_tau2_log": {},
+ "contrasts_common_blocks": {
+  "now_primary": {
+   "P1 quarot_w4-gptq_w4_d1": [
+    "f01",
+    "f02",
+    "f03"
+   ],
+   "P2 spinquant_w4a4-quarot_w4a4": [
+    "f01",
+    "f02",
+    "f03"
+   ],
+   "P3 kivi_k2v2-kvq_int8": [
+    "f01",
+    "f02"
+   ],
+   "T1 quarot_w4-quarot_w16": [
+    "f01",
+    "f02",
+    "f03"
+   ],
+   "T2 spinquant_w4a4-spinquant_w16": [
+    "f01",
+    "f02",
+    "f03"
+   ],
+   "T3 quarot_w4a4-quarot_w16": [
+    "f01",
+    "f02",
+    "f03"
+   ],
+   "K2 kivi_k4v4-kvq_int8": [
+    "f02",
+    "f03"
+   ],
+   "A4.4 kivi_k2v2-kivi_k16v16 (not implemented in analyze_newmethod)": [
+    "f01",
+    "f02"
+   ],
+   "A4.4 kivi_k4v4-kivi_k16v16 (not implemented)": [
+    "f02",
+    "f03"
+   ]
+  },
+  "pre_recovery_and_strict": {
+   "P1": [
+    "f01",
+    "f02",
+    "f03"
+   ],
+   "P2": [
+    "f02",
+    "f03"
+   ],
+   "P3": "not estimable (kivi_k2v2 has no admitted block)",
+   "T1": [
+    "f01",
+    "f02",
+    "f03"
+   ],
+   "T2": [
+    "f02",
+    "f03"
+   ],
+   "T3": [
+    "f01",
+    "f02",
+    "f03"
+   ],
+   "K2": [
+    "f02",
+    "f03"
+   ]
+  },
+  "a6_prospective_and_a6_plus": "identical to the primary (no S1/S3/JSONDecodeError arm in any q8 panel or reference U2B row)",
+  "after_pending_A7": {
+   "P1": "f01-f03 (k=3, unchanged)",
+   "P2": "f01-f03 (k=3, final: spinquant_w4a4 f01 A7 recovered 9/9)",
+   "P3": "f01,f02 (k=2) final: kivi_k2v2 f03 cannot be admitted (01a17956873df0ef QQ failed again)",
+   "T2": "f01-f03 (final)",
+   "K2": "f01-f03 iff all 11 pending kivi_k4v4 f01 arms complete; else f02,f03",
+   "A4.4 k4v4-k16v16": "as K2",
+   "A4.4 k2v2-k16v16": "f01,f02 final"
+  },
+  "note": "tau2_contrast needs >= 2 common blocks; at k = 2 the primary t has df 1"
+ },
+ "reuse_scan_spinquant_w4a4_f03": {
+  "tokenizer": "Qwen/Qwen3-8B@b968826d9c46dd6066d109eabc6255188de91218",
+  "kwargs": {
+   "enable_thinking": false
+  },
+  "sensitivity": {
+   "key_order_changes_render": true,
+   "int_vs_float_changes_render": true
+  },
+  "dirs": {
+   "analysis/fork/newmethod/tau2/q8_spinquant_w4a4/f03": {
+    "rows": 85,
+    "rows_with_Y": 85,
+    "exact_rows": 28,
+    "reuse_rows": 28,
+    "tool_call": 22,
+    "text": 6,
+    "reused_arms": 56,
+    "canon_eq": 28,
+    "view_eq": 28,
+    "render_eq": 28,
+    "flagged": [],
+    "labels": {
+     "run": 208,
+     "orig": 76,
+     "reuse=BB": 28,
+     "reuse=QQ": 28
+    }
+   },
+   "analysis/fork/newmethod/tau2/q8_spinquant_w4a4/f02": {
+    "rows": 85,
+    "rows_with_Y": 85,
+    "exact_rows": 29,
+    "reuse_rows": 29,
+    "tool_call": 26,
+    "text": 3,
+    "reused_arms": 58,
+    "canon_eq": 29,
+    "view_eq": 29,
+    "render_eq": 29,
+    "flagged": [],
+    "labels": {
+     "run": 207,
+     "orig": 75,
+     "reuse=BB": 29,
+     "reuse=QQ": 29
+    }
+   },
+   "analysis/fork/newmethod/tau2/q8_spinquant_w4a4/f01": {
+    "rows": 85,
+    "rows_with_Y": 85,
+    "exact_rows": 25,
+    "reuse_rows": 25,
+    "tool_call": 22,
+    "text": 3,
+    "reused_arms": 50,
+    "canon_eq": 25,
+    "view_eq": 25,
+    "render_eq": 25,
+    "flagged": [],
+    "labels": {
+     "run": 202,
+     "orig": 79,
+     "reuse=BB": 25,
+     "reuse=QQ": 25,
+     "error": 9
+    }
+   }
+  }
+ },
+ "go_blockers": [
+  "2 A7 tasks running (a7_rr1_q8_kivi_k2v2_f03, a7_rr1_q8_kivi_k4v4_f01; 13 arms pending; a7_rr1_q8_spinquant_w4a4_f01 finished 9/9). exppilot_analysis.required() does not list a7_rr1_* tasks and the analysis runs once; a GO written now would let the q8 primary run (as soon as nmp_score_q8_spinquant_w4a4_f03 is done, or at T_deadline 2026-10-04 12:00 PDT) without the pending A7 arms (only K2 and the A4.4 k4v4 contrast can still change: kivi_k4v4 f01). Write GO only after both tasks finish (A7 deadline 2026-10-04 21:00 PDT), or have the main session add them to required().",
+  "nmp_score_q8_spinquant_w4a4_f03 running (local fidelity, \u00a79); exppilot already waits for it.",
+  "A4.4 contrasts kivi_k2v2-kivi_k16v16 and kivi_k4v4-kivi_k16v16 are prescribed but absent from analyze_newmethod (SECONDARY = T1,T2,T3,K2). Implement before the read, or record why they are omitted."
+ ],
+ "not_blocking": [
+  "E1.7 closed in W100ae (S3 and q8 scope kept); no A6/A6.E1-class arm exists in q8, so every A6 view equals strict except for A7",
+  "kivi_k2v2 f03 lost under the primary by the A7.2 persistent-timeout rule fixed before the re-run",
+  "noop checks not performed on kivi_k4v4 f01 9749f30f7ffd3c41 and 95d6b21e8fc7af2b (noop-sampled rows whose BB arm errored); bank_u_arms does not compare a re-run BB with the original",
+  "reference kvq_int8 served with hook_version ca3e42d2ba543122 (Bank U era) vs 30020b7507a4fa7a for the new KIVI cells; \u00a72.5 admits reference rows on row identity and the Bank U manifest sha",
+  "gate_pass true in all 33 blocks; budget_ok true in all 33"
+ ],
+ "as_of": "2026-10-04T02:31Z (A7 and --dry re-read after a7_rr1_q8_spinquant_w4a4_f01 finished at 02:29:17Z)"
+}
