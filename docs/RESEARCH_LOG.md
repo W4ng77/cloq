@@ -10,6 +10,33 @@ Newest first.
 
 ---
 
+## W100ai - q8 acceptance: reviews A and B give a conditional GO (no blocking issue); pre-read fixes A7.E2; automatic GO once A7 finishes (2026-10-03 20:15 PDT)
+
+**TL;DR** Both independent q8 reviews give a conditional GO after the two running A7 tasks finish:
+- review A (059d7d1): protocol chain, completeness, A7 compliance on 18 arms, code and hygiene all pass;
+- review B (3de8d31): an independent re-derivation equals `--dry` in all 5 views, and 1,200 reuse rows are token-identical.
+
+The primary family is already fixed: P1 k = 3; P2 k = 3, via A7.E1; P3 k = 2, {f01, f02}.
+
+Pre-read fixes, protocol **A7.E2** (32aa1ca, sha 3b144592):
+- what-was-known erratum;
+- Holm over estimable members;
+- persistent-timeout clause enforced in `a7_records`: any re-run request of 600 s or more stays missing; the longest so far is 524.7 s;
+- the re-run BB on no-op-sampled rows (k4v4 f01 9749f3, 95d6b2) must pass `noop_check`, otherwise the block is quarantined. The code path was verified on 2 known-good rows;
+- per-arm `scripts/a6000/a7_report.py`;
+- E1.5's consequence superseded.
+
+The passing rotation-gate verdict is now committed. `tools/go_q8.sh` writes `EXPPILOT_GO_newmethod_q8` only when:
+- both A7 tasks have left running;
+- A7_REPORT passes;
+- protocol, script and expansion shas are unchanged;
+- no phase-2 q8 task exists;
+- `--dry` admission is kivi_k2v2 {f01, f02}, kivi_k4v4 {f01-f03} if all 12 f01 arms recover (else {f02, f03}), and all other cells f01-f03.
+
+Otherwise it holds and logs to `logs/go_q8.log`.
+
+Evidence: `analysis/fork/out/q8_acceptance_review_{A,B}.md`, `docs/insights/NEWMETHOD_PANEL_PROTOCOL.md` (A7.E2), `scripts/a6000/a7_report.py`, `/data/ziyangs/cloq_work/tools/go_q8.sh`.
+
 ## W100ah - Mistral-24B result: two-sided turnover (~10%), no mode value, GPTQ vs RTN not resolved; §7 filled; A4.4 contrasts implemented; q8 review B conditional GO; the off-diagonal share sits at the exchangeable null (2026-10-03 20:05 PDT)
 
 **TL;DR**
