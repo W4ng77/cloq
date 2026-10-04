@@ -1,6 +1,6 @@
-# A6000 queue snapshot (2026-10-03 20:48:06 PDT)
+# A6000 queue snapshot (2026-10-03 21:18:09 PDT)
 
-## running (18)
+## running (16)
 
 - `a6k2_q14_gauss3_s2_rro`
 - `a6k2_q14_kvq_int3_rro`
@@ -9,8 +9,6 @@
 - `a6k2_q32_rtn_w3_rro`
 - `a6k2_q4_gauss3_s1_redo`
 - `a6k2_q4_gauss3_s2_redo`
-- `a6k2_q4_kvq_int3`
-- `a6k2_q4_kvq_int4`
 - `a6k2_q8_gauss3_s1`
 - `a6k2_q8_gauss3_s2_redo`
 - `a6k2_q8_kvq_int3`
