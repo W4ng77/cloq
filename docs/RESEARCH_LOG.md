@@ -10,6 +10,21 @@ Newest first.
 
 ---
 
+## W100ah - Mistral-24B result: two-sided turnover (~10%), no mode value, GPTQ vs RTN not resolved; §7 filled; A4.4 contrasts implemented; q8 review B conditional GO; the off-diagonal share sits at the exchangeable null (2026-10-03 20:05 PDT)
+
+**TL;DR**
+- **m24.** The GO was written automatically at 19:38. All 7 checks passed, which C1 and C3 of reviews A and B require. exppilot ran the analysis at 19:44 (cc888fb, `analysis/fork/out/newmethod_m24_20261004T024453Z`).
+  - **GPTQ-W4** (k = 6, n = 498): r 4.6 [2.4, 6.8], d 5.4 [2.4, 8.5], M 10.0 [7.0, 13.1]. G -0.8, H +1.4, F +0.0, I +0.6, all spanning 0. Off-diagonal 12.0%.
+  - **RTN-W4** (k = 5): M 10.4 [6.3, 14.4], all modes null, off-diagonal 12.3%.
+  - **M1 (GPTQ - RTN):** ΔD_cc +2.2 [-3.5, +7.8], p .35. Strict view (k = 3): +1.2 [-13.8, +16.2]. Parse view (k = 6): +2.4 [-1.9, +6.7].
+  - **BFCL:** M 9.5 / 16.5%, net null.
+  - §7 "Model family" is filled with the strict-view disclosure.
+- **Off-diagonal null.** The AC review (af064a6) found the paper's 26.9% at the exchangeable-branch null (28.4%). This was reproduced independently from gen_patterns.tex: every W4 cell is at or below the null, and KV8 is 15.3 vs 18.9. m24 shows the same: 12.0 / 12.3 vs 15.7 / 15.9. The full analysis (block bootstrap, within-k tests, variance decomposition, other designs) is running. A reframing decision is pending with GPT.
+- **q8:** A4.4 contrasts implemented before any read (744f7c4). Review B (3de8d31) gives a conditional GO after both A7 tasks finish (C1-C4); review A is pending.
+- **Paper:** BFCL, ALFWorld, Qwen3 and vLLM are now cited, and previously uncited bib entries are used (f3800bc).
+
+Evidence: `analysis/fork/out/newmethod_m24_20261004T024453Z.{md,json}`, `paper/review_ac_20261003.md`, `analysis/fork/out/q8_acceptance_review_B.md`, `/data/ziyangs/cloq_work/logs/go_m24.log`.
+
 ## W100ag - q8 expansion: expand = false (cost); m24 acceptance: two independent reviews, no blocking issue; GO written automatically when C1 and C3 hold (2026-10-03 19:35 PDT)
 
 **TL;DR**
