@@ -820,3 +820,18 @@ No outcome is read for the classification.
 - `scripts/a6000/worker.py`: a fork task's optional `user_base` overrides the node's simulator route.
 - `scripts/a6000/make_tasks_a7.py`: `APPROVED_OTHER`.
 - `analysis/fork/analyze_newmethod.py`: `PROTOCOL_SHA256` = this file's new sha256 (same commit).
+
+---
+
+## Amendment A7.E2 (2026-10-03 20:10 PDT, W100ai): pre-read clarifications from the two q8 acceptance reviews
+
+**TL;DR** Six clarifications, all fixed before any q8 new-method outcome is read. None changes an admitted block, a contrast or a Holm family member. The text above is a byte-identical prefix: sha256 3bd7ef3301b62a9a4688be8b10405ce1f58157ae2327324cd06dbc4ead5ba8f6 (the A7.E1 version).
+
+- **E2.1, "what was known" in A7, corrected.** Between 16:36 and 16:39 PDT, before the A7 commit, the forensics audit printed `termination_reason` for non-errored sibling arms in 3 KIVI branch files and the start of one BQ suffix. The values were not used. Every other statement stands.
+- **E2.2, Holm.** Each Holm family runs over its estimable members only. This is the script's behaviour since the frozen skeleton. Primary: P1-P3 when all three are estimable; in a view where P3 is not estimable, P1 and P2.
+- **E2.3, the persistent-timeout clause is enforced.** Any re-run request taking ≥ 600 s means a timed-out attempt followed by a retry. Such an arm counts as a "persistent timeout" and stays missing, even if a retry later completed. `analyze_newmethod.a7_records` applies this.
+- **E2.4, no-op rows.** Some re-run BB arms sit on a bank_u row that its hash rule samples for the no-op check: kivi_k4v4 f01 9749f30f7ffd3c41 and 95d6b21e8fc7af2b, whose original BB errored. Such a re-run must reproduce the original source suffix under `fork_driver.noop_check` (equality only). If it fails, the block is quarantined for that cell in every view, like a failed no-op.
+- **E2.5, per-arm report.** `scripts/a6000/a7_report.py` writes `analysis/fork/kivi_recovery/A7_REPORT.{md,json}`, effect-blind. Per arm it gives the A7.2 class, the status (recovered / failed again / persistent timeout), the longest request, and state and shadow identity. Per task it gives server identity against `a7_expect` and arms against the spec. It also records the E2.4 no-op result. `queue/EXPPILOT_GO_newmethod_q8` is written only when this report passes and both A7 tasks have finished.
+- **E2.6, E1.5's consequence sentence is superseded.** The sentence was "They decide P3 … and cost P2 one block". After A7/A7.E1: P2 has f01-f03, with f01 only through the A7.E1 re-run, and the pre-re-run and strict views keep k = 2. P3 has {f01, f02}; kivi_k2v2 f03 stays missing because of the persistent timeout of 01a17956873df0ef QQ. On BFCL, K2 and the A4.4 contrasts are labelled "not registered on BFCL", not "cell not admitted".
+
+Files: `analysis/fork/analyze_newmethod.py` (E2.3; `PROTOCOL_SHA256` = this file's new sha256, same commit), `scripts/a6000/a7_report.py`.

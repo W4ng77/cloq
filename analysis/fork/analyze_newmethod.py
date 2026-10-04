@@ -65,7 +65,7 @@ PROTOCOL = ROOT / "docs/insights/NEWMETHOD_PANEL_PROTOCOL.md"
 # Amendment A5 (W100g, 2026-10-02): was 0dc3143e... (A4); expansion decision: registered cells, KIVI _fx gates, fixed population, KIVI pairing, frozen snapshot.
 # Amendment A6 (W100v, 2026-10-03): was f9f8b3a5... (A5); fork-branch arm errors on the agent's own output scored Y = 0.
 # Amendment A6.E1 (W100v-e, 2026-10-03): was 73bf5538... (A6); corrections, A6-prospective and tool-call-parse sensitivities.
-PROTOCOL_SHA256 = "3bd7ef3301b62a9a4688be8b10405ce1f58157ae2327324cd06dbc4ead5ba8f6"  # A7.E1 (W100ae)
+PROTOCOL_SHA256 = "3b144592254a6bf91d70c5b9dbd919ee5cf0470ceecdd135d49d6685b921d06a"  # A7.E2 (W100ai)
 # Amendment A6.2 (W100v): exception signatures raised only by validating an AGENT message (repr as cloq/fork.py::run_branch records
 # it); S1 = mistral_common's check of an assistant tool call's function name (W99p), S3 = tau2's agent_msg.validate() on an
 # empty agent message (W92). Either quote style (repr switches to " when the message contains ').
@@ -295,7 +295,11 @@ def a7_records(model: str, cell: str, blk: str) -> dict:
     out = {}
     for x in map(json.loads, filter(str.strip, (d / "recovery_rows.jsonl").read_text().splitlines())):
         p = d / "branches" / f"{x['state_key']}.json"
-        out[x["state_key"]] = {**x, "branches": json.loads(p.read_text()) if p.exists() else {}}
+        br = json.loads(p.read_text()) if p.exists() else {}
+        for a in x.get("arms", []) if "Y" in x else []:  # A7.2 / A7.E2: any request >= 600 s (a timed-out attempt) = persistent timeout
+            if x["arm_source"].get(a) == "rerun" and max([dd.get("wall_seconds") or 0 for dd in (br.get(a) or {}).get("decisions") or []] or [0]) >= 600:
+                x["Y"][a], x["arm_source"][a] = None, "error: persistent timeout (A7.2: a re-run request took >= 600 s)"
+        out[x["state_key"]] = {**x, "branches": br}
     return out
 
 
