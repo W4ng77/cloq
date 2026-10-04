@@ -1,2 +1,3 @@
 - 20261004T024453Z `newmethod_m24` (all admitted panel+score tasks done): `analysis/fork/out/newmethod_m24_20261004T024453Z.json`, `analysis/fork/out/newmethod_m24_20261004T024453Z.md`
 - 20261004T051538Z `newmethod_q8` (all admitted panel+score tasks done): `analysis/fork/out/newmethod_q8_20261004T051538Z.json`, `analysis/fork/out/newmethod_q8_20261004T051538Z.md`
+- 20261004T070604Z `sameprec` (sameprec freeze 2026-10-04 00:00 PDT): `analysis/fork/out/sameprec_20261004T070601Z.json`, `analysis/fork/out/sameprec_20261004T070601Z.md`
