@@ -143,3 +143,11 @@ Deleting files frees space only when no snapshot references the blocks. Snapshot
 - **Local deletion and READMEs (07:15-08:10).** After offload.py and an independent re-hash (workflow wf_1b133c46-ed1: 229/229 data files sha-identical; no running or queued job uses them), the three local folders were deleted (`delete_cq_local_20261004.json`: 21 + 138 + 74 files, 41.0 GiB logical; freed when the 10-04 00:00 snapshot expires). Model cards were drafted and fact-checked claim by claim (workflow wf_12e8781a-670: 165 / 215 / 145 claims) and uploaded to the three ChangXWLab repos; all private. The backfill card records that shard 3 of the archived export differs from its certificate (the reason it was archived). To resume `qwen4b-calib-ohio-w4-v1` or the one-step campaign, download `cells/` back from ChangXWLab first.
 
 Records: `/home/ziyangs/cloq_offload_20261003/{offload_p_*.json, offload_cq_*.json, migrate_changquant.json, migrate_changxwlab.json, readmes/, verify_tmp/, offload_logs/}`, workflow runs wf_a603dd43-1cc (verify) and wf_51f0bc1e-b12 (READMEs), `/data/ziyangs/cloq_work/logs/purge_20261003.log`.
+
+## Update 2026-10-04 17:00: pranalabs-ai repos deleted; 7 llama3 states lost
+
+- The llama3 part-2 migration failed at 12:04. pranalabs-ai is over its private storage limit, and Hugging Face then blocks all downloads from its private repos: `resolve` returns 403 "Private repository storage limit reached"; listing still works.
+- The 7 org-only states (awq_w3_i3, gptq_w3_i0, gptq_w4_i3, omniquant_w3_i3, rtn_w3_i0, rtn_w3_i3, rtn_w4_i3; 232 files, 31.5 GB) could therefore not be copied.
+- The user asked to clear pranalabs-ai and deleted both repos (llama3-8b-main-v1, qronos-llama31-8b-ppl-v1) in the web UI. The 7 layer checkpoints are lost.
+- Their certificates (`weights.json` with layer SHA-256), results and evaluations remain in `W4ng1204/ckpt-sotaquant-llama3-8b-main-v1`. The file list with sizes and hashes is `/home/ziyangs/cloq_offload_20261003/lost_llama3_org_only_20261004.json`.
+- The README was updated ("not available"; commit df132aeb). `migrate_changxwlab.py` was stopped. The ChangXWLab part-2 repo was never created.
