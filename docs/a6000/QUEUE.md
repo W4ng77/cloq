@@ -1,6 +1,6 @@
-# A6000 queue snapshot (2026-10-04 11:50:36 PDT)
+# A6000 queue snapshot (2026-10-04 12:21:38 PDT)
 
-## running (10)
+## running (12)
 
 - `a6k2_q4_gauss3_s1_redo`
 - `a6k2_q4_gauss3_s2_redo`
@@ -12,6 +12,8 @@
 - `a6k2_q8_kvq_int4_rro`
 - `pert_q4_rtn_w3_resid_a2_q345`
 - `pert_q8_rtn_w3_resid_a2_q345`
+- `pivot_q8_rtn_w3_early__middle`
+- `pivot_q8_rtn_w3_rand_attn_s1__rand_mlp_s1`
 
 ## failed (18)
 
