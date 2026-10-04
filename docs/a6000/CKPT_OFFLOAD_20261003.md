@@ -119,3 +119,23 @@ Deleting files frees space only when no snapshot references the blocks. Snapshot
 - Items 14-25 (about 205 GiB, deleted 12:07-12:12): also held by `@2026-10-03-120000`, so they are released
   around 2026-10-05 00:00.
 `usedsnap` moved 31.8G -> 428G while `usedds` moved 991G -> 592G, as expected.
+
+## Update 2026-10-04 (W100al): personal account, qronos dropped, changquant
+
+**TL;DR**
+- **Moved to the personal account.** The user asked to move the uploads off `pranalabs-ai` to the personal account W4ng1204 (free tier, private storage limit about 100 GB).
+  - `W4ng1204/ckpt-sotaquant-llama3-8b-main-v1`: 1,823 files, 70.7 GB. 9 states complete; the other 7 are in a companion repo.
+  - `W4ng1204/ckpt-sotaquant-qronos-llama31-8b-ppl-v1`: weights removed by the user's decision; results only, 9 MB, history squashed.
+  - Both are verified: the uploader re-hashed every file, then a workflow ran 2x2 independent verifiers (full hash and download-compare). Both carry fact-checked READMEs.
+- **Local deletions.**
+  - llama3: 9 checkpoint folders, 66.1 GB, re-verified before deletion.
+  - qronos: weights only, 16.8 GB (llama31 and llama32).
+  - Regenerable environments and caches, 39 GB: sotaquant runtime venvs, official-baselines cache and onecomp-env, envs/strict, sotaquant/cache, naacl2027 envs and hf cache.
+- **Storage limit.** The backfill upload hit "Private repository storage limit reached" on the personal account. The rest goes to a new org `changquant`, which the user creates in the web UI; there is no API for it.
+  - `migrate_changquant.py` (running, waiting for the org) copies the org-only 7 llama3 states (31.5 GB) into `changquant/ckpt-sotaquant-llama3-8b-main-v1-part2`.
+  - It checks that every `pranalabs-ai` file is in personal ∪ part2 with an identical hash.
+  - It then uploads backfill, one-step and qwen4b.
+  - It never deletes anything. The `pranalabs-ai` repos are deleted only after that check and an independent verification.
+- **Not uploaded.** CLOQ's own ckpt_cache base builds (31 GB) are deterministic and their shas are recorded. They are proposed for deletion once tonight's tasks finish.
+
+Records: `/home/ziyangs/cloq_offload_20261003/{offload_p_*.json, migrate_changquant.json, readmes/, verify_tmp/, offload_logs/}`, workflow runs wf_a603dd43-1cc (verify) and wf_51f0bc1e-b12 (READMEs), `/data/ziyangs/cloq_work/logs/purge_20261003.log`.
