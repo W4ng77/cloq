@@ -10,6 +10,20 @@ Newest first.
 
 ---
 
+## W100ak - Ops 21:00: q8 GO guard bug fixed; node008 simulator relieved for the k4v4 A7 re-run (user-approved stop of 2 coverage tasks) (2026-10-03 21:05 PDT)
+
+**TL;DR**
+- **GO guard bug.** `tools/go_q8.sh` exited at 20:01 with HOLD. `ls` over two globs returns non-zero when one of them is empty, so the guard took "A7 done" for true while the tasks were still running. No GO was written. Fixed: the guard now greps the running/todo listings. Restarted.
+- **kivi_k4v4 f01 re-run.** Only 1 of 8 states was done after 3.5 h. Its Q and B servers were idle, and the node008 user simulator was overloaded (5 running, 42 waiting). At that rate the run would pass the freeze.
+  - With the user's approval, the two coverage tasks loading it were stopped with SIGINT: `a6k2_q4_kvq_int3` and `a6k2_q4_kvq_int4` (node008 GPUs 2, 3; running 16 h).
+  - Both were moved to deferred/ with `autopilot_retry: no` and a deferred_note. Their finished episodes are kept; resume them after the re-run.
+  - GPUs 2 and 3 were freed and the simulator queue drained to 0 within a minute.
+  - New node008 runs are routed to node001's idle simulator (`queue/USER_BASE.node008`).
+  - The k4v4 re-run task itself was not touched, so A7's one-run rule is intact.
+- **kivi_k2v2 f03 re-run done:** 4 of 5 arms recovered; 1 persistent timeout (01a17956 QQ) stays missing.
+
+Evidence: `/data/ziyangs/cloq_work/logs/go_q8.log`, `queue/deferred/a6k2_q4_kvq_int{3,4}.json`, `gpumon/node008.jsonl`, `analysis/fork/newmethod/tau2_recovery/q8_kivi_k2v2/f03/rr1/recovery_summary.json`.
+
 ## W100aj - Off-diagonal null (EXPLORATORY): never above chance; the structure is action-side; possible holdout replay gap (only-QQ enrichment in q8 holdout) needs authorised check (2026-10-03 20:25 PDT)
 
 **TL;DR** (5a3b17c, `analysis/fork/offdiag_null.py`, `out/offdiag_null_20261004T030949Z.md`; post hoc). Reproduction is exact: the analyze_ghf unit digests match, and the per-cell shares 29.33 / 25.05 / 30.47 / 22.88 are reproduced. Results:
