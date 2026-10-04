@@ -15,6 +15,9 @@ from pathlib import Path
 ROOT, WORK = Path("/data/ziyangs/cloq"), Path("/data/ziyangs/cloq_work")
 Q = WORK / "queue"
 RERUN = ("service_failure_verified", "timeout_cause_not_established")
+# A7.E1 (GPT-6.1 via the user, 2026-10-03): spinquant_w4a4 f01's 9 'other' arms (user-simulator overload) are re-run once,
+# on a simulator replica with no backlog named in the task (lowering the task's concurrency alone would not relieve it).
+APPROVED_OTHER = {("spinquant_w4a4", "f01"): "http://node001:8000/v1"}
 SKIP = {"id", "priority", "deps", "fork", "note", "result", "finished", "seconds", "host", "error_history", "requeue_note",
         "requeue_notes", "autopilot_retry", "node", "priority_note"}
 
@@ -27,7 +30,7 @@ def main() -> None:
     arms = json.loads((ROOT / "analysis/fork/kivi_recovery/failed_arms.json").read_text())
     by: dict = {}
     for x in arms:
-        if x["class"] in RERUN:
+        if x["class"] in RERUN or (x["class"] == "other" and (x["cell"], x["block"]) in APPROVED_OTHER):
             by.setdefault((x["cell"], x["block"]), []).append([x["state_key"], x["arm"]])
         else:
             print(f"stays missing (class {x['class']}): {x['cell']} {x['block']} {x['state_key']} {x['arm']}")
@@ -48,7 +51,7 @@ def main() -> None:
                            for r in ("B", "Q")},
              "autopilot_retry": "no (A7: one re-run per arm; a failed re-run is left for a human)",
              "note": f"NEWMETHOD A7 (W100ab): one re-run of {len(sel)} failed arm(s) of {oid}, concurrency 1, recorded actions; originals read only",
-             "created": time.strftime("%Y-%m-%d %H:%M:%S")}
+             "created": time.strftime("%Y-%m-%d %H:%M:%S"), **({"user_base": APPROVED_OTHER[(cell, blk)]} if (cell, blk) in APPROVED_OTHER else {})}
         print(tid, len(sel), "arms", t["gpus"], t["fork"]["out"])
         if a.write:
             p = Q / "todo" / f"{tid}.json"

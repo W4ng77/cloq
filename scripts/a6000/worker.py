@@ -660,7 +660,7 @@ def run_fork(task, args, st: Status):
                     f.unlink()
         servers["q_quantization"] = {k: v for k, v in (q_meta or {}).items() if k not in ("per_tensor", "stats")}
         ext = task.get("env")  # simulator-free external environment fork (scripts/ext/fork_ext.py, W39-extfork)
-        ubase = None if ext else user_base()
+        ubase = None if ext else (task.get("user_base") or user_base())  # NEWMETHOD A7.E1: a task may name a simulator replica with no backlog
         t1 = time.time()
         while ubase:
             try:

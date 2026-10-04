@@ -65,7 +65,7 @@ PROTOCOL = ROOT / "docs/insights/NEWMETHOD_PANEL_PROTOCOL.md"
 # Amendment A5 (W100g, 2026-10-02): was 0dc3143e... (A4); expansion decision: registered cells, KIVI _fx gates, fixed population, KIVI pairing, frozen snapshot.
 # Amendment A6 (W100v, 2026-10-03): was f9f8b3a5... (A5); fork-branch arm errors on the agent's own output scored Y = 0.
 # Amendment A6.E1 (W100v-e, 2026-10-03): was 73bf5538... (A6); corrections, A6-prospective and tool-call-parse sensitivities.
-PROTOCOL_SHA256 = "ba743ceed731a09a9f0c50579f4507a1f6125a7bc9ea22456386e398aee16aa0"  # A7 (W100ab)
+PROTOCOL_SHA256 = "3bd7ef3301b62a9a4688be8b10405ce1f58157ae2327324cd06dbc4ead5ba8f6"  # A7.E1 (W100ae)
 # Amendment A6.2 (W100v): exception signatures raised only by validating an AGENT message (repr as cloq/fork.py::run_branch records
 # it); S1 = mistral_common's check of an assistant tool call's function name (W99p), S3 = tau2's agent_msg.validate() on an
 # empty agent message (W92). Either quote style (repr switches to " when the message contains ').

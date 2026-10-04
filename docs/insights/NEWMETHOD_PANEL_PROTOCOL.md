@@ -800,3 +800,23 @@ No outcome is read for the classification.
 - `scripts/a6000/fork_driver.py`: `bank_u_arms`.
 - `analysis/fork/analyze_newmethod.py`: `a7_apply`, `a7_records`, `load_tau2(recovery=)`, the `prerecovery` view, `P3_K2V2_GATE_FAILED`, and `PROTOCOL_SHA256` = this file's new sha256 (same commit).
 - `analysis/fork/kivi_recovery/{failed_arms.json, FORENSICS.md}` (A7.2; committed before any re-run task is queued).
+
+---
+
+## Amendment A7.E1 (2026-10-03 17:55 PDT, W100ae): the 9 spinquant_w4a4 f01 user-simulator timeouts are re-run once; E1.5's label is corrected
+
+**TL;DR** GPT-6.1, relayed by the user on 2026-10-03, approved one re-run of each of the 9 spinquant_w4a4 f01 arms that the A7.2 audit classed `other` (user-simulator overload). The A7.3 conditions apply unchanged: rebuilt and checked state, recorded actions, original checkpoint, kernel and budgets, separate output directory, concurrency 1.
+- **Simulator.** The re-run task names a simulator replica with no backlog in its `user_base` field (node001:8000). Lowering the task's own concurrency would not relieve a shared, overloaded simulator.
+- **Second failure.** An arm that fails again stays missing.
+- **Reporting.** The result before the re-run is kept and reported (A7.4). Written expansion records are not changed (A7.6).
+- **Timing.** The amendment was adopted after the classification and before any outcome of these arms was read.
+
+**E1.5, corrected.**
+- **spinquant_w4a4 f01.** These timeouts were user-simulator timeouts under overload, not "Q-server timeouts". The failing server was attributed by elimination from the serving logs: the arm's agent server was idle while the simulator had 83–92 requests waiting (`analysis/fork/kivi_recovery/FORENSICS.md`). The final count is **9**, 2 of them QB arms. E1.5's "2" was an interim count taken while the block was running, so the total is 9, not 11.
+- **kivi_k2v2.** The 10 arms remain Q-server timeouts, cause not established.
+- **Unchanged.** E1.5's rule text and every other A7 provision.
+
+**Files.**
+- `scripts/a6000/worker.py`: a fork task's optional `user_base` overrides the node's simulator route.
+- `scripts/a6000/make_tasks_a7.py`: `APPROVED_OTHER`.
+- `analysis/fork/analyze_newmethod.py`: `PROTOCOL_SHA256` = this file's new sha256 (same commit).
