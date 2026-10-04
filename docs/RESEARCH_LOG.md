@@ -10,6 +10,31 @@ Newest first.
 
 ---
 
+## W100ag - q8 expansion: expand = false (cost); m24 acceptance: two independent reviews, no blocking issue; GO written automatically when C1 and C3 hold (2026-10-03 19:35 PDT)
+
+**TL;DR**
+- **q8 expansion** (written at 19:08, trigger "all phase-1 tasks finished", commit 2a607db): all 8 cells were eligible, but phase 2 projects to 171.5 GPU-h and 21.4 h of wall time. It would finish at 10-04 16:34 PDT, after T_deadline (12:00), so under §5 all-or-none **expand = false**. This is effect-blind. The q8 new-method analysis uses f01-f03 (k = 3).
+- **The q8 GO waits for the A7 re-runs.** exppilot's required-task list does not include them.
+- **m24 acceptance:**
+  - review A (ae6cd61): conditional GO;
+  - review B (96160a4, independent re-derivation from raw files): PASS.
+  - Neither found a blocking issue. Both reproduce the admission: primary rtn {f01, f02, f03, f05, f06}, gptq f01-f06, M1 k = 5; strict k = 3; parse view k = 6.
+- **`tools/go_m24.sh`** writes `queue/EXPPILOT_GO_newmethod_m24` only when:
+  - C1: `nmp_score_m24_rtn_w4_f03` is done with a fresh score_summary: n_ok 84, prompt sha 84, bound to the current bank_rows;
+  - C3: protocol sha 3bd7ef33, no m24 recovery directory, and `--dry` gives the reviewed admission.
+
+  Otherwise it holds and logs to `logs/go_m24.log`.
+- **To disclose in the m24 write-up** (review notes A N1-N8, B N1-N7):
+  - f01 and f02 are admitted only by A6, which was adopted after the interim, so the strict view (k = 3) gets equal prominence;
+  - expansion_m24 credits the r1 gate_same tasks, but the passing gate is the r2 re-run;
+  - the m24 BFCL forks ran without gate dependencies; same builds, no-ops pass;
+  - fidelity covers rtn f01 at 82/83 (retail:51) and `load_scores` skips missing scores silently;
+  - the A6.E1 statement that "views agree" holds for phase 1 only;
+  - E1.6 read accounting misses 11 gptq f04 files read at 08:21-08:24 (immaterial; no arm error);
+  - hardening, not done after the reviews: `load_tau2(recovery=True)` is not restricted to q8. C3 checks that no m24 recovery exists.
+
+Evidence: `analysis/fork/newmethod/expansion_q8.json`, `analysis/fork/out/m24_acceptance_review_{A,B}.md`, `/data/ziyangs/cloq_work/tools/go_m24.sh`.
+
 ## W100af - Disk purge before the 00:00 snapshot (2026-10-03 19:00 PDT)
 
 **TL;DR** Deleted 83 G of regenerable data at 18:57 (usedds 565 G -> 482 G):
