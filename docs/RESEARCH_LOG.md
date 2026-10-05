@@ -10,6 +10,24 @@ Newest first.
 
 ---
 
+## W100at - Label transfer, trigger under G/H/F, common-state BF16 vs Q' decomposition (EXPLORATORY, POST HOC; GPT 10-05); paper C1/C2 fixes (2026-10-05 12:10 PDT)
+
+TL;DR
+- **Label transfer.**
+  - Same-draw hindsight losses are partly mechanical, because all three labels share the QQ arm.
+  - Split-half on Bank U (ordinary states) resolves nothing; even the oracles cover 0.
+  - Split-half on Bank P (first divergences, 10% budget):
+    - Losses with crossed intervals above 0 (pp of all units): H->F 2.82 [1.40, 3.90], H->G 2.43 [0.97, 3.68], G->F 1.50 [0.20, 2.19].
+    - Only the F label recovers the oracle's mode ranking.
+- **Frozen trigger.** Not resolved over random under G, H or F. Same-selection mode contrasts are unresolved.
+- **Common states, BF16 vs Q'.** On q8, BF16's extra rescues (+0.3) and extra damages (-0.6) are each within ±3 pp (TOST); net K +0.9 is unresolved. q4 is unresolved.
+- **Paper.**
+  - Takeover cell selection disclosed.
+  - 7 related works added.
+  - Trigger wording now states net gains.
+
+Evidence: analysis/fork/out/{label_transfer_20261005T185537Z, trigger_ghf_20261005T185154Z, commonstate_rd_20261005T185153Z}.md; docs/insights/{LABEL_TRANSFER, TRIGGER_GHF, COMMONSTATE_RD}_POSTHOC.md; commits 63e8b2c, 600f74a, 6da41fb, 60fb8e4.
+
 ## W100as - Key-order gate audited field by field: 8/8 pass; panel g1-g4 running (2026-10-05 09:25 PDT)
 
 TL;DR The ko-v1 gate (8 f01 states) passes every recorded acceptance field, not only the summary `pass`. Outcome-blind: no branch file was opened.
