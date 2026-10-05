@@ -1,11 +1,13 @@
-# A6000 queue snapshot (2026-10-05 00:24:07 PDT)
+# A6000 queue snapshot (2026-10-05 00:54:11 PDT)
 
-## running (4)
+## running (6)
 
 - `a6k2_q4_gauss3_s2_redo`
 - `a6k2_q4_kvq_int3`
 - `a6k2_q4_kvq_int4`
 - `pert_q8_rtn_w3_resid_a2_q345`
+- `tw_q8_gptq_w4_d1_f01`
+- `tw_q8_spinquant_w4a4_f01`
 
 ## failed (22)
 
@@ -235,6 +237,10 @@
 - `a6k2_q32_calib_c2` · 0 min · node004
 - `a6k2_q32_gauss0.03_s1` · 35 min · node007
 
-## todo (0)
+## todo (4)
 
+- `tw_q8_gptq_w4_d1_f02`
+- `tw_q8_gptq_w4_d1_f03`
+- `tw_q8_spinquant_w4a4_f02`
+- `tw_q8_spinquant_w4a4_f03`
 
