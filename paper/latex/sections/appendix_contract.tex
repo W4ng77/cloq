@@ -23,18 +23,19 @@ The replacement gains $\Gall$, $G$, $H$ and $F$ are not end-to-end comparisons. 
 \begin{table}[h]
 \centering\scriptsize\setlength{\tabcolsep}{3pt}
 % src: analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md
-\setlength{\tabcolsep}{2.5pt}
+\setlength{\tabcolsep}{1.6pt}
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{@{}lrrcc@{}}
 \toprule
 Cell & Q / BF16 (\%) & Q$-$BF16 [95\% CI] & NI 3\pp{} & TOST $\pm$3\pp{} \\
 \midrule
 q4 GPTQ-W4 & 40.0 / 35.8 & $+4.2$ [$-2.4$, $+10.5$] & pass & fail \\
-q4 AWQ-W4  & 36.8 / 35.8 & $+0.9$ [$-5.8$, $+7.5$] & fail & fail \\
+q4 AWQ-style W4  & 36.8 / 35.8 & $+0.9$ [$-5.8$, $+7.5$] & fail & fail \\
 q8 GPTQ-W4 & 30.1 / 30.4 & $-0.2$ [$-7.7$, $+6.8$] & fail & fail \\
-q8 AWQ-W4  & 31.5 / 30.4 & $+1.2$ [$-5.3$, $+7.6$] & fail & fail \\
+q8 AWQ-style W4  & 31.5 / 30.4 & $+1.2$ [$-5.3$, $+7.6$] & fail & fail \\
 pool, all four & & $+1.5$ [$-2.7$, $+5.6$] & pass & fail \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \caption{End-to-end closed-loop success, quantized minus BF16 (pp). Units are paired on nonce, and the crossed task$\times$block bootstrap is drawn jointly across cells. Non-inferiority (NI) at a 3\pp{} margin passes for q4 GPTQ-W4 and the all-four pool. Equivalence (TOST at $\pm$3\pp{}) passes nowhere. These comparisons therefore support neither a difference nor equivalence.}
 \label{tab:e2e}
 \end{table}
@@ -53,10 +54,10 @@ Table~\ref{tab:coverage} lists the completed crossed-intervention coverage behin
 Cell & \tautwo{} retail (Bank P) & \tautwo{} airline (Bank P) & telecom dev (Bank P) & Bank U (retail / airline) & BFCL / ALFWorld \\
 \midrule
 q4 GPTQ-W4 & 58 t $\cdot$ 727 st $\cdot$ 20/20 b & 27 t $\cdot$ 375 st $\cdot$ 20/20 b & holdout only & 3 b $\cdot$ 393 / 177 rows & 788 items $\cdot$ 573 st / -- \\
-q4 AWQ-W4  & 58 t $\cdot$ 986 st $\cdot$ 20/20 b & 27 t $\cdot$ 453 st $\cdot$ 20/20 b & -- & 3 b $\cdot$ 393 / 177 rows & 788 items $\cdot$ 642 st / -- \\
+q4 AWQ-style W4  & 58 t $\cdot$ 986 st $\cdot$ 20/20 b & 27 t $\cdot$ 453 st $\cdot$ 20/20 b & -- & 3 b $\cdot$ 393 / 177 rows & 788 items $\cdot$ 642 st / -- \\
 q4 KV8     & 58 t $\cdot$ 412 st $\cdot$ 22/22 b & 27 t $\cdot$ 181 st $\cdot$ 22/22 b & -- & 3 b $\cdot$ 393 / 177 rows & -- / -- \\
 q8 GPTQ-W4 & 58 t $\cdot$ 1017 st $\cdot$ 20/20 b & 27 t $\cdot$ 456 st $\cdot$ 20/20 b & 80 t $\cdot$ 477 st $\cdot$ 6/6 b; holdout & 3 b $\cdot$ 393 / 177 rows & 788 $\cdot$ 533 st / 134 $\cdot$ 115 st \\
-q8 AWQ-W4  & 58 t $\cdot$ 1087 st $\cdot$ 20/20 b & 27 t $\cdot$ 475 st $\cdot$ 20/20 b & 80 t $\cdot$ 480 st $\cdot$ 6/6 b; holdout & 3 b $\cdot$ 393 / 177 rows & 788 $\cdot$ 548 st / 134 $\cdot$ 119 st \\
+q8 AWQ-style W4  & 58 t $\cdot$ 1087 st $\cdot$ 20/20 b & 27 t $\cdot$ 475 st $\cdot$ 20/20 b & 80 t $\cdot$ 480 st $\cdot$ 6/6 b; holdout & 3 b $\cdot$ 393 / 177 rows & 788 $\cdot$ 548 st / 134 $\cdot$ 119 st \\
 q8 KV8     & 58 t $\cdot$ 585 st $\cdot$ 22/22 b & 27 t $\cdot$ 270 st $\cdot$ 22/22 b & -- & 3 b $\cdot$ 393 / 177 rows & -- / -- \\ % src: analysis/fork/out/ghf_20261001T211519Z.md (§5); analysis/fork/bank_u/q8_kvq_int8/f03/bank_summary.json; analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§1)
 \midrule
 q4 GPTQ-W3 & 58 t $\cdot$ 162 st $\cdot$ 3/3 b & 27 t $\cdot$ 70 st $\cdot$ 3/3 b & -- & -- & 591 $\cdot$ 540 st$^\dagger$ / -- \\ % src: analysis/fork/out/ghf_20261001T211519Z.md (§5); analysis/fork/out/ext_r2_20261002T024433Z.md (§1 inclusion counts)
@@ -104,7 +105,7 @@ Config.\ (models) & Method, weights & Group, grid & Act-order & Calibration & KV
 \midrule
 GPTQ-W4 Q (q4, q8) & GPTQ, W4; damp 0.01, block 128, true-sequential & 128, asym. & yes & draw c1: 57 BF16 agent-trajectory states (39 retail, 18 airline calibration tasks, disjoint from the 85 dev tasks), one state per task, full context (median 6041 / 6310 tok.); 64{,}000 activation rows (1122--1123 per state); draw seed 20260729 & KV BF16, act.\ BF16, no rotation \\
 GPTQ-W4 Q$'$ (q4, q8) & as Q & 128, asym. & yes & draw c2, seed 20260730: same 57 tasks and trajectories, re-drawn decision state and rows (5/57 states shared with c1); not disjoint & as Q \\
-AWQ-W4 (q4, q8) & AWQ-style: per-linear scale $\bar{|x|}^\alpha$, 20-pt $\alpha$ grid, scale folded into weight, then RTN; no clip search & 128, asym. & n/a (GPTQ only) & draw c1 as GPTQ-W4 Q; $\alpha$ fit on a 4096-row sample (code default; per-run value not recorded) & as Q \\
+AWQ-style W4 (q4, q8) & AWQ-style: per-linear scale $\bar{|x|}^\alpha$, 20-pt $\alpha$ grid, scale folded into weight, then RTN; no clip search & 128, asym. & n/a (GPTQ only) & draw c1 as GPTQ-W4 Q; $\alpha$ fit on a 4096-row sample (code default; per-run value not recorded) & as Q \\
 GPTQ-W3$^s$ Q / Q$'$ (q4, q8) & GPTQ, W3 & 128, asym. & yes & c1 / c2 as W4 & as Q \\
 RTN-W3$^s$ (q4, q8) & RTN, W3 & 128, asym. & n/a & none & as Q \\
 KV8 (q4, q8) & BF16 weights & -- & -- & none & INT8 K and V, asym.\ min--max per (token, KV head) over head\_dim, no clip, no rotation; fake quant in fp32 \\
@@ -115,7 +116,7 @@ KIVI-2 / KIVI-4 (q8) & BF16 weights & -- & -- & none & K per channel, V per toke
 Mistral GPTQ-W4 / RTN-W4 (m24) & GPTQ W4 / RTN W4 & 128, asym. & yes / n/a & GPTQ: draw c1, 57 states, 64{,}000 rows, seed 20260729 (no c2 draw) & as Q \\
 \bottomrule
 \end{tabular}
-\caption{Quantization configuration of every checkpoint configuration, from the checkpoint metadata. AWQ-W4 is AWQ-style (scale folded into the weight, then RTN, no clip search). Q$'$ re-draws the decision state and activation rows from the same 57 calibration trajectories as Q. The W4A4 configurations keep a 16-bit KV cache and calibrate on WikiText-2, so a QuaRot-minus-GPTQ contrast also changes the calibration source. One q8 calibration context (c1) is marked truncated. All checkpoints are fake-quantized and stored in BF16; embeddings, \texttt{lm\_head} and norms stay BF16. $^s$stress cell.}
+\caption{Quantization configuration of every checkpoint configuration, from the checkpoint metadata. AWQ-style W4 is AWQ-style (scale folded into the weight, then RTN, no clip search). Q$'$ re-draws the decision state and activation rows from the same 57 calibration trajectories as Q. The W4A4 configurations keep a 16-bit KV cache and calibrate on WikiText-2, so a QuaRot-minus-GPTQ contrast also changes the calibration source. One q8 calibration context (c1) is marked truncated. All checkpoints are fake-quantized and stored in BF16; embeddings, \texttt{lm\_head} and norms stay BF16. $^s$stress cell.}
 \label{tab:qconfig}
 \end{table*}
 

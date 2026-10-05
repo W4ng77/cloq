@@ -7,7 +7,7 @@ These tests ask whether numerical error locates changed actions, consequential c
 
 \paragraph{Numerical quality.} QuaRot-W4 against GPTQ-W4 is $-0.4$ [$-10.7$, $+9.9$]\pp{} (P1). The matched SpinQuant-W4A4 contrast is P2 (complete family: Table~\ref{tab:primary-methods}; paired diagnostic components: Table~\ref{tab:fidelity-components}). Its third block rests on a one-time re-run of arms lost to a user-simulator overload; on the two blocks without it the contrast is $+2.4$\pp{} (strict view). % src: analysis/fork/out/newmethod_q8_20261004T051538Z.md; analysis/fork/out/newmethod_q8_20261004T051538Z.json (tau2.cells.*.all_states_pp; tau2.contrasts; fidelity.cells.*.KLu_mean; fidelity.across_cells_spearman_KLu_mean_vs_M_cc); docs/insights/NEWMETHOD_PANEL_PROTOCOL.md (A1.2, A4.4, A7, A7.E1, A7.E2)
 
-\paragraph{Upgrade modes on the q8 panel.} On the q8 ordinary-state panel, B's action alone ($G$) is resolved in no cell. Fixed-pool intervals for B's takeover $H$ or full substitution $F$ exclude zero in weight-only (AWQ-W4, QuaRot-W4), W4A4 and KV8 cells, and new-task intervals still do in both W4A4 cells and KV8 (unadjusted), so resolved value is not confined to quantized activations. It is largest in SpinQuant-W4A4 ($H=+11.8$ [6.7, 16.8], $F=+13.7$ [9.3, 18.2]\pp{}). % src: analysis/fork/out/newmethod_q8_20261004T051538Z.md (τ² U2B all states: G, H, F with crossed columns)
+\paragraph{Upgrade modes on the q8 panel.} On the q8 ordinary-state panel, B's action alone ($G$) is resolved in no cell. Fixed-pool intervals for B's takeover $H$ or full substitution $F$ exclude zero in weight-only (AWQ-style W4, QuaRot-W4), W4A4 and KV8 cells, and new-task intervals still do in both W4A4 cells and KV8 (unadjusted), so resolved value is not confined to quantized activations. It is largest in SpinQuant-W4A4 ($H=+11.8$ [6.7, 16.8], $F=+13.7$ [9.3, 18.2]\pp{}). % src: analysis/fork/out/newmethod_q8_20261004T051538Z.md (τ² U2B all states: G, H, F with crossed columns)
 
 \subsection{Fidelity, sensitivity and signed value}
 The following decomposition was added after panel results were read and is exploratory. On each cell's admitted states, exact action equality and deterministic continuation give
@@ -66,7 +66,7 @@ Table~\ref{tab:ordinary-modes} reports all three upgrade modes for every admitte
 \toprule
 Cell & blocks & states & $G$ & $H$ & $F$ \\
 \midrule
-AWQ-W4 & 3 & 255 & $+2.7$ [$-4.6$, $+10.1$] & $+4.3$ [$-0.1$, $+8.8$] & $+5.5$ [$+1.0$, $+10.0$] \\
+AWQ-style W4 & 3 & 255 & $+2.7$ [$-4.6$, $+10.1$] & $+4.3$ [$-0.1$, $+8.8$] & $+5.5$ [$+1.0$, $+10.0$] \\
  & & & [$-2.4$, $+9.0$] & [$-1.2$, $+11.0$] & [$-0.8$, $+12.5$] \\
 GPTQ-W4 & 3 & 255 & $+0.4$ [$-7.0$, $+7.7$] & $+0.8$ [$-5.3$, $+6.9$] & $+3.5$ [$-2.3$, $+9.4$] \\
  & & & [$-4.3$, $+5.9$] & [$-5.9$, $+7.5$] & [$-3.9$, $+10.6$] \\
@@ -101,11 +101,12 @@ Only finished end-to-end runs enter: q4 and q8, 85 tasks on each of three nonce 
 
 \emph{Error dose.} The residual intervention $W_\alpha=W+\alpha(W_{\mathrm{Q}}-W)$ scales the quantizer's own weight error, with $\alpha\in\{0, 0.25, 0.5, 1, 2\}$; it is not a bit width (Table~\ref{tab:dose}). % src: docs/insights/PERTURBATION_PROTOCOL.md §2.2
 Agreement with BF16's actions fell at every step of $\alpha$ in all six cells, with both intervals of every step below zero; in q8 RTN-W3, the share of BF16's decisions before the first differing action is 1, 0.32, 0.16 and 0.04 at $\alpha=0$, 0.25, 0.5 and 1. Success did not follow. No success step up to $\alpha=0.5$ is resolved under both intervals (in RTN-W3 the point estimates at $\alpha=0.25$ lie above BF16, 40.0 and 36.5\% against 35.7 and 30.6\%), and success fell between $\alpha=0.5$ and 1 only in RTN-W3, by $-20.8$ [$-22.5$, $-19.1$]\pp{} in q4 (crossed [$-29.8$, $-11.8$]) and $-14.1$ [$-26.9$, $-1.4$] in q8 (crossed [$-24.7$, $-3.9$]). % src: analysis/fork/out/backfill_20261003T193042Z.md (TL;DR 2; §2)
-In GPTQ-W3, q4 GPTQ-W4 and q8 AWQ-W4 no success step is resolved under both intervals; doubling the q8 AWQ-W4 error ($\alpha=2$) changed success by $-10.6$ [$-16.4$, $-4.7$]\pp{} (crossed [$-20.8$, $0.0$]). The $\alpha=2$ arms of the four W3 cells did not finish. The action response to the error dose is thus monotone, whereas success shows only a drop between half and full RTN-W3 error. % src: analysis/fork/out/backfill_20261003T193042Z.md (TL;DR 2; §2 step tables)
+In GPTQ-W3, q4 GPTQ-W4 and q8 AWQ-style W4 no success step is resolved under both intervals; doubling the q8 AWQ-style W4 error ($\alpha=2$) changed success by $-10.6$ [$-16.4$, $-4.7$]\pp{} (crossed [$-20.8$, $0.0$]). The $\alpha=2$ arms of the four W3 cells did not finish. The action response to the error dose is thus monotone, whereas success shows only a drop between half and full RTN-W3 error. % src: analysis/fork/out/backfill_20261003T193042Z.md (TL;DR 2; §2 step tables)
 
 \begin{table}[h]
 \centering
 \small\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{4pt}\resizebox{\linewidth}{!}{%
 \begin{tabular}{@{}lrrrrr@{}}
 \toprule
 $\alpha$ & 0 (BF16) & 0.25 & 0.5 & 1 (Q) & 2 \\
@@ -116,7 +117,7 @@ q8 RTN-W3 & 30.6 & 36.5 & 27.5 & 13.3 & n.f. \\
 q4 GPTQ-W3 & 35.7 & 37.6 & 36.1 & 36.1 & n.f. \\
 q8 GPTQ-W3 & 30.6 & 29.4 & 29.0 & 26.7 & n.f. \\
 q4 GPTQ-W4 & 33.7 & 38.0 & 38.4 & 43.9 & 37.6 \\
-q8 AWQ-W4 & 31.4 & 31.0 & 32.5 & 32.5 & 22.0 \\
+q8 AWQ-style W4 & 31.4 & 31.0 & 32.5 & 32.5 & 22.0 \\
 \midrule
 \multicolumn{6}{@{}l}{\emph{Action agreement with BF16}} \\
 q4 RTN-W3 & 1 & 0.362 & 0.225 & 0.088 & n.f. \\
@@ -124,9 +125,9 @@ q8 RTN-W3 & 1 & 0.319 & 0.162 & 0.043 & n.f. \\
 q4 GPTQ-W3 & 1 & 0.508 & 0.406 & 0.234 & n.f. \\
 q8 GPTQ-W3 & 1 & 0.397 & 0.297 & 0.176 & n.f. \\
 q4 GPTQ-W4 & 1 & 0.572 & 0.504 & 0.424 & 0.238 \\
-q8 AWQ-W4 & 1 & 0.392 & 0.309 & 0.194 & 0.058 \\
+q8 AWQ-style W4 & 1 & 0.392 & 0.309 & 0.194 & 0.058 \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \caption{Error dose (exploratory): closed-loop success (\%) of $W_\alpha$ (top) and action agreement with BF16 (bottom; share of BF16's decisions before the first differing action, 1 = identical). 255 task$\times$block units per cell over three blocks; action agreement on 245 units for q4 RTN-W3, whose other 10 units contain an episode that ended in context overflow and has no message record. n.f.: not finished. Intervals of every step are in the analysis output.} % src: analysis/fork/out/backfill_20261003T193042Z.md (§2)
 \label{tab:dose}
 \end{table}
