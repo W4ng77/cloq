@@ -1,0 +1,141 @@
+\section{Where Do the Consequences Persist?}
+\subsection{Ordinary states and the user simulator}
+\label{app:ordinary}
+
+\paragraph{Ordinary states turn over less, mostly through text under our simulator.} At ordinary states, replacing Q's action changes the outcome less often than at first tool-structure divergences (a descriptive comparison of different state populations, with no interval on the difference). Over blocks f01--f03 (task-equal; $t$ intervals over block means), $M$ per sub-bank is 7.8--9.0\% for the q4 W4 cells in U1 and U2B, 4.7--9.0\% for the q8 W4 cells and at most 4.7\% for KV8. The net gain lies within $\pm$2.8\pp{} (U1, U2B) and $\pm$5.0\pp{} (U2Q), and every interval covers zero (Appendix~\ref{app:banku}). % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§2)
+Identical actions never change the outcome, as determinism implies. Reused arms rest on canonical equality. All 4{,}114 such reuses were rendered with each model's chat template; 4{,}113 are token-identical. The remaining pair differs only in JSON key order, and its two cross arms, measured separately, gave the reused outcomes. % src: analysis/fork/reuse_audit/REUSE_AUDIT.md (TL;DR); analysis/fork/reuse_audit/REUSE_FIX_RESULT.md (TL;DR)
+After deduplication, 150 of the 208 outcome-changing cell$\times$state rows ($\approx$72.1\%) are class (ii), the same tool structure with different text; 26 involve a different tool name, call count or argument (Table~\ref{tab:taxonomy}). % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§3); derived: 150=45+28+44+25+10+6-5-3; 208=99+99+18-5-3; 72.1=100*(45+28+44+25+10+6-5-3)/(99+99+18-5-3); 26=1+11+4+9+0+1
+The rows are not independent states: the three blocks repeat the same tasks, and each U2B/U2Q state appears once per cell of a model.
+This is a \emph{composition share}: per instance, text, tool/argument and act/talk differences flip the outcome in 14.4\%, 18.2\% and 18.9\% of rows. Text dominates because it is common (1045 of 1357 differing rows), not because each text difference matters more. % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§3); derived: 14.4=100*(45+28+44+25+10+6-5-3)/(309+202+277+199+63+33-24-14); 1045=309+202+277+199+63+33-24-14; 18.2=100*(1+11+4+9+0+1)/(19+47+24+40+5+11-1-2); 18.9=100*(10+4+3+14+1+0)/(38+33+34+56+4+7-1-2); 1357=309+202+277+199+63+33-24-14+19+47+24+40+5+11-1-2+38+33+34+56+4+7-1-2
+
+\paragraph{Sensitivity to the user simulator.} Text actions act through the user simulator, and changing the simulator moves $\tau$-bench outcomes by 9--15 points \citep{seshadri2026lost,jain2026userproxybench}. % src: outputs/.drafts/storyline-v7-lit.md (rows 23-24)
+We froze a control before running it: the 39 deduplicated class-(ii) flips of block f01 and 39 matched non-flip states. Their BQ and QQ branches were each re-run three times with a different user simulator, Sonnet 5.5, answering through a file relay from Claude Code subagents (reproducibility limits in the Limitations). % src: docs/RESEARCH_LOG.md W90, W91 (manifests/fork/simctrl_v3.json)
+Judged by the sign of the replicate mean, only 7 of the 39 flips keep their direction (95\% CI 0.075--0.335). Six reverse, and 26 vanish (15 both succeed, 2 both fail, 9 ties). Among the matched non-flip states, 11 of 39 become flips (0.15--0.45). Replicates of the same arm disagree in 41\% of flip arms and in 21--26\% of control arms. % src: analysis/fork/out/simctrl_20261001T212742Z.md
+\textbf{The Bank U text-difference outcome labels did not reproduce reliably under this alternative relay setting.} The control changes three things at once (simulator model, sampling, relay interface), so it cannot say which of them changed the labels.
+
+\paragraph{Sensitivity of the four-branch results.}
+\label{app:simctrlpmain}
+Before running, we sampled 80 Bank P states without outcome information (20 per W4 cell, stratified by domain and block) and re-ran all four arms five times each with Sonnet 5.5 as the user, one isolated single-request call per user turn (7896 calls; all integrity checks passed). % src: analysis/fork/out/simctrl_p_20261002T015200Z.md; manifests/fork/simctrl_p_v1.json
+Per-state arm outcomes track the original single runs (correlation 0.63--0.68). Pooled over cells, $G=-3.0$ [$-10.2$, $+4.8$], $H=+5.5$ [$+0.0$, $+11.2$] and $G-H=-8.5$ [$-14.8$, $-2.8$]\pp{} under Sonnet, against $G-H=-2.5$ [$-11.2$, $+6.2$] on the same states under the original simulator (change $-6.0$ [$-16.2$, $+4.2$]). % src: analysis/fork/out/simctrl_p_20261002T015200Z.md (pool, all batches)
+With 20 states per cell, this control cannot resolve the few-pp contrasts of Table~\ref{tab:ghf} (on this sample even the original simulator gives $G-H=0.0$ in both q8 W4 cells), so it neither confirms nor reverses the within-cell orderings. % src: analysis/fork/out/simctrl_p_20261002T015200Z.md (q8 cells)
+
+
+\paragraph{Bank P and Bank U measure different quantities.} Bank P skips text-only differences by design, yet these make up 150 of the 208 outcome-changing rows at ordinary states, and their labels did not reproduce under a second simulator (Appendix~\ref{app:banku}; \S\ref{sec:value}). Including text actions requires a simulator control before their consequences are reported as a property of the action. % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§3); analysis/fork/out/simctrl_20261001T212742Z.md; derived: 150=45+28+44+25+10+6-5-3; 208=99+99+18-5-3
+
+
+\subsection{Bank U per Sub-Bank}
+\label{app:banku}
+
+Table~\ref{tab:banku} gives the per-state turnover behind Appendix~\ref{app:ordinary}, over blocks f01--f03. Exact action agreement is 0.43--0.83 per cell and sub-bank. % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (column "exact")
+
+\begin{table}[h]
+\centering\scriptsize\setlength{\tabcolsep}{3.5pt}
+% src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§2 Native estimates, task-equal; r and d counts)
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Cell & U1 ($n{=}255$) & U2B ($n{=}255$) & U2Q ($n{=}60$) \\
+\midrule
+q4 GPTQ-W4 & .090 (11/12) & .082 (10/11) & .083 (4/1)$^\ast$ \\
+q4 AWQ-W4  & .082 (7/14) & .078 (7/13) & .083 (3/2) \\
+q4 KV8     & .047 (4/8) & .039 (5/5) & .017 (0/1) \\
+q8 GPTQ-W4 & .047 (8/4) & .067 (9/8) & .050 (3/0)$^\ast$ \\
+q8 AWQ-W4  & .086 (14/8) & .090 (15/8) & .067 (3/1) \\
+q8 KV8     & .035 (5/4) & .031 (6/2) & 0 (0/0) \\
+\bottomrule
+\end{tabular}
+\caption{Bank U, blocks f01--f03: per-state turnover $M$ (rescues/damages), task-equal (one state per task and block; 85/85/20 states per block). $G$ lies within $\pm0.028$ in U1 and U2B and within $\pm0.050$ in U2Q, and every interval includes 0. Intervals are $t$ intervals over the three block means and are wide (e.g.\ q4 GPTQ-W4 U1: .090 [.029, .151]). $^\ast$GPTQ-W4's U2Q states are its own U1 states, with concordant outcomes on 20/20 duplicates per block; they are counted once in cross-sub-bank totals.}
+\label{tab:banku}
+\end{table}
+
+\begin{table}[h]
+\centering\scriptsize\setlength{\tabcolsep}{2.6pt}
+% src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§3 class composition and consequence per sub-bank; per cell; comparator block, unique states)
+\begin{tabular}{@{}lllll@{}}
+\toprule
+& (i) identical & (ii) same tool & (iii) different & (iv) act vs.\ \\
+Model:sub & & structure, text & tool or args & talk \\
+\midrule
+q4:U1  & 399: 0 & 309: 45 (.146) & 19: 1 (.053) & 38: 10 (.263) \\
+q8:U1  & 483: 0 & 202: 28 (.139) & 47: 11 (.234) & 33: 4 (.121) \\
+q4:U2B & 430: 0 & 277: 44 (.159) & 24: 4 (.167) & 34: 3 (.088) \\
+q8:U2B & 470: 0 & 199: 25 (.126) & 40: 9 (.225) & 56: 14 (.250) \\
+q4:U2Q & 108: 0 & 63: 10 (.159)$^\ast$ & 5: 0 & 4: 1 (.250) \\
+q8:U2Q & 129: 0 & 33: 6 (.182)$^\ast$ & 11: 1 (.091) & 7: 0 \\
+\midrule
+unique rows & 1943: 0 & 1045: 150 (.144) & 143: 26 (.182) & 169: 32 (.189) \\ % derived: 1045=309+202+277+199+63+33-24-14; 150=45+28+44+25+10+6-5-3; 143=19+47+24+40+5+11-1-2; 26=1+11+4+9+0+1; 169=38+33+34+56+4+7-1-2; 32=10+4+3+14+1+0; .144=150/1045; .182=26/143; .189=32/169
+\bottomrule
+\end{tabular}
+\caption{Which kind of action difference changes the outcome at ordinary states (Bank U, blocks f01--f03). Entries: ``state rows: outcome-changing rows (flip rate)'', pooled over the three cells of a model within a sub-bank. The last row counts each (cell, state) once: q4/q8 GPTQ-W4's U2Q states repeat their U1 states ($^\ast$ includes 5 and 3 repeated class-(ii) flips), so 216 flipping rows become 208. In block f01 alone the corresponding counts were 39 of 56 flips in class (ii), with rates .126/.109/.200 for (ii)/(iii)/(iv); the 58 f01 flips scored in Appendix~\ref{app:token} include the two duplicated U2Q rows. % src: analysis/fork/out/token_mech_20261001T185031Z.md (flips: 58); analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§3); analysis/fork/out/bank_u_f01_20261001T134456Z.md; docs/REPORT_GPT61_20261001_0915.md (correction 1: 39/56 after deduplication); derived: 216=99+99+18; 208=99+99+18-5-3
+}
+\label{tab:taxonomy}
+\end{table}
+
+\subsection{Models compared on their own ordinary states}
+\label{app:mistral}
+\paragraph{Mistral population, scoring and coverage.} The Mistral panel applies the same row rule to Mistral's own BF16 trajectories on the 85 retail and airline tasks. Seven BF16 source rows are missing because the source episode ended in an invalid tool call produced by the model itself (airline task 44 in all six blocks, airline task 13 in f01). A dated amendment, fixed from the BF16 source runs before any Mistral fork output existed, excludes both tasks in every block and cell, leaving 83 tasks. The selection was outcome-blind, but BF16 Mistral fails these tasks structurally, so the estimates describe this conditional population, not the 85-task panel, and are not compared with q8 as if the populations were equal. % src: docs/insights/NEWMETHOD_PANEL_PROTOCOL.md (A3, A3.1, A3.2); manifests/fork/newmethod_panel_v1_m24_mask_v1.json
+A branch that ended because the harness could not accept the agent's own message (an empty or invalid tool name, or an empty message) is scored as a failure, as in end-to-end evaluation. This rule was added after the Mistral phase-1 results had been read; without it the Mistral primary comparison is not estimable from phase 1 (one complete block). The analysis without the rule (which leaves such an arm missing and fails its block) and one applying the rule only to data not yet read when it was fixed are reported alongside; both admit the same three blocks for GPTQ $-$ RTN ($+1.2$ [$-13.8$, $+16.2$]). Coverage: GPTQ-W4 has 498 states on six blocks and RTN-W4 415 states on five. % src: docs/insights/NEWMETHOD_PANEL_PROTOCOL.md (A6, A6.E1: E1.1, E1.8 paper wording, E1.9); analysis/fork/out/newmethod_m24_20261004T024453Z.md (sensitivities: strict as preregistered; A6 prospective only)
+Full estimates on the 83 tasks (GPTQ-W4 on six blocks, RTN-W4 on five): in GPTQ-W4, B's action rescues $r=4.6$ [2.4, 6.8] and damages $d=5.4$ [2.4, 8.5]\pp{} of states ($M=10.0$ [7.0, 13.1]; fixed-pool 95\%), and no mode's net value is resolved ($G=-0.8$ [$-5.2$, $+3.6$], $H=+1.4$ [$-3.0$, $+5.8$], $F=+0.0$ [$-4.2$, $+4.2$]). RTN-W4 is similar ($M=10.4$ [6.3, 14.4]). The pre-registered contrast GPTQ $-$ RTN is not resolved: $\Delta D_{cc}=+2.2$ [$-3.5$, $+7.8$]\pp{}, $p=.35$, on five blocks, two of which are admitted only by a scoring rule adopted after an interim look (above). % src: analysis/fork/out/newmethod_m24_20261004T024453Z.md; analysis/fork/out/newmethod_m24_20261004T024453Z.json (tau2.cells.*.all_states_pp; tau2.contrasts.M1); analysis/fork/out/m24_acceptance_review_A.md; docs/insights/NEWMETHOD_PANEL_PROTOCOL.md (A3, A6, A6.E1); docs/RESEARCH_LOG.md W99p; analysis/fork/ext_l8_gate/GATE.md
+
+
+\begin{table}[t]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+% src: analysis/fork/out/newmethod_m24_20261004T024453Z.md (τ² U2B all states: G/H/F); docs/insights/NEWMETHOD_PANEL_PROTOCOL.md
+\resizebox{\columnwidth}{!}{\begin{tabular}{@{}lrrlll@{}}
+\toprule
+Cell & blocks & states & $G$ & $H$ & $F$ \\
+\midrule
+GPTQ-W4 & 6 & 498 & $-0.8$ [$-5.2$, $+3.6$] & $+1.4$ [$-3.0$, $+5.8$] & $+0.0$ [$-4.2$, $+4.2$] \\
+ & & & [$-5.8$, $+4.2$] & [$-4.0$, $+6.8$] & [$-6.0$, $+6.0$] \\
+RTN-W4 & 5 & 415 & $+0.7$ [$-2.7$, $+4.2$] & $+1.9$ [$-3.8$, $+7.7$] & $+2.4$ [$-2.2$, $+7.0$] \\
+ & & & [$-3.6$, $+5.5$] & [$-4.6$, $+8.0$] & [$-3.9$, $+8.4$] \\
+
+\bottomrule
+\end{tabular}}
+\caption{Mistral-Small-3.2-24B on its fixed 83-task conditional population. pp; fixed-pool 95\% $t$ intervals, then crossed task$\times$block 95\% intervals. Missing argument-JSON errors leave RTN f04 excluded, whereas model-produced invalid tool names are scored as failures under the dated amendment above. None of the three mode intervals excludes zero.}
+\label{tab:mistral-modes}
+\end{table}
+
+\subsection{Replacement and four-branch estimands on BFCL and ALFWorld (supplementary)}
+\label{app:extr2}
+
+Table~\ref{tab:extr2} gives the replacement quantities of \S\ref{sec:value} ($r$, $d$, $M$ and $\Gall$ over all items, non-divergent items counting as zero) and applies the four-branch analysis to the external benchmarks, from the raw four-arm outcomes on divergent items (one run per item; item bootstrap within benchmark category). The four-branch columns are post hoc and not part of any pre-registered analysis. In the KV4 cells $\YY{QQ}=0$ on every state, so $\DQ$ is almost constant and their off-diagonal mass is $H$. In BFCL q4 GPTQ-W3, the base category was dropped whole by the QQ no-op rule, leaving 591 items and 540 states. % src: analysis/fork/out/ext_r2_20261002T024433Z.md (§1, TL;DR)
+Off-diagonal shares are 4.7--17.1\% in BFCL W4 cells (pool 10.3\%) and 32.8--40.0\% in q8 ALFWorld W4 (pool 36.4\%). The ALFWorld GPTQ-W3 stress cell has $H=+38.5$ and $G-H=-34.6$ [$-43.5$, $-25.4$]\pp{}; KV4 cells reduce to $H$. % src: analysis/fork/out/ext_r2_20261002T024433Z.md (§2, §3, §6)
+
+\begin{table*}[t]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+% src: analysis/fork/out/ext_r2_20261002T024433Z.md (§2, §3, §6)
+% src: analysis/fork/out/ext_20261001T135106Z.md (r, d, M, G_all per cell; pools)
+\resizebox{\textwidth}{!}{\begin{tabular}{@{}lrrrrlrllllr@{}}
+\toprule
+& \multicolumn{5}{c}{all items} & \multicolumn{6}{c}{divergent items} \\
+\cmidrule(lr){2-6}\cmidrule(lr){7-12}
+Cell & items & $r$ & $d$ & $M$ & $\Gall$ & states & $G$ & $H$ & $F$ & $G-H$ & off-diag.\ \% \\
+\midrule
+BFCL q4 GPTQ-W4 & 788 & 6.3 & 4.3 & 10.7 & $+2.0$ [$-0.3$, $+4.3$] & 573 & $+2.8$ [$-0.4$, $+5.9$] & $+1.4$ [$-0.7$, $+3.5$] & $+4.2$ [$+0.9$, $+7.2$] & $+1.4$ [$-1.8$, $+4.5$] & 11.7 \\
+BFCL q4 AWQ-W4  & 788 & 5.7 & 9.5 & 15.2 & $-3.8$ [$-6.5$, $-1.3$] & 642 & $-4.7$ [$-7.8$, $-1.5$] & $-1.1$ [$-3.6$, $+1.4$] & $-1.4$ [$-4.8$, $+1.7$] & $-3.6$ [$-6.7$, $-0.2$] & 17.1 \\
+BFCL q8 GPTQ-W4 & 788 & 2.9 & 2.3 & 5.2 & $+0.6$ [$-0.9$, $+2.3$] & 533 & $+0.9$ [$-1.3$, $+3.3$] & $+1.5$ [$+0.0$, $+3.2$] & $+2.1$ [$-0.4$, $+4.6$] & $-0.6$ [$-3.1$, $+2.0$] & 4.7 \\
+BFCL q8 AWQ-W4  & 788 & 4.1 & 2.7 & 6.7 & $+1.4$ [$-0.3$, $+3.3$] & 548 & $+2.0$ [$-0.4$, $+4.7$] & $+1.8$ [$+0.0$, $+3.7$] & $+3.6$ [$+0.9$, $+6.5$] & $+0.2$ [$-2.6$, $+3.1$] & 7.8 \\
+BFCL W4 pool    &  &  &  &  & $+0.1$ [$-1.0$, $+1.2$] &     & $+0.3$ [$-1.2$, $+1.8$] & $+0.9$ [$-0.2$, $+2.0$] & $+2.1$ [$+0.3$, $+3.9$] & $-0.6$ [$-2.3$, $+1.0$] & 10.3 \\
+ALFWorld q8 GPTQ-W4 & 134 & 9.0 & 12.7 & 21.6 & $-3.7$ [$-11.2$, $+4.5$] & 115 & $-4.3$ [$-13.3$, $+5.0$] & $+7.0$ [$-2.6$, $+16.7$] & $+9.6$ [$-0.9$, $+19.7$] & $-11.3$ [$-20.9$, $-1.8$] & 40.0 \\
+ALFWorld q8 AWQ-W4  & 134 & 10.4 & 14.2 & 24.6 & $-3.7$ [$-11.9$, $+4.5$] & 119 & $-4.2$ [$-13.6$, $+4.9$] & $+5.0$ [$-2.6$, $+12.2$] & $+4.2$ [$-5.9$, $+13.7$] & $-9.2$ [$-18.8$, $+0.0$] & 32.8 \\
+ALFWorld W4 pool    &  &  &  &  & $-3.7$ [$-9.7$, $+1.9$] &     & $-4.3$ [$-11.1$, $+2.2$] & $+6.0$ [$-0.5$, $+12.6$] & $+6.9$ [$-2.1$, $+15.5$] & $-10.3$ [$-17.7$, $-2.9$] & 36.4 \\
+\midrule
+BFCL q4 GPTQ-W3$^s$ & 591 & 6.1 & 3.6 & 9.6 & $+2.5$ [$+0.2$, $+5.1$] & 540 & $+2.8$ [$+0.2$, $+5.5$] & $+5.2$ [$+2.9$, $+7.7$] & $+8.9$ [$+5.7$, $+12.2$] & $-2.4$ [$-5.7$, $+0.7$] & 13.0 \\
+BFCL q8 GPTQ-W3$^s$ & 788 & 5.2 & 4.1 & 9.3 & $+1.1$ [$-1.0$, $+3.3$] & 696 & $+1.3$ [$-1.1$, $+3.7$] & $+1.4$ [$-0.1$, $+2.9$] & $+3.4$ [$+0.9$, $+6.0$] & $-0.1$ [$-2.6$, $+2.4$] & 8.3 \\
+BFCL q4 KV4$^s$ & 788 & 0.3 & 0.0 & 0.3 & $+0.3$ [$+0.0$, $+0.6$] & 787 & $+0.3$ [$+0.0$, $+0.6$] & $+2.9$ [$+1.9$, $+4.1$] & $+20.3$ [$+17.6$, $+23.0$] & $-2.7$ [$-3.9$, $-1.5$] & 20.5 \\
+BFCL q8 KV4$^s$ & 788 & 0.3 & 0.0 & 0.3 & $+0.3$ [$+0.0$, $+0.6$] & 788 & $+0.3$ [$+0.0$, $+0.6$] & $+1.8$ [$+1.0$, $+2.7$] & $+14.5$ [$+12.1$, $+17.0$] & $-1.5$ [$-2.5$, $-0.6$] & 14.7 \\
+ALFWorld q8 GPTQ-W3$^s$ & 134 & 6.7 & 3.0 & 9.7 & $+3.7$ [$-1.5$, $+9.7$] & 130 & $+3.8$ [$-1.5$, $+9.8$] & $+38.5$ [$+29.8$, $+46.9$] & $+42.3$ [$+33.6$, $+50.8$] & $-34.6$ [$-43.5$, $-25.4$] & 30.8 \\
+ALFWorld q8 KV4$^s$ & 134 & 0.0 & 0.0 & 0.0 & $+0.0$ [$+0.0$, $+0.0$] & 134 & $+0.0$ [$+0.0$, $+0.0$] & $+38.1$ [$+30.6$, $+45.5$] & $+53.0$ [$+44.8$, $+61.2$] & $-38.1$ [$-45.5$, $-30.6$] & 26.9 \\
+\bottomrule
+\end{tabular}}
+\caption{Replacement and four-branch estimands on BFCL multi-turn and ALFWorld (no LLM user simulator; one run per item; 95\% item-bootstrap intervals). All items: rescue $r$, damage $d$, turnover $M$ (\% of all items) and net $\Gall$ (pp), non-divergent items counting as zero. Divergent items (supplementary, exploratory, post hoc; pp, divergent items): Off-diag.: share with $\DQ\neq\DB$. Pools: equal weight per cell. $^s$Stress and unrotated KV4 cells; in KV4 $\YY{QQ}=0$ on every state, so the table reduces to $H$.}
+\label{tab:extr2}
+\end{table*}
+
+
+\subsection{Telecom development and task concentration}
+\label{app:holdoutdev}
+On 80 telecom development tasks (6 blocks; fixed-pool 95\%), the two q8 holdout cells give $\Gall=+2.7$ [$-4.7$, $+10.1$] (GPTQ-W4) and $-0.6$ [$-4.9$, $+3.7$]\pp{} (AWQ-W4), against $-5.6$ and $-6.6$ on the holdout; q4 has no telecom development forks. % src: analysis/fork/out/dev_all_20261001T093944Z.md (Telecom development); analysis/fork/out/dev_all_20261001T093944Z.json (telecom_cells, t_ci95); analysis/fork/out/holdout_confirm_20261002T012353Z.md (per-cell G)
+
+\label{app:concentration}
+On the 85 development tasks, the top 20\% of tasks account for 57--71\% of flips in the W4 and KV8 cells. Splitting the 20 blocks into disjoint nonce halves reproduces task-level turnover rankings (Spearman 0.52--0.86). Conditional tests control measured baseline success and, in a post-hoc variant, trajectory length; the association is carried primarily by retail and weakens on airline alone. These are retrospective associations on the same tasks under fresh prompt perturbations, rather than evidence of transfer to new tasks. % src: analysis/fork/out/consequence_v2_20261001T070850Z.json (share_of_consequences_in_top20pct_tasks); analysis/fork/out/w67_audit_v2_20261001T0600Z_20261001T070500Z.md (Concentration; panel85, airline27)

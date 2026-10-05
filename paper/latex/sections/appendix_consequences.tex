@@ -1,0 +1,110 @@
+\section{Which Upgrade Changes the Task?}
+\label{app:tables}
+
+Table~\ref{tab:r1} gives every cell of Figure~\ref{fig:case}b, including the stress cells, with new-task intervals. Table~\ref{tab:ghf} gives every cell of Figure~\ref{fig:modes}a, with $F-G$, $F-H$ and the $(\DQ,\DB)$ summaries. % nocheck: cross-reference sentence
+
+\begin{table}[h]
+\centering\scriptsize\setlength{\tabcolsep}{2.4pt}
+% src: analysis/fork/out/dev_all_20261001T070326Z.md (two-sided table; W4:all pooled row)
+\resizebox{\columnwidth}{!}{\begin{tabular}{@{}lrrrrrll@{}}
+\toprule
+Cell & units & div. & $r$ & $d$ & $M$ & $\Gall$ [fixed pool] & [new tasks] \\
+\midrule
+q4 GPTQ-W4 & 85$\times$20 & 1102 & 6.8 & 8.7 & 15.5 & $-1.9$ [$-3.7$, $-0.1$] & [$-6.8$, $+2.7$] \\
+q4 AWQ-W4  & 85$\times$20 & 1439 & 9.8 & 10.1 & 19.9 & $-0.3$ [$-2.2$, $+1.6$] & [$-5.4$, $+5.2$] \\
+q8 GPTQ-W4 & 85$\times$20 & 1473 & 10.4 & 7.5 & 17.9 & $+2.9$ [$+1.4$, $+4.4$] & [$-2.9$, $+9.2$] \\
+q8 AWQ-W4  & 85$\times$20 & 1562 & 11.4 & 9.5 & 20.9 & $+1.9$ [$-0.6$, $+4.3$] & [$-3.9$, $+8.1$] \\
+W4 pool    & 85$\times$20 & & 9.6 & 9.0 & 18.6 & $+0.7$ [$-0.3$, $+1.6$] & \\
+\midrule
+q4 KV8 & 85$\times$22 & 593 & 3.1 & 3.4 & 6.5 & $-0.3$ [$-1.7$, $+1.0$] & [$-3.0$, $+2.3$] \\
+q8 KV8 & 85$\times$22 & 855 & 4.3 & 3.7 & 8.1 & $+0.6$ [$-0.4$, $+1.6$] & [$-1.9$, $+3.0$] \\
+\midrule
+q4 GPTQ-W3$^s$ & 85$\times$3 & 232 & 9.0 & 10.2 & 19.2 & $-1.2$ [$-7.0$, $+4.7$] & [$-8.6$, $+5.9$] \\
+q4 KV4-rot$^s$ & 85$\times$3 & 233 & 11.8 & 7.1 & 18.8 & $+4.7$ [$-4.1$, $+13.5$] & [$-3.1$, $+12.9$] \\
+q8 GPTQ-W3$^s$ & 85$\times$3 & 242 & 10.2 & 8.2 & 18.4 & $+2.0$ [$-12.5$, $+16.4$] & [$-6.3$, $+11.8$] \\
+q8 KV4-rot$^s$ & 85$\times$3 & 239 & 11.8 & 8.6 & 20.4 & $+3.1$ [$-14.5$, $+20.8$] & [$-5.9$, $+12.9$] \\
+q8 RTN-W3$^s$ & 85$\times$3 & 255 & 3.1 & 3.5 & 6.7 & $-0.4$ [$-3.8$, $+3.0$] & [$-4.7$, $+3.9$] \\
+\bottomrule
+\end{tabular}}
+\caption{Replacing Q's first tool-structure-divergent action while Q continues, \tautwo{} retail/airline panel (pp). Denominator: the full pool of tasks $\times$ complete blocks; units without a Bank P state count as zero. div.\ = Bank P states. $\Gall=r-d$ is a local replacement effect, \emph{not} the end-to-end success difference (Appendix~\ref{app:e2e}). Fixed pool: block bootstrap ($\ge$10 blocks) or $t$ over block means; new tasks: crossed task$\times$block bootstrap. $^s$stress cell, 3 blocks.}
+\label{tab:r1}
+\end{table}
+
+\begin{table*}[t]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+% src: analysis/fork/out/ghf_20261001T211519Z.md (§1 per-cell table and pools; §2 3x3 table columns)
+\resizebox{\textwidth}{!}{\begin{tabular}{@{}lrllllllrrl@{}}
+\toprule
+Cell & states & $G$ (this step) & $H$ (next step on) & $F$ (from here on) & $G-H$ & $F-G$ & $F-H$ ($=\DB$) & off-diag.\ \% & rev.\ \% & mean $I$ \\
+\midrule
+q4 GPTQ-W4 & 1102 & $-2.9$ [$-5.7$, $-0.2$] & $+0.7$ [$-1.6$, $+3.0$] & $-2.5$ [$-5.3$, $+0.2$] & $-3.6$ [$-6.6$, $-0.6$] & $+0.5$ [$-1.2$, $+2.2$] & $-3.2$ [$-6.4$, $+0.2$] & 25.0 & 2.6 & $+0.3$ \\
+q4 AWQ-W4  & 1439 & $-0.3$ [$-2.6$, $+1.9$] & $+0.9$ [$-1.1$, $+2.9$] & $-0.8$ [$-3.3$, $+1.6$] & $-1.3$ [$-3.0$, $+0.6$] & $-0.4$ [$-2.4$, $+1.5$] & $-1.7$ [$-3.6$, $+0.4$] & 29.3 & 3.1 & $+1.3$ \\
+q8 GPTQ-W4 & 1473 & $+3.3$ [$+1.6$, $+5.0$] & $+0.4$ [$-1.2$, $+1.9$] & $+5.4$ [$+3.5$, $+7.2$] & $+2.9$ [$+1.3$, $+4.7$] & $+2.1$ [$+0.2$, $+4.0$] & $+5.0$ [$+3.2$, $+6.8$] & 22.9 & 2.7 & $-1.7$ \\
+q8 AWQ-W4  & 1562 & $+2.1$ [$-0.6$, $+4.7$] & $-1.3$ [$-3.5$, $+0.9$] & $+0.6$ [$-1.5$, $+2.7$] & $+3.4$ [$+1.5$, $+5.2$] & $-1.5$ [$-4.2$, $+0.8$] & $+1.9$ [$-0.1$, $+3.8$] & 30.5 & 4.2 & $+0.3$ \\
+W4 pool    & 5576 & $+0.5$ [$-0.7$, $+1.7$] & $+0.2$ [$-1.3$, $+1.6$] & $+0.7$ [$-0.6$, $+2.1$] & $+0.4$ [$-0.8$, $+1.7$] & $+0.2$ [$-1.0$, $+1.2$] & $+0.5$ [$-1.0$, $+2.1$] & 26.9 & 3.2 & $+0.0$ \\
+\midrule
+q4 KV8 & 593 & $-1.0$ [$-5.3$, $+3.2$] & $-2.5$ [$-4.5$, $-0.5$] & $-1.2$ [$-4.7$, $+2.3$] & $+1.5$ [$-3.1$, $+6.0$] & $-0.2$ [$-3.5$, $+3.7$] & $+1.3$ [$-2.5$, $+4.9$] & 15.7 & 1.2 & $-2.4$ \\
+q8 KV8 & 855 & $+1.3$ [$-0.9$, $+3.4$] & $-0.4$ [$-2.1$, $+1.5$] & $+2.5$ [$+0.0$, $+5.1$] & $+1.6$ [$-0.6$, $+3.9$] & $+1.2$ [$-0.5$, $+3.2$] & $+2.8$ [$+0.3$, $+5.5$] & 14.9 & 1.2 & $-1.5$ \\
+KV8 pool   & 1448 & $+0.1$ [$-2.8$, $+3.0$] & $-1.4$ [$-2.7$, $-0.1$] & $+0.6$ [$-1.8$, $+3.1$] & $+1.6$ [$-1.2$, $+4.1$] & $+0.5$ [$-1.6$, $+2.8$] & $+2.1$ [$-0.2$, $+4.2$] & 15.3 & 1.2 & $-1.9$ \\
+\midrule
+q4 GPTQ-W3$^s$ & 232 & $-1.3$ [$-7.7$, $+5.0$] & $+4.3$ [$-10.7$, $+19.4$] & $+1.3$ [$-1.9$, $+4.4$] & $-5.6$ [$-15.0$, $+3.7$] & $+2.6$ [$-0.6$, $+5.8$] & $-3.0$ [$-15.1$, $+9.1$] & 31.5 & 3.9 & $+1.7$ \\
+q4 KV4-rot$^s$ & 233 & $+5.2$ [$-4.5$, $+14.9$] & $+9.4$ [$+5.1$, $+13.7$] & $+12.4$ [$+11.0$, $+13.9$] & $-4.3$ [$-18.3$, $+9.8$] & $+7.3$ [$-2.0$, $+16.5$] & $+3.0$ [$-1.9$, $+8.0$] & 33.0 & 1.7 & $+2.1$ \\
+q8 GPTQ-W3$^s$ & 242 & $+2.1$ [$-13.3$, $+17.2$] & $+0.4$ [$-7.4$, $+8.2$] & $+2.1$ [$-7.4$, $+11.4$] & $+1.7$ [$-9.1$, $+12.3$] & $+0.0$ [$-11.0$, $+11.1$] & $+1.7$ [$-0.1$, $+3.4$] & 23.1 & 4.5 & $+0.4$ \\
+q8 KV4-rot$^s$ & 239 & $+3.3$ [$-15.4$, $+21.9$] & $-0.8$ [$-18.2$, $+16.3$] & $+4.6$ [$-16.0$, $+25.0$] & $+4.2$ [$+2.5$, $+5.8$] & $+1.3$ [$-1.8$, $+4.3$] & $+5.4$ [$+0.8$, $+10.0$] & 31.0 & 4.6 & $-2.1$ \\
+q8 RTN-W3$^s$ & 255 & $-0.4$ [$-3.8$, $+3.0$] & $+15.3$ [$+0.7$, $+29.9$] & $+18.4$ [$+16.7$, $+20.1$] & $-15.7$ [$-27.5$, $-3.9$] & $+18.8$ [$+13.8$, $+23.9$] & $+3.1$ [$-13.0$, $+19.2$] & 29.0 & 0.4 & $-3.5$ \\
+\bottomrule
+\end{tabular}}
+\caption{Three replacement gains and their paired differences on each cell's Bank P states (pp; same denominator in every column). $G=\YY{BQ}-\YY{QQ}$, $H=\YY{QB}-\YY{QQ}$, $F=\YY{BB}-\YY{QQ}$. Off-diag.: share of states with $\DQ\neq\DB$; rev.: strict reversals. Fixed-pool 95\% intervals (block bootstrap over 20--22 complete blocks; $t$ over 3 blocks for $^s$stress cells, which cannot be pooled). New-task intervals are in Table~\ref{tab:ghf-crossed}. Within a row, contrasts are paired and identified; between rows, descriptive.}
+\label{tab:ghf}
+\end{table*}
+
+
+\subsection{Paired comparisons and interval families}
+\label{app:r2main}
+\paragraph{The $G-H$ family and Figure~\ref{fig:modes}a.} In Figure~\ref{fig:modes}a, $G$, $H$, $F$ and the pool show fixed-pool 95\% (thick; block bootstrap) and new-task 95\% (thin; crossed) intervals, none multiplicity-adjusted. For the four cells' $G-H$, which form the Holm family ($m=4$), thick is the plain 95\% $t$ interval and thin the Bonferroni simultaneous 98.75\% interval; filled markers are significant after Holm adjustment, open markers are not. In \S\ref{sec:value}, the stress cell's $G-H$ has a $t$ interval over three blocks, and the BFCL configuration's an item-bootstrap 95\% interval; neither is drawn. % src: analysis/fork/out/ghf_20261001T211519Z.json; analysis/fork/out/ext_q14_20261002T085647Z.json; analysis/fork/out/ghf_multiplicity_20261001T225727Z.md (Bonferroni 98.75%)
+The plain 95\% $t$ intervals are [$+1.0$, $+4.8$] (q8 GPTQ-W4, $G-H=+2.9$, Holm-adjusted $p=.013$) and [$+1.3$, $+5.5$] (q8 AWQ-W4, $+3.4$, $p=.012$). In q4 GPTQ-W4 ($-3.6$) the plain interval [$-6.9$, $-0.3$] excludes zero, but the Holm-adjusted $p=.069$; q4 AWQ-W4 ($-1.3$) has $p=.199$. Two further cautions apply. A significant result in one model and a non-significant one in the other is not a significant difference between models, and the cells select different divergent states. $G-H>0$ shows that replacing the action beats handing over the continuation, not that replacing the action beats QQ. % src: analysis/fork/out/ghf_multiplicity_20261001T225727Z.md; analysis/fork/out/ghf_20261001T211519Z.md (§1)
+
+\paragraph{Supplementary configuration.} For Qwen3-14B GPTQ-W4 on BFCL (one configuration, one run per item, 471 divergent items; exploratory), action and continuation are complementary: keeping Q's action, a BF16 continuation adds $H=+0.4$ [$-1.1$, $+1.9$]\pp{}; after B's action has replaced Q's, the BF16 continuation adds a further $F-G=+3.4$ [$+1.3$, $+5.6$]\pp{}. % src: analysis/fork/out/ext_q14_20261002T085647Z.md (§2, bfcl:q14:gptq_w4_d1 H and F−G)
+
+
+\label{app:patterns}
+Table~\ref{tab:ghf-crossed} gives all new-task intervals corresponding to Table~\ref{tab:ghf}.
+\input{sections/gen_ghf_crossed}
+
+\subsection{Outcome Classes and a Label-Permutation Reference} % nocheck: heading
+\label{app:offdiag}
+
+Everything in this section is exploratory and post hoc. It uses the four outcomes of each divergent state in the order BB, BQ, QB, QQ; $k$ is the number of successful arms.
+
+\paragraph{Five classes.} The 16 patterns fall into five classes: unchanged (\texttt{0000}, \texttt{1111}); action only (\texttt{1100}, \texttt{0011}: the outcome follows the action under both continuations); continuation only (\texttt{1010}, \texttt{0101}); one arm differs from the other three ($k$ odd); strict reversal (\texttt{1001}, \texttt{0110}). % nocheck: pattern labels
+Changing the action changes the outcome under at least one continuation exactly in the action-only, one-arm and reversal classes, and changing the continuation exactly in the continuation-only, one-arm and reversal classes. Both change it exactly on the off-diagonal states, so the two shares overlap and must not be added, and their gap equals action only minus continuation only: it comes from $k=2$ states alone and restates the $k=2$ arrangement below on all divergent states. Two named patterns follow the upgrade modes: joint rescue (\texttt{1000}: only the joint upgrade succeeds) and rescue undone ($\YY{BQ}=1$, $\YY{QQ}=0$, $\YY{BB}=0$: B's action rescues under Q's continuation and B's takeover of the continuation undoes it). % nocheck: definitions
+Table~\ref{tab:classes} gives the shares. The action-side gap holds in the \tautwo{} retail/airline W4 and KV8 pools, in the W4 same-precision fork and in the BFCL W4 pool. It is near zero on the telecom development tasks ($+0.1$ [$-2.1$, $+2.4$]\pp{}, 6-block $t$) and in the q4 GPTQ-W3 and KV4-rot stress cells, and it is not resolved in the ALFWorld W4 pool ($+3.4$ [$-1.8$, $+8.4$]) or the W3 same-precision pair ($+1.9$ [$-2.9$, $+6.7$]). Its point estimate is negative in the q8 RTN-W3 stress cell ($-7.8$; 3-block $t$ [$-18.1$, $+2.4$], new-task [$-15.3$, $-1.2$]) and, not shown, in ALFWorld q8 GPTQ-W3 ($-19.2$ [$-27.3$, $-10.8$]). In the ALFWorld and BFCL KV4 cells (not shown) Q almost never succeeds, so continuation-only states dominate there mechanically. % src: analysis/fork/out/outcome_classes_20261004T143614Z.md
+
+\paragraph{W4 pool details.} In the \tautwo{} W4 pool, the gap between the action and continuation shares is $+5.2$\pp{} (new-task [$+3.1$, $+7.7$]): action effects are somewhat more common, and the continuation changes the outcome mostly where the action matters too. Of the 26.9\% off-diagonal states, 23.8\% have one arm differing from the other three and 3.2\% are strict reversals; states where the swap helps more under Q ($I>0$, 13.6\%) and under B ($I<0$, 13.4\%) are about equally frequent, so the mean interaction is $+0.0$ [$-1.9$, $+2.0$]\pp{}. % src: analysis/fork/out/outcome_classes_20261004T143614Z.md (TL;DR); analysis/fork/out/ghf_20261001T211519Z.md (TL;DR; §2, pool W4:all)
+
+\begin{table*}[t]
+\centering\scriptsize
+\setlength{\tabcolsep}{3pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lrrrrrrrrrrr@{}}
+\toprule
+Group & states & action changes & continuation changes & gap (pp) & unch. & act.\ only & cont.\ only & one arm & rev. & joint resc. & resc.\ undone \\
+\midrule
+\tautwo{} W4 pool (4 cells) & 5576 & 34.9 [33.6, 36.0] & 29.6 [28.5, 30.7] & $+5.2$ [$+4.4$, $+6.1$] & 62.4 & 7.9 & 2.7 & 23.8 & 3.2 & 4.0 & 4.8 \\
+\tautwo{} KV8 pool & 1448 & 26.8 [25.0, 28.6] & 17.0 [14.9, 19.1] & $+9.8$ [$+8.0$, $+11.6$] & 71.5 & 11.6 & 1.7 & 14.1 & 1.2 & 3.0 & 2.3 \\
+Telecom q8 W4 pool & 957 & 22.1 [18.2, 25.9] & 21.9 [17.8, 26.1] & $+0.1$ [$-2.1$, $+2.4$] & 74.8 & 3.2 & 3.1 & 18.1 & 0.7 & 3.2 & 4.2 \\
+Same-precision W4 (Q$'$ as B) & 784 & 33.5 [29.8, 37.1] & 28.7 [24.8, 32.2] & $+4.9$ [$+2.9$, $+6.9$] & 64.0 & 7.4 & 2.5 & 22.5 & 3.6 & 2.3 & 5.8 \\
+BF16, same blocks & 784 & 35.1 [32.6, 37.4] & 27.8 [23.8, 31.6] & $+7.3$ [$+4.9$, $+9.7$] & 62.0 & 10.2 & 2.9 & 22.4 & 2.6 & 5.0 & 3.8 \\
+q8 RTN-W3$^s$ & 255 & 29.8 [28.1, 31.5] & 37.6 [26.0, 49.3] & $-7.8$ [$-18.1$, $+2.4$] & 61.6 & 0.8 & 8.6 & 28.6 & 0.4 & 12.6 & 0.8 \\
+BFCL W4 pool$^b$ & 2296 & 18.4 [16.4, 20.5] & 11.2 [9.8, 12.6] & $+7.2$ [$+5.8$, $+8.7$] & 80.8 & 8.1 & 0.8 & 9.8 & 0.5 & 2.4 & 1.4 \\
+ALFWorld q8 W4 pool$^b$ & 234 & 44.9 [38.3, 52.4] & 41.5 [34.3, 49.4] & $+3.4$ [$-1.8$, $+8.4$] & 50.0 & 8.5 & 5.1 & 33.4 & 3.0 & 9.4 & 5.5 \\
+\bottomrule
+\end{tabular}}
+\caption{Which intervention changes the outcome, in \% of divergent states (pools: equal weight per cell). ``Action changes'': the outcome changes with the action under at least one continuation; ``continuation changes'': with the continuation controller under at least one action; gap = action only $-$ continuation only. Fixed-pool 95\% intervals: block bootstrap for the 20- and 22-block \tautwo{} W4 and KV8 pools; $t$ over per-block ratios for the 6-block telecom and same-precision rows and the 3-block $^s$stress cell; $^b$one run per item, item bootstrap. Same-precision rows: Q$'$, a second GPTQ checkpoint of the same bit width, in the B role, and BF16 on the same blocks. New-task (crossed) intervals for the \tautwo{} W4 pool: \S\ref{sec:value} and above.} % src: analysis/fork/out/outcome_classes_20261004T143614Z.md
+\label{tab:classes}
+\end{table*}
+
+\paragraph{A label-permutation reference.} Given $k$, assigning the four outcomes to the four arms uniformly at random gives the off-diagonal share $E_0=P(k\ \mathrm{odd})+P(k=2)/3$. In every cell the observed share minus $E_0$ equals $P(k=2)\,[P(\mathrm{reversal}\mid k=2)-1/3]$, so it can depart from $E_0$ only through strict reversals. In the W4 pool the share is 26.9\% against $E_0=28.4\%$ ($-1.4$ [$-1.8$, $-1.0$]\pp{}, fixed pool, block bootstrap over 20 blocks; KV8: 15.3 against 18.9\%), because reversals are 23.6\% [19.2, 28.3] (task bootstrap) of $k=2$ states instead of one third. % src: analysis/fork/out/offdiag_null_20261004T030949Z.md
+This shows only that strict reversals are rarer than under random labelling. It does not show that the continuation controller is irrelevant, which would require $\YY{BB}=\YY{BQ}$ and $\YY{QB}=\YY{QQ}$, or that the interaction is zero: the reference itself allows $I\neq0$ in most arrangements. Conversely, an off-diagonal state does not show a distinct interaction mechanism: if an arm succeeds when an action score plus a continuation score exceeds a threshold, exactly additive scores can make only BB succeed (\texttt{1000}), although they never produce a strict reversal. % nocheck: argument
+
+\paragraph{The $k=2$ arrangement.} At $k=2$ the two successes share the action in 56.4\% of W4 states and 80.3\% of KV8 states, against one third under random labelling. A statement that outcomes are mainly determined by the action holds only within this subset, which is 13.8\% (W4) and 14.5\% (KV8) of divergent states. % src: analysis/fork/out/offdiag_null_20261004T030949Z.json (groups.pool W4:all, pool KV8:all: P(act|k=2)); analysis/fork/out/outcome_classes_20261004T143614Z.md
