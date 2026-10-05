@@ -6,7 +6,7 @@
 
 \paragraph{Tasks and agents.} We use \tautwo{} in text mode: a development panel of 58 retail and 27 airline tasks plus 80 telecom development tasks, and a holdout of 34 telecom tasks that no agent ran before its protocol was frozen. % src: manifests/fork/splits_v1.json
 The agents are Qwen3-4B-Instruct (q4) and Qwen3-8B with thinking disabled (q8); \S\ref{sec:scope} adds Mistral-Small-3.2-24B. % nocheck: model name
-One greedy Qwen3-30B-A3B-Instruct user simulator serves all agents. % src: /data/ziyangs/cloq_work/sims/*.json (hf_id); docs/FINAL_EXPERIMENTS.md
+One greedy Qwen3-30B-A3B-Instruct user simulator serves all agents. % src: ../cloq_work/sims/*.json (hf_id); docs/FINAL_EXPERIMENTS.md
 Retail and airline success is the final-database match with normal termination, which does not include all of \tautwo{}'s official communication requirements; telecom uses the official task-basis success (Appendix~\ref{app:setup}). BFCL multi-turn and ALFWorld, which have no user simulator, run once per item (Appendix~\ref{app:setup}).
 
 \paragraph{Quantization and serving.} Q is a simulated (fake-quantized) checkpoint served with BF16 compute on the same path as B: GPTQ \citep{frantar2023gptq} and AWQ \citep{lin2024awq} at W4 and a KV8 cache in the main cells; GPTQ-W3, RTN-W3 and a rotated KV4 cache as boundary (stress) cells. B and Q run on vLLM \citep{kwon2023vllm} with batch-invariant kernels \citep{he2025defeating} and deterministic compilation in separate server processes, so no prefix cache is shared. A \emph{block} is one closed-loop run of Q over the task pool under one prompt nonce (a random session-identifier line in the system prompt); blocks are the replicate unit.
