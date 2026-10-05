@@ -10,6 +10,18 @@ Newest first.
 
 ---
 
+## W100aq - Pre-outcome analysis scripts frozen for takeover-window and key-order; overflow audit fix; GPT 10-05 review items (2026-10-05 08:20 PDT)
+
+TL;DR Both analysis scripts are written, adversarially reviewed and selftested on synthetic data only, and their sha256 values are recorded in dated protocol amendments. No takeover-window or key-order outcome had been read when they were frozen. The GPT 10-05 pre-outcome requirements are in place:
+1. A KQ context overflow keeps its audit trail (forced tool calls, tool results, prefix), and acceptance verifies it. A CPU regression test runs through `run_branch`.
+2. Key-order conditional readings use only pooled-ratio intervals; the t interval over block ratios is auxiliary.
+3. A6 agent-output KQ errors get a Y = 0 sensitivity.
+
+Evidence: commits da9aaf8 and 4489148.
+- `docs/insights/TAKEOVER_WINDOW_PROTOCOL.md`: Amendments 2-4. Takeover readings now require at least 2 blocks and a nonzero-width interval, and repro records are classed as mismatch, error or not comparable.
+- `docs/insights/KEYORDER_PERTURB_PROTOCOL.md`: Amendment 2026-10-05e. Shas: fork.py 7b4ef65e, keyorder_arm 06e219eb, analyze_keyorder 9b987e68.
+- Scope recorded: 300 states, 41 tasks (airline 187, retail 113).
+
 ## W100ap - Takeover-window gates all pass; scale decided once = 3 blocks (f01-f03); panel queued (2026-10-05 00:50 PDT)
 
 **TL;DR**
@@ -32,6 +44,7 @@ Evidence: `analysis/fork/takeover/gate/{q8_gptq_w4_d1,q8_spinquant_w4a4,null_bf1
 - **Frozen at gate submission.** Protocol `docs/insights/TAKEOVER_WINDOW_PROTOCOL.md` sha256 `ce4f8858b01ceda56661ccd1fae59aec10c75783043f487936bf2478efe24f8c`; manifest `manifests/fork/takeover_window_v1.json` `396e3b35f4eaea15359e6c5e13b85e66218711bdeee2fe5da4cb8c05c428501d`.
 - **Code sha256 at submission.** `cloq/fork.py` 9d12edb6dc26, `scripts/a6000/fork_driver.py` 45345f6d5e7d, `scripts/a6000/takeover_window.py` f318e1891316, `scripts/a6000/make_tasks_takeover.py` 979c48e4df3d, `tests/test_takeover_window.py` a2c1796232c0 (selftest ok, 12 branches, 84 calls).
 - **Gate.** `tw_gate_q8_gptq_w4_d1`, `tw_gate_q8_spinquant_w4a4` (8 shared f01 states, windows + all endpoint re-runs, concurrency 6, both on simulator replica node005:8000). Outputs `analysis/fork/takeover/gate/q8_<cell>/window_summary.json`. Outcome-blind until `scale_decision.json` (protocol §5, §6). No panel task queued.
+- **Protocol sha256 after amendments (2026-10-05 07:45 PDT, before any window outcome read).** Sections 1-11 (Amendment 1, commit 560d717) `75bf7c35`; after Amendment 2 `47b947e5`; after Amendment 3 (reading needs >= 2 blocks and nonzero width, repro mismatch / error / not comparable, 85-state strict blocks, deadline) `261e8d17f8f0bf91744afdb2d5b997e39cd1341bf7b826c3a9bc8d32d5a11970`. Analysis code sha256 in §13. KEYORDER protocol after amendment 2026-10-05c `535c2fc27c8e`.
 - **Next.** Gate pass -> `make_tasks_takeover.py handback`, `decide --slots S --write` (once), `panel --write`. Deadline 2026-10-05 21:00 PDT. alpha=2 dose gap not started; capacity reported by `decide`.
 
 ## W100an - Holdout QQ no-op acceptance audit (GPT-authorised): the frozen 135/0 covers every eligible state; all checks pass; no section-4 repair (2026-10-04 08:25 PDT)
