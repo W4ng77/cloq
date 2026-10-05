@@ -6,9 +6,12 @@
             windows L = 1, 4 and all four endpoints re-run (repro "all"), switch-point checks, at the panel concurrency;
             both gates name the same simulator replica and wait for each other (co_gate), so the rate is measured at
             two fork tasks per replica
+  gate --null  amendment 1 item 1: tw_gate_null_bf16, both controllers on one BF16 service, a_B fixed, L = 0, 1, 4, inf
+            on the longest retail and airline f01 states (remaining BF16 decisions only); full-trajectory identity required
   handback  outcome-blind check of gate criterion 6: prints only the per-decision server sequence (B/Q) and counters
   decide    scale decision from the two gate summaries (throughput and pass fields only; no outcome field is read):
-            6 blocks iff now + SAFETY * projected wall <= DEADLINE, else 3; written once, refused if it exists
+            6 blocks iff now + SAFETY * projected wall <= DEADLINE, else 3 if that fits, else NO PANEL (amendment 1);
+            needs the null gate passed; written once, refused if it exists
   panel     endpoint tasks (spinquant_w4a4 f04-f06, mode bank_u, only if the decision says 6) and one window task per
             config x block, every one depending on its config's gate, chained so at most S_eff run at once
 usage: python scripts/a6000/make_tasks_takeover.py {manifest|gate|handback|decide|panel} [--write] [--nodes n1,n2] [--slots S]
@@ -94,11 +97,21 @@ def gate_keys(m: dict) -> list[str]:
     return sorted(k + [r["state_key"] for r in f01 if r["state_key"] not in k and all(x.get(r["state_key"]) for x in d)][:2])
 
 
+def null_keys(m: dict) -> list[str]:
+    """Amendment 1 item 1: the f01 state with the most BF16 decisions after t per domain (manifest structure only; ties
+    by sha256("tw-v1-null|state_key")); never outcomes."""
+    f01 = sorted((r for r in m["rows"] if r["block"] == "f01"),
+                 key=lambda r: (-(r["n_decisions"] - r["t"] - 1), hashlib.sha256(f"tw-v1-null|{r['state_key']}".encode()).hexdigest()))
+    return sorted(next(r["state_key"] for r in f01 if r["domain"] == d) for d in ("retail", "airline"))
+
+
 def task(cell: str, blk: str, tid: str, fork: dict, deps: list, node, prio: int, note: str) -> dict:
     ep = endpoint(cell, blk)
     tpl = json.loads((QD / "done" / f"{ep['template']}.json").read_text())
     srv = json.loads((WORK / "logs/tasks" / f"{ep['template']}.servers.json").read_text())
     expect = {r: {k: srv[r].get(k) for k in ("canary", "ckpt_sha256", "effective_config_sha")} for r in ("B", "Q")}
+    if fork.get("null"):  # one BF16 service for both controllers: Q role = B role, both expected to be BF16
+        tpl, expect = {**tpl, "Q": tpl["B"]}, {"B": expect["B"], "Q": expect["B"]}
     if fork["mode"] == "takeover_window":
         fork = {**fork, "expect": expect}
     return {**{k: tpl[k] for k in KEEP if k in tpl}, "id": tid, "node": node, "priority": prio, "deps": deps, "fork": fork,
@@ -131,6 +144,9 @@ def decide(slots: int, now: dt.datetime) -> dict:
     """Throughput-only scale rule (protocol §6). Reads window_summary.json pass/throughput fields and the gate tasks' wall
     seconds. Capacity is bounded by the simulator: S_eff = min(S, fork tasks per replica validated at gate load x live replicas)."""
     import simreg
+    ns = ROOT / OUT / "gate" / "null_bf16" / "window_summary.json"  # amendment 1 item 1: the scale waits for the null gate
+    if not (QD / "done" / "tw_gate_null_bf16.json").exists() or not json.loads(ns.read_text())["gate_pass"]:
+        raise SystemExit("null gate tw_gate_null_bf16 not passed; no scale decision")
     g, iv = {}, {}
     for c in CELLS:
         s = json.loads((ROOT / OUT / "gate" / f"q8_{c}" / "window_summary.json").read_text())
@@ -150,6 +166,19 @@ def decide(slots: int, now: dt.datetime) -> dict:
     shared = len({g[c]["user_base"] for c in CELLS}) == 1 and overlap >= 0.5 and all(g[c]["sim_waiting_p90"] is not None and g[c]["sim_waiting_p90"] <= WAIT_OK for c in CELLS)  # no load samples: not shown
     replicas = sorted(r["url"] for r in simreg.all_instances().values() if simreg.is_live(r))
     s_eff = max(1, min(slots, (2 if shared else 1) * len(replicas)))
+    plan, blocks = plan_scale(g, s_eff, now)
+    return {"rule": "6 blocks iff now + SAFETY * max(task-hours / S_eff, longest chain) <= DEADLINE, else 3 if that fits, "
+                    "else NO PANEL (protocol §6, amendment 1 item 4); decided once",
+            "now": now.isoformat(), "deadline": DEADLINE.isoformat(), "SAFETY": SAFETY, "slots": slots, "gate": g, "plan": plan,
+            "simulator": {"live_replicas": replicas, "gate_overlap": overlap, "two_per_replica_validated": shared, "WAIT_OK": WAIT_OK},
+            "S_eff": s_eff,
+            "blocks": list(BLOCKS[:blocks]), "no_panel": blocks == 0,
+            "alpha2_capacity_h": (DEADLINE - now).total_seconds() / 3600 - (plan[blocks]["projected_wall_h"] if blocks else 0),
+            "inputs_read": "window_summary.json gate_pass + throughput, gate task seconds, simulator registry only"}
+
+
+def plan_scale(g: dict, s_eff: int, now: dt.datetime) -> tuple[dict, int]:
+    """Projection per scale (protocol §6) and the chosen number of blocks: 6, else 3, else 0 = NO PANEL (amendment 1)."""
     plan = {}
     for k in (3, 6):
         tasks = [(c, "block_h") for c in CELLS for _ in range(k)] + ([("spinquant_w4a4", "endpoint_block_h")] * 3 if k == 6 else [])
@@ -158,13 +187,7 @@ def decide(slots: int, now: dt.datetime) -> dict:
         wall = SAFETY * max(work / s_eff, chain)
         plan[k] = {"n_tasks": len(tasks), "task_hours": work, "longest_chain_h": chain, "projected_wall_h": wall,
                    "projected_finish": (now + dt.timedelta(hours=wall)).isoformat(), "fits": now + dt.timedelta(hours=wall) <= DEADLINE}
-    blocks = 6 if plan[6]["fits"] else 3
-    return {"rule": "6 blocks iff now + SAFETY * max(task-hours / S_eff, longest chain) <= DEADLINE, else 3 (protocol §6); decided once",
-            "now": now.isoformat(), "deadline": DEADLINE.isoformat(), "SAFETY": SAFETY, "slots": slots, "gate": g, "plan": plan,
-            "simulator": {"live_replicas": replicas, "gate_overlap": overlap, "two_per_replica_validated": shared, "WAIT_OK": WAIT_OK},
-            "S_eff": s_eff,
-            "blocks": list(BLOCKS[:blocks]), "alpha2_capacity_h": (DEADLINE - now).total_seconds() / 3600 - plan[blocks]["projected_wall_h"],
-            "inputs_read": "window_summary.json gate_pass + throughput, gate task seconds, simulator registry only"}
+    return plan, 6 if plan[6]["fits"] else 3 if plan[3]["fits"] else 0
 
 
 def handback(cell: str) -> None:
@@ -187,6 +210,7 @@ def main() -> None:
     ap.add_argument("--nodes", default="", help="comma list, assigned round robin (empty: unpinned)")
     ap.add_argument("--slots", type=int, default=0, help="decide: parallel 2-GPU fork slots the queue can give this panel")
     ap.add_argument("--priority", type=int, default=PRIORITY)
+    ap.add_argument("--null", action="store_true", help="gate: the same-checkpoint null gate (amendment 1 item 1)")
     a = ap.parse_args()
     nodes = [n for n in a.nodes.split(",") if n] or [None]
     if a.cmd == "manifest":
@@ -199,6 +223,15 @@ def main() -> None:
             print(MAN, sha_file(ROOT / MAN))
         return
     m, m_sha = man()
+    if a.cmd == "gate" and a.null:  # independent of the two config gates; own replica (not node005, so their rate is untouched)
+        f = window_fork("gptq_w4_d1", "f01", m_sha, repro="all", state_keys=null_keys(m), sources=["B"], shadow_check=False,
+                        switch_env_check=True, gate=True, null=True, concurrency=8, out=f"{OUT}/gate/null_bf16")  # all 8 suffixes at once
+        t = task("gptq_w4_d1", "f01", "tw_gate_null_bf16", f, [], nodes[0], a.priority - 1,
+                 "tw-v1 amendment 1 null gate: B and Q controllers on one BF16 service, a_B fixed, L = 0, 1, 4, inf identical")
+        if nodes[0] and nodes[0] != "node005":  # the pinned node's own simulator replica, never the gates' node005 replica
+            t["user_base"] = f"http://{nodes[0]}:8000/v1"
+        put(t, a.write)
+        return
     if a.cmd == "gate":
         keys = gate_keys(m)
         for i, c in enumerate(CELLS):
@@ -220,12 +253,16 @@ def main() -> None:
             raise SystemExit("--slots required")
         d = decide(a.slots, dt.datetime.now(dt.timezone.utc))
         print(json.dumps(d, indent=1))
+        if d["no_panel"]:
+            print("NO PANEL: even 3 blocks do not finish by the deadline under the throughput rule (amendment 1 item 4)")
         if a.write:
             dp.parent.mkdir(parents=True, exist_ok=True)
             dp.write_text(json.dumps(d, indent=1))
         return
     dec = json.loads(dp.read_text())
     blocks, s_eff, ids = dec["blocks"], dec["S_eff"], []
+    if not blocks:
+        raise SystemExit("NO PANEL (scale_decision.json): nothing is queued")
     chain = lambda deps: deps + ([ids[-s_eff]] if len(ids) >= s_eff else [])  # noqa: E731  at most S_eff panel tasks at once
     k = 0
     for blk in blocks:  # block-major: the blocks complete at the deadline are complete for both configs

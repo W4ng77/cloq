@@ -6,7 +6,8 @@ writes the api_base it was called with into its message, so the suffix itself sh
 Its first generated decision carries two parallel tool calls (one decision); the mock user stops after decision G_END.
 Checks: switch after exactly L decisions (L = 0, 1, 4; none for inf), a run that ends inside the window is not handed
 back, per-branch counters under concurrency (all windows of a state at once, random delays), window_view and
-prefix_check on the outputs. run: source scripts/a6000/env.sh; python tests/test_takeover_window.py
+prefix_check on the outputs. Amendment 1: the null gate (B and Q on one service, L = 0, 1, 4, inf identical, switch still
+counted), the "attempted handback, generation failed" overflow category, prefix quarantine and the NO PANEL scale rule. run: source scripts/a6000/env.sh; python tests/test_takeover_window.py
 """
 from __future__ import annotations
 
@@ -72,11 +73,11 @@ def load_state() -> dict:
     return st
 
 
-def run_one(st, x, L):
+def run_one(st, x, L, q=Q):
     tag = f"selftest-{x}{L}-{random.random()}"
     if L == "inf":
-        return F.run_branch(st, x, "B", {"B": B, "Q": Q}, "http://mock-user/v1", tag, replay_hash=False)
-    return F.run_branch(st, x, "B", {"B": B, "Q": Q}, "http://mock-user/v1", tag, replay_hash=False, handback=(L, Q))
+        return F.run_branch(st, x, "B", {"B": B, "Q": q}, "http://mock-user/v1", tag, replay_hash=False)
+    return F.run_branch(st, x, "B", {"B": B, "Q": q}, "http://mock-user/v1", tag, replay_hash=False, handback=(L, q))
 
 
 def servers_in_suffix(r):
@@ -138,6 +139,33 @@ def main() -> None:
         assert v["counter_ok"] and not v["handed_back"] and v["attempted_handback"] == (sw is not None), (sw, v)
     r = {"decisions": ds, "window": {"L": 4, "n_cont": 4, "switch_decision_idx": 15}}  # without overflow: inconsistent
     assert TW.window_view(r, 4, {"B": B, "Q": Q})["counter_ok"] is False
+    # amendment 1: overflow at Q's first request is its own category and does not break the prefix check
+    r = {"infra_cause": "context_overflow", "suffix_sha": None, "decisions": [{**d, "prompt_ids_sha": a, "completion_ids_sha": c}
+         for d, (a, c) in zip(ds, refB["decisions"])], "window": {"L": 4, "n_cont": 4, "switch_decision_idx": 15}}
+    assert TW.window_view(r, 4, {"B": B, "Q": Q})["overflow"] == "attempted_handback_generation_failed"
+    assert TW.prefix_check(r, refB, 4)["ok"] is True
+    r["window"]["switch_decision_idx"] = None  # overflow at a B request inside the window, absent from the reference
+    assert TW.prefix_check(r, refB, 4)["bad"] == ["overflow_in_window_not_in_reference"]
+    assert TW.window_view(r, 4, {"B": B, "Q": Q})["overflow"] == "overflow_before_handback"
+    # amendment 1 item 4: a prefix mismatch is quarantined with a diagnosis; a clean prefix is not
+    qz = TW.quarantine(TW.prefix_check(res[("Q", 4)], refB, 4), "Q", 4)
+    assert qz["diagnosis"] == "observation_or_simulator" and "curve_Q_all_L" in qz["excluded"], qz
+    assert TW.quarantine(TW.prefix_check(res[("B", 4)], refB, 4), "B", 4) is None
+    # amendment 1 item 1: null gate, both controllers on one service; every L identical, the switch still counted
+    nul = {"R_Binf" if L == "inf" else ("R_B0" if L == 0 else f"W_B{L}"): run_one(st, "B", L, q=B) for L in (0, 1, 4, "inf")}
+    assert not any(TW.null_identity(nul, [1, 4]).values()), TW.null_identity(nul, [1, 4])
+    for L in (0, 1, 4):
+        v = TW.window_view(nul["R_B0" if L == 0 else f"W_B{L}"], L, {"B": B, "Q": B})
+        assert v["counter_ok"] and v["handed_back"] and v["switch_decision_idx"] == st["decision_idx"] + 1 + L, (L, v)
+    neg = TW.null_identity({**nul, "W_B4": res[("B", 4)]}, [1, 4])  # negative control: a real Q after the switch differs
+    assert neg["4"] and not neg["1"], neg
+    # amendment 1 item 4: NO PANEL when even 3 blocks miss the deadline under the throughput rule
+    import make_tasks_takeover as MK
+    now = MK.DEADLINE - MK.dt.timedelta(hours=10)
+    g = {c: {"overhead_h": 0.1, "block_h": 1.0, "endpoint_block_h": 0.5} for c in MK.CELLS}
+    assert MK.plan_scale(g, 4, now)[1] == 6
+    assert MK.plan_scale({c: {**g[c], "block_h": 2.0} for c in g}, 2, now)[1] == 3
+    assert MK.plan_scale({c: {**g[c], "block_h": 5.0} for c in g}, 2, now)[1] == 0
     assert TW.raw_key({"content": None, "tool_calls": [{"name": "f", "arguments": {"a": 1, "b": 2}}]}) != \
         TW.raw_key({"content": None, "tool_calls": [{"name": "f", "arguments": {"b": 2, "a": 1}}]})
     print(json.dumps({"selftest": "ok", "state": st["state_id"], "n_branches": len(res), "n_calls": len(SEEN)}))

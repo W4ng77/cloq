@@ -41,6 +41,10 @@ def window_view(r: dict, L: int, bases: dict) -> dict:
     v = {"n_cont": n_cont, "n_B": None if n_cont is None else min(n_cont, L), "n_Q": None if n_cont is None else max(n_cont - L, 0),
          "handed_back": None if n_cont is None else n_cont > L, "switch_decision_idx": w.get("switch_decision_idx"),
          "attempted_handback": w.get("switch_decision_idx") is not None}
+    # amendment 1 item 2: an overflow raised by Q's first request is a valid failure, reported as its own category
+    ovf, att = r.get("infra_cause") == "context_overflow", v["attempted_handback"]
+    v["overflow"] = None if not ovf else "attempted_handback_generation_failed" if att and n_cont == L else \
+        "overflow_after_handback" if att else "overflow_before_handback"
     if "error" in r or not ds:
         return {**v, "pattern_ok": None, "counter_ok": None}
     want = [bases["B"] if i < L else bases["Q"] for i in range(len(cont))]
@@ -66,10 +70,35 @@ def prefix_check(r: dict, ref: dict | None, L: int) -> dict:
             bad.append(f"prompt{i}")
         elif 1 <= i <= L and ds[i].get("completion_ids_sha") != rd[i][1]:
             bad.append(f"completion{i}")
-    inside = len(ds) <= L + 1
-    if inside and r.get("suffix_sha") != ref["suffix_sha"]:
+    inside, ovf = len(ds) <= L + 1, r.get("infra_cause") == "context_overflow"
+    if inside and not ovf and r.get("suffix_sha") != ref["suffix_sha"]:
         bad.append("ended_in_window_suffix_differs")
+    if ovf and (r.get("window") or {}).get("switch_decision_idx") is None and len(rd) > len(ds):  # overflow at a B request
+        bad.append("overflow_in_window_not_in_reference")  # (Q's first request overflowing is amendment 1's valid failure)
     return {"ok": not bad, "bad": bad, "ref": ref["kind"], "ended_in_window": inside}
+
+
+def quarantine(pc: dict, x: str, L: int) -> dict | None:
+    """Amendment 1 item 4 (panel): a prefix mismatch before the switch breaks duration attribution. The suffix is kept on
+    disk but excluded from the main analysis: Y_{x,L} in Delta_L, V_{x,L}, R_{x,L}, and the state from the x duration curve
+    at every L (fixed composition). Diagnosis = the first mismatching item."""
+    if pc.get("ok") is not False:
+        return None
+    b = pc["bad"][0]
+    kind = ("state_rebuild" if b == "prompt0" else "bf16_generation_nondeterminism" if b.startswith("completion")
+            else "reprefill_at_switch" if b == f"prompt{L + 1}" else "observation_or_simulator" if b.startswith("prompt") else b)
+    return {"reason": "prefix_mismatch_before_switch", "first_bad": b, "diagnosis": kind, "bad": pc["bad"],
+            "excluded": [f"Delta_{L}", f"V_{x},{L}", f"R_{x},{L}", f"curve_{x}_all_L"]}
+
+
+def null_identity(got: dict, windows: list) -> dict:
+    """Amendment 1 item 1: with B and Q on the same BF16 service and one fixed current action (a_B), every L must give the
+    same branch signature as L = inf (full suffix, every prompt/completion, outcome, final env, budget); only key names
+    of the differing fields are kept (outcome-blind)."""
+    ref = got.get(f"R_B{INF}")
+    runs = {"0": got.get("R_B0"), **{str(L): got.get(f"W_B{L}") for L in windows}}
+    ok_ref = ref is not None and "error" not in ref
+    return {L: (sig_diff(r, ref) if ok_ref and r is not None and "error" not in r else ["run error"]) for L, r in runs.items()}
 
 
 def raw_key(m: dict) -> str:
@@ -100,12 +129,14 @@ def run(FD, spec, bases, user_base, servers, out: Path) -> dict:
     rrec = {x["state_key"]: x for x in _jsonl(rr / "recovery_rows.jsonl")} if rr and (rr / "recovery_rows.jsonl").exists() else {}
     keys = sorted(spec.get("state_keys") or rows)
     windows, sources, rep = [int(L) for L in spec.get("windows", [1, 4])], spec.get("sources", ["B", "Q"]), spec.get("repro", 0.1)
-    gate = bool(spec.get("gate"))
+    gate, null = bool(spec.get("gate")), bool(spec.get("null"))
+    if null:  # amendment 1 item 1: both controllers on the one BF16 service (B's); the Q-role server is not used
+        bases = {"B": bases["B"], "Q": bases["B"]}
     exp = spec.get("expect") or {}
     srv_ok = {r: {k: (servers.get(r) or {}).get(k) == v for k, v in exp.get(r, {}).items()} for r in exp}
     src_srv = ssum.get("servers") or {}  # the endpoint block's own gate (noop) and server identity (protocol §2)
     src_ok = {"gate_pass": ssum.get("gate_pass") is True,
-              **{f"{r}_{k}": (src_srv.get(r) or {}).get(k) == v for r in exp for k, v in exp[r].items()}}
+              **{f"{r}_{k}": (src_srv.get(r) or {}).get(k) == v for r in exp if not null or r == "B" for k, v in exp[r].items()}}
     blocks: dict = {}
 
     def endpoint(sk: str, arm: str, st: dict, depth: int = 0):
@@ -225,7 +256,7 @@ def run(FD, spec, bases, user_base, servers, out: Path) -> dict:
                      "official_reward": r.get("official_reward"), "db_match": r.get("db_match"), "error": (r.get("error") or "")[:200] or None,
                      "n_decisions_logged": r.get("n_decisions") if "error" in r else len(r.get("decisions") or []),
                      **window_view(r, L, bases), "prefix": prefix_check(r, ref, L),
-                     "budget_ok": None if "error" in r else FD.budget_check(st, r)["ok"], "env_hash_init_ok": r.get("env_hash_init_ok"),
+                     "budget_ok": None if "error" in r or r.get("infra_cause") == "context_overflow" else FD.budget_check(st, r)["ok"], "env_hash_init_ok": r.get("env_hash_init_ok"),
                      "history_prefix_ok": r.get("prefix_ok"), "suffix_sha": r.get("suffix_sha"), "duration": r.get("duration"),
                      # eligibility (protocol §7): the L = inf endpoint of this source generated more than L decisions
                      "ref_n_gen": None if ref is None else len(ref["decisions"]) - 1,
@@ -235,6 +266,9 @@ def run(FD, spec, bases, user_base, servers, out: Path) -> dict:
                 if spec.get("switch_env_check") and ref is not None and v["handed_back"] and "error" not in r:
                     a, b = at_switch(st["history"] + r["suffix"], st, L), at_switch(ref["full"], st, L)
                     v["at_switch"] = {"ok": a is not None and a == b, "history_sha": a and a[0], "budget": a and a[1], "env_hash": a and a[2]}
+                q = None if gate else quarantine(v["prefix"], x, L)
+                if q:  # amendment 1 item 4: recorded and diagnosed; excluded downstream from the main analysis
+                    v["quarantine"] = q
                 p["windows"][f"{x}{L}"] = v
             if p["raw_identical_actions"]:  # identical current actions: the B- and Q-first windows must coincide
                 for L in windows:
@@ -243,7 +277,7 @@ def run(FD, spec, bases, user_base, servers, out: Path) -> dict:
                         p.setdefault("exact_pair", {})[str(L)] = not sig_diff(rb, rq)
         for x in sources:
             for L in (0, INF) if p["repro_sample"] else ():
-                r, arm = got.get(f"R_{x}{L}") or {"error": "not run"}, endpoint_arm(x, L)
+                r, arm = got.get(f"R_{x}{L}") or {"error": "not run"}, "BB" if null else endpoint_arm(x, L)
                 kind, br = endpoint(sk, arm, st)
                 if "error" in r:
                     c = {"ok": False, "why": r["error"][:200]}
@@ -255,8 +289,11 @@ def run(FD, spec, bases, user_base, servers, out: Path) -> dict:
                 else:
                     c = {"ok": None, "why": f"endpoint {arm} not comparable ({p['src_arm_source'].get(arm)})"}
                 c.update(arm=arm, L=L, Y=None if "error" in r else FD._y(st["domain"], r), duration=r.get("duration"))
-                c["window_counter_ok"] = window_view(r, 0, bases)["counter_ok"] if L == 0 else None
-                p["repro"][arm] = c
+                wv0 = window_view(r, 0, bases) if L == 0 else {}
+                c["window_counter_ok"], c["handed_back"] = wv0.get("counter_ok"), wv0.get("handed_back")
+                p["repro"][f"BB{L}" if null else arm] = c  # null: both L = 0 and L = inf are arm BB; keep both records
+        if null:
+            p["null_identity"] = null_identity(got, windows)
         FD.dump(out / "branches" / f"{sk}.json", got)
         rows_out.append(p)
     out.mkdir(parents=True, exist_ok=True)
@@ -280,7 +317,16 @@ def run(FD, spec, bases, user_base, servers, out: Path) -> dict:
          "history_prefix_ok": allv(v["history_prefix_ok"] for v in W),
          "exact_pair": {"n": sum(len(x.get("exact_pair", {})) for x in rows_out), "n_ok": sum(sum(x.get("exact_pair", {}).values()) for x in rows_out)},
          "repro": {"n": len(R), "n_ok": sum(1 for v in R if v["ok"] is True), "n_not_comparable": sum(1 for v in R if v["ok"] is None)},
-         "handed_back": hb, "src_ok": src_ok, "n_E_handback_mismatch": sum(1 for v in W if v.get("E") is not None and v.get("handed_back") is not None and v["E"] != v["handed_back"]),
+         "handed_back": hb, "src_ok": src_ok,
+         "overflow": {c: sum(1 for v in W if v.get("overflow") == c) for c in ("attempted_handback_generation_failed", "overflow_before_handback", "overflow_after_handback")},
+         "quarantine": [[x["state_key"], k, v["quarantine"]["diagnosis"]] for x in rows_out for k, v in (x.get("windows") or {}).items() if v.get("quarantine")],
+         "null": None if not null else {"single_server": bases["Q"] == bases["B"], "n_states": len(good),
+                                        "n_identical": sum(1 for x in good if not any((x.get("null_identity") or {"": ["missing"]}).values())),
+                                        "switch_counted": all(v["handed_back"] and v["counter_ok"] for v in W) and len(W) == len(good) * len(windows)
+                                        # amendment 1 item 1: the L = 0 handback (0, B) must also happen and be counted
+                                        and sum(1 for v in R if v["L"] == 0 and v["handed_back"] and v["window_counter_ok"] is True) == len(good)},
+         "n_E_handback_mismatch": sum(1 for v in W if v.get("E") is not None and v.get("handed_back") is not None and v["E"] != v["handed_back"]
+                                     and v.get("overflow") != "attempted_handback_generation_failed"),  # overflow bucket first (amendment 1)
          "repro_window_counter_ok": allv(v["window_counter_ok"] for v in R), "throughput": {"concurrency": spec.get("concurrency", 6), "job_seconds": t_jobs, "n_suffixes": len(jobs),
                                             "suffixes_per_hour": len(jobs) / t_jobs * 3600 if t_jobs > 0 else None,
                                             "suffix_seconds_p50_p90": [durs[len(durs) // 2], durs[int(len(durs) * 0.9)]] if durs else None,
@@ -294,7 +340,9 @@ def run(FD, spec, bases, user_base, servers, out: Path) -> dict:
                                             "sim_load": {"n_samples": len(sim), "waiting_p50_p90_max": [pq([m["wait"] for m in sim], .5), pq([m["wait"] for m in sim], .9), max((m["wait"] for m in sim), default=None)],
                                                          "running_p50_max": [pq([m["run"] for m in sim], .5), max((m["run"] for m in sim), default=None)]}},
          "seconds": time.time() - t0}
-    s["gate_pass"] = (s["n_errors"] == 0 and s["n_missing"] == 0 and s["state_identical"] and s["shadow_identical"] == len(good)
+    s["gate_pass"] = (s["n_errors"] == 0 and s["n_missing"] == 0 and s["state_identical"]
+                      and (s["shadow_identical"] == len(good) or not spec.get("shadow_check", True))
+                      and (not null or (s["null"]["single_server"] and s["null"]["switch_counted"] and s["null"]["n_identical"] == len(good) > 0))
                       and s["pattern_ok"] and s["counter_ok"] and s["prefix_ok"] and s["at_switch_ok"] and s["budget_ok"]
                       and s["env_hash_init_ok"] and s["history_prefix_ok"] and s["exact_pair"]["n"] == s["exact_pair"]["n_ok"]
                       and s["repro"]["n_ok"] == s["repro"]["n"] - s["repro"]["n_not_comparable"]
