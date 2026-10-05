@@ -310,3 +310,76 @@ Per state s and cell c, Y_{x,L} ∈ {0, 1} is retail/airline DB success with a n
 - **Figure.** One takeover-duration vs net-gain curve per cell (L = 0, 1, 4, ∞; V_{Q,L} with block-t intervals, all-state and E_{Q,4} = 1), annotated at each L with the realized handback share (handed back / attempted handback, generation failed / ended inside window) and the rescue and damage counts whose difference is the net gain.
 - **Readings it can support** (each subject to 11.3): a short-takeover gain that survives handback to Q; sustained takeover gaining more than short takeover; longer takeover both rescuing and damaging tasks, with cancellation.
 - **Labels.** Exploratory follow-up, both configurations chosen after seeing results (§1). Deadline unchanged: 2026-10-05 21:00 PDT (Toronto 2026-10-06 00:00). Frozen readings (SAMEPREC, COMMONSTATE, NEWMETHOD, holdout) unchanged.
+
+---
+
+## 12. Amendment 2 (2026-10-05, about 07:20 PDT): analysis script recorded
+
+**TL;DR** Records the analysis code required by §8 ("written before any panel output is read"). It implements §7, §9 and Amendment 1 (§11) as written; no estimand, subset, rule or interval is changed. Sections 1 to 11 are not edited.
+
+**Outcome status at the time of writing.** Panel outputs for some blocks exist on disk, but no window outcome (`analysis/fork/takeover/q8_*/f0*/branches/`, the outcome fields of `window_rows.jsonl`) and nothing under `analysis/fork/keyorder/**/branches/` or `analysis/fork/holdout/` was opened while writing or testing the code. The code was tested only on synthetic data (fake panel directories with random Y). This amendment is therefore not post hoc (§10).
+
+**Files.** The §8 script is split in three to keep each file under the 200-line cap:
+
+| File | Role | sha256 |
+|---|---|---|
+| `analysis/fork/analyze_takeover.py` | guard, panel loader (A6 on window errors, §8 task invalidation), endpoint loading via `analyze_newmethod.load_tau2` (A6 + A7), main | `8d36b6a5a1c3cc219b65a52f6433f75493ee50ea9d8f536202fa19e1c6bf8932` |
+| `analysis/fork/takeover_report.py` | estimands, subsets, transitions, handback, reading rules, cross-cell contrast | `ad20a3af06706c7404e4ffcad4bc8a8f24aedc9dd503ad048f1722414e95dcd6` |
+| `analysis/fork/analyze_takeover_selftest.py` | `--selftest`, synthetic only | `3c99c8ba5648432ecc9bc34121c7ce3c360e52ff0075440445cc88b9c2655b32` |
+
+**Guard.** The script refuses to run unless sections 1 to 11 of this file (the text before the `---` separator that precedes `## 12.`) hash to `75bf7c3557c63d7b8e1cf9026447ffce2a24a6d398501495c82c86daeb009750` (commit 560d717), this file contains the sha256 of all three files above, the manifest hashes to `396e3b35…` and the row list of the blocks in `scale_decision.json` hashes to the frozen row-list value (§ header). Any later code change needs a further dated amendment with the new sha256 values.
+
+**Implementation choices that the text leaves open** (fixed here, before any outcome is read):
+- **Strict blocks.** A quarantined suffix (§11.4) counts as recorded for the strict-block rule (§8); only a missing value (non-A6 error) removes the (cell, block). An A6 window error is Y = 0.
+- **Quarantine masking.** A quarantined Y_{x,L} masks Δ_L at that L and every source-x quantity (Y_{x,·}, V_{x,·}, R_{x,·}, rescue/damage, short-window-only) at every L.
+- **Reuse acceptance.** One repro mismatch in a (cell, block) masks Y_{x,0}, Y_{x,∞} and every quantity that uses them for that block; Y_{x,1}, Y_{x,4}, Δ_1, Δ_4 and Y_{x,4} − Y_{x,1} remain.
+- **Answer 3.** "Longer is not monotone" fires when V_{x,L} − V_{x,L'} (L > L') has a primary interval below 0, or the signed short-window-only change (Y_{x,L} − Y_{x,0}) · 1[Y_{x,∞} = Y_{x,0}] has an interval excluding 0. A t interval of zero width (zero between-block variance) is flagged as degenerate in the reading text.
+- **Fixed-composition B curve.** The x = B curve on E_{B,4} = 1 is reported alongside the registered Q curve, descriptive.
+- **BF16 usage.** Per cell, x and L: n_B distribution and mean BF16 / Q prefill and generated tokens per window suffix (the first n_B generated decisions, guaranteed by `pattern_ok`); for L = ∞ the BF16 decision count is `ref_n_gen`; tokens of reused endpoints are not in the window rows and are not reported.
+- **Outputs.** `analysis/fork/out/takeover_<UTC>.{json,md}`.
+
+---
+
+## 13. Amendment 3 (2026-10-05, about 07:45 PDT): reading needs two blocks, repro classes, strict-block and deadline checks
+
+**TL;DR** Fixes from the review of the Amendment 2 code, written before any window outcome is read. A §9 / §11.3 reading now needs a t interval over at least 2 block means with nonzero width; otherwise the line says "not estimable". A repro record is classed as mismatch, error or not comparable, and only a mismatch masks a block's endpoint contrasts. Strict blocks need all 85 states, and only blocks complete at the deadline enter. No estimand or subset changes. Sections 1 to 12 are not edited.
+
+**Outcome status at the time of writing.** As for Amendment 2: no window outcome (`analysis/fork/takeover/q8_*/f0*/branches/`, the outcome fields of `window_rows.jsonl`), nothing under `analysis/fork/keyorder/**/branches/` and nothing under `analysis/fork/holdout/` was opened. The code was tested only on synthetic data. No `takeover_*` output exists in `analysis/fork/out`. This amendment is therefore not post hoc (§10).
+
+**Files** (supersede the Amendment 2 values; the guard requires these):
+
+| File | sha256 |
+|---|---|
+| `analysis/fork/analyze_takeover.py` | `de416d4d710989b04f8c5fa140f0f49cee79b79eba5c3cdb03d147fcb853b415` |
+| `analysis/fork/takeover_report.py` | `1d56aacf99df4470ef06e9a65f699db76d8adb651f4f6c263af3ef62b7409750` |
+| `analysis/fork/analyze_takeover_selftest.py` | `b1a25529387238e3f6ec071d3c89153c715c9402e94785653444a6c84b763573` |
+
+**Rules** (fixed here, before any outcome is read):
+- **A reading needs two blocks and a nonzero-width interval.** Every reading line (V_{Q,L}, R_{Q,L}, V_{Q,∞} − V_{Q,L}, the answer 3 contrasts, the short-window-only change) uses its interval only when `t_ci95` exists (`n_blocks` ≥ 2) and the primary interval has nonzero width. Otherwise the line reads "<statistic> not estimable (<reason>)" and supports no §9 answer. The reasons are "no data", "data in fewer than 2 blocks, no t interval" and "zero-width interval (zero between-block variance)". The one-block block bootstrap fallback of `analyze_dev.summarise` (zero width at the estimate) is never read. This closes the case where masking or a dropped block leaves a statistic in one block.
+- **Degenerate intervals.** A zero-width t interval (identical block means, possible at K = 2 or 3) does not support any answer. This supersedes Amendment 2's "flagged as degenerate in the reading text". V and R are judged separately: a non-estimable R_{Q,L} does not suppress the V_{Q,L} line, and the reverse.
+- **Repro classes** (§8 "mismatch"; `analyze_takeover.repro_kind`).
+  - *mismatch*: a comparable re-run whose branch signature differs (`differs`), or a failed `noop_check`.
+  - *error*: the re-run raised (timeout, simulator outage, not run), i.e. `ok` False with `why` and no `differs`. This is an infrastructure failure (§10), re-runnable once by a recorded rule.
+  - *not_comparable*: `ok` None (the stored endpoint has no comparable record).
+  - Only a mismatch masks Y_{x,0}, Y_{x,∞} and their contrasts for the (cell, block). An error or a not-comparable record does not mask. Both are counted per block in the JSON and the .md. The block's endpoint contrasts are accepted only with zero mismatches **and** at least one re-run that compared equal (`endpoint_accepted`). So a block whose sample yielded no comparable re-run is masked as untested. §5.8 (no not-comparable re-run) stays a gate criterion. In the panel a not-comparable record is reported, not counted as an acceptance.
+- **Task invalidation (§8, §5.5).** An L = 0 endpoint re-run with `window_counter_ok` False invalidates the task output like a window suffix. `server_expect_ok` and `src_ok` must be present and non-empty in `window_summary.json`. An absent field fails; it no longer passes vacuously.
+- **Strict blocks (§8).** A (cell, block) enters the primary only when all 85 states are present (distinct state keys) and each has all 8 values. A bank row refused by `load_tau2` therefore drops the block instead of shrinking it.
+- **Deadline (§6, §11.5).** A block enters only if `window_summary.json` `throughput.jobs_end_unix` ≤ 1791259200 (2026-10-05 21:00 PDT). A missing end time counts as not complete. Such a block is listed in `design_incomplete` with status "not complete at the deadline (§6)".
+- **Handback mismatch.** `n_E_handback_mismatch` excludes only `attempted_handback_generation_failed`, as in the driver and §11.2. Other overflow categories are counted.
+- **Report (.md).** The .md now carries the scale decision record verbatim, per-block status and repro counts (ok, mismatch, error, not comparable), and the handback buckets, E share, n_B and BF16 decisions for every window (§9). The answer 1 line prints the E_{Q,4} = 1 share.
+- **Selftest.** It now reproduces the review case: f01 alone (K = 1) gives "not estimable" and no answer. It also checks that a zero-width 2-block interval gives no answer. It checks that a repro error and a not-comparable record do not mask, and that a mismatch-only block or a block with no ok re-run is not accepted. Further checks: the 85-state rule, a block finished after the deadline, and an absent `src_ok`. The planted answer 1 and "beats" modes now carry noise so that their block-t intervals are non-degenerate. Passed 2026-10-05 (`--selftest --B 300`).
+- **Not changed.** Δ_∞ − Δ_0 is still not computed (it was not registered in §7), and the minor review items not listed here remain open.
+
+---
+
+## 14. Amendment 4 (2026-10-05, about 07:47 PDT): analysis script frozen
+
+**TL;DR** The Amendment 3 code is frozen as the §8 analysis, frozen before any outcome of this experiment was read. No code, estimand, subset or rule changes. Sections 1 to 13 are not edited.
+
+| File | sha256 |
+|---|---|
+| `analysis/fork/analyze_takeover.py` | `de416d4d710989b04f8c5fa140f0f49cee79b79eba5c3cdb03d147fcb853b415` |
+| `analysis/fork/takeover_report.py` | `1d56aacf99df4470ef06e9a65f699db76d8adb651f4f6c263af3ef62b7409750` |
+| `analysis/fork/analyze_takeover_selftest.py` | `b1a25529387238e3f6ec071d3c89153c715c9402e94785653444a6c84b763573` |
+
+**Outcome status.** No window outcome (`analysis/fork/takeover/q8_*/f0*/branches/`, the outcome fields of `window_rows.jsonl`), nothing under `analysis/fork/keyorder/**/branches/` and nothing under `analysis/fork/holdout/` was opened. No `takeover_*` output exists in `analysis/fork/out`. `analyze_takeover.py --selftest --B 300` (synthetic data with random Y only) passed at 07:46 PDT. Any later change to these files needs a further dated amendment with the new sha256 values.
