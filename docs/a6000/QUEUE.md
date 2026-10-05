@@ -1,11 +1,13 @@
-# A6000 queue snapshot (2026-10-04 20:53:41 PDT)
+# A6000 queue snapshot (2026-10-04 21:23:45 PDT)
 
-## running (4)
+## running (6)
 
 - `a6k2_q4_gauss3_s2_redo`
 - `a6k2_q4_kvq_int3`
 - `a6k2_q4_kvq_int4`
 - `pert_q8_rtn_w3_resid_a2_q345`
+- `tw_gate_q8_gptq_w4_d1`
+- `tw_gate_q8_spinquant_w4a4`
 
 ## failed (22)
 
