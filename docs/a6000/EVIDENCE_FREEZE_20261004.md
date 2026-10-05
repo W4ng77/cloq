@@ -22,3 +22,6 @@
 - `a6k2_q8_gauss3_s1` 2026-10-04 15:03
 
 Total done: 1351; git HEAD at freeze: 0119322.
+
+## Amendment 2026-10-04 21:05 PDT
+After the snapshot script was written, GPT (20:45 PDT) opened one separately registered exploratory window: the takeover-duration panel (docs/insights/TAKEOVER_WINDOW_PROTOCOL.md), with a deadline of 2026-10-05 21:00 PDT. This snapshot still freezes everything else. The SAMEPREC, COMMONSTATE, NEWMETHOD and holdout readings and the four tasks listed above as incomplete are unchanged.
