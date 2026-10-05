@@ -18,6 +18,8 @@ modes (task["fork"]["mode"]):
              other handle; reference re-runs against the existing Bank U arms (COMMONSTATE_SOURCES_PROTOCOL.md).
   takeover_window  tw-v1: BF16 takes over for L decisions after the forced action, then Q (scripts/a6000/takeover_window.py,
              TAKEOVER_WINDOW_PROTOCOL.md); endpoint arms L = 0 / inf re-run on a hash sample and compared with the bank.
+  keyorder   ko-v1: KQ (Q's action with its arguments' top-level keys reversed, then Q) on the eligible Bank P states of one
+             fork directory, plus a QQ no-op sample (scripts/a6000/keyorder_arm.py, KEYORDER_PERTURB_PROTOCOL.md).
 usage:
   python scripts/a6000/fork_driver.py --task <task.json> --b-base URL --q-base URL --user-base URL --servers <json>
   python scripts/a6000/fork_driver.py --cpucheck --block RUN:DOMAIN [--block ...] --out analysis/fork/gate/cpucheck_x.json
@@ -882,6 +884,12 @@ def takeover_window(spec, bases, user_base, servers, out):
     return TW.run(sys.modules[__name__], spec, bases, user_base, servers, out)
 
 
+def keyorder(spec, bases, user_base, servers, out):
+    import keyorder_arm as KO  # scripts/a6000/keyorder_arm.py (KEYORDER_PERTURB_PROTOCOL.md, ko-v1)
+
+    return KO.run(sys.modules[__name__], spec, bases, user_base, servers, out)
+
+
 def _user_protocol(st: dict, br: dict) -> dict:
     """W90 acceptance checks on one branch run with a user_llm override (cloq/user_llm.py records every user call)."""
     from tau2.runner.build import build_environment, build_user
@@ -1690,7 +1698,7 @@ def main():
     out = ROOT / spec["out"]
     out.mkdir(parents=True, exist_ok=True)
     fn = {"gate": gate, "gate_same": gate_same, "search": search_mode, "branches": branches_mode, "dev": dev_mode, "pivot_arms": pivot_arms, "bank_u": bank_u, "bank_u_arms": bank_u_arms, "bank_u_q0": bank_u_q0, "repair": repair_mode, "simctrl": simctrl,
-          "simctrl_p": simctrl_p, "commonstate": commonstate, "takeover_window": takeover_window}[spec["mode"]]
+          "simctrl_p": simctrl_p, "commonstate": commonstate, "takeover_window": takeover_window, "keyorder": keyorder}[spec["mode"]]
     r = fn(spec, bases, a.user_base, servers, out)
     v = r.get("verdict")
     print(json.dumps({"verdict": v}, default=str))
