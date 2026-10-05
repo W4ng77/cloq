@@ -109,10 +109,10 @@ def save(fig, name, keys, what):
     shas = {SRC[k]: _cache[k][1] for k in keys}
     meta = {
         "Title": name,
-        "Author": "CLOQ paper figures (paper/latex/tools/figs/make_figs.py)",
+        "Author": None,  # anonymous review: no project name in figure metadata
         "Subject": "Source: " + "; ".join(srcs),
         "Keywords": "script_sha256=" + script_sha() + "; " + "; ".join(f"{s}={h}" for s, h in shas.items()),
-        "Creator": "paper/latex/tools/figs/make_figs.py",
+        "Creator": None,
     }
     path = os.path.join(OUT, name + ".pdf")
     w = fig.get_size_inches()[0]
@@ -414,7 +414,7 @@ def f3():
     ax.text(-13.6, ypos[0] + 0.9, r"$\leftarrow$ damage $d$", ha="left", va="bottom", fontsize=7, color=INK)
     ax.text(13.6, ypos[0] + 0.9, r"rescue $r$ $\rightarrow$", ha="right", va="bottom", fontsize=7, color=INK)
     iho = [i for i, r in enumerate(rows) if r[6] == "ho"][0]
-    ax.text(13.6, ypos[iho] + 0.62, "telecom holdout (pre-reg., 90%)", ha="right", va="bottom", fontsize=7,
+    ax.text(13.9, ypos[iho] + 0.95, "telecom holdout (pre-reg., 90%)", ha="right", va="center", fontsize=6.5,
             color=INK2, style="italic")
     ax.text(13.6, ypos[0] + 0.0, r"$\tau^2$ dev", ha="right", va="center", fontsize=7, color=INK2, style="italic")
     # no legend: bars are labelled at the top (damage d / rescue r); the diamond is net G_all (caption)
