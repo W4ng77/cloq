@@ -312,13 +312,20 @@ def _make_agent_cls():
     from tau2.utils.utils import get_now
 
     class ForkAgent(CLOQAgent):
-        def __init__(self, tools, domain_policy, llm, llm_args, task, nonce, forced=None, tag=None, decision_idx=0):
+        def __init__(self, tools, domain_policy, llm, llm_args, task, nonce, forced=None, tag=None, decision_idx=0, handback=None):
             self._nonce = nonce
             super().__init__(tools=tools, domain_policy=domain_policy, llm=llm, llm_args=llm_args, task=task)
             self._forced = forced
             if tag:
                 self.trajectory_id = tag
             self.decision_idx = decision_idx
+            # Takeover window (TAKEOVER_WINDOW_PROTOCOL): handback = (L, base_after). The server in llm_args generates the
+            # first L complete decisions after the forced action (one assistant message = one decision, however many
+            # parallel tool calls it carries); every later decision goes to base_after. The counter is this agent's own
+            # attribute (llm_args is a per-agent deep copy), so concurrent branches never share it.
+            self._handback = handback
+            self.n_cont = 0  # generated (non-forced) decisions so far
+            self.switch_decision_idx = None  # decision_idx of the first decision sent to base_after
 
         @property
         def system_prompt(self) -> str:  # the block's nonce, per agent (CLOQAgent reads it from the process env)
@@ -327,8 +334,12 @@ def _make_agent_cls():
 
         def _generate_next_message(self, message, state):
             if self._forced is None:
-                t0 = time.time()
+                if self._handback is not None and self.switch_decision_idx is None and self.n_cont >= self._handback[0]:
+                    self.llm_args["api_base"] = self._handback[1]
+                    self.switch_decision_idx = self.decision_idx
+                t0, d0 = time.time(), self.decision_idx
                 out = super()._generate_next_message(message, state)
+                self.n_cont += self.decision_idx > d0  # a loop-guard stop (no generation) is not a decision
                 usage = (out.raw_data or {}).get("usage") or {}
                 recs = _W.recs.get(self.trajectory_id) if _W is not None else None
                 if recs:
@@ -537,10 +548,12 @@ def local_prompt_ids(st: dict) -> list[int]:
 
 
 def run_branch(st: dict, first: str, controller: str, bases: dict[str, str], user_base: str, tag: str,
-               replay_hash: bool = True, user_llm: Optional[dict] = None) -> dict:
+               replay_hash: bool = True, user_llm: Optional[dict] = None, handback: Optional[tuple[int, str]] = None) -> dict:
     """Branch <first><controller>: force a_<first> at h_t, continue with the controller server to the end.
     With `user_llm` (W90) the branch's user turns go to that model (cloq/user_llm.py) and every user call is
-    returned under "user_llm_calls"; without it nothing changes."""
+    returned under "user_llm_calls"; without it nothing changes. With `handback` = (L, base_after) the controller
+    generates the next L decisions and base_after every later one (ForkAgent; TAKEOVER_WINDOW_PROTOCOL); the result
+    then carries "window" (L, n_cont, switch_decision_idx)."""
     from tau2.data_model.tasks import InitialState, Task
     from tau2.evaluator.evaluator import EvaluationType, evaluate_simulation
     from tau2.orchestrator.modes import CommunicationMode
@@ -566,7 +579,10 @@ def run_branch(st: dict, first: str, controller: str, bases: dict[str, str], use
     A = fork_agent_cls()
     orch.agent = A(tools=orch.environment.get_tools(), domain_policy=orch.environment.get_policy(), llm=cfg.llm_agent,
                    llm_args=copy.deepcopy(cfg.llm_args_agent), task=task, nonce=st["nonce"], forced=forced, tag=tag,
-                   decision_idx=st["decision_idx"])
+                   decision_idx=st["decision_idx"], handback=handback)
+    ag = orch.agent
+    win = (lambda: {"window": {"L": handback[0], "base_after": handback[1], "n_cont": ag.n_cont,
+                               "switch_decision_idx": ag.switch_decision_idx}}) if handback is not None else dict
     probe: dict = {}
     base_init = orch.initialize
 
@@ -595,11 +611,11 @@ def run_branch(st: dict, first: str, controller: str, bases: dict[str, str], use
                     "prefix_ok": None, "env_hash_init": probe.get("env_hash_init"), "env_hash_init_ok": probe.get("env_hash_init") == st["env_hash"],
                     "counters_tau2_default": probe.get("counters_tau2"), "to_role_at_init": probe.get("to_role"), "env_hash_final": None,
                     "suffix": None, "suffix_sha": None, "n_messages": None, "duration": time.time() - t0, "sim_seed": st["simulator"]["sim_seed"],
-                    "n_user_msgs": None, "error_text": repr(e)[:300], **ucalls,
+                    "n_user_msgs": None, "error_text": repr(e)[:300], **ucalls, **win(),
                     "decisions": [{"decision_idx": r["decision_idx"], "forced": bool(r.get("forced")),
                                    "prompt_ids_sha": ids_sha(r.get("prompt_token_ids")), "n_prompt_tokens": r.get("n_prompt_tokens"),
                                    "completion_ids_sha": ids_sha(r.get("completion_token_ids"))} for r in recs]}
-        return {"tag": tag, "branch": first + controller, "error": repr(e), "n_decisions": len(recs), "probe": probe, **ucalls}
+        return {"tag": tag, "branch": first + controller, "error": repr(e), "n_decisions": len(recs), "probe": probe, **ucalls, **win()}
     dur = time.time() - t0
     rinfo = evaluate_simulation(simulation=sim, task=task, evaluation_type=EvaluationType.ALL_IGNORE_BASIS,
                                 solo_mode=False, domain=st["domain"], mode=CommunicationMode.HALF_DUPLEX)
@@ -632,7 +648,7 @@ def run_branch(st: dict, first: str, controller: str, bases: dict[str, str], use
                       for r in recs],
         "duration": dur, "sim_seed": sim.seed,
         "n_user_msgs": sum(1 for m in msgs[n_h:] if m["role"] == "user"),
-        **ucalls,
+        **ucalls, **win(),
     }
     if replay_hash:
         env2 = restore_env(st["domain"], task, [msg_from_dict(m) for m in msgs])

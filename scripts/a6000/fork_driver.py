@@ -16,6 +16,8 @@ modes (task["fork"]["mode"]):
              simulator replaced by the simrelay-v2 relay (scripts/a6000/simrelay_cli.py); unexposed branches kept.
   commonstate W100a: a new action source (e.g. GPTQ-W4 d2) at the frozen Bank U states, forced and continued by the
              other handle; reference re-runs against the existing Bank U arms (COMMONSTATE_SOURCES_PROTOCOL.md).
+  takeover_window  tw-v1: BF16 takes over for L decisions after the forced action, then Q (scripts/a6000/takeover_window.py,
+             TAKEOVER_WINDOW_PROTOCOL.md); endpoint arms L = 0 / inf re-run on a hash sample and compared with the bank.
 usage:
   python scripts/a6000/fork_driver.py --task <task.json> --b-base URL --q-base URL --user-base URL --servers <json>
   python scripts/a6000/fork_driver.py --cpucheck --block RUN:DOMAIN [--block ...] --out analysis/fork/gate/cpucheck_x.json
@@ -874,6 +876,12 @@ def bank_u_arms(spec, bases, user_base, servers, out):
     return res
 
 
+def takeover_window(spec, bases, user_base, servers, out):
+    import takeover_window as TW  # scripts/a6000/takeover_window.py; gets this module for the shared checks
+
+    return TW.run(sys.modules[__name__], spec, bases, user_base, servers, out)
+
+
 def _user_protocol(st: dict, br: dict) -> dict:
     """W90 acceptance checks on one branch run with a user_llm override (cloq/user_llm.py records every user call)."""
     from tau2.runner.build import build_environment, build_user
@@ -1682,7 +1690,7 @@ def main():
     out = ROOT / spec["out"]
     out.mkdir(parents=True, exist_ok=True)
     fn = {"gate": gate, "gate_same": gate_same, "search": search_mode, "branches": branches_mode, "dev": dev_mode, "pivot_arms": pivot_arms, "bank_u": bank_u, "bank_u_arms": bank_u_arms, "bank_u_q0": bank_u_q0, "repair": repair_mode, "simctrl": simctrl,
-          "simctrl_p": simctrl_p, "commonstate": commonstate}[spec["mode"]]
+          "simctrl_p": simctrl_p, "commonstate": commonstate, "takeover_window": takeover_window}[spec["mode"]]
     r = fn(spec, bases, a.user_base, servers, out)
     v = r.get("verdict")
     print(json.dumps({"verdict": v}, default=str))

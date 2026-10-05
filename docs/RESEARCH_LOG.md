@@ -10,6 +10,14 @@ Newest first.
 
 ---
 
+## W100ao - Takeover window tw-v1 (EXPLORATORY follow-up, GPT-approved 2026-10-04 20:45 PDT): protocol frozen, gate queued (2026-10-04 21:20 PDT)
+
+**TL;DR** How long must BF16 take over for its value to appear, and is it kept after control returns to Q? Two q8 cells (GPTQ-W4 d1, SpinQuant-W4A4), the same 85 ordinary BF16-sourced U2B states per block, current action from B or Q, then B for L in {0, 1, 4, inf} decisions and Q after. Configurations chosen after seeing results; SAMEPREC, COMMONSTATE, NEWMETHOD and holdout readings unchanged. A temporal-response diagnostic, not a routing method (DMR, arXiv 2602.02711).
+- **Frozen at gate submission.** Protocol `docs/insights/TAKEOVER_WINDOW_PROTOCOL.md` sha256 `ce4f8858b01ceda56661ccd1fae59aec10c75783043f487936bf2478efe24f8c`; manifest `manifests/fork/takeover_window_v1.json` `396e3b35f4eaea15359e6c5e13b85e66218711bdeee2fe5da4cb8c05c428501d`.
+- **Code sha256 at submission.** `cloq/fork.py` 9d12edb6dc26, `scripts/a6000/fork_driver.py` 45345f6d5e7d, `scripts/a6000/takeover_window.py` f318e1891316, `scripts/a6000/make_tasks_takeover.py` 979c48e4df3d, `tests/test_takeover_window.py` a2c1796232c0 (selftest ok, 12 branches, 84 calls).
+- **Gate.** `tw_gate_q8_gptq_w4_d1`, `tw_gate_q8_spinquant_w4a4` (8 shared f01 states, windows + all endpoint re-runs, concurrency 6, both on simulator replica node005:8000). Outputs `analysis/fork/takeover/gate/q8_<cell>/window_summary.json`. Outcome-blind until `scale_decision.json` (protocol §5, §6). No panel task queued.
+- **Next.** Gate pass -> `make_tasks_takeover.py handback`, `decide --slots S --write` (once), `panel --write`. Deadline 2026-10-05 21:00 PDT. alpha=2 dose gap not started; capacity reported by `decide`.
+
 ## W100an - Holdout QQ no-op acceptance audit (GPT-authorised): the frozen 135/0 covers every eligible state; all checks pass; no section-4 repair (2026-10-04 08:25 PDT)
 
 **TL;DR** (b2bdad5, `analysis/fork/holdout_noop_audit.py`, `out/holdout_noop_audit_20261004T152207Z.md`; run once on the holdout after a dev dry run and code review)
