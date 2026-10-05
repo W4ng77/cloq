@@ -35,9 +35,9 @@ def f9():
     q = q14["cells"]["q14"]["r2"]["pp_on_divergent"]
     rows = [  # (label, {G,H,F: (est, thick, thin)}, colour, marker)
         ("q4 GPTQ-W4", {k: ghf["cells"]["q4:gptq_w4_d1"]["stats"][k] for k in KEYS}, B, "o"),
-        ("q4 AWQ-W4", {k: ghf["cells"]["q4:awq_w4"]["stats"][k] for k in KEYS}, B, "o"),
+        ("q4 AWQ-style W4", {k: ghf["cells"]["q4:awq_w4"]["stats"][k] for k in KEYS}, B, "o"),
         ("q8 GPTQ-W4", {k: ghf["cells"]["q8:gptq_w4_d1"]["stats"][k] for k in KEYS}, B, "o"),
-        ("q8 AWQ-W4", {k: ghf["cells"]["q8:awq_w4"]["stats"][k] for k in KEYS}, B, "o"),
+        ("q8 AWQ-style W4", {k: ghf["cells"]["q8:awq_w4"]["stats"][k] for k in KEYS}, B, "o"),
         ("W4 pool", {k: ghf["pools"]["W4:all"]["stats"][k] for k in KEYS}, INK, "s"),
         ("q8 RTN-W3$^s$", {k: ghf["cells"]["q8:rtn_w3"]["stats"][k] for k in KEYS}, QP, "^"),
         ("q14 GPTQ-W4$^b$", {k: q[k] for k in KEYS}, ALT, "D"),
@@ -58,17 +58,17 @@ def f9():
     chk("q14 GPTQ-W4$^b$", "F", 9.1, [5.8, 12.5])
     assert ghf["cells"]["q8:rtn_w3"]["stats"]["H"]["n_blocks"] == 3
     # preregistered multiplicity family: four core W4 G-H (fixed pool), Holm m = 4 (ghf_multiplicity)
-    chk("q4 GPTQ-W4", "GmH", -3.6, [-6.6, -0.6]); chk("q4 AWQ-W4", "GmH", -1.3, [-3.0, 0.6])
-    chk("q8 GPTQ-W4", "GmH", 2.9, [1.3, 4.7]); chk("q8 AWQ-W4", "GmH", 3.4, [1.5, 5.2])
-    for lab in ("q4 GPTQ-W4", "q4 AWQ-W4", "q8 GPTQ-W4", "q8 AWQ-W4"):
+    chk("q4 GPTQ-W4", "GmH", -3.6, [-6.6, -0.6]); chk("q4 AWQ-style W4", "GmH", -1.3, [-3.0, 0.6])
+    chk("q8 GPTQ-W4", "GmH", 2.9, [1.3, 4.7]); chk("q8 AWQ-style W4", "GmH", 3.4, [1.5, 5.2])
+    for lab in ("q4 GPTQ-W4", "q4 AWQ-style W4", "q8 GPTQ-W4", "q8 AWQ-style W4"):
         lo, hi = S[lab]["GmH"]["crossed_ci95"]
         assert lo < 0 < hi, lab
     chk("q8 RTN-W3$^s$", "GmH", -15.7, [-27.5, -3.9]); chk("q14 GPTQ-W4$^b$", "GmH", 5.3, [2.3, 8.4])
 
     # Holm family (m = 4) for G-H: plain 95% t interval and Bonferroni simultaneous 98.75% interval (same source)
     mult = {r_["cell"]: r_ for r_ in MF.load("mult")["rows"]}
-    cellkey = {"q4 GPTQ-W4": "q4:gptq_w4_d1", "q4 AWQ-W4": "q4:awq_w4", "q8 GPTQ-W4": "q8:gptq_w4_d1",
-               "q8 AWQ-W4": "q8:awq_w4"}
+    cellkey = {"q4 GPTQ-W4": "q4:gptq_w4_d1", "q4 AWQ-style W4": "q4:awq_w4", "q8 GPTQ-W4": "q8:gptq_w4_d1",
+               "q8 AWQ-style W4": "q8:awq_w4"}
     assert [round(mult[cellkey[l]]["p_holm"], 3) for l in cellkey] == [0.069, 0.199, 0.013, 0.012]
     assert mult["q4:gptq_w4_d1"]["t_ci95"][1] < 0 < mult["q4:gptq_w4_d1"]["bonf_ci"][1]  # plain excludes 0, Holm fails
     for l, ck in cellkey.items():
@@ -98,7 +98,7 @@ def f9():
     for lab, *_ in main:
         ypos.append(y)
         y -= 1.0
-        if lab == "q8 AWQ-W4":
+        if lab == "q8 AWQ-style W4":
             y -= 0.35
     axs = sfa.subplots(1, 4, sharey=False)
     for j, (ax, (k, title)) in enumerate(zip(axs, panels)):

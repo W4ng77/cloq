@@ -91,8 +91,8 @@ plt.rcParams.update({
     "savefig.dpi": 300,
 })
 
-CELL4 = [("q4:gptq_w4_d1", "q4 GPTQ-W4"), ("q4:awq_w4", "q4 AWQ-W4"),
-         ("q8:gptq_w4_d1", "q8 GPTQ-W4"), ("q8:awq_w4", "q8 AWQ-W4")]
+CELL4 = [("q4:gptq_w4_d1", "q4 GPTQ-W4"), ("q4:awq_w4", "q4 AWQ-style W4"),
+         ("q8:gptq_w4_d1", "q8 GPTQ-W4"), ("q8:awq_w4", "q8 AWQ-style W4")]
 KV8 = [("q4:kvq_int8", "q4 KV8"), ("q8:kvq_int8", "q8 KV8")]
 
 
@@ -214,9 +214,9 @@ def f1():
         rows.append(("pool", po["est"], None, po["ci95"], None, True))  # no pooled control in the source
         return rows
 
-    bf = ext_rows("bfcl", [("q4:gptq_w4_d1", "q4 GPTQ-W4"), ("q4:awq_w4_d1", "q4 AWQ-W4"),
-                           ("q8:gptq_w4_d1", "q8 GPTQ-W4"), ("q8:awq_w4_d1", "q8 AWQ-W4")])
-    af = ext_rows("alfworld", [("q8:gptq_w4_d1", "q8 GPTQ-W4"), ("q8:awq_w4_d1", "q8 AWQ-W4")])
+    bf = ext_rows("bfcl", [("q4:gptq_w4_d1", "q4 GPTQ-W4"), ("q4:awq_w4_d1", "q4 AWQ-style W4"),
+                           ("q8:gptq_w4_d1", "q8 GPTQ-W4"), ("q8:awq_w4_d1", "q8 AWQ-style W4")])
+    af = ext_rows("alfworld", [("q8:gptq_w4_d1", "q8 GPTQ-W4"), ("q8:awq_w4_d1", "q8 AWQ-style W4")])
     assert sorted(r1(r[1]) for r in bf[:4]) == [4.7, 7.8, 11.7, 17.1] and r1(bf[-1][1]) == 10.3
     assert sorted(r1(r[4]) for r in bf[:4]) == [16.2, 19.9, 27.4, 32.4]
     assert sorted(r1(r[1]) for r in af[:2]) == [32.8, 40.0] and r1(af[-1][1]) == 36.4
@@ -225,7 +225,7 @@ def f1():
     groups.append(("ALFWorld W4", "post hoc", af))
 
     ho = []
-    for k, lab in [("q4:gptq_w4_d1", "q4 GPTQ-W4"), ("q8:gptq_w4_d1", "q8 GPTQ-W4"), ("q8:awq_w4", "q8 AWQ-W4")]:
+    for k, lab in [("q4:gptq_w4_d1", "q4 GPTQ-W4"), ("q8:gptq_w4_d1", "q8 GPTQ-W4"), ("q8:awq_w4", "q8 AWQ-style W4")]:
         c = hr2["cells"][k]
         st = c["stats"]["offdiag"]
         ctl = c["table3"]["marginal_preserving_pairing_agreement_control"]
@@ -312,7 +312,7 @@ def f2():
     chk("W4 pool", "G", 0.5, [-0.7, 1.7]); chk("W4 pool", "H", 0.2, [-1.3, 1.6]); chk("W4 pool", "F", 0.7, [-0.6, 2.1])
     chk("W4 pool", "GmH", 0.4, [-0.8, 1.7])
     chk("q8 GPTQ-W4", "G", 3.3, [1.6, 5.0]); chk("q8 GPTQ-W4", "H", 0.4, None); chk("q8 GPTQ-W4", "F", 5.4, None)
-    chk("q8 GPTQ-W4", "GmH", 2.9, [1.3, 4.7]); chk("q8 AWQ-W4", "GmH", 3.4, [1.5, 5.2])
+    chk("q8 GPTQ-W4", "GmH", 2.9, [1.3, 4.7]); chk("q8 AWQ-style W4", "GmH", 3.4, [1.5, 5.2])
     chk("q4 GPTQ-W4", "G", -2.9, [-5.7, -0.2]); chk("q4 GPTQ-W4", "GmH", -3.6, [-6.6, -0.6])
     chk("q4 KV8", "H", -2.5, [-4.5, -0.5])
     # new-task intervals of all four W4 cells cover zero for G-H (text, R2)
@@ -381,7 +381,7 @@ def f3():
     kv = [r for r in rows if r[6] == "dev"][4:]
     assert [(r1(r[1]), r1(r[2]), r1(r[3])) for r in kv] == [(3.1, 3.4, -0.3), (4.3, 3.7, 0.6)]
 
-    for k, lab in [("q4:gptq_w4_d1", "q4 GPTQ-W4"), ("q8:gptq_w4_d1", "q8 GPTQ-W4"), ("q8:awq_w4", "q8 AWQ-W4")]:
+    for k, lab in [("q4:gptq_w4_d1", "q4 GPTQ-W4"), ("q8:gptq_w4_d1", "q8 GPTQ-W4"), ("q8:awq_w4", "q8 AWQ-style W4")]:
         c = hc["per_cell_descriptive"][k]
         rows.append((lab, c["rescue"]["crossed"]["est"], c["damage"]["crossed"]["est"], c["G"]["crossed"]["est"],
                      c["G"]["block_t"]["ci90"], c["G"]["crossed"]["ci90"], "ho"))
