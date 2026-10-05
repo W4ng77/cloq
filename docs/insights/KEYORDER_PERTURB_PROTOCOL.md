@@ -224,3 +224,13 @@ TL;DR Three pre-outcome fixes that GPT requested: (1) the overflow record keeps 
   - Any K result is limited to these verified tool-call states. A null K turnover does not exclude effects of other representation changes or of free-text changes.
   - Before the panel is released, the gate is checked on its recorded counts, hashes and acceptance fields, not only on `pass`.
 - **Outcome status.** No ko-v1 task has run (the gate is still queued). No keyorder, takeover-window or holdout branch was opened.
+
+## Amendment 2026-10-05f (release order; before any KQ outcome)
+
+TL;DR At the user's instruction, the four panel tasks (g1 to g4) were released at about 09:10 PDT, alongside the gate and the last takeover-window task. Previously the panel was to be released only after the gate's acceptance had been checked. Nothing else changes: transform, eligibility, arms, estimands, analysis code and acceptance rules are the same.
+
+- **What still holds.**
+  - Each panel task runs the full outcome-blind acceptance (shadow, QQ no-op, KQ checks, state, server, manifest), and a task that fails it is quarantined whole (§4).
+  - The gate's counts, hashes and acceptance fields are checked, and recorded, before any panel outcome is read.
+  - If the gate shows a systematic fault, the panel is not analysed until the fault is understood, and the decision is recorded in a further amendment.
+- **Load.** The two simulator replicas (node005:8000, node006:8000) now carry up to two key-order tasks each, plus the gate and takeover-window f03. The QQ no-op check detects any loss of replay determinism under load.
