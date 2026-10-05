@@ -10,6 +10,20 @@ Newest first.
 
 ---
 
+## W100as - Key-order gate audited field by field: 8/8 pass; panel g1-g4 running (2026-10-05 09:25 PDT)
+
+TL;DR The ko-v1 gate (8 f01 states) passes every recorded acceptance field, not only the summary `pass`. Outcome-blind: no branch file was opened.
+- Manifest sha256 cbf12188 matches the frozen manifest.
+- Server checks (B and Q): canary, ckpt sha and effective config all true.
+- 8 of 8 states run; 0 missing, 0 errors.
+- KQ: 8 of 8 ok, 0 failures on any of the 10 checks, 0 context overflows.
+- Shadow 8 of 8 identical; QQ no-op 8 of 8 ok.
+- Throughput 129 suffixes/h.
+
+Panel release order: see Amendment 2026-10-05f.
+
+Evidence: analysis/fork/keyorder/gate/q8_gptq_w4_d1_f01/{keyorder_summary.json,keyorder_rows.jsonl}.
+
 ## W100ar - Takeover window tw-v1 read with frozen analysis: SpinQuant-W4A4 continuation value needs a sustained takeover; GPTQ-W4 unresolved (2026-10-05 09:30 PDT)
 
 TL;DR All 6 panel tasks passed acceptance before any outcome was read: 0 errors, 0 overflows, 256/256 endpoint re-runs reproduced, nothing quarantined. The frozen `analyze_takeover.py` (Amendment 4 shas) was run once.
