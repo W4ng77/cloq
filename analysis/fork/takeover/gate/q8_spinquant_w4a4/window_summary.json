@@ -1,0 +1,480 @@
+{
+ "protocol": "tw-v1 (docs/insights/TAKEOVER_WINDOW_PROTOCOL.md)",
+ "manifest_sha256": "396e3b35f4eaea15359e6c5e13b85e66218711bdeee2fe5da4cb8c05c428501d",
+ "spec": {
+  "mode": "takeover_window",
+  "manifest": "manifests/fork/takeover_window_v1.json",
+  "manifest_sha256": "396e3b35f4eaea15359e6c5e13b85e66218711bdeee2fe5da4cb8c05c428501d",
+  "model": "q8",
+  "cell": "spinquant_w4a4",
+  "block": "f01",
+  "src_out": "analysis/fork/newmethod/tau2/q8_spinquant_w4a4/f01",
+  "src_manifest_sha256": "7534c6907fa68bc8dab48061d7a2944a719e6e2fa123b639e7a0674c5a6ca201",
+  "windows": [
+   1,
+   4
+  ],
+  "sources": [
+   "B",
+   "Q"
+  ],
+  "repro": "all",
+  "shadow_check": true,
+  "concurrency": 6,
+  "out": "analysis/fork/takeover/gate/q8_spinquant_w4a4",
+  "rr_out": "analysis/fork/newmethod/tau2_recovery/q8_spinquant_w4a4/f01/rr1",
+  "state_keys": [
+   "006ba8f68c05b627",
+   "4bba2d240ce1711a",
+   "7c68e507e803e37d",
+   "9985ee888911c032",
+   "b858e455a36fcd30",
+   "c4209bd6e73eaf27",
+   "e34be950d767b00b",
+   "fe1eb4b31bb5ddda"
+  ],
+  "switch_env_check": true,
+  "gate": true,
+  "co_gate": "tw_gate_q8_gptq_w4_d1",
+  "expect": {
+   "B": {
+    "canary": "e340c7991fa5bc08",
+    "ckpt_sha256": null,
+    "effective_config_sha": "0d4bf272db1da1c5"
+   },
+   "Q": {
+    "canary": "66028ece4c06573c",
+    "ckpt_sha256": "b7223e201cbdb2509422f5fb06bf1d694e89b5cb29b34459d6bee0f5ce67368c",
+    "effective_config_sha": "f32980982246866d"
+   }
+  }
+ },
+ "servers": {
+  "B": {
+   "gpu": "2",
+   "port": 8103,
+   "pid": 2352471,
+   "ckpt": {
+    "kind": "bf16"
+   },
+   "path": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+   "serve_env": {},
+   "serve_extra": [],
+   "launch_args": [
+    "2",
+    "8103",
+    "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.90",
+   "hook_coverage": null,
+   "canary": "e340c7991fa5bc08",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-8B",
+     "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+     "chat_template_kwargs": {
+      "enable_thinking": false
+     }
+    },
+    "weights": "Qwen/Qwen3-8B@b968826d9c46dd6066d109eabc6255188de91218",
+    "ckpt": {
+     "kind": "bf16"
+    },
+    "serve_env": {},
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 16,
+     "A": 16,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": null,
+    "cache_namespace": "default"
+   },
+   "effective_config_sha": "0d4bf272db1da1c5",
+   "canary_ref_ok": true
+  },
+  "Q": {
+   "gpu": "3",
+   "port": 8203,
+   "pid": 2353157,
+   "ckpt": {
+    "kind": "spinquant",
+    "wbits": 4,
+    "seed": 0,
+    "rotations": "/data/ziyangs/cloq_work/rot/spinquant_q8_a4_s0/R.pt",
+    "rotations_sha256": "1f1719b58be67060acbb25426d16c2ee877ca2e519e4ca6676a9fb83fec3f5ed",
+    "wmethod": "gptq"
+   },
+   "path": "/tmp/cloq_50040/ckpt_tw_gate_q8_spinquant_w4a4_Q",
+   "serve_env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_AQ_BITS": "4",
+    "CLOQ_AQ_FMT": "sym_quarot",
+    "CLOQ_AQ_CLIP": "0.9",
+    "CLOQ_AQ_HAD": "quarot",
+    "CLOQ_KVQ_BITS": "16",
+    "CLOQ_KVQ_ROT": "qk",
+    "CLOQ_KVQ_FMT": "quarot",
+    "CLOQ_KVQ_KCLIP": "0.95",
+    "CLOQ_KVQ_VCLIP": "0.95"
+   },
+   "serve_extra": [],
+   "launch_args": [
+    "3",
+    "8203",
+    "/tmp/cloq_50040/ckpt_tw_gate_q8_spinquant_w4a4_Q",
+    "agent",
+    "33792"
+   ],
+   "gpu_util": "0.90",
+   "hook_coverage": {
+    "kvq": {
+     "bits": 16,
+     "rot": true,
+     "rot_mode": "qk",
+     "rot_v_online": false,
+     "which": "kv",
+     "fmt": "quarot",
+     "kclip": 0.95,
+     "vclip": 0.95,
+     "active": true,
+     "namespace": "kvq_b16_rqk_kv_quarot_kc0.95_vc0.95"
+    },
+    "aq": {
+     "bits": 4,
+     "fmt": "sym_quarot",
+     "clip": "0.9",
+     "group": "-1",
+     "only": [
+      "down",
+      "gate_up",
+      "o",
+      "qkv"
+     ],
+     "had": "quarot",
+     "quant": true
+    },
+    "kivi": null,
+    "cache_roots": [
+     "/tmp/cloq_50040/vllm_cache/kvq_b16_rqk_kv_quarot_kc0.95_vc0.95__aq_b4_sym_quarot_c0.9_g-1_hquarot_all"
+    ],
+    "n_wrapped_processes": 2,
+    "decoder_attention_hooked": 36,
+    "expected_layers": 36,
+    "aq_modules": {
+     "quant": 144,
+     "had_only": 0,
+     "pass": 0
+    },
+    "aq_expected_quant": 144,
+    "ok": true
+   },
+   "canary": "66028ece4c06573c",
+   "ckpt_sha256": "b7223e201cbdb2509422f5fb06bf1d694e89b5cb29b34459d6bee0f5ce67368c",
+   "effective_config": {
+    "model": {
+     "hf_id": "Qwen/Qwen3-8B",
+     "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+     "chat_template_kwargs": {
+      "enable_thinking": false
+     }
+    },
+    "weights": "sha256:b7223e201cbdb2509422f5fb06bf1d694e89b5cb29b34459d6bee0f5ce67368c",
+    "ckpt": {
+     "kind": "spinquant",
+     "wbits": 4,
+     "seed": 0,
+     "rotations": "/data/ziyangs/cloq_work/rot/spinquant_q8_a4_s0/R.pt",
+     "rotations_sha256": "1f1719b58be67060acbb25426d16c2ee877ca2e519e4ca6676a9fb83fec3f5ed",
+     "wmethod": "gptq"
+    },
+    "serve_env": {
+     "CLOQ_PYHOOKS": "1",
+     "CLOQ_AQ_BITS": "4",
+     "CLOQ_AQ_FMT": "sym_quarot",
+     "CLOQ_AQ_CLIP": "0.9",
+     "CLOQ_AQ_HAD": "quarot",
+     "CLOQ_KVQ_BITS": "16",
+     "CLOQ_KVQ_ROT": "qk",
+     "CLOQ_KVQ_FMT": "quarot",
+     "CLOQ_KVQ_KCLIP": "0.95",
+     "CLOQ_KVQ_VCLIP": "0.95"
+    },
+    "serve_extra": [],
+    "max_model_len": 33792,
+    "numerics_env": {
+     "VLLM_BATCH_INVARIANT": "1",
+     "VLLM_USE_FLASHINFER_SAMPLER": "0",
+     "TORCHINDUCTOR_DETERMINISTIC": "1",
+     "CLOQ_BATCH_INVARIANT": null
+    },
+    "bits": {
+     "W": 4,
+     "A": 4,
+     "K": 16,
+     "V": 16
+    },
+    "hook_version": "30020b7507a4fa7a",
+    "cache_namespace": "kvq_b16_rqk_kv_quarot_kc0.95_vc0.95__aq_b4_sym_quarot_c0.9_g-1_hquarot_all"
+   },
+   "effective_config_sha": "f32980982246866d"
+  },
+  "same_effective_config": false,
+  "q_quantization": {
+   "method": "SpinQuant",
+   "wbits": 4,
+   "rotation": {
+    "residual": "random Hadamard diag(s) H_d / sqrt(d) (cloq.rotate.random_hadamard)",
+    "seed": 0,
+    "norms_fused": true,
+    "embedding_mean_subtraction": false,
+    "v_proj_out": "per-head Hadamard H_hd",
+    "o_proj_in": "full Hadamard H_{nh*hd} (offline) + H_nh across heads (online)",
+    "down_proj_in": "H_12 kron H_1024 (offline + online)",
+    "qk": "per-head Hadamard after RoPE (online, cloq_kvq CLOQ_KVQ_ROT=qk)",
+    "d": 4096,
+    "num_heads": 32,
+    "head_dim": 128,
+    "num_kv_heads": 8,
+    "intermediate": 12288,
+    "down_had_K": 12,
+    "tied_untied": false,
+    "rotated_tensors": 254,
+    "rtn_quantized": 0,
+    "learned": {
+     "R1": "learned (cloq.spinquant, replaces the random Hadamard; seed unused)",
+     "R2": "learned per layer; replaces H_hd on v_proj out / o_proj in (H_nh across heads kept)",
+     "path": "/data/ziyangs/cloq_work/rot/spinquant_q8_a4_s0/R.pt",
+     "sha256": "1f1719b58be67060acbb25426d16c2ee877ca2e519e4ca6676a9fb83fec3f5ed",
+     "orth_err_stored": {
+      "R1": 7.395008299040592e-07,
+      "R2_max": 4.85616062362304e-07
+     },
+     "polar_shift_max": {
+      "R1": 3.478143932450495e-07,
+      "R2": 2.380762918474666e-07
+     },
+     "orth_err_used": {
+      "R1": 6.8833827526759706e-15,
+      "R2_max": 2.220446049250313e-15
+     },
+     "learn_meta": {
+      "method": "SpinQuant rotation learning (controlled: QuaRot skeleton and grid)",
+      "args": {
+       "cmd": "learn",
+       "model_dir": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+       "out": "/data/ziyangs/cloq_work/rot/spinquant_q8_a4_s0",
+       "steps": 100,
+       "lr": 1.5,
+       "batch": 8,
+       "micro": 4,
+       "abits": 4,
+       "nsamples": 128,
+       "seqlen": 2048,
+       "calib_seed": 0,
+       "rot_seed": 0,
+       "seed": 0,
+       "ppl_windows": 0
+      },
+      "calibration": {
+       "source": "WikiText-2 raw v1 train (cloq.quarot.wikitext_windows; = the GPTQ windows)",
+       "source_sha256": "57947bc7b58df4b19662c0609cc30651bc84328dab5fd588860b752072911789",
+       "seed": 0,
+       "n_samples": 128,
+       "seq_len": 2048,
+       "token_ids_sha256": "ec0a043b2c48080ebb5cce82773928c13562007527fc443b1fd8f651a02820d8"
+      },
+      "abits_train": 4,
+      "a_fmt": "sym_quarot",
+      "a_clip": 0.9,
+      "init": {
+       "R1": "random_hadamard(d, seed=0) = QuaRot Q",
+       "R2": "H_hd / sqrt(hd) = QuaRot per-head Hadamard"
+      }
+     }
+    }
+   },
+   "weight_quant": {
+    "bits": 4,
+    "method": "GPTQ",
+    "granularity": "per output channel",
+    "sym": true,
+    "maxq": 7,
+    "clip": "MSE grid search (norm 2.4, grid 100, maxshrink 0.8) = --w_clip",
+    "gptq": {
+     "percdamp": 0.01,
+     "blocksize": 128,
+     "act_order": false,
+     "groupsize": -1,
+     "sequential": [
+      [
+       "self_attn.k_proj",
+       "self_attn.v_proj",
+       "self_attn.q_proj"
+      ],
+      [
+       "self_attn.o_proj"
+      ],
+      [
+       "mlp.up_proj",
+       "mlp.gate_proj"
+      ],
+      [
+       "mlp.down_proj"
+      ]
+     ]
+    },
+    "modules": [
+     "self_attn.q_proj",
+     "self_attn.k_proj",
+     "self_attn.v_proj",
+     "self_attn.o_proj",
+     "mlp.gate_proj",
+     "mlp.up_proj",
+     "mlp.down_proj"
+    ],
+    "storage": "dequantized bf16",
+    "mean_rel_weight_err": 0.017940464932175857
+   },
+   "calibration": {
+    "source": "WikiText-2 raw v1 train (Salesforce/wikitext arrow)",
+    "source_sha256": "57947bc7b58df4b19662c0609cc30651bc84328dab5fd588860b752072911789",
+    "rule": "'\\n\\n'.join(text) tokenized; random.seed(seed); randint windows",
+    "seed": 0,
+    "n_samples": 128,
+    "seq_len": 2048,
+    "n_tokens": 262144,
+    "token_ids_sha256": "ec0a043b2c48080ebb5cce82773928c13562007527fc443b1fd8f651a02820d8"
+   },
+   "requires_serve_env": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_AQ_HAD": "quarot"
+   },
+   "forbids_serve_env": {
+    "CLOQ_KVQ_ROT": "1"
+   },
+   "reference_serve_env_W4A4KV4": {
+    "CLOQ_PYHOOKS": "1",
+    "CLOQ_AQ_BITS": "4",
+    "CLOQ_AQ_FMT": "sym_quarot",
+    "CLOQ_AQ_CLIP": "0.9",
+    "CLOQ_AQ_HAD": "quarot",
+    "CLOQ_KVQ_BITS": "4",
+    "CLOQ_KVQ_ROT": "qk",
+    "CLOQ_KVQ_FMT": "quarot",
+    "CLOQ_KVQ_KCLIP": "0.95",
+    "CLOQ_KVQ_VCLIP": "0.95"
+   },
+   "invariance_check_hf": null,
+   "source_model": "Qwen/Qwen3-8B",
+   "source_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+   "source_dir": "/data/ziyangs/cloq_work/hf/hub/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218",
+   "storage": "fake-quant bf16",
+   "seconds": 1343.2033047676086
+  },
+  "user_base": "http://node005:8000/v1",
+  "host": "node002",
+  "job": "50040"
+ },
+ "server_expect_ok": {
+  "B": {
+   "canary": true,
+   "ckpt_sha256": true,
+   "effective_config_sha": true
+  },
+  "Q": {
+   "canary": true,
+   "ckpt_sha256": true,
+   "effective_config_sha": true
+  }
+ },
+ "n_states": 8,
+ "n_prepared": 8,
+ "n_missing": 0,
+ "n_errors": 0,
+ "state_identical": true,
+ "shadow_identical": 8,
+ "n_window_suffixes": 32,
+ "n_repro_suffixes": 32,
+ "pattern_ok": true,
+ "counter_ok": true,
+ "prefix_ok": true,
+ "prefix_unchecked": 0,
+ "at_switch_ok": true,
+ "n_at_switch_checked": 31,
+ "budget_ok": true,
+ "env_hash_init_ok": true,
+ "history_prefix_ok": true,
+ "exact_pair": {
+  "n": 4,
+  "n_ok": 4
+ },
+ "repro": {
+  "n": 32,
+  "n_ok": 32,
+  "n_not_comparable": 0
+ },
+ "handed_back": {
+  "B1": 8,
+  "B4": 8,
+  "Q1": 8,
+  "Q4": 7
+ },
+ "src_ok": {
+  "gate_pass": true,
+  "B_canary": true,
+  "B_ckpt_sha256": true,
+  "B_effective_config_sha": true,
+  "Q_canary": true,
+  "Q_ckpt_sha256": true,
+  "Q_effective_config_sha": true
+ },
+ "n_E_handback_mismatch": 0,
+ "repro_window_counter_ok": true,
+ "throughput": {
+  "concurrency": 6,
+  "job_seconds": 1501.9457230567932,
+  "n_suffixes": 64,
+  "suffixes_per_hour": 153.40101607073046,
+  "suffix_seconds_p50_p90": [
+   136.21543788909912,
+   238.4583580493927
+  ],
+  "prep_seconds": 21.7986319065094,
+  "jobs_start_unix": 1791175851.017007,
+  "jobs_end_unix": 1791177352.9627302,
+  "mean_W_seconds": 134.66648595035076,
+  "mean_R_seconds": 113.29032937437296,
+  "pool_efficiency": 0.8804821160295159,
+  "user_base": "http://node005:8000/v1",
+  "co_gate": {
+   "peer": "tw_gate_q8_gptq_w4_d1",
+   "peer_seen": "running",
+   "waited_s": 0.0003142356872558594
+  },
+  "sim_load": {
+   "n_samples": 75,
+   "waiting_p50_p90_max": [
+    0.0,
+    5.0,
+    9.0
+   ],
+   "running_p50_max": [
+    2.0,
+    9.0
+   ]
+  }
+ },
+ "seconds": 1529.8967666625977,
+ "gate_pass": true
+}

@@ -10,6 +10,22 @@ Newest first.
 
 ---
 
+## W100ap - Takeover-window gates all pass; scale decided once = 3 blocks (f01-f03); panel queued (2026-10-05 00:50 PDT)
+
+**TL;DR**
+- **Gates** (only pass/fail and throughput fields read; window outcomes sealed):
+  - GPTQ-W4 d1: pass, 172 suffixes/h.
+  - SpinQuant-W4A4: pass, 153 suffixes/h.
+  - Same-checkpoint null gate (one BF16 service for both controllers, L = 0/1/4/inf, concurrency 8, two long states): pass. Identity holds on 2/2 states, the switch is counted at every L including L = 0, there is no overflow and nothing is quarantined.
+- **Handback check** (server sequences only): every window is B^L then Q. A suffix that ends inside its window is recorded as not handed back.
+- **Scale decision** (`make_tasks_takeover.py decide --slots 6`, protocol §6 and Amendment 1, decided once, `analysis/fork/takeover/scale_decision.json`):
+  - The two simulator replicas cap the effective concurrency at S_eff = 2. Two tasks per replica were not validated: gate overlap was 0.07.
+  - 3 blocks project 12.5 h with the 1.5× safety factor, finishing about 13:15 PDT. 6 blocks project 29.4 h and do not fit the 2026-10-05 21:00 PDT deadline.
+  - Result: **3 blocks**. The alpha = 2 dose gap is not started (second priority; 7.8 h spare capacity estimated).
+- **Panel:** 6 tasks (2 configs × f01-f03), chained by block, unpinned.
+
+Evidence: `analysis/fork/takeover/gate/{q8_gptq_w4_d1,q8_spinquant_w4a4,null_bf16}/window_summary.json`, `analysis/fork/takeover/scale_decision.json`, `docs/insights/TAKEOVER_WINDOW_PROTOCOL.md` (§6, §11).
+
 ## W100ao - Takeover window tw-v1 (EXPLORATORY follow-up, GPT-approved 2026-10-04 20:45 PDT): protocol frozen, gate queued (2026-10-04 21:20 PDT)
 
 **TL;DR** How long must BF16 take over for its value to appear, and is it kept after control returns to Q? Two q8 cells (GPTQ-W4 d1, SpinQuant-W4A4), the same 85 ordinary BF16-sourced U2B states per block, current action from B or Q, then B for L in {0, 1, 4, inf} decisions and Q after. Configurations chosen after seeing results; SAMEPREC, COMMONSTATE, NEWMETHOD and holdout readings unchanged. A temporal-response diagnostic, not a routing method (DMR, arXiv 2602.02711).

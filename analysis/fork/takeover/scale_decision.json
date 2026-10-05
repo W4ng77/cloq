@@ -1,0 +1,61 @@
+{
+ "rule": "6 blocks iff now + SAFETY * max(task-hours / S_eff, longest chain) <= DEADLINE, else 3 if that fits, else NO PANEL (protocol \u00a76, amendment 1 item 4); decided once",
+ "now": "2026-10-05T07:44:41.892594+00:00",
+ "deadline": "2026-10-05T21:00:00-07:00",
+ "SAFETY": 1.5,
+ "slots": 6,
+ "gate": {
+  "gptq_w4_d1": {
+   "suffixes_per_hour": 171.9334221707347,
+   "overhead_h": 0.22076002147462634,
+   "block_h": 2.2581794162243867,
+   "endpoint_block_h": 1.4140332219376943,
+   "user_base": "http://node005:8000/v1",
+   "sim_waiting_p90": 7.0
+  },
+  "spinquant_w4a4": {
+   "suffixes_per_hour": 153.40101607073046,
+   "overhead_h": 0.4618448932303323,
+   "block_h": 2.6100219076403737,
+   "endpoint_block_h": 1.5190033425863618,
+   "user_base": "http://node005:8000/v1",
+   "sim_waiting_p90": 5.0
+  }
+ },
+ "plan": {
+  "3": {
+   "n_tasks": 6,
+   "task_hours": 16.652418715709157,
+   "longest_chain_h": 3.0718668008707057,
+   "projected_wall_h": 12.489314036781867,
+   "projected_finish": "2026-10-05T20:14:03.423126+00:00",
+   "fits": true
+  },
+  "6": {
+   "n_tasks": 15,
+   "task_hours": 39.247382138868396,
+   "longest_chain_h": 6.1437336017414115,
+   "projected_wall_h": 29.435536604151295,
+   "projected_finish": "2026-10-06T13:10:49.824369+00:00",
+   "fits": false
+  }
+ },
+ "simulator": {
+  "live_replicas": [
+   "http://node005:8000/v1",
+   "http://node006:8000/v1"
+  ],
+  "gate_overlap": 0.06650217602642053,
+  "two_per_replica_validated": false,
+  "WAIT_OK": 4.0
+ },
+ "S_eff": 2,
+ "blocks": [
+  "f01",
+  "f02",
+  "f03"
+ ],
+ "no_panel": false,
+ "alpha2_capacity_h": 7.765715798218132,
+ "inputs_read": "window_summary.json gate_pass + throughput, gate task seconds, simulator registry only"
+}
