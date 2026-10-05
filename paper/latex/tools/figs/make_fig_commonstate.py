@@ -12,6 +12,7 @@ script also merges its entry into figures/provenance.json (other entries untouch
     (ordinary intervals after the fixed extension; the two-look sensitivity intervals are in the appendix text);
     shaded = the +-3 pp equivalence margin of the frozen rule.
 (c) Exact action agreement among the three sources: the five patterns of the 510 states.
+Panels are lettered (b)-(d) since 10-04 (post freeze): the figure sits next to the F6a re-plot, panel (a), in main-text Figure 3.
 """
 import hashlib
 import json
@@ -87,7 +88,7 @@ def f8(src: str = DEFAULT):
     for s_ in a.spines.values():
         s_.set_visible(False)
     a.set_ylabel("action source", fontsize=6.8, labelpad=1)
-    a.set_title("(a) success %, continuation:", pad=2, fontsize=6.8)
+    a.set_title("(b) success %, continuation:", pad=2, fontsize=6.8)
 
     # (b) K(c) with both intervals and the +-3 pp margin
     style_axis(b, grid_axis="x")
@@ -104,7 +105,7 @@ def f8(src: str = DEFAULT):
     b.set_ylim(-0.6, 1.6)
     b.set_xlim(-10, 10)
     b.set_xlabel("K(c) = V(B, c) \u2212 V(Q\u2032, c), pp", fontsize=6.6, labelpad=1)
-    b.set_title("(b) B's action minus Q\u2032's", pad=2, fontsize=6.8)
+    b.set_title("(c) B's action minus Q\u2032's", pad=2, fontsize=6.8)
 
     # (c) agreement patterns, one stacked bar of the 255 states
     seg = [("all equal", P["all equal"], GRID), ("B=Q", P["BF16 = d1 != d2"], AQUA),
@@ -125,7 +126,7 @@ def f8(src: str = DEFAULT):
     c.legend(handles=[Patch(color=col, label=lab) for lab, _, col in seg], loc="upper center",
              bbox_to_anchor=(0.5, -0.02), ncol=5, frameon=False, fontsize=6.2, handlelength=0.9, columnspacing=0.9,
              handletextpad=0.35, borderaxespad=0.0)
-    c.set_title(f"(c) exact action agreement among the three sources ({n} states)", pad=2, fontsize=6.8)
+    c.set_title(f"(d) exact action agreement among the three sources ({n} states)", pad=2, fontsize=6.8)
 
     MF.save(fig, NAME, ["cs"], SHOWS)
     e = MF.PROV[NAME]

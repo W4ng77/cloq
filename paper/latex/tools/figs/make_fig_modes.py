@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""F9 (W100j): paired upgrade modes G (this step), H (from the next step), F (both) per configuration, main text.
+"""F9 (W100j; panel (b) added post-freeze 10-04): paired upgrade modes G (this step), H (from the next step), F (both),
+and (b) the joint-rescue / rescue-undone outcome classes, per core W4 cell and pool, main text.
+The q8 RTN-W3 and q14 BFCL rows are still asserted (their numbers stay in the text and tables) but no longer drawn.
 
 A slim companion of F2 (appendix forest). Separate from make_figs.py (edited by other sessions); imports it only for
 style, palette, widths, load(), save() and interval(). Reads committed outputs only and asserts every quoted number.
@@ -72,53 +74,80 @@ def f9():
     for l, ck in cellkey.items():
         assert abs(mult[ck]["est"] - S[l]["GmH"]["est"]) < 0.06, l
 
+    # (b) joint rescue (only BB succeeds) and rescue undone (BQ = 1, QQ = 0, BB = 0), % of divergent states
+    # exploratory, post hoc; fixed pool = block bootstrap (K = 20), new tasks = crossed task x block bootstrap
+    MF.SRC["oc"] = "analysis/fork/out/outcome_classes_20261004T143614Z.json"
+    oc = MF.load("oc")["groups"]
+    ockey = dict(cellkey, **{"W4 pool": "pool W4:all"})
+    CLS = [("joint rescue", "joint rescue (only BB)"), ("rescue undone", "rescue undone")]
+    for lab, ck in ockey.items():
+        assert oc[ck]["K"] == 20, lab
+    jr, ru = oc["pool W4:all"]["joint rescue"], oc["pool W4:all"]["rescue undone"]
+    assert (r1(jr["est"]), [r1(v) for v in jr["block"]], [r1(v) for v in jr["crossed"]]) == (4.0, [3.5, 4.5], [2.7, 5.3])
+    assert (r1(ru["est"]), [r1(v) for v in ru["block"]], [r1(v) for v in ru["crossed"]]) == (4.8, [4.1, 5.4], [3.2, 6.5])
+    assert oc["pool W4:all"]["n_states"] == 5576
+
     main = rows[:5]
-    supp = rows[5:]
-    fig = plt.figure(figsize=(COL_W, 2.45), layout="constrained")
-    gs = fig.add_gridspec(2, 4, height_ratios=[5.0, 2.3])
+    fig = plt.figure(figsize=(COL_W, 2.85), layout="constrained")
+    sfa, sfb = fig.subfigures(2, 1, height_ratios=[5.0, 4.0], hspace=0.02)
     panels = [("G", "$G$: this step"), ("H", "$H$: rest"), ("F", "$F$: both"), ("GmH", "$G-H$")]
     allv = [v for _, st, _, _ in main for k, _ in panels[:3] for v in st[k]["crossed_ci95"]]
     allv += [v for l in cellkey for v in mult[cellkey[l]]["bonf_ci"]]
     lim = (min(allv) - 0.8, max(allv) + 0.8)
-    for row_i, (rws, xl, xt) in enumerate([(main, lim, [-8, 0, 8]), (supp, (-30, 32), [-20, 0, 20])]):
-        ypos, y = [], 0.0
-        for lab, *_ in rws:
-            ypos.append(y)
-            y -= 1.0
-            if lab == "q8 AWQ-W4":
-                y -= 0.35
-        axs = [fig.add_subplot(gs[row_i, j]) for j in range(4)]
-        for j, (ax, (k, title)) in enumerate(zip(axs, panels)):
-            style_axis(ax, grid_axis="x")
-            ax.axvline(0, color=INK2, lw=0.6, zorder=1)
-            for (lab, st, col, mk), yy in zip(rws, ypos):
-                s_ = st[k]
-                if k == "GmH" and lab in cellkey:
-                    m = mult[cellkey[lab]]
-                    sig = m["p_holm"] < 0.05
-                    MF.interval(ax, yy, m["est"], m["t_ci95"], m["bonf_ci"], col, marker=mk, horizontal=True,
-                                ms=3.2, mfc=col if sig else "white")
-                else:
-                    MF.interval(ax, yy, s_["est"], s_["ci95"], s_.get("crossed_ci95"), col, marker=mk,
-                                horizontal=True, ms=3.2)
-            if row_i == 0:
-                ax.set_title(title, pad=2, fontsize=7)
-            ax.set_xlim(*xl)
-            ax.set_xticks([t_ for t_ in xt if xl[0] <= t_ <= xl[1]])
-            ax.tick_params(axis="y", length=0, labelsize=6.5)
-            ax.tick_params(axis="x", labelsize=6.3)
-            ax.set_yticks(ypos)
-            ax.set_yticklabels([r_[0] for r_ in rws] if j == 0 else [])
-            ax.set_ylim(ypos[-1] - 0.6, ypos[0] + 0.6)
-            if j:
-                ax.spines["left"].set_visible(False)
-        if row_i == 1:
-            for ax in axs:
-                ax.set_title("supplementary, own scale" if ax is axs[1] else " ", pad=2, fontsize=6.3,
-                             color=INK2, style="italic", loc="center")
-    fig.supxlabel("gain over QQ, or paired difference (pp)", fontsize=7)
-    MF.save(fig, "f9_upgrade_modes", ["ghf", "q14", "mult"],
-            "main: G/H/F and G-H (t 95% + Bonferroni simultaneous 98.75%) for four core W4 cells + pool; supplementary: q8 RTN-W3, q14 BFCL (own scale)")
+    ypos, y = [], 0.0
+    for lab, *_ in main:
+        ypos.append(y)
+        y -= 1.0
+        if lab == "q8 AWQ-W4":
+            y -= 0.35
+    axs = sfa.subplots(1, 4, sharey=False)
+    for j, (ax, (k, title)) in enumerate(zip(axs, panels)):
+        style_axis(ax, grid_axis="x")
+        ax.axvline(0, color=INK2, lw=0.6, zorder=1)
+        for (lab, st, col, mk), yy in zip(main, ypos):
+            s_ = st[k]
+            if k == "GmH" and lab in cellkey:
+                m = mult[cellkey[lab]]
+                sig = m["p_holm"] < 0.05
+                MF.interval(ax, yy, m["est"], m["t_ci95"], m["bonf_ci"], col, marker=mk, horizontal=True,
+                            ms=3.2, mfc=col if sig else "white")
+            else:
+                MF.interval(ax, yy, s_["est"], s_["ci95"], s_.get("crossed_ci95"), col, marker=mk,
+                            horizontal=True, ms=3.2)
+        ax.set_title(title, pad=2, fontsize=7)
+        ax.set_xlim(*lim)
+        ax.set_xticks([t_ for t_ in [-8, 0, 8] if lim[0] <= t_ <= lim[1]])
+        ax.tick_params(axis="y", length=0, labelsize=6.5)
+        ax.tick_params(axis="x", labelsize=6.3)
+        ax.set_yticks(ypos)
+        ax.set_yticklabels([r_[0] for r_ in main] if j == 0 else [])
+        ax.set_ylim(ypos[-1] - 0.6, ypos[0] + 0.6)
+        if j:
+            ax.spines["left"].set_visible(False)
+    sfa.supxlabel("gain over QQ, or paired difference (pp)", fontsize=6.8)
+    sfa.text(0.0, 1.0, "(a)", fontsize=7.5, va="top", ha="left")
+    axb = sfb.subplots(1, 2)
+    hi = max(oc[ck][c]["crossed"][1] for ck in ockey.values() for c, _ in CLS)
+    for j, (ax, (c, title)) in enumerate(zip(axb, CLS)):
+        style_axis(ax, grid_axis="x")
+        for (lab, _, col, mk), yy in zip(main, ypos):
+            g = oc[ockey[lab]][c]
+            MF.interval(ax, yy, g["est"], g["block"], g["crossed"], col, marker=mk, horizontal=True, ms=3.2)
+        ax.set_title(title, pad=2, fontsize=7)
+        ax.set_xlim(0, hi + 0.6)
+        ax.set_xticks([0, 2, 4, 6, 8])
+        ax.tick_params(axis="y", length=0, labelsize=6.5)
+        ax.tick_params(axis="x", labelsize=6.3)
+        ax.set_yticks(ypos)
+        ax.set_yticklabels([r_[0] for r_ in main] if j == 0 else [])
+        ax.set_ylim(ypos[-1] - 0.6, ypos[0] + 0.6)
+        if j:
+            ax.spines["left"].set_visible(False)
+    sfb.supxlabel("% of divergent states", fontsize=6.8)
+    sfb.text(0.0, 1.0, "(b)", fontsize=7.5, va="top", ha="left")
+    MF.save(fig, "f9_upgrade_modes", ["ghf", "mult", "oc"],
+            "(a) G/H/F and G-H (t 95% + Bonferroni simultaneous 98.75%) for four core W4 cells + pool; "
+            "(b) joint rescue and rescue undone, % of divergent states (block and crossed 95%), same cells + pool")
     pj = os.path.join(MF.OUT, "provenance.json")
     old = json.load(open(pj))
     for kk, v in MF.PROV.items():
