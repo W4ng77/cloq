@@ -10,8 +10,8 @@ Provenance: each PDF carries its source JSON paths, their sha256 and this script
 (Subject / Keywords), and figures/provenance.json lists the same. No number in a figure is typed by hand;
 derived quantities (e.g. pp = count / 1020 * 100) are computed here from JSON fields and named in the caption.
 
-Palette (dataviz reference instance, validated with validate_palette.js --mode light, 3 slots, all checks pass):
-blue #2a78d6, orange #eb6834, aqua #1baf7a; marks also differ by shape/fill so the figures read in greyscale.
+Palette (10-05, one palette for every figure f1-f9 and for Figure 1(a) TikZ via definecolor in main.tex): Okabe-Ito
+hues with FIXED semantic roles, see PAL below. Marks also differ by shape/fill so the figures read in greyscale.
 """
 import hashlib
 import json
@@ -47,16 +47,32 @@ _cache = {}
 # ACL review format, measured with tectonic: \textwidth 455.24pt = 6.30in, \columnwidth 219.09pt = 3.03in.
 # Figures are drawn at exactly these widths and included at scale 1, so the font sizes below are print sizes.
 FULL_W, COL_W = 455.24 / 72.27, 219.09 / 72.27
-BLUE, ORANGE, AQUA = "#2a78d6", "#eb6834", "#1baf7a"
-INK, INK2, MUTED, GRID, BAND = "#0b0b0b", "#52514e", "#8a8984", "#e4e3df", "#f1f0ec"
+# One palette, fixed roles (Okabe-Ito hues; colour-blind safe). Same hex in main.tex \definecolor (Figure 1a).
+PAL = {
+    "B": "#0072B2",       # BF16 / B's action or upgrade; default per-cell estimate (an upgrade to B)
+    "Q": "#CC79A7",       # quantized policy Q (only where Q itself is a mark)
+    "QP": "#E69F00",      # same-precision Q' (second W4/W3 checkpoint)
+    "RESCUE": "#009E73",  # rescue r / success
+    "DAMAGE": "#D55E00",  # damage d / harm
+    "ALT": "#56B4E9",     # secondary series: KV8 family, post-hoc KL reference
+    "SHARED": "#5E5E5E",  # units affected under both substitutions
+    "REF": "#8C8C8C",     # random / original simulator / shuffle null (hollow marks)
+    "INK": "#111111",     # net, pool, oracle / ceiling, text
+}
+B, Q, QP, RESCUE, DAMAGE, ALT, SHARED, REF = (PAL[k] for k in ("B", "Q", "QP", "RESCUE", "DAMAGE", "ALT", "SHARED", "REF"))
+INK, INK2, MUTED, GRID, BAND = PAL["INK"], "#4D4D4D", REF, "#E3E3E3", "#F2F2F2"
+NET = ORACLE = INK
+BLUE, ORANGE, AQUA = B, QP, SHARED  # legacy names kept for importers; prefer the role names
+FS, FS_S = 7, 6.5    # text: labels/ticks/titles/legends; small (in-bar counts, side notes)
+LW_ZERO = 0.6        # zero / reference line width in every panel
 
 plt.rcParams.update({
     "font.family": "serif",
     "font.serif": ["Liberation Serif", "Nimbus Roman", "Times New Roman", "Times", "STIXGeneral"],
     "mathtext.fontset": "stix",
-    "font.size": 7.5,
-    "axes.labelsize": 7.5,
-    "axes.titlesize": 7.5,
+    "font.size": 7,
+    "axes.labelsize": 7,
+    "axes.titlesize": 7,
     "xtick.labelsize": 7,
     "ytick.labelsize": 7,
     "legend.fontsize": 7,
@@ -230,9 +246,9 @@ def f1():
         y -= 0.95  # header row
         y0 = y
         for lab, est, thick, thin, ctl, is_pool in rows:
-            col = INK if is_pool else BLUE
+            col = INK if is_pool else (ALT if "KV8" in title else B)  # KV8 family = ALT, as in F2
             if F1_SHOW_CONTROL and ctl is not None:
-                ax.plot([ctl], [y], marker="D", ms=3.4, mfc="white", mec=ORANGE, mew=1.0, ls="none", zorder=5)
+                ax.plot([ctl], [y], marker="D", ms=3.4, mfc="white", mec=REF, mew=1.0, ls="none", zorder=5)
             interval(ax, y, est, thick, thin, col, marker="s" if is_pool else "o", ms=3.6 if is_pool else 3.4,
                      horizontal=True)
             ticks.append(y)
@@ -244,9 +260,9 @@ def f1():
     for top, bot, title, kind in spans:
         if kind == "post hoc":
             ax.axhspan(bot - 0.15, top + 1.05, color=BAND, zorder=0, lw=0)
-        t = ax.text(0.6, top + 0.5, title, ha="left", va="center", fontsize=7, color=INK, fontweight="bold")
+        t = ax.text(0.6, top + 0.5, title, ha="left", va="center", fontsize=FS, color=INK, fontweight="bold")
         ax.annotate(" development" if kind == "development" else " post hoc", xycoords=t, xy=(1, 0.5),
-                    va="center", ha="left", fontsize=7, color=INK2, style="italic")
+                    va="center", ha="left", fontsize=FS, color=INK2, style="italic")
     ax.set_yticks(ticks)
     ax.set_yticklabels(labels)
     for t, lab in zip(ax.get_yticklabels(), labels):
@@ -258,15 +274,15 @@ def f1():
     ax.set_xticks(range(0, 51, 10))
     ax.set_xlabel(r"off-diagonal share ($\Delta_{\mathrm{Q}}\neq\Delta_{\mathrm{B}}$), % of divergent states", labelpad=1)
     handles = [
-        Line2D([], [], color=BLUE, marker="o", ms=3.4, lw=1.8, label="cell"),
+        Line2D([], [], color=B, marker="o", ms=3.4, lw=1.8, label="cell"),
         Line2D([], [], color=INK, marker="s", ms=3.6, lw=1.8, label="pool"),
-    ] + ([Line2D([], [], color=ORANGE, marker="D", ms=3.4, mfc="white", mew=1.0, lw=0,
+    ] + ([Line2D([], [], color=REF, marker="D", ms=3.4, mfc="white", mew=1.0, lw=0,
                  label="pairing control")] if F1_SHOW_CONTROL else [])
     # legend in the empty right part of the BFCL group (x > 34%, no marks there)
     bf_top, bf_bot = spans[2][0], spans[2][1]
     leg = ax.legend(handles=handles, loc="upper right", bbox_to_anchor=(xmax - 0.3, bf_top - 1.9), borderaxespad=0,
                     bbox_transform=ax.transData, frameon=True, framealpha=1.0, edgecolor=BAND, facecolor="white",
-                    handletextpad=0.4, fontsize=7, handlelength=1.4, borderpad=0.3, labelspacing=0.25)
+                    handletextpad=0.4, fontsize=FS, handlelength=1.4, borderpad=0.3, labelspacing=0.25)
     leg.get_frame().set_linewidth(0.4)
     save(fig, "f1_controller_dependence", ["ghf", "agree", "ext", "hr2"],
          "per-cell off-diagonal share with intervals, by environment" + (" vs marginal-preserving pairing agreement control" if F1_SHOW_CONTROL else ""))
@@ -279,10 +295,10 @@ def f2():
     ghf = load("ghf")
     rows = []
     for k, lab in CELL4:
-        rows.append((lab, ghf["cells"][k]["stats"], BLUE, "o"))
+        rows.append((lab, ghf["cells"][k]["stats"], B, "o"))
     rows.append(("W4 pool", ghf["pools"]["W4:all"]["stats"], INK, "s"))
     for k, lab in KV8:
-        rows.append((lab, ghf["cells"][k]["stats"], ORANGE, "^"))
+        rows.append((lab, ghf["cells"][k]["stats"], ALT, "^"))
     rows.append(("KV8 pool", ghf["pools"]["KV8:all"]["stats"], INK, "s"))
     S = {lab: st for lab, st, _, _ in rows}
 
@@ -319,7 +335,7 @@ def f2():
             y -= 0.5
     for ax, (key, title) in zip(axs, panels):
         style_axis(ax, grid_axis="x")
-        ax.axvline(0, color=INK2, lw=0.6, zorder=1)
+        ax.axvline(0, color=INK2, lw=LW_ZERO, zorder=1)
         for (lab, st, col, mk), yy in zip(rows, ypos):
             s = st[key]
             interval(ax, yy, s["est"], s["ci95"], s["crossed_ci95"], col, marker=mk, horizontal=True,
@@ -396,10 +412,10 @@ def f3():
     h = 0.62
     for r, yy in zip(rows, ypos):
         lab, rr, dd, net, thick, thin, g = r
-        ax.barh(yy, rr, height=h, color=BLUE, alpha=0.85, lw=0, zorder=2)
-        ax.barh(yy, -dd, height=h, color=ORANGE, alpha=0.85, lw=0, zorder=2)
-        interval(ax, yy, net, thick, thin, INK, marker="D", ms=3.2, horizontal=True, z=4)
-    ax.axvline(0, color=INK2, lw=0.6, zorder=3)
+        ax.barh(yy, rr, height=h, color=RESCUE, lw=0, zorder=2)
+        ax.barh(yy, -dd, height=h, color=DAMAGE, lw=0, zorder=2)
+        interval(ax, yy, net, thick, thin, NET, marker="D", ms=3.2, horizontal=True, z=4)
+    ax.axvline(0, color=INK2, lw=LW_ZERO, zorder=3)
     ax.set_yticks(ypos)
     ax.set_yticklabels([r[0] for r in rows])
     for t, r in zip(ax.get_yticklabels(), rows):
@@ -411,12 +427,12 @@ def f3():
     ax.set_xticks([-12, -8, -4, 0, 4, 8, 12])
     ax.set_xticklabels(["12", "8", "4", "0", "4", "8", "12"])
     ax.set_xlabel("% of units (net: pp)")
-    ax.text(-13.6, ypos[0] + 0.9, r"$\leftarrow$ damage $d$", ha="left", va="bottom", fontsize=7, color=INK)
-    ax.text(13.6, ypos[0] + 0.9, r"rescue $r$ $\rightarrow$", ha="right", va="bottom", fontsize=7, color=INK)
+    ax.text(-13.6, ypos[0] + 0.9, r"$\leftarrow$ damage $d$", ha="left", va="bottom", fontsize=FS, color=DAMAGE)
+    ax.text(13.6, ypos[0] + 0.9, r"rescue $r$ $\rightarrow$", ha="right", va="bottom", fontsize=FS, color=RESCUE)
     iho = [i for i, r in enumerate(rows) if r[6] == "ho"][0]
-    ax.text(13.9, ypos[iho] + 0.95, "telecom holdout (pre-reg., 90%)", ha="right", va="center", fontsize=6.5,
+    ax.text(13.9, ypos[iho] + 0.95, "telecom holdout (pre-reg., 90%)", ha="right", va="center", fontsize=FS_S,
             color=INK2, style="italic")
-    ax.text(13.6, ypos[0] + 0.0, r"$\tau^2$ dev", ha="right", va="center", fontsize=7, color=INK2, style="italic")
+    ax.text(13.6, ypos[0] + 0.0, r"$\tau^2$ dev", ha="right", va="center", fontsize=FS_S, color=INK2, style="italic")
     # no legend: bars are labelled at the top (damage d / rescue r); the diamond is net G_all (caption)
     save(fig, "f3_rescue_damage", ["dev", "hconf"], "rescue and damage rates per cell with net G_all and intervals")
 
@@ -474,22 +490,22 @@ def f4():
         ax.set_xlim(3, 22)
         ax.set_xlabel("escalation budget (%)")
     kw = dict(lw=1.2, ms=3.4)
-    a.plot(xs, net_or, color=INK, marker="^", label="matched oracle (a); max. capturable (b)", **kw)
-    a.plot(xs, net_fr, color=BLUE, marker="o", label="frozen Q-only trigger", **kw)
-    a.plot(xs, net_rd, color=MUTED, marker="s", mfc="white", label="random (expected)", **kw)
-    a.plot(xs, net_kl, color=AQUA, marker="x", lw=0.8, ms=3.4, alpha=0.6, label="KL ref. (post hoc)")
-    a.axhline(0, color=INK2, lw=0.5, zorder=1)
+    a.plot(xs, net_or, color=ORACLE, marker="^", label="matched oracle (a); max. capturable (b)", **kw)
+    a.plot(xs, net_fr, color=B, marker="o", label="frozen Q-only trigger", **kw)
+    a.plot(xs, net_rd, color=REF, marker="s", mfc="white", label="random (expected)", **kw)
+    a.plot(xs, net_kl, color=ALT, marker="x", lw=0.8, ms=3.4, alpha=0.6, label="KL ref. (post hoc)")
+    a.axhline(0, color=INK2, lw=LW_ZERO, zorder=1)
     a.set_ylim(-0.3, 4.2)
     a.set_ylabel("net gain (pp)")
     a.set_title("(a) net gain", pad=2)
-    b2.plot(xs, [tv(v) for v in ceil_t], color=INK, marker="^", **kw)
-    b2.plot(xs, [tv(f["turnover_captured"]) for f in fr], color=BLUE, marker="o", **kw)
-    b2.plot(xs, [tv(f["random_expected_turnover"]) for f in fr], color=MUTED, marker="s", mfc="white", **kw)
-    b2.plot(xs, [tv(k["turnover_captured"]) for k in kl], color=AQUA, marker="x", lw=0.8, ms=3.4, alpha=0.6)
+    b2.plot(xs, [tv(v) for v in ceil_t], color=ORACLE, marker="^", **kw)
+    b2.plot(xs, [tv(f["turnover_captured"]) for f in fr], color=B, marker="o", **kw)
+    b2.plot(xs, [tv(f["random_expected_turnover"]) for f in fr], color=REF, marker="s", mfc="white", **kw)
+    b2.plot(xs, [tv(k["turnover_captured"]) for k in kl], color=ALT, marker="x", lw=0.8, ms=3.4, alpha=0.6)
     b2.set_ylim(0, 105)
     b2.set_ylabel("turnover captured (% of 69)")
     b2.set_title("(b) turnover captured", pad=2)
-    fig.legend(loc="outside lower center", ncol=2, frameon=False, fontsize=7,
+    fig.legend(loc="outside lower center", ncol=2, frameon=False, fontsize=FS,
                handletextpad=0.4, columnspacing=1.0)
     PROV_EXTRA["f4_turnover_ceiling"] = ceil_t
     save(fig, "f4_trigger_oracle", ["oracle", "tok"],
@@ -519,11 +535,11 @@ def f5():
     ypos = [0, -1, -2, -3, -4.4]
     for ax, (k, title) in zip(axs, panels):
         style_axis(ax, grid_axis="x")
-        ax.axvline(0, color=INK2, lw=0.6, zorder=1)
+        ax.axvline(0, color=INK2, lw=LW_ZERO, zorder=1)
         for c, yy in zip(cells, ypos):
             o, so = E[k]["original"][c], E[k]["sonnet"][c]
-            interval(ax, yy + 0.17, o["est"], None, o["ci95_states"], MUTED, marker="o", mfc="white", horizontal=True)
-            interval(ax, yy - 0.17, so["est"], so["ci95_states"], None, BLUE, marker="s" if c == "pool" else "o",
+            interval(ax, yy + 0.17, o["est"], None, o["ci95_states"], REF, marker="o", mfc="white", horizontal=True)
+            interval(ax, yy - 0.17, so["est"], so["ci95_states"], None, B, marker="s" if c == "pool" else "o",
                      horizontal=True)
         ax.set_title(title, pad=3)
         ax.set_xlim(-50, 50)
@@ -536,11 +552,11 @@ def f5():
     axs[0].set_yticklabels(labs)
     axs[0].get_yticklabels()[-1].set_fontweight("bold")
     axs[0].set_ylim(-5.0, 0.6)
-    handles = [Line2D([], [], color=MUTED, marker="o", mfc="white", ms=3.4, lw=0.6,
+    handles = [Line2D([], [], color=REF, marker="o", mfc="white", ms=3.4, lw=0.6,
                       label="original simulator (single run)"),
-               Line2D([], [], color=BLUE, marker="o", ms=3.4, lw=1.8, label="Sonnet 5.5 user (5 replicates)")]
+               Line2D([], [], color=B, marker="o", ms=3.4, lw=1.8, label="Sonnet 5.5 user (5 replicates)")]
     fig.legend(handles=handles, loc="outside lower center", ncol=2, frameon=False,
-               fontsize=7)
+               fontsize=FS)
     save(fig, "f5_simctrl_p", ["simp"], "SIMCTRL-P G/H/F/G-H, original vs Sonnet user simulator, 95% over states")
 
 
@@ -595,17 +611,17 @@ def f6():
     # (a) rates under the two replacement sources
     style_axis(a)
     for i, (k, lab) in enumerate(mets):
-        for d, (src, col, mk) in enumerate([(pr, BLUE, "o"), (sa, ORANGE, "s")]):
+        for d, (src, col, mk) in enumerate([(pr, B, "o"), (sa, QP, "s")]):
             interval(a, i + (d - 0.5) * 0.32, src[k]["est"], src[k]["ci95"], src[k]["crossed_ci95"], col, marker=mk)
-    a.axhline(0, color=INK2, lw=0.5, zorder=1)
+    a.axhline(0, color=INK2, lw=LW_ZERO, zorder=1)
     a.set_xticks(range(len(mets)))
     a.set_xticklabels([m[1] for m in mets])
     a.tick_params(axis="x", length=0)
     a.set_ylabel("pp of units (off-diag.: %)")
     a.set_title("(a) W4: BF16 vs. second W4 checkpoint as replacement", pad=2)
-    a.legend(handles=[Line2D([], [], color=BLUE, marker="o", lw=0, ms=3.6, label="BF16 action"),
-                      Line2D([], [], color=ORANGE, marker="s", lw=0, ms=3.6, label="checkpoint-2 action")],
-             loc="upper left", frameon=False, fontsize=6.5, handletextpad=0.2, borderaxespad=0.1)
+    a.legend(handles=[Line2D([], [], color=B, marker="o", lw=0, ms=3.6, label="BF16 action"),
+                      Line2D([], [], color=QP, marker="s", lw=0, ms=3.6, label="checkpoint-2 action")],
+             loc="upper left", frameon=False, fontsize=FS, handletextpad=0.2, borderaxespad=0.1)
     a.set_ylim(-7, 34)
     # (b) which units flip: only BF16 / both / only the same-precision checkpoint, W4 and W3
     style_axis(cax, grid_axis="x")
@@ -614,14 +630,14 @@ def f6():
     for lab, ob, bo, od, yy in sets:
         tot = ob + bo + od
         left = 0.0
-        for n, col in [(ob, BLUE), (bo, AQUA), (od, ORANGE)]:
+        for n, col in [(ob, B), (bo, SHARED), (od, QP)]:
             w = 100.0 * n / tot
-            cax.barh(yy, w, left=left, height=0.55, color=col, alpha=0.85, lw=0, zorder=2)
-            cax.text(left + w / 2, yy, f"{n}", ha="center", va="center", fontsize=6.8, color="white", zorder=3)
+            cax.barh(yy, w, left=left, height=0.55, color=col, lw=0, zorder=2)
+            cax.text(left + w / 2, yy, f"{n}", ha="center", va="center", fontsize=FS_S, color=INK if col == QP else "white", zorder=3)
             left += w
     for x, lab in [(50.0 * 64 / 245, "only BF16"), (100.0 * (64 + 107 / 2) / 245, "both"),
                    (100.0 * (64 + 107 + 37) / 245, "only ckpt 2")]:
-        cax.text(x, 0.36, lab, ha="center", va="bottom", fontsize=6.5, color=INK)
+        cax.text(x, 0.36, lab, ha="center", va="bottom", fontsize=FS_S, color=INK)
     cax.set_yticks([0, -1])
     cax.set_yticklabels([s_[0] for s_ in sets])
     cax.tick_params(axis="y", length=0)

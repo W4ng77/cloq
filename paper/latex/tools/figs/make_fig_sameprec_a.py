@@ -16,7 +16,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import make_figs as MF  # noqa: E402
-from make_figs import BLUE, COL_W, INK2, ORANGE, Line2D, plt, r1, style_axis  # noqa: E402
+from make_figs import B, COL_W, FS, INK2, LW_ZERO, QP, Line2D, plt, r1, style_axis  # noqa: E402
 
 NAME = "f6a_sameprec_rates"
 SRC_SAME = "analysis/fork/out/sameprec_20261004T070601Z.json"  # frozen analysis set (K = 6), cited by the caption
@@ -44,18 +44,18 @@ def f6a():
     fig, a = plt.subplots(1, 1, figsize=(COL_W, 1.70), layout="constrained")
     style_axis(a)
     for i, (k, _) in enumerate(mets):
-        for d, (src, col, mk) in enumerate([(pr, BLUE, "o"), (sa, ORANGE, "s")]):
+        for d, (src, col, mk) in enumerate([(pr, B, "o"), (sa, QP, "s")]):
             MF.interval(a, i + (d - 0.5) * 0.32, src[k]["est"], src[k]["ci95"], src[k]["crossed_ci95"], col, marker=mk)
-    a.axhline(0, color=INK2, lw=0.5, zorder=1)
+    a.axhline(0, color=INK2, lw=LW_ZERO, zorder=1)
     a.set_xticks(range(len(mets)))
     a.set_xticklabels([m[1] for m in mets])
     a.tick_params(axis="x", length=0)
     a.set_ylabel("pp of units (off-diag.: %)")
-    a.legend(handles=[Line2D([], [], color=BLUE, marker="o", lw=0, ms=3.6, label="B's action"),
-                      Line2D([], [], color=ORANGE, marker="s", lw=0, ms=3.6, label="second W4 checkpoint's action")],
-             loc="upper left", frameon=False, fontsize=6.5, handletextpad=0.2, borderaxespad=0.1)
+    a.legend(handles=[Line2D([], [], color=B, marker="o", lw=0, ms=3.6, label="B's action"),
+                      Line2D([], [], color=QP, marker="s", lw=0, ms=3.6, label="second W4 checkpoint's action")],
+             loc="upper left", frameon=False, fontsize=FS, handletextpad=0.2, borderaxespad=0.1)
     a.set_ylim(-7, 36)
-    a.set_title("(a) divergent states, W4: replacement source", pad=2, fontsize=6.8)
+    a.set_title("(a) divergent states, W4: replacement source", pad=2, fontsize=FS)
     MF.save(fig, NAME, ["same"],
             "re-plot of F6 panel (a) at column width: r/d/M/G_all/off-diag, B vs second W4 checkpoint as replacement (W4, K = 6)")
     pj = os.path.join(MF.OUT, "provenance.json")

@@ -17,7 +17,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import make_figs as MF  # noqa: E402
-from make_figs import BLUE, COL_W, INK, INK2, ORANGE, AQUA, plt, style_axis, r1  # noqa: E402
+from make_figs import ALT, B, COL_W, FS, FS_S, INK, INK2, LW_ZERO, QP, plt, style_axis, r1  # noqa: E402
 
 
 def script_sha():
@@ -34,13 +34,13 @@ def f9():
     ghf, q14 = MF.load("ghf"), MF.load("q14")
     q = q14["cells"]["q14"]["r2"]["pp_on_divergent"]
     rows = [  # (label, {G,H,F: (est, thick, thin)}, colour, marker)
-        ("q4 GPTQ-W4", {k: ghf["cells"]["q4:gptq_w4_d1"]["stats"][k] for k in KEYS}, BLUE, "o"),
-        ("q4 AWQ-W4", {k: ghf["cells"]["q4:awq_w4"]["stats"][k] for k in KEYS}, BLUE, "o"),
-        ("q8 GPTQ-W4", {k: ghf["cells"]["q8:gptq_w4_d1"]["stats"][k] for k in KEYS}, BLUE, "o"),
-        ("q8 AWQ-W4", {k: ghf["cells"]["q8:awq_w4"]["stats"][k] for k in KEYS}, BLUE, "o"),
+        ("q4 GPTQ-W4", {k: ghf["cells"]["q4:gptq_w4_d1"]["stats"][k] for k in KEYS}, B, "o"),
+        ("q4 AWQ-W4", {k: ghf["cells"]["q4:awq_w4"]["stats"][k] for k in KEYS}, B, "o"),
+        ("q8 GPTQ-W4", {k: ghf["cells"]["q8:gptq_w4_d1"]["stats"][k] for k in KEYS}, B, "o"),
+        ("q8 AWQ-W4", {k: ghf["cells"]["q8:awq_w4"]["stats"][k] for k in KEYS}, B, "o"),
         ("W4 pool", {k: ghf["pools"]["W4:all"]["stats"][k] for k in KEYS}, INK, "s"),
-        ("q8 RTN-W3$^s$", {k: ghf["cells"]["q8:rtn_w3"]["stats"][k] for k in KEYS}, ORANGE, "^"),
-        ("q14 GPTQ-W4$^b$", {k: q[k] for k in KEYS}, AQUA, "D"),
+        ("q8 RTN-W3$^s$", {k: ghf["cells"]["q8:rtn_w3"]["stats"][k] for k in KEYS}, QP, "^"),
+        ("q14 GPTQ-W4$^b$", {k: q[k] for k in KEYS}, ALT, "D"),
     ]
     S = {lab: st for lab, st, _, _ in rows}
 
@@ -103,7 +103,7 @@ def f9():
     axs = sfa.subplots(1, 4, sharey=False)
     for j, (ax, (k, title)) in enumerate(zip(axs, panels)):
         style_axis(ax, grid_axis="x")
-        ax.axvline(0, color=INK2, lw=0.6, zorder=1)
+        ax.axvline(0, color=INK2, lw=LW_ZERO, zorder=1)
         for (lab, st, col, mk), yy in zip(main, ypos):
             s_ = st[k]
             if k == "GmH" and lab in cellkey:
@@ -114,18 +114,18 @@ def f9():
             else:
                 MF.interval(ax, yy, s_["est"], s_["ci95"], s_.get("crossed_ci95"), col, marker=mk,
                             horizontal=True, ms=3.2)
-        ax.set_title(title, pad=2, fontsize=7)
+        ax.set_title(title, pad=2, fontsize=FS)
         ax.set_xlim(*lim)
         ax.set_xticks([t_ for t_ in [-8, 0, 8] if lim[0] <= t_ <= lim[1]])
-        ax.tick_params(axis="y", length=0, labelsize=6.5)
-        ax.tick_params(axis="x", labelsize=6.3)
+        ax.tick_params(axis="y", length=0, labelsize=FS)
+        ax.tick_params(axis="x", labelsize=FS)
         ax.set_yticks(ypos)
         ax.set_yticklabels([r_[0] for r_ in main] if j == 0 else [])
         ax.set_ylim(ypos[-1] - 0.6, ypos[0] + 0.6)
         if j:
             ax.spines["left"].set_visible(False)
-    sfa.supxlabel("gain over QQ, or paired difference (pp)", fontsize=6.8)
-    sfa.text(0.0, 1.0, "(a)", fontsize=7.5, va="top", ha="left")
+    sfa.supxlabel("gain over QQ, or paired difference (pp)", fontsize=FS)
+    sfa.text(0.0, 1.0, "(a)", fontsize=FS, va="top", ha="left")
     axb = sfb.subplots(1, 2)
     hi = max(oc[ck][c]["crossed"][1] for ck in ockey.values() for c, _ in CLS)
     for j, (ax, (c, title)) in enumerate(zip(axb, CLS)):
@@ -133,18 +133,18 @@ def f9():
         for (lab, _, col, mk), yy in zip(main, ypos):
             g = oc[ockey[lab]][c]
             MF.interval(ax, yy, g["est"], g["block"], g["crossed"], col, marker=mk, horizontal=True, ms=3.2)
-        ax.set_title(title, pad=2, fontsize=7)
+        ax.set_title(title, pad=2, fontsize=FS)
         ax.set_xlim(0, hi + 0.6)
         ax.set_xticks([0, 2, 4, 6, 8])
-        ax.tick_params(axis="y", length=0, labelsize=6.5)
-        ax.tick_params(axis="x", labelsize=6.3)
+        ax.tick_params(axis="y", length=0, labelsize=FS)
+        ax.tick_params(axis="x", labelsize=FS)
         ax.set_yticks(ypos)
         ax.set_yticklabels([r_[0] for r_ in main] if j == 0 else [])
         ax.set_ylim(ypos[-1] - 0.6, ypos[0] + 0.6)
         if j:
             ax.spines["left"].set_visible(False)
-    sfb.supxlabel("% of divergent states", fontsize=6.8)
-    sfb.text(0.0, 1.0, "(b)", fontsize=7.5, va="top", ha="left")
+    sfb.supxlabel("% of divergent states", fontsize=FS)
+    sfb.text(0.0, 1.0, "(b)", fontsize=FS, va="top", ha="left")
     MF.save(fig, "f9_upgrade_modes", ["ghf", "mult", "oc"],
             "(a) G/H/F and G-H (t 95% + Bonferroni simultaneous 98.75%) for four core W4 cells + pool; "
             "(b) joint rescue and rescue undone, % of divergent states (block and crossed 95%), same cells + pool")

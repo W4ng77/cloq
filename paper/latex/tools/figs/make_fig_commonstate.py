@@ -22,7 +22,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import make_figs as MF  # noqa: E402
-from make_figs import AQUA, BAND, BLUE, COL_W, GRID, INK, INK2, MUTED, ORANGE, plt, style_axis  # noqa: E402,F401
+from make_figs import B, BAND, COL_W, FS, FS_S, GRID, INK, INK2, LW_ZERO, Q, QP, RESCUE, plt, style_axis  # noqa: E402,F401
 from matplotlib.colors import LinearSegmentedColormap  # noqa: E402
 
 DEFAULT = "analysis/fork/out/commonstate_q8ext_20261003T231159Z.json"
@@ -69,14 +69,14 @@ def f8(src: str = DEFAULT):
     a, b, c = fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[0, 1]), fig.add_subplot(gs[1, :])
 
     # (a) 3x2 grid, single-hue sequential fill, numbers in ink
-    cmap = LinearSegmentedColormap.from_list("seq", ["#ffffff", BLUE])
+    cmap = LinearSegmentedColormap.from_list("seq", ["#ffffff", RESCUE])  # success: rescue hue (Fig. 1a)
     rows, cols = ("bf16", "d1", "d2"), ("bf16", "d1")
     lo, hi = 26.0, 33.0
     for i, s in enumerate(rows):
         for j, cc in enumerate(cols):
             v = V[(s, cc)]
             a.add_patch(plt.Rectangle((j, -i - 1), 0.96, 0.92, color=cmap(0.12 + 0.6 * (v - lo) / (hi - lo)), lw=0))
-            a.text(j + 0.48, -i - 0.54, f"{v:.1f}", ha="center", va="center", fontsize=7, color=INK)
+            a.text(j + 0.48, -i - 0.54, f"{v:.1f}", ha="center", va="center", fontsize=FS, color=INK)
     a.set_xlim(-0.02, 2.0)
     a.set_ylim(-3.05, 0.0)
     a.set_xticks([0.48, 1.48])
@@ -87,14 +87,14 @@ def f8(src: str = DEFAULT):
     a.tick_params(length=0, pad=1.5)
     for s_ in a.spines.values():
         s_.set_visible(False)
-    a.set_ylabel("action source", fontsize=6.8, labelpad=1)
-    a.set_title("(b) success %, continuation:", pad=2, fontsize=6.8)
+    a.set_ylabel("action source", fontsize=FS, labelpad=1)
+    a.set_title("(b) success %, continuation:", pad=2, fontsize=FS)
 
     # (b) K(c) with both intervals and the +-3 pp margin
     style_axis(b, grid_axis="x")
     m = r["margin_pp"]
     b.axvspan(-m, m, color=BAND, zorder=0, lw=0)
-    b.axvline(0, color=INK2, lw=0.5, zorder=1)
+    b.axvline(0, color=INK2, lw=LW_ZERO, zorder=1)
     for y, cc, col, mk in ((1, "bf16", INK, "o"), (0, "d1", INK, "s")):
         k = K[cc]
         MF.interval(b, y, pp(k["point"]), [pp(x) for x in k["boot95"]], [pp(x) for x in k["t95"]], col, marker=mk,
@@ -104,18 +104,19 @@ def f8(src: str = DEFAULT):
     b.tick_params(axis="y", length=0)
     b.set_ylim(-0.6, 1.6)
     b.set_xlim(-10, 10)
-    b.set_xlabel("K(c) = V(B, c) \u2212 V(Q\u2032, c), pp", fontsize=6.6, labelpad=1)
-    b.set_title("(c) B's action minus Q\u2032's", pad=2, fontsize=6.8)
+    b.set_xlabel("K(c) = V(B, c) \u2212 V(Q\u2032, c), pp", fontsize=FS, labelpad=1)
+    b.set_title("(c) B's action minus Q\u2032's", pad=2, fontsize=FS)
 
     # (c) agreement patterns, one stacked bar of the 255 states
-    seg = [("all equal", P["all equal"], GRID), ("B=Q", P["BF16 = d1 != d2"], AQUA),
-           ("B=Q\u2032", P["BF16 = d2 != d1"], BLUE), ("Q=Q\u2032", P["d1 = d2 != BF16"], ORANGE),
-           ("all differ", P["all different"], "#cfcdc6")]
+    # segment colour = the source whose action differs (palette roles); agreement/disagreement of all three in greys
+    seg = [("all equal", P["all equal"], GRID), ("B=Q", P["BF16 = d1 != d2"], QP),
+           ("B=Q\u2032", P["BF16 = d2 != d1"], Q), ("Q=Q\u2032", P["d1 = d2 != BF16"], B),
+           ("all differ", P["all different"], "#BDBDBD")]
     x0 = 0
     from matplotlib.patches import Patch
     for lab, v, col in seg:
         c.barh(0, v, left=x0, height=0.7, color=col, lw=0.8, edgecolor="white")
-        c.text(x0 + v / 2, 0, f"{v}", ha="center", va="center", fontsize=6.2, color=INK)
+        c.text(x0 + v / 2, 0, f"{v}", ha="center", va="center", fontsize=FS_S, color="white" if col == B else INK)
         x0 += v
     c.set_xlim(0, n)
     c.set_ylim(-0.4, 0.4)
@@ -124,9 +125,9 @@ def f8(src: str = DEFAULT):
     for s_ in ("top", "right", "left", "bottom"):
         c.spines[s_].set_visible(False)
     c.legend(handles=[Patch(color=col, label=lab) for lab, _, col in seg], loc="upper center",
-             bbox_to_anchor=(0.5, -0.02), ncol=5, frameon=False, fontsize=6.2, handlelength=0.9, columnspacing=0.9,
+             bbox_to_anchor=(0.5, -0.02), ncol=5, frameon=False, fontsize=FS_S, handlelength=0.9, columnspacing=0.9,
              handletextpad=0.35, borderaxespad=0.0)
-    c.set_title(f"(d) exact action agreement among the three sources ({n} states)", pad=2, fontsize=6.8)
+    c.set_title(f"(d) exact action agreement among the three sources ({n} states)", pad=2, fontsize=FS)
 
     MF.save(fig, NAME, ["cs"], SHOWS)
     e = MF.PROV[NAME]
