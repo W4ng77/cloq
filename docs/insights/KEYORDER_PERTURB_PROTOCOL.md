@@ -234,3 +234,11 @@ TL;DR At the user's instruction, the four panel tasks (g1 to g4) were released a
   - The gate's counts, hashes and acceptance fields are checked, and recorded, before any panel outcome is read.
   - If the gate shows a systematic fault, the panel is not analysed until the fault is understood, and the decision is recorded in a further amendment.
 - **Load.** The two simulator replicas (node005:8000, node006:8000) now carry up to two key-order tasks each, plus the gate and takeover-window f03. The QQ no-op check detects any loss of replay determinism under load.
+
+## Amendment 2026-10-05g (g2 restart; before any KQ outcome is read)
+
+TL;DR To speed things up, the user stopped g2 and four post-freeze tasks at 12:52 PDT. The four tasks are deferred and do not enter the paper. g2 was requeued with `resume: true`, concurrency 12 and a dedicated simulator replica (node005:8000). g4 continues unchanged and now has node006:8000 to itself.
+
+- **What resume keeps.** A state whose branch file already holds every needed arm is not re-run. States that were in flight at the stop are re-run from the frozen state. Acceptance per state is unchanged.
+- **Replica choice.** node005:8000 is the replica that g1 and g3 used, and it passed the identical-answer check against node006:8000 at startup. The QQ no-op checks on the noop sample still test replay on the new replica.
+- **Scope of the change.** Transform, eligibility, arms, estimands and the frozen analysis code are unchanged.
