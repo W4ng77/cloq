@@ -1,0 +1,56 @@
+\section{Introduction}
+\label{sec:intro}
+
+A quantized LLM agent is cheaper to serve than its BF16 reference, and a deployment can keep the reference as a fallback, as dynamic precision routing does \citep{li2026dynamicmp}. Suppose the quantized agent (Q) reaches a decision at which the BF16 agent (B) would act differently. There are three ways to spend B here: \textbf{replace only this step, let B take over from the next step, or both}. Average task success does not answer this. On our checkpoints, quantized-minus-BF16 success ranges from $-0.2$ to $+4.2$\pp{} across four W4 cells, and an equivalence test at $\pm$3\pp{} fails in every cell (Appendix~\ref{app:e2e}); even a precise end-to-end number would not say which step an upgrade should touch. % src: analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md
+
+Figure~\ref{fig:case}a shows one such decision from our data. In an airline task, Q looks up a reservation id that does not exist and receives ``not found''; B looks up the user's profile. We froze the state and ran all four combinations of \{B's or Q's action\} $\times$ \{B or Q continuing\}. Only B's action followed by B's continuation succeeds. When B supplies only this step, Q continues, searches for flights, writes a change and fails; when Q's failed lookup stands and B takes over, B fails too. % src: analysis/fork/out/ghf_20261001T211519Z.md (§4 Case 5)
+Here the task value of B's action depends on the execution that follows it, and judging the action alone, however carefully, cannot reveal it.
+
+More generally, the task benefit of a higher-precision upgrade can depend on which step is upgraded and on who executes afterwards, and whole-model swap evaluations mix these effects. Recent work already forks live agent trajectories and continues them with a different model, against same-model control forks \citep{gonuguntla2026replay}; there, the new model writes the next action and everything after it, so the two cannot be told apart. Same-state crossed interventions measure them separately: we cross the source of the current action with the model that executes the rest of the episode, at a frozen state that replays bit-exactly, including the environment databases, the user simulator's view and the remaining step and error budget (\S\ref{sec:method}). A same-precision substitution, a second W4 checkpoint of the same model in place of B, tests whether turnover and continuation dependence require a higher bit width, and benchmarks B's substitution against a fixed-precision alternative. Three questions thus need separate measurements: how sensitive the outcome is to a local replacement, how much net value a specific upgrade mode brings, and how much more a higher-precision replacement provides than a same-precision one. We study Qwen3-4B and Qwen3-8B \citep{yang2025qwen3} under simulated weight and KV-cache quantization in \tautwo{} \citep{yao2024tau,barres2025tau2}, BFCL multi-turn \citep{patil2025bfcl} and ALFWorld \citep{shridhar2021alfworld}, and Mistral-Small-3.2-24B \citep{mistral2025small32} on ordinary BF16-sourced \tautwo{} states. % nocheck: model sizes
+
+\paragraph{Findings.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+\item \textbf{Local replacement is sensitive; its net value is small} (\S\ref{sec:value}). Replacing a W4 agent's first tool-structure-divergent action with B's changes the outcome in 15.5--20.9\% of task$\times$block units, with rescues and damages of similar size and a net effect of $-1.9$ to $+2.9$\pp{} (Figure~\ref{fig:case}b). Splitting the upgrade shows why one evaluation mode is not enough (exploratory, post hoc; \% of divergent W4 states). In 4.0\%, only the joint upgrade succeeds (joint rescue, Figure~\ref{fig:case}a); in 4.8\%, B's action rescues under Q's continuation but B's takeover undoes the rescue (rescue undone, Figure~\ref{fig:modes}b). Evaluating only this-step replacement misses the first group; a fork that swaps the action and everything after it misses the second. Paired comparisons separate the upgrade modes only on the fixed task pool and only in some cells, not in the W4 pool (exploratory; Figure~\ref{fig:modes}a). On ordinary BF16-sourced states of Mistral-Small-3.2-24B, replacing the action turns over about 10\% of states, in both directions, with no resolved net value. % src: analysis/fork/out/dev_all_20261001T070326Z.md; analysis/fork/out/outcome_classes_20261004T143614Z.md; analysis/fork/out/newmethod_m24_20261004T024453Z.md
+\item \textbf{The extra value of higher precision is not established} (\S\ref{sec:sameprec}). Swapping only the calibration checkpoint, at W4 and at W3, also produces two-sided flips and continuation dependence at comparable size, and BF16's additional action value over a second W4 checkpoint on common states is not resolved. The two substitutions share more affected units than the tasks' flip propensity explains, yet at W4, 138 of the 245 affected units respond to only one of them. Equivalence of the two turnovers within $\pm$3\pp{} is not shown. % src: analysis/fork/out/sameprec_20261004T070601Z.md (Amendment A1); analysis/fork/out/sameprec_overlap_20261002T143218Z.md (Agreement, null within task); analysis/fork/out/commonstate_q8ext_20261003T231159Z.md; analysis/fork/out/commonstate_q4_20261004T001159Z.md; derived: 138=64+74; 245=107+64+74
+\item \textbf{Detecting sensitivity is not selecting value} (\S\ref{sec:r4}). A frozen Q-only uncertainty trigger captures more outcome-changing decisions than random selection, but rescues and damages alike: 2--5 of the 34--38 net units that a hindsight oracle with the same budget shows are available. % src: analysis/fork/out/token_mech_20261002T003130Z.md (§3); analysis/fork/out/oracle_trigger_20261002T024423Z.md (§1a)
+\end{itemize}
+
+\paragraph{Contributions.} (1)~\emph{An executable same-state intervention protocol} that measures separately the value of upgrading the current action, the continuation, and both, with a same-precision reference substitution. The factorial design is standard; the contribution is making these counterfactuals executable and auditable in closed-loop agents (exact state restoration, budget accounting, replay acceptance, explicit denominators). (2)~\emph{Evidence that the three questions have different answers}, summarised in the findings above. % nocheck: list labels (1)-(2)
+
+\begin{figure*}[t]
+\begin{minipage}[b]{\columnwidth}
+\centering
+\begin{tikzpicture}[ % nocheck: TikZ layout coordinates
+  font=\scriptsize,
+  box/.style={draw, rounded corners=2pt, align=center, inner sep=2pt},
+  act/.style={draw, rounded corners=2pt, align=center, inner sep=1.8pt, fill=gray!10}, % nocheck: TikZ style
+  ok/.style={draw, align=center, inner sep=1.5pt, minimum width=1.55cm, fill=green!12},
+  no/.style={draw, align=center, inner sep=1.5pt, minimum width=1.55cm},
+  arr/.style={-{Stealth[length=3.5pt]}, thin}]
+\node[box, text width=7.2cm] (h) at (0,0) {frozen state: airline task, first decision; user wants an earlier nonstop flight. History, databases, simulator view and budget restored}; % nocheck: TikZ
+\node[act, text width=3.3cm] (aB) at (-1.95,-1.05) {B's action: look up the user's profile $\rightarrow$ ok}; % nocheck: TikZ
+\node[act, text width=3.3cm] (aQ) at (1.95,-1.05) {Q's action: look up reservation by a wrong id $\rightarrow$ not found}; % nocheck: TikZ
+\draw[arr] (h.south -| aB) -- (aB); \draw[arr] (h.south -| aQ) -- (aQ);
+\node[ok] (bb) at (-2.85,-2.2) {BB: success\\[-1pt]{\tiny B continues}}; % nocheck: TikZ
+\node[no] (bq) at (-0.95,-2.2) {BQ: fail\\[-1pt]{\tiny Q continues}}; % nocheck: TikZ
+\node[no] (qb) at (0.95,-2.2) {QB: fail\\[-1pt]{\tiny B continues}}; % nocheck: TikZ
+\node[no] (qq) at (2.85,-2.2) {QQ: fail\\[-1pt]{\tiny Q continues}}; % nocheck: TikZ
+\draw[arr] (aB) -- (bb); \draw[arr] (aB) -- (bq);
+\draw[arr] (aQ) -- (qb); \draw[arr] (aQ) -- (qq);
+\node[box, text width=7.2cm, fill=orange!8, anchor=north] at (0,-2.75) % nocheck: TikZ
+  {\textbf{joint rescue}: only BB succeeds\\ % nocheck: TikZ
+   action swap under Q's continuation: $\DQ=\YY{BQ}-\YY{QQ}=0$\\ % nocheck: TikZ
+   action swap under B's continuation: $\DB=\YY{BB}-\YY{QB}=+1$}; % nocheck: TikZ
+\end{tikzpicture}\\[1pt]
+{\small (a)}
+\end{minipage}\hfill
+\begin{minipage}[b]{\columnwidth}
+\centering
+\includegraphics[width=\columnwidth]{figures/f3_rescue_damage.pdf}\\[1pt]
+{\small (b)}
+\end{minipage}
+\caption{Four-branch task value. (a)~A real decision (Qwen3-4B, AWQ-W4; airline task 31, decision 1 of 12): B's action is worth a success only if B also continues. This is a \emph{joint rescue} (exploratory: 4.0\% of W4 divergent states; the opposite case, rescue undone, 4.8\%: Figure~\ref{fig:modes}b). (b)~Replacing the first tool-structure-divergent action with B's, per cell: rescues $r$ (right) and damages $d$ (left) in \% of all task$\times$block units, and the net $\Gall=r-d$ (diamond, pp). Thick/thin: fixed-pool/new-task 95\% intervals on the \tautwo{} development panel; block-$t$/crossed 90\% on the pre-registered telecom holdout (``weighted'' is its decisional endpoint). All cells: Appendix Table~\ref{tab:r1}.} % src: analysis/fork/out/ghf_20261001T211519Z.md (§4 Case 5); analysis/fork/out/dev_all_20261001T070326Z.json; analysis/fork/out/holdout_confirm_20261002T012353Z.json; analysis/fork/out/outcome_classes_20261004T143614Z.md
+\label{fig:case}
+\label{fig:rd}
+\label{fig:fork}
+\end{figure*}

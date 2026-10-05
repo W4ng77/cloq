@@ -1,0 +1,38 @@
+\section{Measuring the Task Value of a Replacement}
+\label{sec:method}
+
+\subsection{Setting}
+\label{sec:setting}
+
+\paragraph{Tasks and agents.} We use \tautwo{} in text mode: a development panel of 58 retail and 27 airline tasks plus 80 telecom development tasks, and a holdout of 34 telecom tasks that no agent ran before its protocol was frozen. % src: manifests/fork/splits_v1.json
+The agents are Qwen3-4B-Instruct (q4) and Qwen3-8B with thinking disabled (q8); \S\ref{sec:value} adds Mistral-Small-3.2-24B. % nocheck: model name
+One greedy Qwen3-30B-A3B-Instruct user simulator serves all agents. % src: /data/ziyangs/cloq_work/sims/*.json (hf_id); docs/FINAL_EXPERIMENTS.md
+Retail and airline success is the final-database match; telecom uses the official task-basis success. BFCL multi-turn and ALFWorld, which have no user simulator, run once per item (Appendix~\ref{app:setup}).
+
+\paragraph{Quantization and serving.} Q is a simulated (fake-quantized) checkpoint served with BF16 compute on the same path as B: GPTQ \citep{frantar2023gptq} and AWQ \citep{lin2024awq} at W4 and a KV8 cache in the main cells; GPTQ-W3, RTN-W3 and a rotated KV4 cache as boundary (stress) cells. B and Q run on vLLM \citep{kwon2023vllm} with batch-invariant kernels \citep{he2025defeating} and deterministic compilation in separate server processes, so no prefix cache is shared. A \emph{block} is one closed-loop run of Q over the task pool under one prompt nonce (a random session-identifier line in the system prompt); blocks are the replicate unit.
+
+\subsection{Four branches on one state}
+\label{sec:estimands}
+
+\paragraph{Frozen state.} Before Q's decision $t$ we restore the state $s_t$: the full message history; the environment and user-device databases, rebuilt by strict replay of every recorded tool call; the user simulator's visible conversation; and the used step and error budget. B and Q generate their actions from identical prompt token ids, and the state is written to disk before any branch runs.
+
+\paragraph{Crossed intervention.} $\YY{XY}\in\{0,1\}$ is task success when the action at $s_t$ comes from X and model Y executes the rest of the episode, X, Y $\in\{\mathrm{B},\mathrm{Q}\}$ (Figure~\ref{fig:case}a). The action is executed by the real environment or answered by the real simulator, and all four branches start with the same remaining budget. Each upgrade option is a paired contrast with QQ: % nocheck: notation {0,1}
+\begin{align*}
+G &= \YY{BQ}-\YY{QQ} && \text{(this step only)},\\
+H &= \YY{QB}-\YY{QQ} && \text{(from the next step)},\\
+F &= \YY{BB}-\YY{QQ} && \text{(both)}.
+\end{align*}
+The paired effect of the action swap under each continuation is $\DQ=\YY{BQ}-\YY{QQ}$ ($=G$) and $\DB=\YY{BB}-\YY{QB}$; their difference $I=\DQ-\DB$ is the action--continuation interaction. $\DQ$ and $\DB$ take values in $\{-1,0,+1\}$, so $I\in\{-2,\dots,+2\}$. When $\DQ\neq\DB$ (``off-diagonal''), the swap's value depends on the continuation; a \emph{strict reversal} is $\DQ=-\DB\neq0$. For the action swap, a \emph{rescue} is $(\YY{BQ},\YY{QQ})=(1,0)$ and a \emph{damage} is $(0,1)$; with rates $r$ and $d$, the turnover is $M=r+d$ and the net gain $r-d$. All contrasts measure effects on task success, not which action is correct. % nocheck: notation {-1,0,+1}, (1,0), (0,1)
+
+\paragraph{Same-precision alternative.} A large $M$ or a frequent interaction could mean that this decision needs higher precision, or only that it is sensitive to any change of model. To tell these apart, we rerun the design with Q$'$, a second GPTQ-W4 checkpoint of the same model calibrated on a different sample, in place of B: the same Q episodes, tasks and nonce blocks, and a protocol frozen before any outcome (q4 and q8 GPTQ-W4; GPTQ-W3 as a stress check). Turnover $M'$, rescues $r'$, damages $d'$ and the off-diagonal share are defined as above with Q$'$ for B.
+
+\subsection{Making the counterfactuals auditable}
+\label{sec:replay}
+
+\paragraph{Replay acceptance.} A causal reading requires exact replay. Before any development outcome was analysed, an engineering gate on real divergence states passed every check: Q$\rightarrow$Q no-ops matched in 20/20 states and B$\rightarrow$B no-ops in 10/10, in every prompt-token hash, message, database hash, termination, reward and budget counter. % src: docs/insights/FORK_PROTOCOL.md §8 (analysis/fork/gate/)
+In production, every fork task re-ran the QQ no-op on an outcome-independent 10\% hash sample of its states, and one mismatch would have quarantined the task's whole output; all 924 sampled development states passed, as did all sampled states of the other banks and of the same-precision run (Appendix~\ref{app:setup}). % src: docs/insights/FORK_PROTOCOL.md §9 (QQ no-op on a 10% hash sample; stop rule); analysis/fork/out/dev_all_20261001T070326Z.md
+Exactness is a tested property of this serving stack, not a general one \citep{yuan2025nondeterminism}: greedy decoding on vLLM 0.29.0 with batch-invariant kernels and deterministic compilation, and simulated checkpoints on dense BF16 kernels; untested conditions and the determinism tests are in Appendix~\ref{app:setup}. % src: analysis/status/gpu_fill_20261003/rerun_premise_det.json; docs/RESEARCH_LOG.md (W100w determinism-premise table); analysis/fork/commonstate_replay_check/REPLAY_8of9.md (TL;DR; serving context)
+
+\paragraph{Which states.} \emph{Bank P}: for each task, block and cell, the first decision at which $a_{\mathrm{B}}$ and $a_{\mathrm{Q}}$ differ in kind (tool call, text, stop), tool name, call count or order, or normalised arguments; differences in text only are skipped. \emph{Bank U}: one ordinary decision per task, drawn by a hash fixed before generation, in three nonce blocks (U2B: up to six in \S\ref{sec:sameprec}, \S\ref{sec:value} and \S\ref{sec:r4}), from Q's own trajectories (U1) or from trajectories shared by all cells of a model (U2B: BF16; U2Q: Q). % src: docs/insights/FORK_PROTOCOL.md §15 amendment 1
+
+\paragraph{Denominators and inference.} We never mix three denominators. (1)~\emph{Full pool}: every task$\times$block unit, units without a Bank P state counting as zero; $r$, $d$, $M$ and $\Gall=r-d$ use it. (2)~\emph{Divergent states}: the Bank P states of a cell; $G$, $H$, $F$ and the off-diagonal share use it. (3)~\emph{Bank U}: one state per task. Within a cell all branches share each state and all tasks of a block share its nonce, so within-cell contrasts are paired and identified; cross-cell comparisons are descriptive, because each cell selects its own divergences. The primary interval treats the task pool as fixed (block bootstrap with at least 10 complete blocks, else $t$ over block means); a crossed task$\times$block bootstrap is the interval for new tasks. Only complete blocks enter. % nocheck: list labels (1)-(3)
