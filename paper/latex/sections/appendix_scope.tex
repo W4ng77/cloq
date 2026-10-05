@@ -161,3 +161,8 @@ SpinQuant-W4A4 & $E_{Q,4}{=}1$ & $-1.8$ {[-6.2, +2.7; -5.5, +1.6]} & $+4.2$ {[+1
 }
 \label{tab:takeover}
 \end{table*}
+
+\subsection{Key-order control}
+\label{app:keyorder}
+\paragraph{Design.} Protocol \texttt{KEYORDER\_PERTURB\_PROTOCOL.md} (ko-v1, exploratory control). Eligible states are first tool-structure divergences of q8 GPTQ-W4 (Bank P) where Q's action is a tool call with at least two top-level argument keys, reversing them leaves the parsed call and the environment effects unchanged, and the next prompt tokens differ (300 of 1473 divergent states, 41 tasks). The arm KQ forces the reversed action and lets Q continue; QQ and BQ are reused from Bank P. Eligibility was fixed without outcomes; the analysis code (sha256-recorded) was frozen before any KQ outcome was read. All four tasks passed acceptance (KQ checks 300/300, shadow 300/300, QQ no-op 35/35, no errors or context overflows). Two tasks were restarted with resume during the run (Amendment 2026-10-05g). % src: docs/insights/KEYORDER_PERTURB_PROTOCOL.md; analysis/fork/keyorder/eligibility_v1.md; analysis/fork/out/keyorder_20261005T204349Z.md; derived: 300=72+80+73+75; 35=7+9+11+8
+\paragraph{Results.} Conditional on eligible states (pooled ratio; intervals are the wider of block and crossed bootstrap), K changes 6.7\% [0.8, 14.4] of outcomes and B 9.0\% [2.9, 18.2]; K has 10 rescues and 10 damages, B 10 and 17, and the flips coincide on 5 rescues and 7 damages. Over the full 1700-unit pool, K contributes 1.2\pp{} [0.1, 2.8] of turnover against 17.9\pp{} for the BF16 swap on all divergent states. % src: analysis/fork/out/keyorder_20261005T204349Z.md (table; joint flips); derived: 10=5+5; 17=7+10
