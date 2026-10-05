@@ -1,0 +1,24 @@
+\section{How Long and Where Do the Consequences Hold?}
+\label{sec:scope}
+\label{sec:duration}
+
+% PLACEHOLDER takeover (protocol docs/insights/TAKEOVER_WINDOW_PROTOCOL.md, tw-v1, exploratory; outcomes NOT read yet).
+% Design: at each of the same 255 q8 U2B states (f01-f03, scale decided once = 3 blocks), the current action comes from B or Q; BF16 executes
+% the next L complete decisions and hands back to Q, L in {0, 1, 4, inf}; cells GPTQ-W4 d1 and SpinQuant-W4A4.
+% When filled, the curve MUST be reported with: wide intervals (3 blocks); BF16's actual decision usage and the handback rate next to the
+% curve; tasks that end inside the window cannot show that four steps suffice; states are BF16-sourced, not the states Q visits.
+% If unresolved, the curve moves to the appendix and the main text keeps one boundary sentence.
+% Do not open analysis/fork/takeover/q8_*/f0*/branches/ or any takeover_* outcome file before analyze_takeover runs.
+\paragraph{Takeover duration.} \textit{\pending{[Pending: $L\in\{0,1,4,\infty\}$ BF16 decisions, then Q; 3 blocks, wide intervals; BF16 usage, handback rate; tasks ending within $L$ cannot show $L=4$ suffices.]}} % src: docs/insights/TAKEOVER_WINDOW_PROTOCOL.md (TL;DR; §1); docs/RESEARCH_LOG.md (W100ap scale decision: 3 blocks)
+
+% PLACEHOLDER keyorder (representation change, Part 4 scope; protocol docs/insights/KEYORDER_PERTURB_PROTOCOL.md, ko-v1; outcomes NOT read yet).
+% When filled, caption/text MUST state scope: 300 verified tool-call states (airline 187, retail 113) covering 41 tasks, q8 GPTQ-W4 Bank P;
+% conclusions limited to these states; a null turnover would not exclude effects of other representation changes or of free-text changes.
+% Scope source: analysis/fork/keyorder/eligibility_v1.md; manifests/fork/keyorder_v1.json. Do not open analysis/fork/keyorder/**/branches/.
+\paragraph{Representation change.} \textit{\pending{[Pending: key-order reversal; 300 verified tool-call states, 41 tasks.]}} % src: analysis/fork/keyorder/eligibility_v1.md (TL;DR; Eligible); manifests/fork/keyorder_v1.json (n_eligible)
+
+\paragraph{Ordinary states and the user simulator.} At ordinary (Bank U) states, turnover is lower (W4 cells, U1 and U2B: 4.7--9.0\%), the net gain covers zero, and most outcome changes come from differences in text, whose labels did not reproduce under a second user simulator, so we do not report them as a property of the action (Appendix~\ref{app:ordinary}). % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§2); analysis/fork/out/simctrl_20261001T212742Z.md
+On the shared q8 U2B panel used for KL (\S\ref{sec:r4}), B's action alone is resolved in no cell, while fixed-pool intervals for B's takeover or full substitution lie above zero in several (Appendix~\ref{app:panels}). % src: analysis/fork/out/newmethod_q8_20261004T051538Z.md (τ² U2B all states: G, H, F with crossed columns)
+
+\paragraph{Other environments and a second family.} On BFCL multi-turn and ALFWorld, which have no simulated user (one run per item), the replacement turns over 5.2--24.6\% of items in both directions (post hoc; Appendix~\ref{app:extr2}). % src: analysis/fork/out/ext_20261001T135106Z.md; analysis/fork/out/ext_r2_20261002T024433Z.md (§3, §6)
+On Mistral-Small-3.2-24B, at its own ordinary BF16-sourced states (83 tasks, a dated amendment), B's action in GPTQ-W4 rescues (fixed-pool 95\%) $r=4.6$ [2.4, 6.8] and damages $d=5.4$ [2.4, 8.5]\pp{} ($M=10.0$ [7.0, 13.1]; RTN-W4 $M=10.4$), and no mode's net value is resolved ($G=-0.8$ [$-5.2$, $+3.6$], $H=+1.4$, $F=+0.0$; Appendix~\ref{app:mistral}). Stress cells are kept separate from W4 (Appendix~\ref{app:coverage}). % src: analysis/fork/out/newmethod_m24_20261004T024453Z.md; analysis/fork/out/newmethod_m24_20261004T024453Z.json (tau2.cells.*.all_states_pp; tau2.contrasts.M1); analysis/fork/out/m24_acceptance_review_A.md; docs/insights/NEWMETHOD_PANEL_PROTOCOL.md (A3, A6, A6.E1)
