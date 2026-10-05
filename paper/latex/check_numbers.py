@@ -41,7 +41,6 @@ REQUIRED_SOURCES = [
     "analysis/fork/out/token_mech_20261001T185031Z.md",     # R4 token analysis
     "analysis/fork/out/ext_20261001T135106Z.md",            # R3 BFCL / ALFWorld
     "analysis/recovery/inject_q4/summary_v2.md",            # App. injection
-    "analysis/annotation/wp5/table4_v2.md",                 # App. Table 4 v2
     "docs/insights/PREREG_FORK_CONFIRM.md",                 # holdout prereg
     "analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md",  # end-to-end comparison
 ]
@@ -213,3 +212,4 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+

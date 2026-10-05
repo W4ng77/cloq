@@ -1,0 +1,76 @@
+\section{Evaluation Contract and Scope}
+\label{app:setup}
+
+\paragraph{Splits.} The development split has 58 retail, 27 airline and 80 telecom tasks. The holdout has 34 telecom tasks, and its pre-registration hash is recorded in the split file. % src: manifests/fork/splits_v1.json
+The telecom split was fixed from \tautwo{}'s 114-task base split by a stratified, salted hash before any run. % src: manifests/telecom/dev_v1.json
+The external benchmarks use BFCL multi-turn (base, miss\_func, miss\_param and long\_context, 197 items each) and ALFWorld (134 out-of-distribution games). Items were selected by hash in manifests committed before any model run. % src: docs/RESEARCH_LOG.md W36-ext (manifests/bfcl/bfcl_mt_v1.json, manifests/alfworld/alfworld_text_v1.json)
+
+\paragraph{Success endpoints.} For retail and airline we use the final-database match with normal termination. This is not \tautwo{}'s official reward, which additionally scores natural-language or communicate checks. Telecom uses the official deterministic task-basis success. Context overflow and unparseable output count as failures. Infrastructure outages are missing, never failures, and a block with a missing unit leaves the primary analysis.
+
+\paragraph{Fork mechanics.} The forced action is returned by a fork agent for the one step that follows $h_t$. A tool call is executed by the real environment, and text is answered by the real simulator, which never reuses observations from the original trajectory. \tautwo{} resets step and error counters when it starts from a history. The fork restores them to the values used at $t$, so the remaining budget equals the original. Every max\_steps and too\_many\_errors episode on the checked blocks is reproduced by the recount. % src: docs/insights/FORK_PROTOCOL.md §2-§4
+\paragraph{Replay acceptance details.} In the engineering gate, one B$\rightarrow$B field, the official reward, was missing from older trajectories and was recomputed from the stored reward information before the verdict. Besides the 924 sampled development states, 328/328 sampled Bank U states passed the QQ no-op, and the Bank U gate passed a further 135/135 no-ops (a different set from the holdout's 135 QQ no-ops, all of which also passed; Appendix~\ref{app:prereg}). Serving in separate processes closes the prefix-cache channel \citep{patodiya2026same}. % src: docs/insights/FORK_PROTOCOL.md §8 (analysis/fork/gate/); analysis/fork/out/dev_all_20261001T070326Z.md; analysis/fork/bank_u/*/f0*/bank_summary.json (noop); analysis/fork/bank_u/gate/*/f01/bank_summary.json; derived: 328=18+13+15+31+14+20+16+24+19+16+17+19+25+17+16+15+18+15
+The same-precision run's acceptance counts are in Appendix~\ref{app:sameprec}.
+
+\paragraph{Determinism of the serving stack.} Closed-loop determinism pairs, the same configuration on two nodes at different times, reproduced whole episodes token for token for dense BF16 paths at tensor parallelism 1 and 2 with 1 to 16 concurrent requests (e.g.\ 257/257 and 1520/1520 episodes). Nine arms that two studies ran independently at the same states were byte-identical. We did not test exactness under KV-cache preemption, or on other models, GPUs or vLLM versions. A deployed AWQ kernel path with fp16 dequantization was not replay-exact, and no reported outcome uses it. % src: analysis/status/gpu_fill_20261003/rerun_premise_det.json; docs/RESEARCH_LOG.md (W100w determinism-premise table); analysis/fork/commonstate_replay_check/REPLAY_8of9.md (TL;DR; serving context)
+
+\paragraph{User simulator.} The served user simulator is Qwen3-30B-A3B-Instruct in every episode; a user-model label stored in the fork state files is outdated and should be ignored. % src: /data/ziyangs/cloq_work/sims/*.json (hf_id); docs/RESEARCH_LOG.md (stale user_model_id field)
+
+\subsection{Separating local value from end-to-end success}
+\label{app:e2e}
+
+The replacement gains $\Gall$, $G$, $H$ and $F$ are not end-to-end comparisons. Table~\ref{tab:e2e} gives the end-to-end comparison, computed separately on the same checkpoints, the same tasks and the same 20 nonce blocks as the forks. % src: analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md
+
+\begin{table}[h]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+% src: analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{@{}lrrcc@{}}
+\toprule
+Cell & Q / BF16 (\%) & Q$-$BF16 [95\% CI] & NI 3\pp{} & TOST $\pm$3\pp{} \\
+\midrule
+q4 GPTQ-W4 & 40.0 / 35.8 & $+4.2$ [$-2.4$, $+10.5$] & pass & fail \\
+q4 AWQ-W4  & 36.8 / 35.8 & $+0.9$ [$-5.8$, $+7.5$] & fail & fail \\
+q8 GPTQ-W4 & 30.1 / 30.4 & $-0.2$ [$-7.7$, $+6.8$] & fail & fail \\
+q8 AWQ-W4  & 31.5 / 30.4 & $+1.2$ [$-5.3$, $+7.6$] & fail & fail \\
+pool, all four & & $+1.5$ [$-2.7$, $+5.6$] & pass & fail \\
+\bottomrule
+\end{tabular}
+\caption{End-to-end closed-loop success, quantized minus BF16 (pp). Units are paired on nonce, and the crossed task$\times$block bootstrap is drawn jointly across cells. Non-inferiority (NI) at a 3\pp{} margin passes for q4 GPTQ-W4 and the all-four pool. Equivalence (TOST at $\pm$3\pp{}) passes nowhere. These comparisons therefore support neither a difference nor equivalence.}
+\label{tab:e2e}
+\end{table}
+
+
+\subsection{Coverage Matrix}
+\label{app:coverage}
+
+Table~\ref{tab:coverage} lists the completed crossed-intervention coverage behind every Qwen3 Bank P and Bank U result; the coverage of the U2B panels (\S\ref{sec:value}, \S\ref{sec:r4}) is in Appendix~\ref{app:panels}. It counts tasks, states and complete blocks after the strict admission rule. Four of the five stress cells turn over 18.4--20.4\% of units with three blocks; we keep them separate from W4, and no W2 crossed-intervention panel is reported. % src: analysis/fork/out/dev_all_20261001T070326Z.md
+
+\begin{table*}[t]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+% src: analysis/fork/out/ghf_20261001T211519Z.md (§5 Coverage matrix, quantization configs)
+\resizebox{\textwidth}{!}{\begin{tabular}{@{}llllll@{}}
+\toprule
+Cell & \tautwo{} retail (Bank P) & \tautwo{} airline (Bank P) & telecom dev (Bank P) & Bank U (retail / airline) & BFCL / ALFWorld \\
+\midrule
+q4 GPTQ-W4 & 58 t $\cdot$ 727 st $\cdot$ 20/20 b & 27 t $\cdot$ 375 st $\cdot$ 20/20 b & holdout only & 3 b $\cdot$ 393 / 177 rows & 788 items $\cdot$ 573 st / -- \\
+q4 AWQ-W4  & 58 t $\cdot$ 986 st $\cdot$ 20/20 b & 27 t $\cdot$ 453 st $\cdot$ 20/20 b & -- & 3 b $\cdot$ 393 / 177 rows & 788 items $\cdot$ 642 st / -- \\
+q4 KV8     & 58 t $\cdot$ 412 st $\cdot$ 22/22 b & 27 t $\cdot$ 181 st $\cdot$ 22/22 b & -- & 3 b $\cdot$ 393 / 177 rows & -- / -- \\
+q8 GPTQ-W4 & 58 t $\cdot$ 1017 st $\cdot$ 20/20 b & 27 t $\cdot$ 456 st $\cdot$ 20/20 b & 80 t $\cdot$ 477 st $\cdot$ 6/6 b; holdout & 3 b $\cdot$ 393 / 177 rows & 788 $\cdot$ 533 st / 134 $\cdot$ 115 st \\
+q8 AWQ-W4  & 58 t $\cdot$ 1087 st $\cdot$ 20/20 b & 27 t $\cdot$ 475 st $\cdot$ 20/20 b & 80 t $\cdot$ 480 st $\cdot$ 6/6 b; holdout & 3 b $\cdot$ 393 / 177 rows & 788 $\cdot$ 548 st / 134 $\cdot$ 119 st \\
+q8 KV8     & 58 t $\cdot$ 585 st $\cdot$ 22/22 b & 27 t $\cdot$ 270 st $\cdot$ 22/22 b & -- & 3 b $\cdot$ 393 / 177 rows & -- / -- \\ % src: analysis/fork/out/ghf_20261001T211519Z.md (§5); analysis/fork/bank_u/q8_kvq_int8/f03/bank_summary.json; analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§1)
+\midrule
+q4 GPTQ-W3 & 58 t $\cdot$ 162 st $\cdot$ 3/3 b & 27 t $\cdot$ 70 st $\cdot$ 3/3 b & -- & -- & 591 $\cdot$ 540 st$^\dagger$ / -- \\ % src: analysis/fork/out/ghf_20261001T211519Z.md (§5); analysis/fork/out/ext_r2_20261002T024433Z.md (§1 inclusion counts)
+q4 KV4-rot & 58 t $\cdot$ 164 st $\cdot$ 3/3 b & 27 t $\cdot$ 69 st $\cdot$ 3/3 b & -- & -- & -- / -- \\
+q8 GPTQ-W3 & 58 t $\cdot$ 166 st $\cdot$ 3/3 b & 27 t $\cdot$ 76 st $\cdot$ 3/3 b & -- & -- & 788 $\cdot$ 696 st / 134 $\cdot$ 130 st \\
+q8 KV4-rot & 58 t $\cdot$ 165 st $\cdot$ 3/3 b & 27 t $\cdot$ 74 st $\cdot$ 3/3 b & -- & -- & -- / -- \\
+q8 RTN-W3  & 58 t $\cdot$ 174 st $\cdot$ 3/3 b & 27 t $\cdot$ 81 st $\cdot$ 3/3 b & -- & -- & -- / -- \\
+q4 / q8 KV4 (unrotated) & -- & -- & -- & -- & 788 $\cdot$ 787 / 788 $\cdot$ 788 st; q8 ALFWorld 134 $\cdot$ 134 st \\
+\midrule
+q14 GPTQ-W4 & -- & -- & -- & -- & 788 $\cdot$ 471 st / -- % src: analysis/fork/out/ext_q14_20261002T085647Z.md
+ \\
+\bottomrule
+\end{tabular}}
+\caption{Completed crossed-intervention coverage (t = tasks, st = states, b = complete/found blocks; BFCL and ALFWorld: items $\cdot$ states, one run). Bank U: blocks completed and state rows per domain; blocks f01--f03 are analysed (Appendix~\ref{app:banku}). ``holdout'': the cell is in the telecom holdout (Appendix~\ref{app:prereg}). Qwen3-32B has end-to-end runs only; Llama-3.1-8B stopped at its fork gate (Limitations); the q14 (Qwen3-14B) BFCL row is a within-family scale check. q4 RTN-W3 has no complete Bank P block and is omitted. The telecom development results (Appendix~\ref{app:holdoutdev}) use the 6 blocks listed. $^\dagger$The BFCL base category of q4 GPTQ-W3 was dropped by the QQ no-op rule (Appendix~\ref{app:extr2}). The end-to-end q4 AWQ-W3 run is incomplete (two airline episodes hit 600\,s serving timeouts), and so are the q4 RTN-W2 stress runs (context-window overflows of the degenerate model and a truncated result file); neither is reported. % src: analysis/fork/ext_l8_gate/GATE.md; /data/ziyangs/cloq_work/queue/deferred/a6k2_w2p_q4_rtn_w2_q3.json; /data/ziyangs/cloq_work/queue/deferred/a6k2_q4_awq_w3_qx.json; runs/a6k2_q4_awq_w3_q5/airline/infra_causes.json
+}
+\label{tab:coverage}
+\end{table*}
