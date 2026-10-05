@@ -10,6 +10,24 @@ Newest first.
 
 ---
 
+## W100au - Key-order ko-v1 read with frozen analysis: a meaning-preserving key reversal turns over 6.7% of 300 verified states, not distinguished from BF16's 9.0% (2026-10-05 13:55 PDT)
+
+TL;DR All four panel tasks passed acceptance (KQ 300/300, shadow 300/300, QQ no-op 35/35, 0 errors, 0 overflows) before outcomes were read. The frozen `analyze_keyorder.py` (sha 9b987e68) ran once.
+
+Conditional on the 300 eligible states (pooled ratio, wider of block/crossed):
+
+| Swap | M | Rescue | Damage |
+|---|---|---|---|
+| K (key reversal) | 6.7% [0.8, 14.4] | 3.3 | 3.3 |
+| B (BF16 action) | 9.0% [2.9, 18.2] | 3.3 | 5.7 |
+
+- M_K - M_B = -2.3 [-8.4, +2.9]: not distinguished; no equivalence claimed.
+- Reading: some outcome changes arise without any change to the tool operation.
+- Scope: these states only (41 tasks; airline 187, retail 113).
+- Paper: §7 paragraph, intro bullet, and app:keyorder.
+
+Evidence: analysis/fork/out/keyorder_20261005T204349Z.{md,json}; analysis/fork/keyorder/q8_gptq_w4_d1/g*/keyorder_summary.json.
+
 ## W100at - Label transfer, trigger under G/H/F, common-state BF16 vs Q' decomposition (EXPLORATORY, POST HOC; GPT 10-05); paper C1/C2 fixes (2026-10-05 12:10 PDT)
 
 TL;DR
