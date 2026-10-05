@@ -1,15 +1,14 @@
-# A6000 queue snapshot (2026-10-04 16:53:12 PDT)
+# A6000 queue snapshot (2026-10-04 17:23:15 PDT)
 
-## running (6)
+## running (5)
 
 - `a6k2_q4_gauss3_s1_redo`
 - `a6k2_q4_gauss3_s2_redo`
 - `a6k2_q4_kvq_int3`
 - `a6k2_q4_kvq_int4`
-- `pert_q4_rtn_w3_resid_a2_q345`
 - `pert_q8_rtn_w3_resid_a2_q345`
 
-## failed (20)
+## failed (21)
 
 - `a6k2_q14_gauss3_s1` · RuntimeError('run a6k2_q14_gauss3_s1/airline: 2 infrastructure_error episodes (outage)')
 - `a6k2_q14_gauss3_s2` · RuntimeError('run a6k2_q14_gauss3_s2/airline: 3 infrastructure_error episodes (outage)')
@@ -28,6 +27,7 @@
 - `ext_l8_gptq_w4_d1_bfcl_smoke_l8g_sc` · RuntimeError("checkpoint build failed ({'kind': 'gptq', 'wbits': 4, 'calib': 'manifests/a6k2/l8/calib_fp_traj_c1.json'}) rc=1")
 - `kivi_gate_q8` · RuntimeError('cmd failed rc=-9')
 - `pert_q4_gptq_w3_resid_a2_q345` · RuntimeError('run a6k2_pert_q4_gptq_w3_resid_a2_q3/airline: 1 infrastructure_error episodes (outage)')
+- `pert_q4_rtn_w3_resid_a2_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_resid_a2_q3/retail: 33 infrastructure_error episodes (outage)')
 - `pert_q4_rtn_w3_restore_rand_attn_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_attn_s3_q3/airline: 1 infrastructure_error episodes (outage)')
 - `pert_q4_rtn_w3_restore_rand_mlp_s3_q345` · RuntimeError('run a6k2_pert_q4_rtn_w3_restore_rand_mlp_s3_q3/retail: 1 infrastructure_error episodes (outage)')
 - `pert_q8_gptq_w3_resid_a2_q345` · RuntimeError('run a6k2_pert_q8_gptq_w3_resid_a2_q4/airline: 9 infrastructure_error episodes (outage)')
