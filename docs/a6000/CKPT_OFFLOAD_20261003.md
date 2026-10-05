@@ -151,3 +151,14 @@ Records: `/home/ziyangs/cloq_offload_20261003/{offload_p_*.json, offload_cq_*.js
 - The user asked to clear pranalabs-ai and deleted both repos (llama3-8b-main-v1, qronos-llama31-8b-ppl-v1) in the web UI. The 7 layer checkpoints are lost.
 - Their certificates (`weights.json` with layer SHA-256), results and evaluations remain in `W4ng1204/ckpt-sotaquant-llama3-8b-main-v1`. The file list with sizes and hashes is `/home/ziyangs/cloq_offload_20261003/lost_llama3_org_only_20261004.json`.
 - The README was updated ("not available"; commit df132aeb). `migrate_changxwlab.py` was stopped. The ChangXWLab part-2 repo was never created.
+
+## Update 2026-10-04 23:40: CLOQ reproduction checkpoints to ChangXWLab
+
+- New private repo `ChangXWLab/cloq-ckpt-cache` (40.9 GB, 177 files incl. README). offload.py verified 173 + 2 files (size and SHA-256).
+- Contents:
+  - `base/`: the three content-addressed W3 bases, q8 GPTQ-W3, q8 RTN-W3 and q4 RTN-W3.
+  - `registry/`: 132 derived-build records with expected tensor content hashes.
+  - `registry.log`.
+  - `spinquant_q8_a4_s0/`: the learned SpinQuant W4A4 rotation.
+- The main-text W4/KV checkpoints are not stored. They are rebuilt per task, and each rebuild is checked against the checkpoint sha and serving canary in `servers.json`. The README says so.
+- Local copies are kept (the takeover panel is running). ChangXWLab now holds about 85 GB of its roughly 100 GB private cap.
