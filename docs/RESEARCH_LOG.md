@@ -10,6 +10,27 @@ Newest first.
 
 ---
 
+## W100ar - Takeover window tw-v1 read with frozen analysis: SpinQuant-W4A4 continuation value needs a sustained takeover; GPTQ-W4 unresolved (2026-10-05 09:30 PDT)
+
+TL;DR All 6 panel tasks passed acceptance before any outcome was read: 0 errors, 0 overflows, 256/256 endpoint re-runs reproduced, nothing quarantined. The frozen `analyze_takeover.py` (Amendment 4 shas) was run once.
+
+Results are on 255 q8 BF16-sourced states. Each interval is given as block-t over 3 blocks / crossed. A result counts as resolved only if both intervals exclude 0.
+
+**SpinQuant-W4A4**
+- V_Q1 = 0.0, [-2.9,+2.9] / [-3.5,+3.5]: a one-decision window is worth nothing.
+- V_Q4 = +6.3, [+0.2,+12.4] / [0.0,+12.2]: borderline.
+- V_Qinf = +11.8, crossed [+5.1,+18.4].
+- R_Q4 = -5.5, crossed [-10.6,-0.8]: resolved; four decisions fall short of sustained takeover.
+- On the E_Q4 = 1 subset, the four-decision gain is +4.2: t [+1.2,+7.2] resolved, crossed [-3.0,+11.6] not.
+- Four-decision windows handed back control at 66% of states (169/255).
+
+**GPTQ-W4**
+- Nothing is resolved; V_Qinf = +0.8.
+
+The Delta_L contrasts between action sources are unresolved in both cells. The paper adds a short paragraph in §7 and the appendix gains `app:takeover` / `tab:takeover`.
+
+Evidence: analysis/fork/out/takeover_20261005T1604Z.{md,json}; paper/latex/sections/results_r4.tex; paper/latex/sections/appendix_scope.tex.
+
 ## W100aq - Pre-outcome analysis scripts frozen for takeover-window and key-order; overflow audit fix; GPT 10-05 review items (2026-10-05 08:20 PDT)
 
 TL;DR Both analysis scripts are written, adversarially reviewed and selftested on synthetic data only, and their sha256 values are recorded in dated protocol amendments. No takeover-window or key-order outcome had been read when they were frozen. The GPT 10-05 pre-outcome requirements are in place:
