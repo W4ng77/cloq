@@ -264,3 +264,49 @@ Per state s and cell c, Y_{x,L} ∈ {0, 1} is retail/airline DB success with a n
 - **Amendments.** Any change is appended to this file as a dated amendment, with the reason and whether any window outcome had been read. Earlier text is never edited.
 - **Labelling.** A change made after reading outcomes is labelled post hoc, and its results are reported as sensitivity only.
 - **Infrastructure failures.** Simulator outage, timeouts or a lost node may be re-run once, by a recorded rule that names the arms. This follows the A7 precedent: the same servers, recorded actions and concurrency 1, decided without reading outcomes.
+
+---
+
+## 11. Amendment 1 (2026-10-04, about 22:00 PDT): null gate, subset naming, reading rules, execution guards
+
+**TL;DR** Four revisions from GPT's review of commit `1c2a263`, appended before any formal panel task is released and before any window outcome is read. They add a true same-checkpoint null gate, rename the handback-eligible set as a reference-policy-defined subset, tighten the reading of a short-window null, and add two execution guards (NO PANEL; prefix-mismatch quarantine). Sections 1 to 10 are not edited; where this amendment conflicts with them, this amendment governs.
+
+**Outcome status at the time of writing.** No window outcome had been read. `tw_gate_q8_gptq_w4_d1` had finished with `gate_pass` true (only pass/fail read); `tw_gate_q8_spinquant_w4a4` was running. Gate tasks do not write window outcomes (§5). No panel task existed. This amendment is therefore not post hoc (§10).
+
+**Code.** `scripts/a6000/takeover_window.py` (`null_identity`, `quarantine`, overflow category, `null` spec), `scripts/a6000/make_tasks_takeover.py` (`gate --null`, `null_keys`, `plan_scale`, NO PANEL), `tests/test_takeover_window.py` (selftest extended, passed 2026-10-04). The sha256 of each file is recorded by the commit that adds this amendment. The changes leave the running SpinQuant gate unaffected (its process loaded the earlier code) and change no behaviour of a non-null gate spec except the overflow handling below. The two files over the 200-line cap (takeover_window.py, make_tasks_takeover.py) are split only after the panel ends.
+
+### 11.1 Same-checkpoint null gate (new gate criterion 10)
+
+§5.1 "Same checkpoint" checks that the window tasks use the same servers as the endpoint tasks; B and Q there are still different checkpoints, so it is not a null intervention. The null gate is:
+- **Task** `tw_gate_null_bf16` (`make_tasks_takeover.py gate --null`), fork mode `takeover_window` with `null: true`. Both roles are BF16 (Q role = B role, one build); the driver points **both** controllers at B's server (`bases["Q"] = bases["B"]`), so one service answers every decision. The Q-role server is started by the worker but not used.
+- **States.** Two f01 states with the most BF16 decisions after t, one retail and one airline, ranked by `n_decisions - t - 1` of the manifest row (structure only, ties by sha256("tw-v1-null|state_key")): `cf71d574b6a973bc` (airline, 58 decisions after t) and `dea7c55ac4885a0c` (retail, 35).
+- **Arms.** The current action is fixed to a_B (`sources: ["B"]`). L = 0 (handback (0, B's server)), 1, 4 and inf run concurrently through the window code.
+- **Pass** (`window_summary.json` `null` and `gate_pass`): for every state, the L = 0, 1, 4 runs have a branch signature identical to L = inf (suffix sha, every prompt and completion id sha, termination, reward, db_match, official reward, final DB hash, final step and error budget; only differing key names are stored); L = 0 and L = inf also pass `noop_check` against the BF16 source episode; every window is handed back with `counter_ok` (switch_decision_idx = forced index + 1 + L, so the switch still happens and is counted); `at_switch`, `budget_ok`, `env_hash_init_ok`, `history_prefix_ok`, server identity (both roles BF16, §2 B values) and the endpoint block's B identity hold.
+- **Switch evidence and records.** In the null gate `pattern_ok` is trivially true (B and Q bases are one URL); the switch evidence is `switch_decision_idx` and `counter_ok`. The L = 0 and L = inf endpoint records are kept separately (`repro` keys `BB0`, `BBinf`), and `null.switch_counted` requires every L = 1, 4 window and every L = 0 handback to be handed back with `counter_ok` true. All 8 suffixes (2 states x L = 0, 1, 4, inf) run at once (`concurrency` 8), which is also the stronger nondeterminism test. The two longest states are the likeliest to overflow; an overflow there fails the gate for a reason other than identity and is diagnosed before any rerun.
+- **Independence and order.** It runs independently of the two configuration gates, pinned to node006 (idle GPUs, not node002 where the SpinQuant gate runs) with `user_base` set to node006's own simulator replica (same Qwen3-30B-A3B-Instruct-2507 snapshot 0d7cf239 and max_model_len 65536 as node005; not node005, so the gates' throughput measurement is untouched). `decide` refuses to run until `tw_gate_null_bf16` is done with `gate_pass` true: the scale decision waits for it.
+
+### 11.2 All-state primary; the eligible set is a reference-policy-defined subset
+
+- **Primary.** All-state estimates are primary for every V, R and Δ.
+- **Naming.** E_{x,L} (§7) is read from the L = inf endpoint, i.e. from the continuous BF16 trajectory after a_x. It is fixed before the window runs, but it is a property of that reference continuation, not a pre-intervention task property. §7's phrase "not post-treatment" is withdrawn; results on E = 1 are reported as "the subset defined by the reference policy (continuous BF16) generating more than L decisions".
+- **Fixed composition for the duration curve.** The Q-action curve Y_{Q,L}, V_{Q,L}, R_{Q,L} over L ∈ {0, 1, 4, ∞} uses E_{Q,4} = 1 for **all four** L (one state set), alongside the all-state curve. Action-source comparisons (Δ_L) use the intersection E_{B,L} = 1 and E_{Q,L} = 1; the Δ curve across L uses E_{B,4} = E_{Q,4} = 1 at every L.
+- **§9 answer 1 and §7.** Answer 1 (a short-takeover gain that survives handback) is still decided on E_{Q,4} = 1, now read as a conditional result on the reference-policy-defined subset and always shown next to the all-state V_{Q,4}; §7's rule that all-state V_{Q,4} > 0 alone does not support answer 1 is kept.
+- **Overflow at handback.** A state whose first Q request after the window raises a context overflow is a valid failure (Y = 0, §4) and stays in every estimate, all-state and E = 1. It is reported per cell, x and L as its own category, **"attempted handback, generation failed"** (`overflow` = `attempted_handback_generation_failed`; summary `overflow`), next to the handed-back share and the ended-inside-window share. It is never filtered out. The handback-share buckets are made disjoint by taking `overflow` first: a suffix with `overflow` = `attempted_handback_generation_failed` is counted only there, never also as ended inside the window or in `n_E_handback_mismatch`.
+- **Code fix.** For a context-overflow record, `budget_ok` is not checkable (no recount) and is recorded as None rather than False, and `prefix_check` does not flag the missing suffix sha as a mismatch; `counter_ok` already accepts switch recorded with n_cont = L. An overflow at a B request inside the window that the reference does not show is still a prefix mismatch (`overflow_in_window_not_in_reference`).
+
+### 11.3 Reading rules (supersede §9 answer 2 where they conflict)
+
+- If the L = 4 net gain V_{Q,4} has an interval crossing 0 and V_{Q,∞} − V_{Q,4} (equivalently −R_{Q,4}) has an interval excluding 0, the only permitted wording is: **"continuous takeover beats four-step takeover; the four-step net gain is unresolved."** It is never written as "short takeover is ineffective" or "only sustained takeover helps".
+- If R_{Q,4} has an interval crossing 0, it is never written as "four steps suffice" (§9 rule kept).
+- These rules apply to both the all-state and the E_{Q,4} = 1 readings, and to L = 1 in the same way.
+
+### 11.4 Execution guards
+
+- **NO PANEL.** `decide` chooses 6 blocks if they fit (§6), else 3 if they fit, else **NO PANEL**: `blocks` is empty, `no_panel` is true, and `panel` queues nothing. Free GPUs are never converted into a completion time (§6).
+- **Prefix-mismatch quarantine** (supersedes §8 "the primary keeps those suffixes"). In the panel, a window suffix whose prefix check fails before the switch carries `quarantine` with the first mismatching item and a diagnosis (`state_rebuild`, `bf16_generation_nondeterminism`, `observation_or_simulator`, `reprefill_at_switch`, or the raw item). Its Y_{x,L} is excluded from the main analysis for Δ_L, V_{x,L} and R_{x,L}, and the state leaves the source-x duration curve at every L (fixed composition). Quarantined suffixes are counted per cell, x and L, diagnosed, and shown in a sensitivity table only; they never enter as a clean duration result. In a gate a prefix mismatch fails the gate (§5.3, unchanged).
+
+### 11.5 Paper target and labels
+
+- **Figure.** One takeover-duration vs net-gain curve per cell (L = 0, 1, 4, ∞; V_{Q,L} with block-t intervals, all-state and E_{Q,4} = 1), annotated at each L with the realized handback share (handed back / attempted handback, generation failed / ended inside window) and the rescue and damage counts whose difference is the net gain.
+- **Readings it can support** (each subject to 11.3): a short-takeover gain that survives handback to Q; sustained takeover gaining more than short takeover; longer takeover both rescuing and damaging tasks, with cancellation.
+- **Labels.** Exploratory follow-up, both configurations chosen after seeing results (§1). Deadline unchanged: 2026-10-05 21:00 PDT (Toronto 2026-10-06 00:00). Frozen readings (SAMEPREC, COMMONSTATE, NEWMETHOD, holdout) unchanged.
