@@ -602,6 +602,9 @@ def run_branch(st: dict, first: str, controller: str, bases: dict[str, str], use
         recs = _W.pop(tag)
         ucalls = _pop_user_calls(tag, user_llm)
         if "ContextWindowExceeded" in repr(e):
+            n_h = st["n_history"]
+            pm = [msg_to_dict(m) for m in orch.trajectory] if getattr(orch, "trajectory", None) is not None else None
+            pok = [canon_msg(m) for m in pm[:n_h]] == [canon_msg(m) for m in st["history"]] if pm is not None else None
             # W10 / W70: a conversation that outgrows the simulator or agent window is the agent's own failure (it loops or
             # rambles), not an outage. It is a valid failure outcome of the frozen policy: Y = 0 under every evaluator.
             return {"tag": tag, "state_id": st["state_id"], "branch": first + controller, "first": first, "controller": controller,
@@ -612,9 +615,15 @@ def run_branch(st: dict, first: str, controller: str, bases: dict[str, str], use
                     "counters_tau2_default": probe.get("counters_tau2"), "to_role_at_init": probe.get("to_role"), "env_hash_final": None,
                     "suffix": None, "suffix_sha": None, "n_messages": None, "duration": time.time() - t0, "sim_seed": st["simulator"]["sim_seed"],
                     "n_user_msgs": None, "error_text": repr(e)[:300], **ucalls, **win(),
+                    # audit fields (2026-10-05): the decisions and messages executed before the overflow, so acceptance can
+                    # still verify the forced action, its tool results and the restored prefix; Y = 0 is unchanged
+                    "partial_suffix": pm[n_h:] if pm is not None else None, "partial_prefix_ok": pok,
+                    "env_hash_at_overflow": env_hashes(orch.environment),
                     "decisions": [{"decision_idx": r["decision_idx"], "forced": bool(r.get("forced")),
                                    "prompt_ids_sha": ids_sha(r.get("prompt_token_ids")), "n_prompt_tokens": r.get("n_prompt_tokens"),
-                                   "completion_ids_sha": ids_sha(r.get("completion_token_ids"))} for r in recs]}
+                                   "completion_ids_sha": ids_sha(r.get("completion_token_ids")),
+                                   "finish_reason": r.get("finish_reason"), "content": r.get("content"), "tool_calls": r.get("tool_calls"),
+                                   "parser_error": r.get("parser_error")} for r in recs]}
         return {"tag": tag, "branch": first + controller, "error": repr(e), "n_decisions": len(recs), "probe": probe, **ucalls, **win()}
     dur = time.time() - t0
     rinfo = evaluate_simulation(simulation=sim, task=task, evaluation_type=EvaluationType.ALL_IGNORE_BASIS,

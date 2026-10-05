@@ -48,11 +48,26 @@ def kq_checks(FD, st: dict, row: dict, r: dict) -> dict:
         return {"ok": False, "error": r["error"][:300]}
     suf, ds = r.get("suffix"), r.get("decisions") or []
     cont = [d for d in ds if not d["forced"]]
-    c = {"forced_first": bool(ds) and ds[0]["forced"] and not any(d["forced"] for d in ds[1:]),
-         "record_key_order": bool(ds) and [list(tc["arguments"]) for tc in ds[0].get("tool_calls") or []] == row["k_key_order"],
-         "next_prompt_predicted": bool(cont) and cont[0]["prompt_ids_sha"] == row["k_next_ids_sha"]}
-    if r.get("infra_cause") == "context_overflow":  # a valid failure outcome (W10/W70): no suffix or final env to check
-        return {"ok": all(c.values()), **c, "context_overflow": True, "duration": r.get("duration"), "n_decisions": len(ds)}
+    c = {"forced_first": bool(ds) and ds[0]["forced"] and not any(d["forced"] for d in ds[1:])}
+    if r.get("infra_cause") == "context_overflow":
+        # A valid failure outcome (W10/W70, Y = 0), never a quarantine. cloq/fork.py keeps the decisions and the messages
+        # executed before the overflow (partial_suffix, 2026-10-05d), so the forced action, its tool results and the restored
+        # prefix are verified exactly as for a completed suffix; only checks on the final env and budget have no input.
+        ps = r.get("partial_suffix")
+        tv = [(t["content"], bool(t["error"]), t["requestor"], t["id"]) for t in (ps or [])[1:1 + row["n_calls"]]]
+        c.update({"env_hash_init_ok": bool(r.get("env_hash_init_ok")), "prefix_ok": bool(r.get("partial_prefix_ok")),
+                  "record_key_order": bool(ds) and [list(tc["arguments"]) for tc in ds[0].get("tool_calls") or []] == row["k_key_order"],
+                  "trajectory_key_order": bool(ps) and KS.key_orders(ps[0]) == row["k_key_order"],
+                  "tool_messages": len(tv) == row["n_calls"] and KS.raw_sha(tv) == row["k_tool_view_sha"]})
+        if cont:
+            c["next_prompt_predicted"] = cont[0]["prompt_ids_sha"] == row["k_next_ids_sha"]
+        else:  # the Q episode sent its n_next_q-token next request without overflow (criterion d): under the deterministic server
+            # only a longer transformed prompt can overflow there; anything else is a render / server / limit fault (2026-10-05c)
+            c["overflow_consistent"] = (row.get("n_next_k") or 0) > (row.get("n_next_q") or 0)
+        return {"ok": all(c.values()), **c, "context_overflow": True, "duration": r.get("duration"), "n_decisions": len(ds),
+                "overflow_at": "continuation" if cont else "before_first_continuation", "n_next_k": row.get("n_next_k"), "n_next_q": row.get("n_next_q")}
+    c.update({"record_key_order": bool(ds) and [list(tc["arguments"]) for tc in ds[0].get("tool_calls") or []] == row["k_key_order"],
+              "next_prompt_predicted": bool(cont) and cont[0]["prompt_ids_sha"] == row["k_next_ids_sha"]})
     tv = [(t["content"], bool(t["error"]), t["requestor"], t["id"]) for t in suf[1:1 + row["n_calls"]]]
     c.update({"trajectory_key_order": bool(suf) and KS.key_orders(suf[0]) == row["k_key_order"],
               "tool_messages": KS.raw_sha(tv) == row["k_tool_view_sha"],
@@ -125,10 +140,11 @@ def run(FD, spec, bases, user_base, servers, out: Path) -> dict:
          "n_kq_ok": sum(1 for x in ok if x["KQ"]["ok"]),
          "kq_check_fail": {k: sum(1 for x in ok if x["KQ"].get(k) is False) for k in
                            ("forced_first", "trajectory_key_order", "record_key_order", "tool_messages", "next_prompt_predicted",
-                            "next_prompt_from_server", "prefix_ok", "env_hash_init_ok", "budget_ok")},
+                            "next_prompt_from_server", "prefix_ok", "env_hash_init_ok", "budget_ok", "overflow_consistent")},
          "shadow": {"n": sum(1 for x in ok if x.get("shadow")), "n_identical": sum(1 for x in ok if (x.get("shadow") or {}).get("identical")
                                                                                     and x["shadow"]["completion_ids_ok"])},
          "noop": {"n": len(nq), "n_ok": sum(1 for v in nq if v.get("ok"))},
+         "kq_context_overflow": {w: sum(1 for x in ok if x["KQ"].get("overflow_at") == w) for w in ("before_first_continuation", "continuation")},
          "throughput": {"wall_seconds": wall, "suffix_seconds_mean": sum(durs) / len(durs) if durs else None,
                         "suffixes_per_hour": (len(ok) + len(nq)) / wall * 3600 if wall > 0 else None},
          "outcome_fields_written": "none (outcomes only in branches/*.json, read by the analysis after the protocol commit)"}
