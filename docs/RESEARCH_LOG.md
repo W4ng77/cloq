@@ -10,6 +10,15 @@ Newest first.
 
 ---
 
+## W100av - Holdout full QQ no-op replay queued (all 1202 divergent states); paper restructure per GPT 10-05 ruling started (2026-10-05 17:45 PDT)
+
+**TL;DR** The holdout no-op audit covered the fixed 10% hash sample only (135/135 pass); it bounds but does not exclude a replay defect on the 1067 unsampled states, and every holdout contrast shares the original Y_QQ. Per GPT's 10-05 ruling, QQ is re-run on every state under a protocol frozen before any task ran; a persistent mismatch is handled by the prereg's own rule (§5.3c, task excluded from the cell in all blocks) and published as a dated correction. The audit script is ready and self-checked; 18 GPU tasks are queued (nodes busy at queue time). In parallel the paper main text is being rebuilt around one evidence chain (W100av rewrite workflow).
+
+- **Protocol (frozen first):** `docs/insights/HOLDOUT_QQFULL_PROTOCOL.md` (state list, preconditions: Q `ckpt_sha256` + `effective_config_sha` equal to the original fork per cell; match criterion = holdout_noop_audit's checks; mismatch handling; leak guard).
+- **Tasks:** `scripts/a6000/make_tasks_holdout_qqfull.py --write` -> 18 `qqfull_hold_<cell>_gNN` (fork mode `branches`, branches [], noop_frac 1.0; output `analysis/fork/holdout_qqfull/`; nothing under `analysis/fork/holdout/` written). Estimated ~1/3 of the original fork cost (originals 1.6-5.3 h per task).
+- **Audit:** `analysis/fork/holdout_qqfull_audit.py --split holdout` (reuses holdout_noop_audit.py unchanged; every state eligible; QQ read from holdout_qqfull). Self-check `--mirror` (QQ from the original branches) reproduces the original audit exactly: `analysis/fork/out/holdout_qqfull_audit_MIRROR_20261006T004420Z.md` (pass 135/1202, fail 0, missing 1067). The non-mirror run before any QQ-full output gives pass 0, missing 1202 (output discarded), so the original sampled QQ is not reused.
+- **Paper:** pre-rewrite main text archived in `paper/latex/sections/old/w100av/`; ruling summary used by the workflow kept with the rewrite notes.
+
 ## W100au - Key-order ko-v1 read with frozen analysis: a meaning-preserving key reversal turns over 6.7% of 300 verified states, not distinguished from BF16's 9.0% (2026-10-05 13:55 PDT)
 
 TL;DR All four panel tasks passed acceptance (KQ 300/300, shadow 300/300, QQ no-op 35/35, 0 errors, 0 overflows) before outcomes were read. The frozen `analyze_keyorder.py` (sha 9b987e68) ran once.
