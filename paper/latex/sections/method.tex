@@ -9,8 +9,8 @@ The agents are Qwen3-4B-Instruct (q4) and Qwen3-8B with thinking disabled (q8); 
 One greedy Qwen3-30B-A3B-Instruct user simulator serves all agents. % src: ../cloq_work/sims/*.json (hf_id); docs/FINAL_EXPERIMENTS.md
 Retail and airline success is the final-database match with normal termination, without all of \tautwo{}'s official communication checks; telecom uses the official task-basis success. BFCL multi-turn and ALFWorld run once per item without a user simulator (Appendix~\ref{app:setup}).
 
-\paragraph{Quantization and serving.} Q is a simulated (fake-quantized) checkpoint served with BF16 compute on the same path as B. The main configurations use GPTQ \citep{frantar2023gptq} and AWQ-style scaling \citep{lin2024awq} at W4 (group size 128), calibrated on BF16 agent trajectories of 57 retail and airline tasks disjoint from the development tasks, and an INT8 KV cache (KV8). Stress configurations (GPTQ-W3, RTN-W3, rotated KV4) and QuaRot, SpinQuant and KIVI \citep{ashkboos2024quarot,liu2025spinquant,liu2024kivi} are scope checks (Table~\ref{tab:scope}; Appendix Table~\ref{tab:qconfig}). % src: runs/a6k2_q4_gptq_w4_d1_f01/quantization.json; runs/a6k2_q8_awq_w4_f01/quantization.json; runs/a6k2_q8_kvq_int8_f01/quantization.json; manifests/a6k2/q4/calib_fp_traj_c1.json
-B and Q run on vLLM \citep{kwon2023vllm} with batch-invariant kernels \citep{he2025defeating} and deterministic compilation in separate server processes (no shared prefix cache). A \emph{block} is one closed-loop run of Q over the task pool under one prompt nonce (a random session-identifier line in the system prompt); blocks are the replicates, and a \emph{unit} is one task in one block.
+\paragraph{Quantization and serving.} Q is a simulated (fake-quantized) checkpoint served with BF16 compute on the same path as B. The main configurations use GPTQ \citep{frantar2023gptq} and AWQ-style scaling \citep{lin2024awq} at W4 (group size 128), with a BF16 KV cache, calibrated on BF16 agent trajectories of 57 retail and airline tasks disjoint from the development tasks. Separate KV8 configurations quantize the cache to INT8 while retaining BF16 weights. Stress configurations (GPTQ-W3, RTN-W3, rotated KV4) and QuaRot, SpinQuant and KIVI \citep{ashkboos2024quarot,liu2025spinquant,liu2024kivi} are scope checks (Table~\ref{tab:scope}; Appendix Table~\ref{tab:qconfig}). % src: runs/a6k2_q4_gptq_w4_d1_f01/quantization.json; runs/a6k2_q8_awq_w4_f01/quantization.json; runs/a6k2_q8_kvq_int8_f01/quantization.json; manifests/a6k2/q4/calib_fp_traj_c1.json
+B and Q run on vLLM \citep{kwon2023vllm} with batch-invariant kernels \citep{he2025defeating} and deterministic compilation in separate server processes (no shared prefix cache). A configuration pairs a model with a quantization setting. A \emph{block} is one closed-loop run of Q over the task pool under one prompt nonce (a random session-identifier line in the system prompt); blocks are the replicates, and a \emph{unit} is one task in one block.
 
 \subsection{Four branches on one state}
 \label{sec:estimands}
@@ -19,6 +19,8 @@ B and Q run on vLLM \citep{kwon2023vllm} with batch-invariant kernels \citep{he2
 
 \paragraph{Four branches.} $\YY{XY}\in\{0,1\}$ is task success when the action at $s_t$ comes from X and model Y executes the rest of the episode, X, Y $\in\{\mathrm{B},\mathrm{Q}\}$; all four branches share the remaining budget, and each upgrade option is a paired contrast with QQ: $G$ (this step only), $H$ (from the next step) and $F$ (both), defined in Figure~\ref{fig:case}. % nocheck: notation {0,1}
 A \emph{rescue} is a unit where the upgraded branch succeeds and QQ fails, a \emph{damage} the reverse; \emph{turnover} is rescues plus damages, \emph{net} rescues minus damages. An outcome is \emph{continuation dependent} when the action swap's effect differs between Q's and B's continuation. All contrasts measure effects on task success, not which action is correct (symbols: Appendix~\ref{app:names}).
+
+\paragraph{The action being replaced.} The intervention replaces a complete assistant turn, including its language and structured tool calls. The chosen message and tool results enter the subsequent history; the continuing model makes every later decision. The contrast therefore measures the task consequence of changing execution at that state, rather than an intrinsic correctness label for the action.
 
 \paragraph{Reference interventions.} A large turnover could mean that a decision needs higher precision, or only that it is sensitive to a change of model. We therefore rerun the design with Q$'$ in place of B: a second GPTQ-W4 checkpoint of the same model, calibrated on a re-drawn state and row sample of the same calibration trajectories, with the same Q episodes, tasks and nonce blocks and a protocol frozen before any outcome (q4 and q8 GPTQ-W4; GPTQ-W3 as a stress check). \S\ref{sec:sameprec} adds common states and a key-order change of Q's own action.
 
@@ -31,50 +33,26 @@ A \emph{rescue} is a unit where the upgraded branch succeeds and QQ fails, a \em
 \newcommand{\minblk}{10}% nocheck: interval rule as in archived method L39 (block bootstrap with at least 10 blocks)
 \begin{figure}[t]
 \centering
-\begin{tikzpicture}[ % nocheck: TikZ layout
-  font=\scriptsize, % nocheck: TikZ layout
-  hd/.style={font=\scriptsize\bfseries,anchor=north west,inner sep=0pt}, % nocheck: TikZ layout
-  txt/.style={anchor=north west,align=left,inner sep=0pt,text width=5.15cm}, % nocheck: TikZ layout
-  st/.style={circle,inner sep=0pt,minimum size=4pt,fill=black!25}] % nocheck: TikZ layout
-% (a) states and denominators
-\node[hd] at (0,0) {(a) Which states, which denominator}; % nocheck: TikZ layout
-\node[anchor=north west,inner sep=0pt,text=black!60] at (0,-.32) {one task$\times$block unit: Q's episode, decisions $t$}; % nocheck: TikZ layout
-\draw[-{Stealth[length=3pt]},black!45] (.1,-1.0) -- (7.55,-1.0) node[right,inner sep=1pt,text=black!60] {$t$}; % nocheck: TikZ layout
-\foreach \x in {.5,1.3,2.1,2.9,3.7,4.5,5.3,6.1,6.9} \node[st] at (\x,-1.0) {}; % nocheck: TikZ layout
-\node[circle,inner sep=0pt,minimum size=6pt,fill=palDamage,draw=white] (fd) at (2.1,-1.0) {}; % nocheck: TikZ layout
-\node[diamond,inner sep=0pt,minimum size=7pt,fill=palB,draw=white] (os) at (5.3,-1.0) {}; % nocheck: TikZ layout
-\node[anchor=south,align=center,inner sep=1pt,text=palDamage] at (2.1,-.88) {\textbf{first divergent state}}; % nocheck: TikZ layout
-\node[anchor=south,align=center,inner sep=1pt,text=palB] at (5.3,-.88) {\textbf{ordinary sampled state}}; % nocheck: TikZ layout
-\node[anchor=north,align=center,inner sep=1pt,text width=3.5cm] at (2.1,-1.13) {first decision where B's and Q's actions differ in kind, tool, call count, order or normalised arguments (not wording)}; % nocheck: TikZ layout
-\node[anchor=north,align=center,inner sep=1pt,text width=3.4cm] at (5.65,-1.13) {one per unit by a hash fixed before generation (Q's or BF16 trajectories); a \emph{common state} when several action sources act on it}; % nocheck: TikZ layout
-\node[draw=black!25,fill=gray!6,rounded corners=1.5pt,anchor=north west,align=left,text width=3.45cm,inner sep=2.5pt] at (0,-2.62) {\textbf{full pool}: rescues, damages, turnover, net per task$\times$block unit; no divergence counts 0}; % nocheck: TikZ layout
-\node[draw=black!25,fill=gray!6,rounded corners=1.5pt,anchor=north west,align=left,text width=3.45cm,inner sep=2.5pt] at (3.85,-2.62) {\textbf{divergent states}: $G$, $H$, $F$, continuation dependence, per configuration}; % nocheck: TikZ layout
-% (b) interval conventions
-\node[hd] at (0,-3.85) {(b) Interval conventions (Figs.~\ref{fig:rd}--\ref{fig:refs})}; % nocheck: TikZ layout
-\draw[black!80,line width=.6pt] (.15,-4.55) -- (1.85,-4.55); \draw[black!80,line width=1.8pt] (.5,-4.55) -- (1.5,-4.55); \fill[black!80] (1.0,-4.55) circle (1.6pt); % nocheck: TikZ layout
-\node[txt] at (1.95,-4.2) {thick: \textbf{fixed pool} 95\%, primary (block bootstrap, ${\geq}\minblk$ blocks, else $t$ over block means); thin: \textbf{new tasks} 95\% (crossed task$\times$block bootstrap)}; % nocheck: interval rule as in archived method L39
-\draw[black!80,line width=1.0pt] (.3,-5.5) -- (1.7,-5.5); \fill[black!80] (.75,-5.5) circle (1.6pt); % nocheck: TikZ layout
-\node[txt] at (1.95,-5.3) {telecom holdout: one crossed 90\% bar, the frozen reading interval}; % nocheck: interval rule (PREREG_FORK_CONFIRM)
-\draw[black!80,line width=1.8pt] (.3,-6.16) -- (1.7,-6.16); \fill[black!80] (1.0,-6.16) circle (1.6pt); \draw[black!80,line width=.6pt] (.45,-6.32) -- (1.55,-6.32); \draw[black!80,line width=.6pt] (.45,-6.27) -- (.45,-6.37) (1.55,-6.27) -- (1.55,-6.37); % nocheck: TikZ layout
-\node[txt] at (1.95,-5.98) {common states: thick two-look 97\% (the reading), thin unadjusted 95\% on its own sub-row}; % nocheck: interval rule (COMMONSTATE_SOURCES_PROTOCOL D2.2)
-\draw[black!80,line width=1.0pt] (.3,-6.85) -- (1.7,-6.85); \fill[black!80] (1.0,-6.85) circle (1.6pt); % nocheck: TikZ layout
-\node[txt] at (1.95,-6.68) {key order: one bar, wider of block / crossed 95\%}; % nocheck: interval rule (KEYORDER_PERTURB_PROTOCOL)
-\node[anchor=north west,inner sep=0pt,text width=7.4cm,align=left,text=black!70] at (0,-7.15) {\emph{Resolved}: the named interval excludes zero; \emph{not resolved}: the reported interval(s) include zero. Fig.~\ref{fig:trigger} reports exact one-sided $p$-values, no intervals.}; % nocheck: TikZ layout
-% (c) replay acceptance card
-\node[draw=palRescue,fill=palRescue!8,rounded corners=2pt,anchor=north west,align=left,text width=7.25cm,inner sep=3pt] at (0,-8.2) {\textbf{(c) Replay acceptance.} Gate, before any development outcome: no-op replays Q$\rightarrow$Q \gateQQ{} and B$\rightarrow$B \gateBB{} states identical in prompt-token hashes, messages, database hashes, termination, reward and budget counters. Production: QQ no-op on a \noopfrac{} hash sample of every fork task's states (one mismatch quarantines the task): \noopdev{} sampled development states passed.}; % nocheck: TikZ layout
+\begin{tikzpicture}[font=\footnotesize,box/.style={draw=black!25,rounded corners=2pt,align=left,inner sep=5pt,text width=6.85cm}] % nocheck: layout
+\node[box,fill=palB!6] (first) at (0,0) {\textbf{First divergent state}\\First decision where B and Q differ in action kind, tool calls or normalised arguments. Wording alone does not qualify.}; % nocheck: layout
+\node[box,fill=gray!6,below=5pt of first] (ordinary) {\textbf{Ordinary sampled state}\\One decision per task--block unit, selected by a fixed hash before generation. Sampling does not depend on disagreement or outcome.}; % nocheck: layout
+\node[box,fill=palQP!9,below=5pt of ordinary] (common) {\textbf{Common state}\\An ordinary sampled state where B, Q and Q$'$ all act on exactly the same history.}; % nocheck: layout
 \end{tikzpicture}
-\caption{Method at a glance. (a) The two state sources and the denominator each measure uses. (b) Interval conventions used in Figures~\ref{fig:rd} and~\ref{fig:refs}; Figure~\ref{fig:trigger} gives exact $p$-values. (c) Replay acceptance (Appendix~\ref{app:setup}).}
+\caption{State selection defines the question. First divergences measure the consequences of a disagreement; ordinary states measure interventions without selecting disagreements. Common states compare action sources directly.}
 \label{fig:method}
 \end{figure}
 
 \subsection{Making the counterfactuals auditable}
 \label{sec:replay}
 
-\paragraph{Replay acceptance.} Before any development outcome was analysed, exact no-op replays on real divergence states passed a gate, and in production every fork task re-ran the QQ no-op on an outcome-independent hash sample of its states; all sampled states of every state source and of the same-precision run passed (Figure~\ref{fig:method}c; Appendix~\ref{app:setup}). % src: docs/insights/FORK_PROTOCOL.md §8, §9; analysis/fork/out/dev_all_20261001T070326Z.md
+\paragraph{Replay acceptance.} Before any development outcome was analysed, exact no-op replays on real divergence states passed a gate, and in production every fork task re-ran the QQ no-op on an outcome-independent hash sample of its states; all sampled states of every state source and of the same-precision run passed (Appendix~\ref{app:setup}). Gates passed \gateQQ{} Q-to-Q and \gateBB{} B-to-B replays; production checks passed \noopdev{} development states. % src: docs/insights/FORK_PROTOCOL.md §8, §9; analysis/fork/out/dev_all_20261001T070326Z.md
 Exact replay is a tested property of this stack (greedy decoding, vLLM 0.29.0, batch-invariant kernels, deterministic compilation, dense BF16 kernels), not a general one \citep{yuan2025nondeterminism}; determinism tests and untested conditions are in Appendix~\ref{app:setup}. % src: analysis/status/gpu_fill_20261003/rerun_premise_det.json; docs/RESEARCH_LOG.md (W100w determinism-premise table); analysis/fork/commonstate_replay_check/REPLAY_8of9.md (TL;DR; serving context)
 
 \subsection{Which states}
 \label{sec:states}
 
-\paragraph{State sources.} A \emph{common state} is an ordinary sampled state at which several action sources are compared; Figure~\ref{fig:method}a gives both state sources and the denominator of each measure. % src: docs/insights/FORK_PROTOCOL.md §15 amendment 1
+\paragraph{State sources.} A \emph{common state} is an ordinary sampled state at which several action sources are compared; Figure~\ref{fig:method} distinguishes the state sources. Full-pool rates include every task--block unit, counting no divergence as zero effect; mode and pattern analyses condition on divergent states. % src: docs/insights/FORK_PROTOCOL.md §15 amendment 1
 Contrasts are paired within a configuration and descriptive across configurations, which select their own divergences; only complete blocks enter. % nocheck: interval rule as in archived method L39
+
+
+\paragraph{Intervals and interpretation.} Fixed-pool intervals describe variation across nonce blocks on the evaluated tasks; crossed task--block intervals also resample tasks and address a new-task target. We call an effect unresolved when the interval used for its reading includes zero; this does not establish equivalence. Figure captions identify the reading interval, and the appendix gives the full inference rules. Each branch measures one realised outcome under the fixed greedy execution stack, not an expectation over user simulators or perturbations.
