@@ -1,5 +1,7 @@
-\section{Independent Telecom Confirmation}
+\section{Telecom Holdout: Protocol, Readings and Replay Audit (supports \texorpdfstring{\S\ref{sec:value}}{the consequences result})}
 \label{app:prereg}
+
+This appendix supports the holdout statement of \S\ref{sec:value}: the net estimate is negative, the frozen readings classify it as inconclusive because they had no negative category, and both pre-registered secondary checks passed.
 
 The protocol was frozen before any holdout unit was run, and its hash was recorded in the split manifest. % src: manifests/fork/splits_v1.json; docs/RESEARCH_LOG.md W87
 It fixes the following design:
@@ -16,6 +18,7 @@ It fixes the following design:
 The analysis script refuses holdout data unless the hash matches. Two task-cell pairs were excluded as structural, and the complete-case analysis is identical. % src: analysis/fork/out/holdout_confirm_cc_20261002T012358Z.md
 
 \paragraph{Replay acceptance on the holdout (post hoc audit).} $\YY{QQ}$ is the one arm taken from the original episode rather than re-executed, and an exploratory count showed only-QQ successes more often than random labelling would give in two q8 holdout cells. We therefore audited the holdout's acceptance records after the analysis, with a script that outputs only consistency checks and counts. The fixed hash rule selected 135 of the 1202 divergent states for the QQ no-op; all 135 were run and passed, none was missing, failed or non-computable, and no other state was re-run. Beyond the frozen checks (suffix, prompts, termination, outcome, budget counters), the 135 also match on reward, database state, the official reward, the final environment hash against a strict replay of the original episode, and the history prefix. The original QQ and the re-run arms are scored by the same official reward rule: recomputing it from the stored reward information reproduces the stored value for every arm. The audit read the same input files as the frozen analysis, so no repair under the protocol's missing-data rules was needed, and the pre-registered result stands as reported. The audit does not explain the only-QQ pattern; a real upgrade that damages the original policy would also produce it. Re-including the two structurally excluded task--cell pairs in all twelve blocks (post hoc sensitivity, frozen estimator) with every unit set to $-1$ or $+1$ gives point estimates of $\Gall$ from $-6.68$ [$-10.35$, $-3.01$] to $-2.27$ [$-5.96$, $+1.43$]\pp{} (crossed 90\%). This is a range of point estimates: the interval of the most optimistic scenario includes zero. With their observed units kept in the eleven blocks where they exist and only the two missing units set to $-1$ or $+1$, the estimates are $-4.72$ to $-4.35$\pp{}, each with a crossed 90\% interval below zero. The frozen reading is inconclusive in all 36 combinations. % src: analysis/fork/out/holdout_structural_worstcase_20261005T031411Z.md % src: analysis/fork/out/holdout_noop_audit_20261004T152207Z.md
+% PLACEHOLDER qqfull
 Table~\ref{tab:holdout} gives the confirmatory result. Table~\ref{tab:strata} gives all six stratum families (Holm within family), which are descriptive. Every level estimate is $\le 0$, and the Holm-significant levels are negative: step-budget T2 and T3, mobile-data issues ($-9.09$\pp{}) and the fewest-faults tercile ($-6.37$\pp{}). % src: analysis/fork/out/holdout_confirm_20261002T012353Z.md (Strata)
 \begin{table}[h]
 \centering\scriptsize\setlength{\tabcolsep}{2.5pt}
@@ -31,7 +34,7 @@ q8 AWQ-style W4 (1/4) & 396 & 1 & $-6.57$ [$-11.98$, $-1.15$] & $+6.31$ & $+12.8
 Weighted ($\Gall$) & & & $-4.57$ [$-7.17$, $-1.96$] & $+5.21$ & $+9.77$ & 0.588 \\
 \bottomrule
 \end{tabular}}
-\caption{Telecom holdout, pre-registered analysis (34 tasks $\times$ 12 blocks; pp; crossed 90\% intervals). Per-cell rows are descriptive; the weighted row is decisional ($\Gall$, reading: inconclusive) and S1/S2 (both pass). Excl.: structurally excluded tasks (decision/trajectory count mismatch at search).}
+\caption{Telecom holdout, pre-registered analysis (34 tasks $\times$ 12 blocks; pp; crossed 90\% intervals). Per-cell rows are descriptive; the weighted row is decisional ($\Gall$, reading: inconclusive) and S1/S2 (both pass). Excl.: structurally excluded tasks (decision/trajectory count mismatch at search). Alongside interval for the weighted row, $t$ over block means (not decisional): $-4.57$ [$-6.08$, $-3.05$].} % src: analysis/fork/out/holdout_confirm_20261002T012353Z.md (Primary G_all, t over block means)
 \label{tab:holdout}
 \end{table}
 
@@ -73,6 +76,9 @@ faults & T1 & 19 & $-6.37$ [$-9.91$, $-2.83$] & .0030 & .0091 \\
 
 
 \paragraph{Post-hoc four-branch estimands on the holdout.} Table~\ref{tab:holdoutr2} is a supplementary, descriptive output computed after the confirmatory analysis, with the same admission and units. It is not part of the pre-registered confirmation and changes neither the primary endpoint nor its reading. Its $G$ is a ratio over divergent states, whereas $\Gall$ in Table~\ref{tab:holdout} averages over all admitted units with non-divergent units counted as 0. % src: analysis/fork/out/holdout_r2_posthoc_20261002T024414Z.md
+
+In a post hoc four-branch analysis of the holdout's divergent states, the pooled $H$ and $F$ are also negative ($-2.8$ and $-2.5$\pp{}), but both crossed 95\% intervals include zero, and q4 GPTQ-W4 has positive point estimates (Appendix Table~\ref{tab:holdoutr2}). The holdout changes domain as well as tasks; on the 80 telecom development tasks the same q8 configurations give $+2.7$ and $-0.6$\pp{} (Appendix~\ref{app:holdoutdev}). % src: analysis/fork/out/holdout_r2_posthoc_20261002T024414Z.md (§1 crossed 95%); analysis/fork/out/dev_all_20261001T093944Z.md (Telecom development)
+
 \begin{table*}[t]
 \centering\scriptsize\setlength{\tabcolsep}{3pt}
 % src: analysis/fork/out/holdout_r2_posthoc_20261002T024414Z.md (§1 crossed 95%; §3 table and control)
@@ -90,3 +96,8 @@ Weighted pool & 1180 & $-4.6$ [$-7.8$, $-1.5$] & $-2.8$ [$-6.3$, $+0.6$] & $-2.5
 \caption{Telecom holdout, \emph{post-hoc} four-branch estimands on divergent states (descriptive; not part of the pre-registered confirmation). pp; crossed task$\times$block 95\% intervals; pool weights as pre-registered; mean $I$ as in Table~\ref{tab:ghf}.}
 \label{tab:holdoutr2}
 \end{table*}
+
+\subsection{Telecom development tasks}
+\label{app:holdoutdev}
+
+On 80 telecom development tasks (6 blocks; fixed-pool 95\%), the two q8 holdout cells give $\Gall=+2.7$ [$-4.7$, $+10.1$] (GPTQ-W4) and $-0.6$ [$-4.9$, $+3.7$]\pp{} (AWQ-style W4), against $-5.6$ and $-6.6$ on the holdout; q4 has no telecom development forks. % src: analysis/fork/out/dev_all_20261001T093944Z.md (Telecom development); analysis/fork/out/dev_all_20261001T093944Z.json (telecom_cells, t_ci95); analysis/fork/out/holdout_confirm_20261002T012353Z.md (per-cell G)

@@ -1,5 +1,7 @@
-\section{Boundaries of a Local-Defect Explanation}
+\section{Supplementary Analyses and Claims Not Supported by Their Controls}
 \label{app:injection}
+
+No main-text claim rests on this appendix. It reports supplementary perturbation analyses and claims that we withdrew because their controls did not support them.
 
 \paragraph{Controlled injection.} On 30 ordinary GPTQ-W4 states per model, each from one development block, we compared a forced invalid action with a matched valid action and with a process perturbation that repeated the last successful read; either B or Q then continued. Each panel balanced wrong-ID, tool-call/schema error and premature-write perturbations. Table~\ref{tab:injection-boundary} gives the invalid-minus-process contrast. These small panels did not resolve an error-specific effect; the q8 interval under Q still allows substantial harm. % src: analysis/recovery/inject_q4/summary_v2.md; analysis/recovery/inject_q8/summary_v2.md
 
@@ -21,6 +23,45 @@ q8 & Q & $-0.13$ [$-0.30$, $+0.03$] & 9/30 \\
 \end{table}
 
 Replay checks passed on both panels; q4 lacked three recorded audit fields. In q4, most wrong-tool injections actually produced schema errors (8/10). In q8, seven premature writes failed to inject the intended write (six environment rejections and one execution without a database change), and two valid references returned ``not found''. These failures prevent the panels from establishing a general recovery mechanism. % src: analysis/recovery/inject_q4/summary_v2.md (Replay audit; Manipulation checks); analysis/recovery/inject_q8/summary_v2.md (Manipulation checks)
+
+\subsection{Error dose}
+\label{app:dose}
+
+\paragraph{Supplementary perturbation analyses (exploratory).} These analyses perturb the quantized weights directly instead of forking trajectories. They are exploratory; the main text does not use them. Each derived checkpoint takes every decoder linear from the BF16 model, from Q, or from an interpolation between them; all other tensors come from the BF16 model, and the endpoints reproduce BF16 and Q bit for bit. % src: docs/insights/PERTURBATION_PROTOCOL.md (TL;DR; §1)
+Only finished end-to-end runs enter: q4 and q8, 85 tasks on each of three nonce blocks per cell (q3--q5 for W3, the development blocks f01--f03 for W4), with outage episodes excluded and context overflow counted as failure. Intervals are fixed-pool $t$ intervals over the three blocks, with crossed task$\times$block intervals alongside; there is no correction for multiplicity. % src: analysis/fork/out/backfill_20261003T193042Z.md (header; §1, §2)
+
+\emph{Error dose.} The residual intervention $W_\alpha=W+\alpha(W_{\mathrm{Q}}-W)$ scales the quantizer's own weight error, with $\alpha\in\{0, 0.25, 0.5, 1, 2\}$; it is not a bit width (Table~\ref{tab:dose}). % src: docs/insights/PERTURBATION_PROTOCOL.md §2.2
+Agreement with BF16's actions fell at every step of $\alpha$ in all six cells, with both intervals of every step below zero; in q8 RTN-W3, the share of BF16's decisions before the first differing action is 1, 0.32, 0.16 and 0.04 at $\alpha=0$, 0.25, 0.5 and 1. Success did not follow. No success step up to $\alpha=0.5$ is resolved under both intervals (in RTN-W3 the point estimates at $\alpha=0.25$ lie above BF16, 40.0 and 36.5\% against 35.7 and 30.6\%), and success fell between $\alpha=0.5$ and 1 only in RTN-W3, by $-20.8$ [$-22.5$, $-19.1$]\pp{} in q4 (crossed [$-29.8$, $-11.8$]) and $-14.1$ [$-26.9$, $-1.4$] in q8 (crossed [$-24.7$, $-3.9$]). % src: analysis/fork/out/backfill_20261003T193042Z.md (TL;DR 2; §2)
+In GPTQ-W3, q4 GPTQ-W4 and q8 AWQ-style W4 no success step is resolved under both intervals; doubling the q8 AWQ-style W4 error ($\alpha=2$) changed success by $-10.6$ [$-16.4$, $-4.7$]\pp{} (crossed [$-20.8$, $0.0$]). The $\alpha=2$ arms of the four W3 cells did not finish. The action response to the error dose is thus monotone, whereas success shows only a drop between half and full RTN-W3 error. % src: analysis/fork/out/backfill_20261003T193042Z.md (TL;DR 2; §2 step tables)
+
+\begin{table}[h]
+\centering
+\small\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{4pt}\resizebox{\linewidth}{!}{%
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+$\alpha$ & 0 (BF16) & 0.25 & 0.5 & 1 (Q) & 2 \\
+\midrule
+\multicolumn{6}{@{}l}{\emph{Closed-loop success (\%)}} \\
+q4 RTN-W3 & 35.7 & 40.0 & 33.7 & 12.9 & n.f. \\
+q8 RTN-W3 & 30.6 & 36.5 & 27.5 & 13.3 & n.f. \\
+q4 GPTQ-W3 & 35.7 & 37.6 & 36.1 & 36.1 & n.f. \\
+q8 GPTQ-W3 & 30.6 & 29.4 & 29.0 & 26.7 & n.f. \\
+q4 GPTQ-W4 & 33.7 & 38.0 & 38.4 & 43.9 & 37.6 \\
+q8 AWQ-style W4 & 31.4 & 31.0 & 32.5 & 32.5 & 22.0 \\
+\midrule
+\multicolumn{6}{@{}l}{\emph{Action agreement with BF16}} \\
+q4 RTN-W3 & 1 & 0.362 & 0.225 & 0.088 & n.f. \\
+q8 RTN-W3 & 1 & 0.319 & 0.162 & 0.043 & n.f. \\
+q4 GPTQ-W3 & 1 & 0.508 & 0.406 & 0.234 & n.f. \\
+q8 GPTQ-W3 & 1 & 0.397 & 0.297 & 0.176 & n.f. \\
+q4 GPTQ-W4 & 1 & 0.572 & 0.504 & 0.424 & 0.238 \\
+q8 AWQ-style W4 & 1 & 0.392 & 0.309 & 0.194 & 0.058 \\
+\bottomrule
+\end{tabular}}
+\caption{Error dose (exploratory): closed-loop success (\%) of $W_\alpha$ (top) and action agreement with BF16 (bottom; share of BF16's decisions before the first differing action, 1 = identical). 255 task$\times$block units per cell over three blocks; action agreement on 245 units for q4 RTN-W3, whose other 10 units contain an episode that ended in context overflow and has no message record. n.f.: not finished. Intervals of every step are in the analysis output.} % src: analysis/fork/out/backfill_20261003T193042Z.md (§2)
+\label{tab:dose}
+\end{table}
 
 \subsection{Claims not supported by their controls}
 \label{app:withdrawn}

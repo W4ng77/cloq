@@ -1,11 +1,13 @@
-\section{Which Upgrade Changes the Task?}
+\section{Two-Sided Consequences in Full (supports \texorpdfstring{\S\ref{sec:value}}{the consequences result})}
 \label{app:tables}
 
-Table~\ref{tab:r1} gives every cell of Figure~\ref{fig:case}b, including the stress cells, with new-task intervals. Table~\ref{tab:ghf} gives every cell of Figure~\ref{fig:modes}a, with $F-G$, $F-H$ and the $(\DQ,\DB)$ summaries. % nocheck: cross-reference sentence
+This appendix supports \S\ref{sec:value}: replacing a W4 agent's action produces both rescues and damages, and a gain measured for one upgrade mode cannot be reused as the gain of another.
+
+Table~\ref{tab:r1} gives every cell of Figure~\ref{fig:rd}a, including the stress cells, with new-task intervals. Table~\ref{tab:ghf} gives every cell of Figure~\ref{fig:modes}a, with $F-G$, $F-H$ and the $(\DQ,\DB)$ summaries. % nocheck: cross-reference sentence
 
 \begin{table}[h]
 \centering\scriptsize\setlength{\tabcolsep}{2.4pt}
-% src: analysis/fork/out/dev_all_20261001T070326Z.md (two-sided table; W4:all pooled row); analysis/fork/out/task_fragility_20261005T134836Z.md (Full pool, pool G crossed)
+% src: analysis/fork/out/dev_all_20261001T070326Z.md (two-sided table; W4:all pooled row); analysis/fork/out/dev_all_20261001T070326Z.json (pooled.W4:all:pooled_equal_weight.G.crossed_ci95)
 \resizebox{\columnwidth}{!}{\begin{tabular}{@{}lrrrrrll@{}}
 \toprule
 Cell & units & div. & $r$ & $d$ & $M$ & $\Gall$ [fixed pool] & [new tasks] \\
@@ -14,7 +16,7 @@ q4 GPTQ-W4 & 85$\times$20 & 1102 & 6.8 & 8.7 & 15.5 & $-1.9$ [$-3.7$, $-0.1$] & 
 q4 AWQ-style W4  & 85$\times$20 & 1439 & 9.8 & 10.1 & 19.9 & $-0.3$ [$-2.2$, $+1.6$] & [$-5.4$, $+5.2$] \\
 q8 GPTQ-W4 & 85$\times$20 & 1473 & 10.4 & 7.5 & 17.9 & $+2.9$ [$+1.4$, $+4.4$] & [$-2.9$, $+9.2$] \\
 q8 AWQ-style W4  & 85$\times$20 & 1562 & 11.4 & 9.5 & 20.9 & $+1.9$ [$-0.6$, $+4.3$] & [$-3.9$, $+8.1$] \\
-W4 pool    & 85$\times$20 & & 9.6 & 9.0 & 18.6 & $+0.7$ [$-0.3$, $+1.6$] & [$-2.1$, $+3.5$] \\
+W4 pool    & 85$\times$20 & & 9.6 & 9.0 & 18.6 & $+0.7$ [$-0.3$, $+1.6$] & [$-2.1$, $+3.4$] \\
 \midrule
 q4 KV8 & 85$\times$22 & 593 & 3.1 & 3.4 & 6.5 & $-0.3$ [$-1.7$, $+1.0$] & [$-3.0$, $+2.3$] \\
 q8 KV8 & 85$\times$22 & 855 & 4.3 & 3.7 & 8.1 & $+0.6$ [$-0.4$, $+1.6$] & [$-1.9$, $+3.0$] \\
@@ -150,8 +152,35 @@ Mistral, own BF16 states$^m$ & 464 & 3.4 & 2.9 & $+0.5$ [$-2.4$, $+3.5$] & [$-2.
 
 \paragraph{The $k=2$ arrangement.} At $k=2$ the two successes share the action in 56.4\% of W4 states and 80.3\% of KV8 states, against one third under random labelling. A statement that outcomes are mainly determined by the action holds only within this subset, which is 13.8\% (W4) and 14.5\% (KV8) of divergent states. % src: analysis/fork/out/offdiag_null_20261004T030949Z.json (groups.pool W4:all, pool KV8:all: P(act|k=2)); analysis/fork/out/outcome_classes_20261004T143614Z.md
 
-\subsection{Transfer of gain labels between upgrade modes}
-\label{app:transfer}
-\paragraph{Design.} Protocol \texttt{LABEL\_TRANSFER\_POSTHOC.md} (exploratory, post hoc: these outcomes had been seen). For a selection label $X$ and an executed mode $Y$, both in $\{G,H,F\}$, and a budget of 5, 10 or 20\%, we select by $X$ and report the executed rescues, damages and net of $Y$, with ties broken uniformly at random (exact expectation). In the split-half variant, tasks are ranked by mean $X$ on one half of the blocks (outcome-independent hash) and evaluated on the other half, averaged over both directions; the diagonal is a self-label reference, not an upper bound, since it can also do poorly on the evaluation half. Same-draw selection on one set of outcomes is a hindsight diagnostic: its loss is non-negative by construction, so only its gain over random selection is informative. Intervals are block and crossed task$\times$block bootstrap, uncorrected for the 18 off-diagonal comparisons per frame. Budgets count states or tasks, not BF16 compute: $H$ and $F$ use several BF16 decisions per selected state. % src: docs/insights/LABEL_TRANSFER_POSTHOC.md; analysis/fork/out/label_transfer_20261005T185537Z.md
-\paragraph{Results.} The protocol designates ordinary states (Bank U U1, 3 blocks) as the primary frame and first-divergence states (Bank P) as secondary, and designates no budget or label pair. In the primary frame no split-half loss is resolved ($H\!\to\!F$ at 10\%: $+0.30$ [$-0.60$, $+1.11$]), and the self-label references themselves cover zero. In the secondary frame (W4 pool, split-half, pp of all units), at a 10\% task budget, the losses with crossed intervals above zero are $H\!\to\!F$ 2.82 [1.40, 3.90], $H\!\to\!G$ 2.43 [0.97, 3.68] and $G\!\to\!F$ 1.50 [0.20, 2.19]; at 5\%, $H\!\to\!G$ and $H\!\to\!F$ (1.70 each) also exclude zero, and at 20\%, $H\!\to\!F$ 3.39 [1.94, 4.91]. The mode ranking implied by the selection label matches the self-label ranking for $F$ at 10 and 20\% and for $G$ at 5\% (point estimates). Same-draw results, U2B and KV8 pools are in the output file. % src: analysis/fork/out/label_transfer_20261005T185537Z.md (Bank P split-half 5/10/20%; Bank U U1 split-half 10%)
-\paragraph{Common states, BF16 against Q$'$, by component.} At the same states and continuation, BF16's extra rescues over Q$'$ on q8 are $+0.3$\pp{} and its extra damages $-0.6$\pp{}, with the net $K=+0.9$ unresolved; each component lies within $\pm$3\pp{} under a 90\% two one-sided test (exploratory, post hoc; the margin is wide relative to rescue rates of 3--5\%). q4 is unresolved. % src: analysis/fork/out/commonstate_rd_20261005T185153Z.md
+\subsection{Task fragility and why the net is small}
+\label{app:concentration}
+
+All analyses in this subsection are exploratory and post hoc.
+
+\paragraph{The consequences recur on the same tasks.} We split the 20 nonce blocks into two halves by an outcome-independent hash of the block name, ranked tasks by turnover on one half and measured the other half (Appendix Table~\ref{tab:fragility}). The 17 most fragile tasks (top 20\%) carry 41.0\% (crossed [26.6, 55.9]) and 42.3\% ([27.0, 57.5]) of the held-out turnover in the two directions, against 20\% if fragility did not persist. Their turnover is 38.7\%, while the other 68 tasks still turn over 13.7\%. Both groups have rescues and damages; neither group's net gain is resolved under the crossed interval. This replicates fragility on other nonces of the same tasks; it does not predict which new tasks are fragile. % src: analysis/fork/out/task_fragility_20261005T134836Z.md (Split-half fragility, both directions); analysis/fork/out/task_fragility_split_20261005T134815Z.json; derived: 68=85-17
+
+On the 85 development tasks, the top 20\% of tasks account for 57--71\% of flips in the W4 and KV8 cells. Splitting the 20 blocks into disjoint nonce halves reproduces task-level turnover rankings (Spearman 0.52--0.86). Conditional tests control measured baseline success and, in a post-hoc variant, trajectory length; the association is carried primarily by retail and weakens on airline alone. These are retrospective associations on the same tasks under fresh prompt perturbations, rather than evidence of transfer to new tasks. % src: analysis/fork/out/consequence_v2_20261001T070850Z.json (share_of_consequences_in_top20pct_tasks); analysis/fork/out/w67_audit_v2_20261001T0600Z_20261001T070500Z.md (Concentration; panel85, airline27)
+
+\begin{table}[h]
+\centering\scriptsize\setlength{\tabcolsep}{2.4pt}
+% src: analysis/fork/out/task_fragility_20261005T134836Z.md (Split-half fragility: define A -> estimate B)
+\begin{tabular}{@{}llllll@{}}
+\toprule
+Tasks & & $r$ & $d$ & $M$ & $\Gall$ \\
+\midrule
+fragile & est. & 21.1 & 17.6 & 38.7 & $+3.4$ \\
+(top 20\%) & $t$ & [18.6, 23.5] & [14.3, 21.0] & [34.9, 42.6] & [$-1.0$, $+7.9$] \\
+ & crossed & [14.8, 28.1] & [12.4, 23.3] & [32.3, 45.7] & [$-7.1$, $+13.7$] \\
+\midrule
+rest & est. & 6.5 & 7.2 & 13.7 & $-0.7$ \\
+ & $t$ & [5.2, 7.8] & [6.2, 8.3] & [12.5, 14.9] & [$-2.7$, $+1.2$] \\
+ & crossed & [4.4, 9.0] & [4.8, 9.9] & [10.2, 17.5] & [$-4.1$, $+2.4$] \\
+\bottomrule
+\end{tabular}
+\caption{Repeatable task fragility (exploratory, post hoc; four \tautwo{} W4 cells, equal weight). Tasks are ranked by turnover on one hash-defined half of the 20 nonce blocks and measured on the other half (pp of units; 95\% intervals, $t$ over held-out blocks and crossed task$\times$block; direction A to B shown). A replication on other nonces of the same tasks, not a prediction for new tasks. Reverse direction: text.}
+\label{tab:fragility}
+\end{table}
+
+\paragraph{Split-half fragility (Table~\ref{tab:fragility}).} The halves are assigned by an outcome-independent hash of the block name (sha256 of a fixed prefix and the block name, mod 2), written to a file before this post hoc analysis loaded outcomes; fragility is a task's mean turnover over the four W4 cells and the defining half's blocks, and ties at the top-20\% threshold are broken by a hash. In the reverse direction (rank on the second half, estimate on the first), the 17 fragile tasks turn over 39.0\% ($t$ [34.2, 43.9]) and carry 42.3\% of the held-out turnover, the other tasks 13.3\%; the fragile tasks' net gain is $+3.7$\pp{} ($t$ [$+0.6$, $+6.9$]; crossed [$-5.0$, $+12.4$]) and the rest's $+0.5$. Ranking tasks by BF16 success instead (tertiles on one half) also separates turnover: the hardest tertile turns over 6.7--10.0\% and the others 25.4--27.3\%, with no net gain resolved under the crossed interval. % src: analysis/fork/out/task_fragility_20261005T134836Z.md (Split-half B -> A; BF16 difficulty tertiles; Method); analysis/fork/out/task_fragility_split_20261005T134815Z.json
+
+\paragraph{Why a fallback cannot be judged by its average gain.} A post hoc decomposition of the \tautwo{} W4 pool accounts for the small net: where QQ fails (non-divergent units count as no rescue), B's action rescues 14.6\% of units, and where QQ succeeds it damages 26.1\%, but QQ succeeds in only $34.6\%$. It conditions on outcomes, so it cannot guide escalation online. % src: analysis/fork/out/task_fragility_20261005T134836Z.md (Conditional rates, pool)

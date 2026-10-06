@@ -1,6 +1,12 @@
-\section{Where Do the Consequences Persist?}
+\section{Scope Checks: Ordinary States, Other Environments, a Second Family and Other Configurations (supports \texorpdfstring{Table~\ref{tab:scope}}{the scope table})}
+\label{app:scope}
+
+This appendix supports Table~\ref{tab:scope}: it reports each scope check in full and states where a check does not support extending the main-panel statements.
+
 \subsection{Ordinary states and the user simulator}
 \label{app:ordinary}
+
+\paragraph{Ordinary states and the user simulator.} At ordinary (Bank U) states, turnover is lower (W4 configurations, U1 and U2B: 4.7--9.0\%) and the net gain covers zero. Most outcome changes there come from differences in text. We could not confirm their labels under a second user simulator (one control exposed replies to sibling arms; see below), so we do not report them as a property of the action. % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§2); analysis/fork/out/simctrl_20261001T212742Z.md
 
 \paragraph{Ordinary states turn over less, mostly through text under our simulator.} At ordinary states, replacing Q's action changes the outcome less often than at first tool-structure divergences (a descriptive comparison of different state populations, with no interval on the difference). Over blocks f01--f03 (task-equal; $t$ intervals over block means), $M$ per sub-bank is 7.8--9.0\% for the q4 W4 cells in U1 and U2B, 4.7--9.0\% for the q8 W4 cells and at most 4.7\% for KV8. The net gain lies within $\pm$2.8\pp{} (U1, U2B) and $\pm$5.0\pp{} (U2Q), and every interval covers zero (Appendix~\ref{app:banku}). % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§2)
 Identical actions never change the outcome, as determinism implies. Reused arms rest on canonical equality. All 4{,}114 such reuses were rendered with each model's chat template; 4{,}113 are token-identical. The remaining pair differs only in JSON key order, and its two cross arms, measured separately, gave the reused outcomes. % src: analysis/fork/reuse_audit/REUSE_AUDIT.md (TL;DR); analysis/fork/reuse_audit/REUSE_FIX_RESULT.md (TL;DR)
@@ -19,9 +25,7 @@ Before running, we sampled 80 Bank P states without outcome information (20 per 
 Per-state arm outcomes track the original single runs (correlation 0.63--0.68). Pooled over cells, $G=-3.0$ [$-10.2$, $+4.8$], $H=+5.5$ [$+0.0$, $+11.2$] and $G-H=-8.5$ [$-14.8$, $-2.8$]\pp{} under Sonnet, against $G-H=-2.5$ [$-11.2$, $+6.2$] on the same states under the original simulator (change $-6.0$ [$-16.2$, $+4.2$]). % src: analysis/fork/out/simctrl_p_20261002T015200Z.md (pool, all batches)
 With 20 states per cell, this control cannot resolve the few-pp contrasts of Table~\ref{tab:ghf} (on this sample even the original simulator gives $G-H=0.0$ in both q8 W4 cells), so it neither confirms nor reverses the within-cell orderings. % src: analysis/fork/out/simctrl_p_20261002T015200Z.md (q8 cells)
 
-
 \paragraph{Bank P and Bank U measure different quantities.} Bank P skips text-only differences by design, yet these make up 150 of the 208 outcome-changing rows at ordinary states, and their labels did not reproduce under a second simulator (Appendix~\ref{app:banku}; \S\ref{sec:scope}). Including text actions requires a simulator control before their consequences are reported as a property of the action. % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§3); analysis/fork/out/simctrl_20261001T212742Z.md; derived: 150=45+28+44+25+10+6-5-3; 208=99+99+18-5-3
-
 
 \subsection{Bank U per Sub-Bank}
 \label{app:banku}
@@ -69,6 +73,10 @@ unique rows & 1943: 0 & 1045: 150 (.144) & 143: 26 (.182) & 169: 32 (.189) \\ % 
 }
 \label{tab:taxonomy}
 \end{table}
+
+\subsection{Summary of the environment and family checks}
+
+\paragraph{Other environments and a second family.} On BFCL multi-turn and ALFWorld (no simulated user, one run per item; post hoc), the replacement turns over 5.2--24.6\% of items in both directions (Appendix~\ref{app:extr2}); on Mistral-Small-3.2-24B's own ordinary BF16-sourced states, B's action in GPTQ-W4 rescues $r=4.6$ and damages $d=5.4$\pp{}, and no mode's net value is resolved (Appendix~\ref{app:mistral}). % src: analysis/fork/out/ext_20261001T135106Z.md; analysis/fork/out/ext_r2_20261002T024433Z.md (§3, §6); analysis/fork/out/newmethod_m24_20261004T024453Z.md; analysis/fork/out/newmethod_m24_20261004T024453Z.json (tau2.cells.*.all_states_pp; tau2.contrasts.M1); docs/insights/NEWMETHOD_PANEL_PROTOCOL.md (A3, A6, A6.E1)
 
 \subsection{Models compared on their own ordinary states}
 \label{app:mistral}
@@ -132,57 +140,70 @@ ALFWorld q8 KV4$^s$ & 134 & 0.0 & 0.0 & 0.0 & $+0.0$ [$+0.0$, $+0.0$] & 134 & $+
 \label{tab:extr2}
 \end{table*}
 
+\subsection{Quantization methods on shared ordinary states}
+\label{app:panels}
 
-\subsection{Telecom development and task concentration}
-\label{app:holdoutdev}
-On 80 telecom development tasks (6 blocks; fixed-pool 95\%), the two q8 holdout cells give $\Gall=+2.7$ [$-4.7$, $+10.1$] (GPTQ-W4) and $-0.6$ [$-4.9$, $+3.7$]\pp{} (AWQ-style W4), against $-5.6$ and $-6.6$ on the holdout; q4 has no telecom development forks. % src: analysis/fork/out/dev_all_20261001T093944Z.md (Telecom development); analysis/fork/out/dev_all_20261001T093944Z.json (telecom_cells, t_ci95); analysis/fork/out/holdout_confirm_20261002T012353Z.md (per-cell G)
+On the q8 U2B panel, $G$ is resolved in no configuration, while fixed-pool $H$ or $F$ exceeds zero in several (Appendix~\ref{app:panels}). % src: analysis/fork/out/newmethod_q8_20261004T051538Z.md (τ² U2B all states: G, H, F with crossed columns)
 
-\label{app:concentration}
-On the 85 development tasks, the top 20\% of tasks account for 57--71\% of flips in the W4 and KV8 cells. Splitting the 20 blocks into disjoint nonce halves reproduces task-level turnover rankings (Spearman 0.52--0.86). Conditional tests control measured baseline success and, in a post-hoc variant, trajectory length; the association is carried primarily by retail and weakens on airline alone. These are retrospective associations on the same tasks under fresh prompt perturbations, rather than evidence of transfer to new tasks. % src: analysis/fork/out/consequence_v2_20261001T070850Z.json (share_of_consequences_in_top20pct_tasks); analysis/fork/out/w67_audit_v2_20261001T0600Z_20261001T070500Z.md (Concentration; panel85, airline27)
+These tests ask whether numerical error locates changed actions, consequential changes and beneficial changes. Methods share ordinary BF16-sourced states (U2B); the separate Mistral population is specified in Appendix~\ref{app:mistral}.
 
-\begin{table}[h]
-\centering\scriptsize\setlength{\tabcolsep}{2.4pt}
-% src: analysis/fork/out/task_fragility_20261005T134836Z.md (Split-half fragility: define A -> estimate B)
-\begin{tabular}{@{}llllll@{}}
+\paragraph{Contrasts.} Methods are compared on shared states by $D_{cc}=\YY{QB}-\YY{BB}$ ($=-\DB$): Q's action against B's under the common BF16 continuation. Because BB is the shared BF16 original, two methods differ on the same states only through $\YY{QB}$. One pre-registered Holm family holds three contrasts on $D_{cc}$, with $t$ intervals over block-mean differences: P1, QuaRot-W4 $-$ GPTQ-W4; P2, SpinQuant-W4A4 $-$ QuaRot-W4A4; P3, KIVI-2 $-$ KV8. Unless marked crossed, intervals for these panels in \S\ref{sec:r4} and \S\ref{sec:scope} are fixed-pool 95\% ($t$ over block means, as fewer than 10 blocks are complete); other new-task (crossed) intervals are in the analysis outputs. % src: docs/insights/NEWMETHOD_PANEL_PROTOCOL.md (§4 Estimands; A1.2 Primary Holm family); analysis/fork/out/newmethod_m24_20261004T024453Z.md
+
+\paragraph{Numerical quality.} QuaRot-W4 against GPTQ-W4 is $-0.4$ [$-10.7$, $+9.9$]\pp{} (P1). The matched SpinQuant-W4A4 contrast is P2 (complete family: Table~\ref{tab:primary-methods}; paired diagnostic components: Table~\ref{tab:fidelity-components}). Its third block rests on a one-time re-run of arms lost to a user-simulator overload; on the two blocks without it the contrast is $+2.4$\pp{} (strict view). % src: analysis/fork/out/newmethod_q8_20261004T051538Z.md; analysis/fork/out/newmethod_q8_20261004T051538Z.json (tau2.cells.*.all_states_pp; tau2.contrasts; fidelity.cells.*.KLu_mean; fidelity.across_cells_spearman_KLu_mean_vs_M_cc); docs/insights/NEWMETHOD_PANEL_PROTOCOL.md (A1.2, A4.4, A7, A7.E1, A7.E2)
+
+\paragraph{Upgrade modes on the q8 panel.} On the q8 ordinary-state panel, B's action alone ($G$) is resolved in no cell. Fixed-pool intervals for B's takeover $H$ or full substitution $F$ exclude zero in weight-only (AWQ-style W4, QuaRot-W4), W4A4 and KV8 cells, and new-task intervals still do in both W4A4 cells and KV8 (unadjusted), so resolved value is not confined to quantized activations. It is largest in SpinQuant-W4A4 ($H=+11.8$ [6.7, 16.8], $F=+13.7$ [9.3, 18.2]\pp{}). % src: analysis/fork/out/newmethod_q8_20261004T051538Z.md (τ² U2B all states: G, H, F with crossed columns)
+
+\paragraph{KIVI.} KIVI \citep{liu2024kivi} quantizes keys per channel and values per token. KIVI-2 against KV8 is not resolved ($-0.6$ [$-38.0$, $+36.8$]\pp{}), nor is KIVI-4 against KV8 ($+1.6$ [$-2.9$, $+6.0$]\pp{}). Our implementation is a replay-compatible variant: at every decode step it reconstructs the quantized view that official KIVI's token-by-token decode would hold at that position from the full-precision cache, rather than persisting a compressed cache across turns, so every token, prompt or generated, attends with that view. The KIVI-2 contrast (P3) rests on two blocks: the third lost one arm to a server timeout that recurred on a single-request re-run, and both admitted blocks depend on the re-run of arms lost to server failures (strict rule: not estimable). Net of the kernel path, the quantization effect is $+0.6$ [$-51.7$, $+52.9$] (KIVI-2) and $+2.4$ [$-5.4$, $+10.1$]\pp{} (KIVI-4), and the unquantized kernel path itself has $D_{cc}=-1.2$ [$-6.2$, $+3.9$]. % src: analysis/fork/out/newmethod_q8_20261004T051538Z.md; analysis/fork/out/newmethod_q8_20261004T051538Z.json (tau2.cells.*.all_states_pp; tau2.contrasts; fidelity.cells.*.KLu_mean; fidelity.across_cells_spearman_KLu_mean_vs_M_cc); docs/insights/NEWMETHOD_PANEL_PROTOCOL.md (A1.2, A4.4, A7, A7.E1, A7.E2); analysis/fork/kivi_gate/GATE.md (§6)
+
+\begin{table}[t]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+% src: analysis/fork/out/newmethod_q8_20261004T051538Z.md (τ² contrasts P1--P3); docs/insights/NEWMETHOD_PANEL_PROTOCOL.md
+\resizebox{\columnwidth}{!}{\begin{tabular}{@{}lclll@{}}
 \toprule
-Tasks & & $r$ & $d$ & $M$ & $\Gall$ \\
+Contrast & blocks & $\Delta D_{cc}$ [fixed pool] & [new tasks] & Holm $p$ \\
 \midrule
-fragile & est. & 21.1 & 17.6 & 38.7 & $+3.4$ \\
-(top 20\%) & $t$ & [18.6, 23.5] & [14.3, 21.0] & [34.9, 42.6] & [$-1.0$, $+7.9$] \\
- & crossed & [14.8, 28.1] & [12.4, 23.3] & [32.3, 45.7] & [$-7.1$, $+13.7$] \\
-\midrule
-rest & est. & 6.5 & 7.2 & 13.7 & $-0.7$ \\
- & $t$ & [5.2, 7.8] & [6.2, 8.3] & [12.5, 14.9] & [$-2.7$, $+1.2$] \\
- & crossed & [4.4, 9.0] & [4.8, 9.9] & [10.2, 17.5] & [$-4.1$, $+2.4$] \\
+P1: QuaRot $-$ GPTQ W4 & 3 & $-0.4$ [$-10.7$, $+9.9$] & [$-5.9$, $+5.5$] & 1.0 \\
+P2: SpinQuant $-$ QuaRot W4A4 & 3 & $+1.2$ [$-3.9$, $+6.2$] & [$-4.7$, $+7.1$] & 1.0 \\
+P3: KIVI-2 $-$ KV8 & 2 & $-0.6$ [$-38.0$, $+36.8$] & [$-7.1$, $+7.1$] & 1.0 \\
 \bottomrule
-\end{tabular}
-\caption{Repeatable task fragility (exploratory, post hoc; four \tautwo{} W4 cells, equal weight). Tasks are ranked by turnover on one hash-defined half of the 20 nonce blocks and measured on the other half (pp of units; 95\% intervals, $t$ over held-out blocks and crossed task$\times$block; direction A to B shown). A replication on other nonces of the same tasks, not a prediction for new tasks. Reverse direction: text.}
-\label{tab:fragility}
+\end{tabular}}
+\caption{Complete primary method-comparison family on shared states, pp; fixed-pool and new-task 95\% intervals. All three comparisons remain unresolved. Admission and re-run dependencies are described in the text.}
+\label{tab:primary-methods}
 \end{table}
 
-\paragraph{Split-half fragility (Table~\ref{tab:fragility}).} The halves are assigned by an outcome-independent hash of the block name (sha256 of a fixed prefix and the block name, mod 2), written to a file before this post hoc analysis loaded outcomes; fragility is a task's mean turnover over the four W4 cells and the defining half's blocks, and ties at the top-20\% threshold are broken by a hash. In the reverse direction (rank on the second half, estimate on the first), the 17 fragile tasks turn over 39.0\% ($t$ [34.2, 43.9]) and carry 42.3\% of the held-out turnover, the other tasks 13.3\%; the fragile tasks' net gain is $+3.7$\pp{} ($t$ [$+0.6$, $+6.9$]; crossed [$-5.0$, $+12.4$]) and the rest's $+0.5$. Ranking tasks by BF16 success instead (tertiles on one half) also separates turnover: the hardest tertile turns over 6.7--10.0\% and the others 25.4--27.3\%, with no net gain resolved under the crossed interval. % src: analysis/fork/out/task_fragility_20261005T134836Z.md (Split-half B -> A; BF16 difficulty tertiles; Method); analysis/fork/out/task_fragility_split_20261005T134815Z.json
-
-\subsection{Takeover duration}
-\label{app:takeover}
-\paragraph{Design and reading.} Protocol \texttt{TAKEOVER\_WINDOW\_PROTOCOL.md} (tw-v1, exploratory; analysis code frozen before outcomes were read, Amendments 2--4). Both cells were chosen after earlier results were seen: GPTQ-W4 for its unresolved sustained-takeover value, SpinQuant-W4A4 for its large one ($H=+11.8$\pp{} on this panel, Table~\ref{tab:ordinary-modes}); $V_{Q,\infty}$ reuses that endpoint, so the SpinQuant results are conditional on this selection, and no interval is adjusted for this configuration selection. At 255 q8 BF16-sourced states (blocks f01--f03, 85 tasks each), the current action comes from Q (or B); BF16 executes the next $L$ complete decisions and hands back to Q. $V_{Q,L}=Y_{Q,L}-Y_{Q,0}$ is the value of an $L$-decision BF16 window after Q's action, $R_{Q,L}=Y_{Q,L}-Y_{Q,\infty}$ its shortfall against sustained takeover. All six tasks passed acceptance (0 errors, 0 overflows, 256/256 endpoint re-runs reproduced, nothing quarantined). The $E_{Q,4}{=}1$ subset keeps states where continuous BF16 generated more than four decisions, so a four-decision window really hands back. Intervals: block-$t$ over 3 block means (registered primary, df $=2$) and crossed task$\times$block bootstrap (Table~\ref{tab:takeover}). The frozen reading script uses the registered primary interval only; Amendment~3 requires at least two blocks and a nonzero-width interval. It reports the all-state SpinQuant four-decision gain as above zero and states that this alone is not value kept after handback, because states that end inside the window contribute $V_{Q,\infty}$ mechanically. The paper reports each takeover result under both intervals and does not call a result resolved when the crossed interval includes zero, a reading adopted when the results were read, not one fixed in the protocol. The four-decision gain is resolved under block-$t$ but not under the crossed interval both on all states and on the $E_{Q,4}{=}1$ subset. Differences between action sources at each $L$ ($\Delta_L$) are unresolved in both cells. % src: analysis/fork/out/takeover_20261005T1604Z.md; analysis/fork/out/takeover_20261005T1604Z.json; docs/insights/TAKEOVER_WINDOW_PROTOCOL.md
+\paragraph{All admitted ordinary-state upgrade effects.} Table~\ref{tab:ordinary-modes} reports all three upgrade modes for every admitted configuration, with both fixed-pool and new-task intervals.
 \begin{table*}[t]
-\centering\scriptsize\setlength{\tabcolsep}{1.6pt}
-\begin{tabular}{@{}llrrrr@{}}
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+% src: analysis/fork/out/newmethod_q8_20261004T051538Z.md (τ² U2B all states: G/H/F and crossed columns); docs/insights/NEWMETHOD_PANEL_PROTOCOL.md
+\begin{tabular}{@{}lrrlll@{}}
 \toprule
-cell & states & $V_{Q,1}$ & $V_{Q,4}$ & $V_{Q,\infty}$ & $R_{Q,4}$ \\
+Cell & blocks & states & $G$ & $H$ & $F$ \\
 \midrule
-GPTQ-W4 & all 255 & $+2.4$ {[-5.4, +10.1; -3.1, +7.8]} & $+2.0$ {[-5.4, +9.3; -3.9, +8.2]} & $+0.8$ {[-5.3, +6.9; -5.9, +7.5]} & $+1.2$ {[-6.6, +8.9; -3.1, +6.3]} \\
-GPTQ-W4 & $E_{Q,4}{=}1$ & $+3.4$ {[-8.9, +15.7; -4.7, +10.9]} & $+2.0$ {[-7.0, +11.0; -6.3, +10.6]} & $+0.2$ {[-8.2, +8.6; -9.9, +9.5]} & $+1.8$ {[-10.6, +14.1; -5.1, +9.6]} \\
-SpinQuant-W4A4 & all 255 & $0.0$ {[-2.9, +2.9; -3.5, +3.5]} & $+6.3$ {[+0.2, +12.4; 0.0, +12.2]} & $+11.8$ {[+6.7, +16.8; +5.1, +18.4]} & $-5.5$ {[-7.2, -3.8; -10.6, -0.8]} \\
-SpinQuant-W4A4 & $E_{Q,4}{=}1$ & $-1.8$ {[-6.2, +2.7; -5.5, +1.6]} & $+4.2$ {[+1.2, +7.2; -3.0, +11.6]} & $+12.5$ {[+7.2, +17.7; +4.6, +21.0]} & $-8.3$ {[-10.9, -5.6; -16.0, -1.2]} \\
+AWQ-style W4 & 3 & 255 & $+2.7$ [$-4.6$, $+10.1$] & $+4.3$ [$-0.1$, $+8.8$] & $+5.5$ [$+1.0$, $+10.0$] \\
+ & & & [$-2.4$, $+9.0$] & [$-1.2$, $+11.0$] & [$-0.8$, $+12.5$] \\
+GPTQ-W4 & 3 & 255 & $+0.4$ [$-7.0$, $+7.7$] & $+0.8$ [$-5.3$, $+6.9$] & $+3.5$ [$-2.3$, $+9.4$] \\
+ & & & [$-4.3$, $+5.9$] & [$-5.9$, $+7.5$] & [$-3.9$, $+10.6$] \\
+KIVI-16 path & 3 & 255 & $+0.0$ [$-2.9$, $+2.9$] & $+1.2$ [$-6.6$, $+8.9$] & $+2.4$ [$-0.6$, $+5.3$] \\
+ & & & [$-2.7$, $+2.7$] & [$-3.5$, $+5.9$] & [$-2.4$, $+7.1$] \\
+KIVI-2 & 2 & 170 & $-2.9$ [$-25.4$, $+19.5$] & $+2.9$ [$-4.5$, $+10.4$] & $+2.9$ [$-34.4$, $+40.3$] \\
+ & & & [$-8.2$, $+2.4$] & [$-3.5$, $+10.0$] & [$-5.9$, $+10.6$] \\
+KIVI-4 & 3 & 255 & $+0.0$ [$-5.1$, $+5.1$] & $+2.0$ [$-1.4$, $+5.3$] & $+0.8$ [$-8.1$, $+9.7$] \\
+ & & & [$-3.5$, $+4.3$] & [$-3.5$, $+7.5$] & [$-5.9$, $+7.1$] \\
+KV8 & 3 & 255 & $+1.6$ [$-0.1$, $+3.3$] & $+5.1$ [$+0.6$, $+9.6$] & $+5.5$ [$+1.0$, $+10.0$] \\
+ & & & [$-1.2$, $+4.7$] & [$+0.4$, $+9.8$] & [$+0.0$, $+10.6$] \\
+QuaRot-W16 path & 3 & 255 & $+0.0$ [$-5.1$, $+5.1$] & $+1.6$ [$-14.5$, $+17.7$] & $+2.4$ [$-8.2$, $+12.9$] \\
+ & & & [$-3.5$, $+3.1$] & [$-5.9$, $+9.4$] & [$-4.3$, $+9.0$] \\
+QuaRot-W4 & 3 & 255 & $+0.8$ [$-5.3$, $+6.9$] & $+1.6$ [$-1.8$, $+4.9$] & $+4.7$ [$+1.8$, $+7.6$] \\
+ & & & [$-3.5$, $+5.9$] & [$-4.3$, $+7.5$] & [$-2.0$, $+11.4$] \\
+QuaRot-W4A4 & 3 & 255 & $+1.2$ [$-6.6$, $+8.9$] & $+6.3$ [$-8.4$, $+21.0$] & $+9.4$ [$+1.7$, $+17.1$] \\
+ & & & [$-4.7$, $+6.3$] & [$-2.4$, $+14.1$] & [$+2.0$, $+16.5$] \\
+SpinQuant-W16 path & 3 & 255 & $-0.4$ [$-2.1$, $+1.3$] & $+2.0$ [$-1.4$, $+5.3$] & $+2.4$ [$-0.6$, $+5.3$] \\
+ & & & [$-3.1$, $+2.4$] & [$-2.4$, $+6.3$] & [$-2.4$, $+7.1$] \\
+SpinQuant-W4A4 & 3 & 255 & $+3.1$ [$-2.9$, $+9.2$] & $+11.8$ [$+6.7$, $+16.8$] & $+13.7$ [$+9.3$, $+18.2$] \\
+ & & & [$-2.0$, $+8.2$] & [$+5.1$, $+18.4$] & [$+5.5$, $+21.6$] \\
+
 \bottomrule
 \end{tabular}
-\caption{Takeover duration (pp; [block-$t$; crossed] 95\%). SpinQuant-W4A4 four-decision windows handed back at 66\% of states (169/255) and generated about 228 BF16 tokens per state, against about 60 for one-decision windows. % src: analysis/fork/out/takeover_20261005T1604Z.json (cells.*.primary.all_states_pp; subsets_pp.E_Q4 curve); analysis/fork/out/takeover_20261005T1604Z.md (Handback per window: spinquant_w4a4 Q1, Q4 tokens_mean B_gen 59.7, 227.8); derived: 66=100*169/255
-}
-\label{tab:takeover}
+\caption{All q8 ordinary BF16-sourced states admitted by the panel rules, including unquantized path controls. Effects in pp; each cell: estimate with fixed-pool 95\% $t$ interval, then crossed task$\times$block 95\% interval. All three modes use the same admitted states within a row. These descriptive intervals are unadjusted; the primary method family is P1--P3. KIVI-2 admits only two blocks after one-time infrastructure re-runs; it is not estimable under the original strict rule. Other cells admit three blocks. No action-only interval excludes zero; several takeover or joint-upgrade intervals do.}
+\label{tab:ordinary-modes}
 \end{table*}
-
-\subsection{Key-order control}
-\label{app:keyorder}
-\paragraph{Design.} Protocol \texttt{KEYORDER\_PERTURB\_PROTOCOL.md} (ko-v1, exploratory control). Eligible states are first tool-structure divergences of q8 GPTQ-W4 (Bank P) where Q's action is a tool call with at least two top-level argument keys, reversing them leaves the parsed call and the environment effects unchanged, and the next prompt tokens differ (300 of 1473 divergent states, 41 tasks). The arm KQ forces the reversed action and lets Q continue; QQ and BQ are reused from Bank P. Eligibility was fixed without outcomes; the analysis code (sha256-recorded) was frozen before any KQ outcome was read. All four tasks passed acceptance (KQ checks 300/300, shadow 300/300, QQ no-op 35/35, no errors or context overflows). Two tasks were restarted with resume during the run (Amendment 2026-10-05g). % src: docs/insights/KEYORDER_PERTURB_PROTOCOL.md; analysis/fork/keyorder/eligibility_v1.md; analysis/fork/out/keyorder_20261005T204349Z.md; derived: 300=72+80+73+75; 35=7+9+11+8
-\paragraph{Results.} Conditional on eligible states (pooled ratio; intervals are the wider of block and crossed bootstrap), KQ changes 6.7\% [0.8, 14.4] of outcomes and B 9.0\% [2.9, 18.2]; KQ has 10 rescues and 10 damages, B 10 and 17, and the flips coincide on 5 rescues and 7 damages. Over the full 1700-unit pool, KQ contributes 1.2\pp{} [0.1, 2.8] of turnover against 17.9\pp{} for the BF16 swap on all divergent states. % src: analysis/fork/out/keyorder_20261005T204349Z.md (table; joint flips); derived: 10=5+5; 17=7+10
