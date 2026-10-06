@@ -37,11 +37,11 @@ Nonce blocks carry ids such as fNN (development) and qN (stress and W3 panels); 
 
 The replacement gains $\Gall$, $G$, $H$ and $F$ are not end-to-end comparisons. Table~\ref{tab:e2e} gives the end-to-end comparison, computed separately on the same checkpoints, the same tasks and the same 20 nonce blocks as the forks. % src: analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md
 
-\begin{table}[h]
-\centering\scriptsize\setlength{\tabcolsep}{3pt}
+\begin{table*}[t]
+\centering% visual-layout-v1
+\renewcommand{\arraystretch}{1.12}\fontsize{8.5}{10}\selectfont\setlength{\tabcolsep}{4pt}
 % src: analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md
-\setlength{\tabcolsep}{1.6pt}
-\resizebox{\linewidth}{!}{%
+\setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}lrrcc@{}}
 \toprule
 Cell & Q / BF16 (\%) & Q$-$BF16 [95\% CI] & NI 3\pp{} & TOST $\pm$3\pp{} \\
@@ -52,10 +52,10 @@ q8 GPTQ-W4 & 30.1 / 30.4 & $-0.2$ [$-7.7$, $+6.8$] & fail & fail \\
 q8 AWQ-style W4  & 31.5 / 30.4 & $+1.2$ [$-5.3$, $+7.6$] & fail & fail \\
 pool, all four & & $+1.5$ [$-2.7$, $+5.6$] & pass & fail \\
 \bottomrule
-\end{tabular}}
+\end{tabular}
 \caption{End-to-end closed-loop success, quantized minus BF16 (pp). Units are paired on nonce, and the crossed task$\times$block bootstrap is drawn jointly across cells. Non-inferiority (NI) at a 3\pp{} margin passes for q4 GPTQ-W4 and the all-four pool. Equivalence (TOST at $\pm$3\pp{}) passes nowhere. These comparisons therefore support neither a difference nor equivalence.}
 \label{tab:e2e}
-\end{table}
+\end{table*}
 
 
 \subsection{Coverage Matrix}
@@ -64,9 +64,10 @@ pool, all four & & $+1.5$ [$-2.7$, $+5.6$] & pass & fail \\
 Table~\ref{tab:coverage} lists the completed crossed-intervention coverage behind every Qwen3 Bank P and Bank U result; the coverage of the U2B panels (\S\ref{sec:r4}, \S\ref{sec:scope}) is in Appendix~\ref{app:panels}. It counts tasks, states and complete blocks after the strict admission rule. Four of the five stress cells turn over 18.4--20.4\% of units with three blocks; we keep them separate from W4, and no W2 crossed-intervention panel is reported. % src: analysis/fork/out/dev_all_20261001T070326Z.md
 
 \begin{table*}[t]
-\centering\scriptsize\setlength{\tabcolsep}{3pt}
+\centering% visual-layout-v1
+\renewcommand{\arraystretch}{1.12}\fontsize{8.5}{10}\selectfont\setlength{\tabcolsep}{4pt}
 % src: analysis/fork/out/ghf_20261001T211519Z.md (§5 Coverage matrix, quantization configs)
-\resizebox{\textwidth}{!}{\begin{tabular}{@{}llllll@{}}
+\begin{tabular}{@{}P{2.4cm}P{2.25cm}P{2.25cm}P{2.1cm}P{2.3cm}P{2.65cm}@{}}
 \toprule
 Cell & \tautwo{} retail (Bank P) & \tautwo{} airline (Bank P) & telecom dev (Bank P) & Bank U (retail / airline) & BFCL / ALFWorld \\
 \midrule
@@ -87,7 +88,7 @@ q4 / q8 KV4 (unrotated) & -- & -- & -- & -- & 788 $\cdot$ 787 / 788 $\cdot$ 788 
 q14 GPTQ-W4 & -- & -- & -- & -- & 788 $\cdot$ 471 st / -- % src: analysis/fork/out/ext_q14_20261002T085647Z.md
  \\
 \bottomrule
-\end{tabular}}
+\end{tabular}
 \caption{Completed crossed-intervention coverage (t = tasks, st = states, b = complete/found blocks; BFCL and ALFWorld: items $\cdot$ states, one run). Bank U: blocks completed and state rows per domain; blocks f01--f03 are analysed (Appendix~\ref{app:banku}). ``holdout'': the cell is in the telecom holdout (Appendix~\ref{app:prereg}). Qwen3-32B has end-to-end runs only; Llama-3.1-8B stopped at its fork gate (Limitations); the q14 (Qwen3-14B) BFCL row is a within-family scale check. q4 RTN-W3 has no complete Bank P block and is omitted. The telecom development results (Appendix~\ref{app:holdoutdev}) use the 6 blocks listed. $^\dagger$The BFCL base category of q4 GPTQ-W3 was dropped by the QQ no-op rule (Appendix~\ref{app:extr2}). The end-to-end q4 AWQ-W3 run is incomplete (two airline episodes hit 600\,s serving timeouts), and so are the q4 RTN-W2 stress runs (context-window overflows of the degenerate model and a truncated result file); neither is reported. % src: analysis/fork/ext_l8_gate/GATE.md; ../cloq_work/queue/deferred/a6k2_w2p_q4_rtn_w2_q3.json; ../cloq_work/queue/deferred/a6k2_q4_awq_w3_qx.json; runs/a6k2_q4_awq_w3_q5/airline/infra_causes.json
 }
 \label{tab:coverage}
@@ -100,8 +101,9 @@ Table~\ref{tab:qconfig} gives the quantization settings of every checkpoint conf
 
 % Quantization configuration of every checkpoint cell (values read from metadata; nothing inferred).
 \begin{table*}[t]
-\centering
-\scriptsize
+\centering% visual-layout-v1
+\renewcommand{\arraystretch}{1.12}
+\fontsize{8.5}{10}\selectfont
 % src: runs/a6k2_q4_gptq_w4_d1_f01/quantization.json; runs/a6k2_q8_gptq_w4_d1_f01/quantization.json (method, wbits, group_size, sym, act_order, percdamp, blocksize, true_sequential, calibration.*)
 % src: runs/a6k2_q4_gptq_w4_d2_n1/quantization.json; runs/a6k2_q8_gptq_w4_d2_n1/quantization.json (Q' = draw c2, draw_seed 20260730); scripts/a6000/make_tasks_sameprec.py L1-2, L30 (q_ckpt c1, b_ckpt c2)
 % src: manifests/a6k2/q*/calib_fp_traj_c*.json (contexts: same 57 tasks and 57 BF16 trajectories in c1 and c2, 5/57 decision states shared; tasks disjoint from manifests/fork/splits_v1.json dev)
@@ -115,24 +117,29 @@ Table~\ref{tab:qconfig} gives the quantization settings of every checkpoint conf
 % src: runs/ext_q8_quarot_w4a4_bfcl_nmp1/quantization.json; runs/ext_q8_spinquant_w4a4_bfcl_nmp1/quantization.json (rotation, weight_quant GPTQ sym per-channel act_order false, WikiText-2 calibration, activations, learn_meta; R.pt sha256 1f1719b5 = tau2 task); analysis/ahook/ckpt_q8_qr4.quantization.json
 % src: ../cloq_work/queue/done/nmp_tau2_q8_kivi_k2v2_f01.json (KIVI group 32, resid 128); runs/ext_q8_kivi_k2v2_bfcl_nmp1/quantization.json (granularity)
 % src: runs/ext_m24_gptq_w4_d1_bfcl_nmp1/quantization.json; runs/a6k2_m24_rtn_w4_g1/quantization.json; manifests/a6k2/m24/calib_fp_traj_c1.json
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}p{2.2cm}p{2.2cm}p{1.6cm}p{1.0cm}p{4.1cm}p{3.75cm}@{}}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}P{2.15cm}P{2.15cm}P{1.55cm}P{1.0cm}P{4.0cm}P{3.7cm}@{}}
 \toprule
 Config.\ (models) & Method, weights & Group, grid & Act-order & Calibration & KV cache / activations / rotation \\
 \midrule
 GPTQ-W4 Q (q4, q8) & GPTQ, W4; damp 0.01, block 128, true-sequential & 128, asym. & yes & draw c1: 57 BF16 agent-trajectory states (39 retail, 18 airline calibration tasks, disjoint from the 85 dev tasks), one state per task, full context (median 6041 / 6310 tok.); 64{,}000 activation rows (1122--1123 per state); draw seed 20260729 & KV BF16, act.\ BF16, no rotation \\
 GPTQ-W4 Q$'$ (q4, q8) & as Q & 128, asym. & yes & draw c2, seed 20260730: same 57 tasks and trajectories, re-drawn decision state and rows (5/57 states shared with c1); not disjoint & as Q \\
-AWQ-style W4 (q4, q8) & AWQ-style: per-linear scale $\bar{|x|}^\alpha$, 20-pt $\alpha$ grid, scale folded into weight, then RTN; no clip search & 128, asym. & n/a (GPTQ only) & draw c1 as GPTQ-W4 Q; $\alpha$ fit on a 4096-row sample (code default; per-run value not recorded) & as Q \\
+AWQ-style W4 (q4, q8) & AWQ-style: per-linear scale $\bar{|x|}^\alpha$, 20-point $\alpha$ grid, scale folded into weight, then RTN; no clip search & 128, asym. & n/a (GPTQ only) & draw c1 as GPTQ-W4 Q; $\alpha$ fit on a 4096-row sample (code default; per-run value not recorded) & as Q \\
 GPTQ-W3$^s$ Q / Q$'$ (q4, q8) & GPTQ, W3 & 128, asym. & yes & c1 / c2 as W4 & as Q \\
 RTN-W3$^s$ (q4, q8) & RTN, W3 & 128, asym. & n/a & none & as Q \\
+\addlinespace[3pt]
 KV8 (q4, q8) & BF16 weights & -- & -- & none & INT8 K and V, asym.\ min--max per (token, KV head) over head\_dim, no clip, no rotation; fake quant in fp32 \\
 KV4-rot$^s$ (q4, q8) & BF16 weights & -- & -- & none & INT4 K and V, same grid as KV8; online normalized Hadamard on head\_dim: q and k rotated, V rotated and rotated back \\
+\addlinespace[3pt]
 QuaRot-W4A4 (q8) & random-Hadamard rotation (seed 0) + GPTQ W4, MSE clip search & per out-channel, sym. & no & WikiText-2 train, 128 $\times$ 2048 tok., seed 0 & A4: sym.\ per-token dynamic, clip 0.9, inputs of qkv, o, gate/up, down, online Hadamard (o, down); KV16, per-head q/k Hadamard after RoPE \\
 SpinQuant-W4A4 (q8) & learned $R_1$, per-layer $R_2$ (100 steps, lr 1.5, A4 in training) + GPTQ W4 as QuaRot & per out-channel, sym. & no & weights and rotations: WikiText-2, 128 $\times$ 2048, seed 0 & as QuaRot-W4A4 \\
+\addlinespace[3pt]
 KIVI-2 / KIVI-4 (q8) & BF16 weights & -- & -- & none & K per channel, V per token, group 32, asym.; last 128 tokens full precision \\
+\addlinespace[3pt]
 Mistral GPTQ-W4 / RTN-W4 (m24) & GPTQ W4 / RTN W4 & 128, asym. & yes / n/a & GPTQ: draw c1, 57 states, 64{,}000 rows, seed 20260729 (no c2 draw) & as Q \\
 \bottomrule
 \end{tabular}
 \caption{Quantization configuration of every checkpoint configuration, from the checkpoint metadata. AWQ-style W4 is AWQ-style (scale folded into the weight, then RTN, no clip search). Q$'$ re-draws the decision state and activation rows from the same 57 calibration trajectories as Q. The W4A4 configurations keep a 16-bit KV cache and calibrate on WikiText-2, so a QuaRot-minus-GPTQ contrast also changes the calibration source. One q8 calibration context (c1) is marked truncated. All checkpoints are fake-quantized and stored in BF16; embeddings, \texttt{lm\_head} and norms stay BF16. $^s$stress cell.}
 \label{tab:qconfig}
 \end{table*}
+

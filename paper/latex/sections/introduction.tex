@@ -26,29 +26,27 @@ Valuing a step under the continuing policy and factorial forking are standard \c
 \begin{figure}[t]
 \centering
 \begin{tikzpicture}[ % nocheck: TikZ layout coordinates
-  font=\scriptsize,
-  box/.style={draw, rounded corners=2pt, align=center, inner sep=2pt},
-  act/.style={draw, rounded corners=2pt, align=center, inner sep=1.8pt, fill=gray!10}, % nocheck: TikZ style
-  ok/.style={draw, align=center, inner sep=1.5pt, minimum width=1.55cm, fill=palRescue!15},
-  no/.style={draw, align=center, inner sep=1.5pt, minimum width=1.55cm},
-  arr/.style={-{Stealth[length=3.5pt]}, thin}]
-\node[box, text width=7.2cm] (h) at (0,0) {frozen state: airline task, first decision; user wants an earlier nonstop flight. History, databases, simulator view and budget restored}; % nocheck: TikZ
-\node[act, fill=palB!12, text width=3.3cm] (aB) at (-1.95,-1.05) {B's action: look up the user's profile $\rightarrow$ ok}; % nocheck: TikZ
-\node[act, fill=palQ!14, text width=3.3cm] (aQ) at (1.95,-1.05) {Q's action: look up reservation by a wrong id $\rightarrow$ not found}; % nocheck: TikZ
-\draw[arr] (h.south -| aB) -- (aB); \draw[arr] (h.south -| aQ) -- (aQ);
-\node[ok] (bb) at (-2.85,-2.2) {BB: success\\[-1pt]{\scriptsize B continues}}; % nocheck: TikZ
-\node[no] (bq) at (-0.95,-2.2) {BQ: fail\\[-1pt]{\scriptsize Q continues}}; % nocheck: TikZ
-\node[no] (qb) at (0.95,-2.2) {QB: fail\\[-1pt]{\scriptsize B continues}}; % nocheck: TikZ
-\node[no] (qq) at (2.85,-2.2) {QQ: fail\\[-1pt]{\scriptsize Q continues}}; % nocheck: TikZ
-\draw[arr] (aB) -- (bb); \draw[arr] (aB) -- (bq);
-\draw[arr] (aQ) -- (qb); \draw[arr] (aQ) -- (qq);
-\node[box, text width=7.2cm, fill=palRescue!6, anchor=north] at (0,-2.75) % nocheck: TikZ
-  {\textbf{joint rescue}: only BB succeeds\\ % nocheck: TikZ
-   this step only: $G=\YY{BQ}-\YY{QQ}=0$\\ % nocheck: TikZ
-   from the next step: $H=\YY{QB}-\YY{QQ}=0$\\ % nocheck: TikZ
-   both: $F=\YY{BB}-\YY{QQ}=+1$}; % nocheck: TikZ
+  font=\footnotesize, % nocheck: TikZ layout
+  box/.style={draw=black!30,rounded corners=2pt,align=center,inner sep=4pt}, % nocheck: TikZ layout
+  arm/.style={box,inner sep=2pt,minimum width=1.45cm,minimum height=.77cm}, % nocheck: TikZ layout
+  arr/.style={-{Stealth[length=4pt]},draw=black!45}] % nocheck: TikZ layout
+\node[box,text width=7.05cm,fill=gray!5] (s) at (0,0) % nocheck: TikZ layout
+  {\textbf{One restored airline state}\\User requests an earlier nonstop flight};
+\node[font=\footnotesize\bfseries,text=palB] at (.65,-.85) {B continues}; % nocheck: TikZ layout
+\node[font=\footnotesize\bfseries,text=palQ] at (2.45,-.85) {Q continues}; % nocheck: TikZ layout
+\node[box,text width=2.9cm,fill=palB!7,anchor=east] (ab) at (-.45,-1.6) % nocheck: TikZ layout
+  {\textcolor{palB}{\textbf{B's action}}\\Look up user profile};
+\node[box,text width=2.9cm,fill=palQ!8,anchor=east] (aq) at (-.45,-2.7) % nocheck: TikZ layout
+  {\textcolor{palQ}{\textbf{Q's action}}\\Wrong reservation ID};
+\node[arm,fill=palRescue!12,draw=palRescue] (bb) at (.65,-1.6) {\textbf{BB}\\Success}; % nocheck: TikZ layout
+\node[arm] (bq) at (2.45,-1.6) {\textbf{BQ}\\Failure}; % nocheck: TikZ layout
+\node[arm] (qb) at (.65,-2.7) {\textbf{QB}\\Failure}; % nocheck: TikZ layout
+\node[arm] (qq) at (2.45,-2.7) {\textbf{QQ}\\Failure}; % nocheck: TikZ layout
+\node[box,text width=7.05cm,fill=palRescue!5,anchor=north] at (0,-3.3) % nocheck: TikZ layout
+  {\textbf{Joint rescue: only BB succeeds}\\$G=0$\qquad $H=0$\qquad $F=+1$};
 \end{tikzpicture}
-\caption{Four branches at one restored state (Qwen3-4B, AWQ-style W4; airline task 31, decision 1 of 12). B's action is worth a success only if B also continues: testing the action alone ($G$) or the continuation takeover alone ($H$) finds no gain, and the joint replacement ($F$) does. This pattern is a \emph{joint rescue}. The case illustrates the measurement distinction, not a mechanism.} % src: analysis/fork/out/ghf_20261001T211519Z.md (§4 Case 5)
+\caption{Four branches at one restored state (Qwen3-4B, AWQ-style W4; airline task 31, decision 1 of 12). Only the joint replacement succeeds; action-only and continuation-only evaluations miss this rescue. The case illustrates the measurement distinction, not a mechanism.} % src: analysis/fork/out/ghf_20261001T211519Z.md (§4 Case 5)
 \label{fig:case}
 \label{fig:fork}
 \end{figure}
+

@@ -5,8 +5,9 @@ No main-text claim rests on this appendix. It reports a supplementary injection 
 
 \paragraph{Controlled injection.} On 30 ordinary GPTQ-W4 states per model, each from one development block, we compared a forced invalid action with a matched valid action and with a process perturbation that repeated the last successful read; either B or Q then continued. Each panel balanced wrong-ID, tool-call/schema error and premature-write perturbations. Table~\ref{tab:injection-boundary} gives the invalid-minus-process contrast. These small panels did not resolve an error-specific effect; the q8 interval under Q still allows substantial harm. % src: analysis/recovery/inject_q4/summary_v2.md; analysis/recovery/inject_q8/summary_v2.md
 
-\begin{table}[t]
-\centering\scriptsize\setlength{\tabcolsep}{3pt}
+\begin{table*}[t]
+\centering% visual-layout-v1
+\renewcommand{\arraystretch}{1.12}\fontsize{8.5}{10}\selectfont\setlength{\tabcolsep}{4pt}
 % src: analysis/recovery/inject_q4/summary_v2.md; analysis/recovery/inject_q8/summary_v2.md (Outcome turnover; Manipulation checks)
 \begin{tabular}{@{}lclc@{}}
 \toprule
@@ -20,7 +21,7 @@ q8 & Q & $-0.13$ [$-0.30$, $+0.03$] & 9/30 \\
 \end{tabular}
 \caption{Error-specific contrast, in success probability units; task-cluster bootstrap. Failed manipulation checks are state counts, repeated here for the two continuations of the same panel. No equivalence claim follows from intervals including zero.}
 \label{tab:injection-boundary}
-\end{table}
+\end{table*}
 
 Replay checks passed on both panels; q4 lacked three recorded audit fields. In q4, most wrong-tool injections actually produced schema errors (8/10). In q8, seven premature writes failed to inject the intended write (six environment rejections and one execution without a database change), and two valid references returned ``not found''. These failures prevent the panels from establishing a general recovery mechanism. % src: analysis/recovery/inject_q4/summary_v2.md (Replay audit; Manipulation checks); analysis/recovery/inject_q8/summary_v2.md (Manipulation checks)
 
@@ -34,3 +35,4 @@ The pre-registered q8 replication gives $+2.1$ [$-5.8$, $+10.1$] over 6 blocks, 
 \paragraph{Static precision restoration.} Restoring attention or a layer segment was compared with byte-matched random modules. In the damaged RTN-W3 models the attention contrast was $+9.8$ [$+6.1$, $+13.6$]\pp{} (crossed [$+4.5$, $+15.1$]), while the last third was $-8.6$ [$-13.4$, $-3.8$] (crossed [$-12.9$, $-4.7$]). These were exploratory contrasts among 39 unadjusted comparisons; the attention reference had only two completed random draws. None of the 30 GPTQ-W3 or W4 contrasts excluded zero under both intervals, and no tested allocation beat whole-model GPTQ-W4 at matched storage. This incomplete stress test supports no deployment method. The full matrix and unfinished-arm inventory remain in the released analysis. % src: analysis/fork/out/backfill_20261003T193042Z.md (§1); docs/RESEARCH_LOG.md W64, W67
 
 \paragraph{Provenance.}\label{app:figsrc} Figure values, retained tables and scoring definitions map to committed analysis outputs and frozen manifests. The release also retains complete pattern counts, restoration matrices, process labels, experiment logs and historical corrections; they are not additional independent evidence for the paper's conclusions. Protocol amendments and unresolved primary contrasts remain disclosed in this supplement. Removing duplicate displays and exploratory leads from this supplement does not change the estimators, admission rules or reported primary decisions.
+

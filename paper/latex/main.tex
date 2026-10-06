@@ -15,7 +15,9 @@
 \usepackage{amssymb}
 \usepackage{booktabs}
 \usepackage{array}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
 \usepackage{multirow}
+\usepackage{stfloats}
 \usepackage{xcolor}
 % figure palette (same hex and roles as PAL in tools/figs/make_figs.py; Okabe-Ito)
 \definecolor{palB}{HTML}{0072B2}\definecolor{palQ}{HTML}{CC79A7}\definecolor{palQP}{HTML}{E69F00}
@@ -45,6 +47,7 @@
 \author{Anonymous ARR submission}
 
 \begin{document}
+\raggedbottom
 \maketitle
 
 \input{sections/abstract}
@@ -62,7 +65,17 @@
 \bibliography{refs}
 
 \appendix
+% Appendix tables use readable print sizes and align at the top of float pages.
+\renewcommand{\dbltopfraction}{0.9}
+\renewcommand{\dblfloatpagefraction}{0.55}
+\setcounter{dbltopnumber}{3}
+\makeatletter
+\setlength{\@dblfptop}{0pt}
+\setlength{\@dblfpsep}{16pt}
+\setlength{\@dblfpbot}{0pt plus 1fil}
+\makeatother
 \input{sections/appendix}
 
 \end{document}
+
 

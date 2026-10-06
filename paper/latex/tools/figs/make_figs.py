@@ -63,19 +63,19 @@ B, Q, QP, RESCUE, DAMAGE, ALT, SHARED, REF = (PAL[k] for k in ("B", "Q", "QP", "
 INK, INK2, MUTED, GRID, BAND = PAL["INK"], "#4D4D4D", REF, "#E3E3E3", "#F2F2F2"
 NET = ORACLE = INK
 BLUE, ORANGE, AQUA = B, QP, SHARED  # legacy names kept for importers; prefer the role names
-FS, FS_S = 7, 6.5    # text: labels/ticks/titles/legends; small (in-bar counts, side notes)
+FS, FS_S = 8.5, 8    # text: labels/ticks/titles/legends; small (in-bar counts, side notes)
 LW_ZERO = 0.6        # zero / reference line width in every panel
 
 plt.rcParams.update({
     "font.family": "serif",
     "font.serif": ["Liberation Serif", "Nimbus Roman", "Times New Roman", "Times", "STIXGeneral"],
     "mathtext.fontset": "stix",
-    "font.size": 7,
-    "axes.labelsize": 7,
-    "axes.titlesize": 7,
-    "xtick.labelsize": 7,
-    "ytick.labelsize": 7,
-    "legend.fontsize": 7,
+    "font.size": 8.5,
+    "axes.labelsize": 8.5,
+    "axes.titlesize": 8.5,
+    "xtick.labelsize": 8.5,
+    "ytick.labelsize": 8.5,
+    "legend.fontsize": 8.5,
     "figure.constrained_layout.h_pad": 0.01,
     "figure.constrained_layout.w_pad": 0.01,
     "axes.linewidth": 0.5,
@@ -405,46 +405,45 @@ def f3():
     assert [round(r[1], 2) for r in ho if r[6] == "ho"] == [5.05, 4.41, 6.31]
     assert [round(r[2], 2) for r in ho if r[6] == "ho"] == [8.08, 10.05, 12.88]
 
-    fig, (ax_a, ax_b) = plt.subplots(2, 1, sharex=True, figsize=(COL_W, 2.35),
-                                     gridspec_kw={"height_ratios": [5, 4]}, layout="constrained")
-    h = 0.62
-    for ax, rr_, title in ((ax_a, dev_rows, r"(a) $\tau^2$ development (85 tasks $\times$ 20 blocks)"),
-                           (ax_b, ho, r"(b) pre-reg. telecom holdout (34 tasks $\times$ 12 blocks)")):
+    # Two populations, two visibly separate panels; never pool the holdout with development.
+    fig = plt.figure(figsize=(FULL_W, 1.95))
+    ax_a = fig.add_axes([.155, .28, .335, .57])
+    ax_b = fig.add_axes([.665, .28, .325, .57])
+    for ax, rr_, title in ((ax_a, dev_rows, "(a) Development · W4"),
+                           (ax_b, ho, "(b) Telecom holdout")):
         style_axis(ax, grid_axis="x")
-        ypos = [-i - (0.35 if r[6] in ("devpool", "hopool") else 0.0) for i, r in enumerate(rr_)]
-        if ax is ax_b:  # pre-registered small-effect region: -3 pp < L and U < +3 pp
-            ax.axvspan(-3, 3, color=INK, alpha=0.12, lw=0, zorder=0)
+        ypos = [-i - (.3 if r[6] in ("devpool", "hopool") else 0) for i,r in enumerate(rr_)]
+        if ax is ax_b:
+            ax.axvspan(-3, 3, color=INK, alpha=.07, lw=0)
         for r, yy in zip(rr_, ypos):
-            lab, res, dam, net, thick, thin, g = r
-            ax.barh(yy, res, height=h, color=RESCUE, lw=0, zorder=2)
-            ax.barh(yy, -dam, height=h, color=DAMAGE, lw=0, zorder=2)
-            if g in ("ho", "hopool"):  # ONE interval: crossed 90% (decisional for the weighted row)
-                interval(ax, yy, net, thin, None, NET, marker="D", ms=3.2, horizontal=True, z=4)
+            lab, res, dam, net, thick, thin, group = r
+            ax.barh(yy, res, height=.58, color=RESCUE, alpha=.82, lw=0, zorder=2)
+            ax.barh(yy, -dam, height=.58, color=DAMAGE, alpha=.82, lw=0, zorder=2)
+            if group in ("ho", "hopool"):
+                interval(ax, yy, net, thin, None, NET, marker="D", ms=4, horizontal=True, z=4)
             else:
-                interval(ax, yy, net, thick, thin, NET, marker="D", ms=3.2, horizontal=True, z=4)
-        ax.axvline(0, color=INK2, lw=LW_ZERO, zorder=3)
+                interval(ax, yy, net, thick, thin, NET, marker="D", ms=4, horizontal=True, z=4)
+        ax.axvline(0,color=INK2,lw=LW_ZERO,zorder=3)
         ax.set_yticks(ypos)
-        ax.set_yticklabels([r[0] for r in rr_])
-        for t, r in zip(ax.get_yticklabels(), rr_):
-            if r[6] in ("devpool", "hopool"):
-                t.set_fontweight("bold")
-        ax.tick_params(axis="y", length=0)
-        ax.set_ylim(ypos[-1] - 0.55, ypos[0] + 0.55)
-        ax.set_title(title, pad=2, fontsize=FS, loc="left")
-    ax_a.set_ylim(ax_a.get_ylim()[0], 1.15)
-    ax_a.text(-13.8, 0.72, r"$\leftarrow$ damage", ha="left", va="center", fontsize=FS_S, color=DAMAGE)
-    ax_a.text(13.8, 0.72, r"rescue $\rightarrow$", ha="right", va="center", fontsize=FS_S, color=RESCUE)
-    ax_b.text(0, -4.6, "pre-reg. small-effect region", ha="center", va="center", fontsize=FS_S, color=INK2,
-              style="italic")
-    ylo, yhi = ax_b.get_ylim()
-    ax_b.set_ylim(-4.9, yhi)
-    ax_b.set_xlim(-14, 14)
-    ax_b.set_xticks([-12, -8, -4, 0, 4, 8, 12])
-    ax_b.set_xticklabels(["12", "8", "4", "0", "4", "8", "12"])
-    ax_b.set_xlabel("% of units (net: pp)")
-    save(fig, "f3_rescue_damage", ["dev", "hconf"],
-         "rescue/damage/net: (a) dev W4 cells + pool, fixed-pool and new-task 95%; "
-         "(b) telecom holdout crossed 90% with ±3 pp region")
+        labels=[]
+        for r in rr_:
+            lab=r[0].replace("q4 ","4B ").replace("q8 ","8B ").replace("-W4","").replace("AWQ-style W4","AWQ-style")
+            labels.append("Weighted" if r[6]=="hopool" else lab)
+        ax.set_yticklabels(labels,fontsize=8)
+        for t,r in zip(ax.get_yticklabels(),rr_):
+            if r[6] in ("devpool","hopool"): t.set_fontweight("bold")
+        ax.tick_params(axis="y",length=0,pad=4)
+        ax.set_ylim(ypos[-1]-.7,.65)
+        ax.set_xlim(-14,14)
+        ax.set_xticks([-12,-6,0,6,12])
+        ax.set_xlabel("Damages ←   % of units   → Rescues",fontsize=8)
+        ax.set_title(title,loc="left",fontweight="bold",pad=16)
+        subtitle="85 tasks × 20 blocks · 95% intervals" if ax is ax_a else "34 tasks × 12 blocks · crossed 90%"
+        ax.text(0,1.055,subtitle,transform=ax.transAxes,fontsize=7.5,color=INK2)
+    fig.text(.155,.025,"◆ Net gain (pp): thick = fixed-pool; thin = new-task",fontsize=7.5)
+    fig.text(.665,.025,"Shading: pre-registered ±3 pp region",fontsize=7.5,color=INK2)
+    save(fig,"f3_rescue_damage",["dev","hconf"],
+         "rescue/damage/net: separate development and holdout panels; all original intervals retained")
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -501,74 +500,49 @@ def f4():
     assert [round(v, 2) for v in net_fr] == [0.39, 0.2, 0.49] and [round(v, 2) for v in net_or] == [3.33, 3.73, 3.73]
     assert [round(v, 2) for v in net_rd] == [p["random_net_pp"] for p in orc]  # 0.02 / 0.10 / 0.23
 
-    fig = plt.figure(figsize=(COL_W, 2.55), layout="constrained")
-    gs = fig.add_gridspec(2, 2, height_ratios=[1.15, 1.0], width_ratios=[1.25, 1.0])
-    a, b2, c3 = fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[0, 1]), fig.add_subplot(gs[1, :])
-    gx = [0, 1, 2]
-    w = 0.36
-    # (a) selected rescues (up) and damages (down): random expected vs frozen trigger; oracle in (c)
+    fig = plt.figure(figsize=(FULL_W, 2.05))
+    a = fig.add_axes([.085,.23,.41,.60])
+    b2 = fig.add_axes([.61,.23,.375,.45])
+    gx=[0,1,2]; w=.32
     style_axis(a)
-    rnd_kw = dict(alpha=0.45, hatch="//////", edgecolor="white", lw=0)
-    a.bar([x - w / 2 for x in gx], rd_r, w, color=RESCUE, zorder=2, **rnd_kw)
-    a.bar([x - w / 2 for x in gx], [-v for v in rd_d], w, color=DAMAGE, zorder=2, **rnd_kw)
-    a.bar([x + w / 2 for x in gx], [f["rescued"] for f in fr], w, color=RESCUE, lw=0, zorder=2)
-    a.bar([x + w / 2 for x in gx], [-f["damaged"] for f in fr], w, color=DAMAGE, lw=0, zorder=2)
-    for x, f in zip(gx, fr):
-        a.text(x + w / 2, f["rescued"] + 0.5, str(f["rescued"]), ha="center", va="bottom", fontsize=FS_S, color=INK)
-        a.text(x + w / 2, -f["damaged"] - 0.5, str(f["damaged"]), ha="center", va="top", fontsize=FS_S, color=INK)
-    a.axhline(0, color=INK2, lw=LW_ZERO, zorder=3)
-    a.set_ylim(-16.5, 19.5)
-    a.set_yticks([-10, -5, 0, 5, 10, 15])
-    a.set_yticklabels(["10", "5", "0", "5", "10", "15"])
-    a.set_ylabel("rescues (up) / damages (down)")
-    a.set_title("(a) selected rescues, damages", pad=2, loc="left")
-    # (b) net gain, trigger vs random only
+    rnd_kw=dict(alpha=.38,hatch="///",edgecolor="white",lw=.3)
+    a.bar([x-w/2 for x in gx],rd_r,w,color=RESCUE,zorder=2,**rnd_kw)
+    a.bar([x-w/2 for x in gx],[-v for v in rd_d],w,color=DAMAGE,zorder=2,**rnd_kw)
+    a.bar([x+w/2 for x in gx],[f["rescued"] for f in fr],w,color=RESCUE,lw=0,zorder=2)
+    a.bar([x+w/2 for x in gx],[-f["damaged"] for f in fr],w,color=DAMAGE,lw=0,zorder=2)
+    for x,f in zip(gx,fr):
+        a.text(x+w/2,f["rescued"]+.5,str(f["rescued"]),ha="center",va="bottom",fontsize=8)
+        a.text(x+w/2,-f["damaged"]-.5,str(f["damaged"]),ha="center",va="top",fontsize=8)
+    a.axhline(0,color=INK2,lw=LW_ZERO)
+    a.set_ylim(-15,20); a.set_yticks([-10,0,10,20])
+    a.set_yticklabels(["10","0","10","20"])
+    a.set_ylabel("Damages ↓   Outcomes   ↑ Rescues",fontsize=8)
+    a.set_title("(a) What the trigger selects",loc="left",fontweight="bold",pad=11)
+    a.legend(handles=[Patch(facecolor=INK2,label="Trigger"),
+                      Patch(facecolor=INK2,alpha=.38,hatch="///",edgecolor="white",label="Random (expected)")],
+             frameon=False,loc="upper left",fontsize=7.5,handlelength=1.1,handletextpad=.4)
     style_axis(b2)
-    kw = dict(lw=1.2, ms=3.4)
-    b2.plot(gx, net_fr, color=B, marker="o", **kw)
-    b2.plot(gx, net_rd, color=REF, marker="s", mfc="white", **kw)
-    b2.axhline(0, color=INK2, lw=LW_ZERO, zorder=1)
-    for x, f, v in zip(gx, fr, net_fr):  # label trigger nets in outcomes too (text quotes outcomes)
-        below = x == 1  # the 10% point is a local minimum of the line: label it underneath
-        b2.text(x, v - 0.035 if below else v + 0.035, f"+{f['net_gain']}", ha="center",
-                va="top" if below else "bottom", fontsize=FS_S, color=B)
-    b2.set_ylim(-0.05, 0.65)
-    b2.set_yticks([0, 0.2, 0.4, 0.6])
-    b2.set_ylabel("net gain (pp)")
-    b2.set_title("(b) net gain", pad=2, loc="left")
-    for ax in (a, b2):
-        ax.set_xticks(gx)
-        ax.set_xticklabels(["5%", "10%", "20%"])
-        ax.set_xlim(-0.65, 2.65)
-    # (c) hindsight oracle with the same per-configuration counts, own axis (headroom; rescues only by construction)
-    style_axis(c3, grid_axis="x")
-    yy = {"random": 2, "trigger": 1, "oracle": 0}
-    hb = 0.26
-    for i, (x, lab) in enumerate(zip(xs, ["5%", "10%", "20%"])):
-        off = (1 - i) * hb * 1.05
-        c3.barh(yy["oracle"] + off, net_or[i], hb, color=ORACLE, lw=0, zorder=2)
-        c3.barh(yy["trigger"] + off, net_fr[i], hb, color=B, lw=0, zorder=2)
-        c3.barh(yy["random"] + off, net_rd[i], hb, color=REF, zorder=2, **{**rnd_kw, "alpha": 0.6})
-        c3.text(net_or[i] + 0.05, yy["oracle"] + off, lab, ha="left", va="center", fontsize=FS_S - 0.5,
-                color=INK2)
-    c3.axvline(0, color=INK2, lw=LW_ZERO, zorder=3)
-    c3.set_yticks([2, 1, 0])
-    c3.set_yticklabels(["random (expected)", "frozen Q-only trigger", "matched oracle (hindsight)"])
-    c3.tick_params(axis="y", length=0)
-    c3.set_xlim(0, 4.3)
-    c3.set_ylim(-0.5, 2.5)
-    c3.set_xlabel("net gain (pp); bars from top: 5, 10, 20% escalation")
-    c3.set_title("(c) against the matched oracle (own axis)", pad=2, loc="left")
-    handles = [Patch(facecolor=INK2, alpha=0.45, hatch="//////", edgecolor="white", lw=0, label="random (exp.)"),
-               Patch(facecolor=INK2, lw=0, label="trigger"),
-               Line2D([], [], color=B, marker="o", **kw, label="trigger"),
-               Line2D([], [], color=REF, marker="s", mfc="white", **kw, label="random")]
-    a.legend(handles=handles[:2], loc="upper left", frameon=False, fontsize=FS_S, handlelength=1.2,
-             borderaxespad=0.1, handletextpad=0.3)
-    b2.legend(handles=handles[2:], loc="upper left", frameon=False, fontsize=FS_S, handlelength=1.6,
-              borderaxespad=0.1, handletextpad=0.3)
-    save(fig, "f4_trigger_oracle", ["oracle", "tok"],
-         "trigger vs random vs oracle: (a) selected rescues/damages, (b) net pp, (c) net pp with matched oracle")
+    kw=dict(lw=1.3,ms=4.5)
+    b2.plot(gx,net_fr,color=B,marker="o",label="Trigger",**kw)
+    b2.plot(gx,net_rd,color=REF,marker="s",mfc="white",label="Random",**kw)
+    b2.axhline(0,color=INK2,lw=LW_ZERO)
+    for x,f,v in zip(gx,fr,net_fr):
+        b2.text(x,v+.045,f"+{f['net_gain']} outcomes",ha="center",fontsize=7.5,color=B)
+    b2.set_ylim(-.05,.65); b2.set_yticks([0,.2,.4,.6]); b2.set_ylabel("Net gain (pp)",fontsize=8)
+    b2.legend(loc="upper left",frameon=False,ncol=2,fontsize=7.5,handlelength=1.1,columnspacing=.7)
+    fig.text(.61,.887,"(b) Net value and hindsight headroom",fontweight="bold",fontsize=FS)
+    # Oracle values are an aligned numerical strip, not bars compressing the trigger's scale.
+    fig.text(.61,.803,"Matched oracle (hindsight; pp):",fontsize=7.5,color=INK2)
+    for x,v in zip(gx,net_or):
+        px=.61+.375*(x+.48)/2.96
+        fig.text(px,.728,f"{v:.2f}",ha="center",fontsize=8,color=INK,
+                 bbox=dict(boxstyle="round,pad=.22",fc="#FFF5E0",ec=QP,lw=.55))
+    for ax in (a,b2):
+        ax.set_xlim(-.48,2.48); ax.set_xticks(gx)
+        ax.set_xticklabels([f"{x}%\n{f['n_escalated']} states" for x,f in zip(xs,fr)],fontsize=8)
+    fig.text(.52,.018,"Nominal escalation rate; realized selection count below",ha="center",fontsize=7.5,color=INK2)
+    save(fig,"f4_trigger_oracle",["oracle","tok"],
+         "trigger/random selected rescues and damages; net gain; count-matched oracle in an aligned numerical strip")
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -723,3 +697,4 @@ if __name__ == "__main__":
         old.setdefault("_derived", {}).update(PROV_EXTRA)
     json.dump(old, open(pj, "w"), indent=1, sort_keys=True)
     print("asserts passed; provenance ->", os.path.relpath(pj, ROOT))
+

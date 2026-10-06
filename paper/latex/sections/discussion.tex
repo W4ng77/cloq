@@ -3,34 +3,16 @@
 
 \paragraph{What an upgrade evaluation should report.} A study of precision routing or escalation should report the net task gain of the intervention it actually executes, as rescues and damages, together with that intervention's cost: the current action only, a continuation takeover, or both, under the continuation that runs afterwards. A gain measured for one of these is not the gain of another (\S\ref{sec:value}). Enrichment of outcome-changing decisions validates a signal's sensitivity, not its value; our trigger result concerns one frozen Q-only rule, and learned routers such as DMR \citep{li2026dynamicmp} and ReDAct \citep{piatrashyn2026redact} are untested (\S\ref{sec:r4}). Our experiments measure task value. They do not give a cost-optimal upgrade policy, and we measure no cost (simulated quantization; Limitations).
 
-\paragraph{How to read flips.} The two references show which consequences appear without more bits (\S\ref{sec:sameprec}). They are interventions on their own populations, not noise floors to subtract from B's turnover. One hypothesis, not an identified mechanism, is that a change in the history the agent reads propagates through the continuation. We tested one key-order change and specific checkpoint substitutions, not a perturbation curve, so the results do not say that any token change has these consequences.
+\paragraph{How to read flips.} The two references show which consequences appear without more bits (\S\ref{sec:sameprec}). They are interventions on their own populations, not noise floors to subtract from B's turnover. Each branch measures a realised outcome under the fixed greedy execution stack; task/nonce intervals do not estimate a state's expectation over arbitrary simulators or semantic perturbations. One hypothesis, not an identified mechanism, is that a change in the history the agent reads propagates through the continuation. We tested one key-order change and specific checkpoint substitutions, not a perturbation curve, so the results do not say that any token change has these consequences.
 
 \paragraph{Precision is not shown to be irrelevant.} Two fixed-pool intervals exclude zero (uncorrected), the holdout estimate is negative (classified inconclusive by the frozen readings), and at common states equivalence of B's and Q$'$'s actions is not shown. % src: analysis/fork/out/dev_all_20261001T070326Z.md (cells G block intervals); analysis/fork/out/holdout_confirm_20261002T012353Z.md (TL;DR; Readings); analysis/fork/out/sameprec_20261004T070601Z.md (Amendment A1); analysis/fork/out/commonstate_q8ext_20261003T231159Z.md
 
 \paragraph{Scope.}\label{sec:scope} Table~\ref{tab:scope} lists the scope checks. At ordinary sampled states, most outcome changes occur where B's and Q's actions have the same tool structure and differ only in text; when a second user simulator replaced the first after a fixed history, we could not confirm their rescue and damage labels (Appendix~\ref{app:ordinary}). All \tautwo{} results use one greedy user simulator. % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§2; §3 outcome changes by class); analysis/fork/out/simctrl_20261001T212742Z.md
 
-\begin{table}[t]
-% src: analysis/fork/out/ext_20261001T135106Z.md (TL;DR; W4:bfcl pooled); analysis/fork/out/newmethod_m24_20261004T024453Z.md; analysis/fork/out/newmethod_m24_20261004T024453Z.json (tau2.cells.*.all_states_pp); docs/insights/NEWMETHOD_PANEL_PROTOCOL.md (A3); analysis/fork/out/dev_all_20261001T070326Z.md; analysis/fork/out/newmethod_q8_20261004T051538Z.md; analysis/fork/out/newmethod_q8_20261004T051538Z.json (tau2.contrasts; fidelity.cells.*.KLu_mean)
-\centering
-\scriptsize
-\setlength{\tabcolsep}{2.5pt}
-\begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.0cm}>{\raggedright\arraybackslash}p{3.2cm}>{\raggedright\arraybackslash}p{2.05cm}@{}}
-\toprule
-Check & Result & Supports \\
-\midrule
-BFCL multi-turn, q4 and q8 W4 (no simulated user; one run per item; post hoc) & turnover 5.2--15.2\% of items, rescues and damages in every configuration; pool net $+0.1$ [$-1.0$, $+1.2$]; q4 AWQ-style W4 net $-3.8$ [$-6.5$, $-1.3$] & two-sided consequences; not the net \\[2pt]
-ALFWorld, q8 W4 (134 games; no simulated user; one run per item; post hoc) & turnover 21.6--24.6\%; pool net $-3.7$ [$-9.7$, $+1.9$] & two-sided consequences; not the net \\[2pt]
-Mistral-Small-3.2-24B, GPTQ-W4 and RTN-W4 (ordinary states from BF16 trajectories; 83 tasks) & GPTQ-W4 rescues 4.6, damages 5.4\pp{}; no mode's net resolved & two-sided consequences; no first divergent states, no Q$'$ \\[2pt]
-GPTQ-W3, RTN-W3, rotated KV4 (stress; three blocks) & turnover 18.4--19.2\% (GPTQ-W3), 6.7\% (q8 RTN-W3), 18.8--20.4\% (rotated KV4) & no; kept separate from W4 \\[2pt]
-QuaRot and SpinQuant W4A4, q8 (ordinary states from BF16 trajectories; three blocks) & SpinQuant has lower KL than QuaRot (0.165 vs 0.199); pre-registered task-value contrast unresolved ($+1.2$, crossed [$-4.7$, $+7.1$]) & no; numerical fidelity is not shown to order task value \\[2pt]
-KV cache: KV8 (q4, q8; first divergent states); KIVI-2 and KIVI-4 (q8; ordinary states from BF16 trajectories; two and three blocks) & KV8 turnover 6.5--8.1\% (descriptive); KIVI against KV8 not resolved & two-sided turnover at KV8; no KIVI claim \\
-\bottomrule
-\end{tabular}
-\caption{Scope checks (details: Appendix~\ref{app:scope}). ``Supports'' says which main-panel statement the check extends to its setting. Intervals are 95\%: item bootstrap for BFCL and ALFWorld, crossed where marked.}
-\label{tab:scope}
-\end{table}
+
 
 \section{Conclusion}
 \label{sec:conclusion}
 
 We evaluate a precision upgrade as a specified intervention at a restored state whose replay is audited: we count the rescues and damages of replacing the action, the continuation or both, and read them against a same-bit-width checkpoint and a representation change that keeps the tool operation identical. These references also change outcomes (two-sided for the same-bit-width checkpoint; observed in both directions, exploratory, for key order), and at common states B's extra action value over the same-bit-width checkpoint is not resolved; equivalence is not shown. Outcome sensitivity alone therefore does not show that more bits are needed. Upgrade evaluations should report the rescues and damages of the executed intervention under the intended continuation, read them against reference interventions, and validate selection rules by net value, not flip enrichment.
+

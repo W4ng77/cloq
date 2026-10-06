@@ -8,11 +8,12 @@ Usage: python3 paper/latex/tools/gen_w93_tables.py
 """
 import os
 import re
+from table_layout import format_tables
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 SRC = "analysis/fork/out/ghf_20261001T211519Z.md"
 OUT = os.path.join(ROOT, "paper", "latex", "sections")
-NAME = {"q4:awq_w4": "q4 AWQ-W4", "q4:gptq_w4_d1": "q4 GPTQ-W4", "q8:awq_w4": "q8 AWQ-W4",
+NAME = {"q4:awq_w4": "q4 AWQ-style W4", "q4:gptq_w4_d1": "q4 GPTQ-W4", "q8:awq_w4": "q8 AWQ-style W4",
         "q8:gptq_w4_d1": "q8 GPTQ-W4", "q4:kvq_int8": "q4 KV8", "q8:kvq_int8": "q8 KV8",
         "q4:gptq_w3": "q4 GPTQ-W3$^s$", "q4:kvq_int4_rot": "q4 KV4-rot$^s$", "q8:gptq_w3": "q8 GPTQ-W3$^s$",
         "q8:kvq_int4_rot": "q8 KV4-rot$^s$", "q8:rtn_w3": "q8 RTN-W3$^s$"}
@@ -62,7 +63,7 @@ def main():
             "drawn like the panel; the fixed-pool intervals of Table~\\ref{tab:ghf} treat the 85 tasks as fixed. "
             "$^s$stress cell, 3 blocks.}",
             "\\label{tab:ghf-crossed}", "\\end{table*}", ""]
-    open(os.path.join(OUT, "gen_ghf_crossed.tex"), "w").write("\n".join(out))
+    open(os.path.join(OUT, "gen_ghf_crossed.tex"), "w").write(format_tables("\n".join(out)))
 
     # 16 patterns
     hdr, rows = table_after(lines, "| pattern |")
@@ -87,9 +88,10 @@ def main():
             "Pattern digits are $(\\YY{BB},\\YY{BQ},\\YY{QB},\\YY{QQ})$. KV4r: Q/K-rotated KV4; W3 and KV4r cells are "
             "stress cells with 3 blocks.}",
             "\\label{tab:patterns}", "\\end{table*}", ""]
-    open(os.path.join(OUT, "gen_patterns.tex"), "w").write("\n".join(out))
+    open(os.path.join(OUT, "gen_patterns.tex"), "w").write(format_tables("\n".join(out)))
     print("wrote gen_ghf_crossed.tex, gen_patterns.tex")
 
 
 if __name__ == "__main__":
     main()
+

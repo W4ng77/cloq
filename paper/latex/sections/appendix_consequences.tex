@@ -5,10 +5,11 @@ This appendix supports \S\ref{sec:value}: replacing a W4 agent's action produces
 
 Table~\ref{tab:r1} gives every cell of Figure~\ref{fig:rd}a, including the stress cells, with new-task intervals. Table~\ref{tab:ghf} gives $G$, $H$, $F$ and their paired differences for every cell, with $F-G$, $F-H$ and the $(\DQ,\DB)$ summaries. % nocheck: cross-reference sentence
 
-\begin{table}[h]
-\centering\scriptsize\setlength{\tabcolsep}{2.4pt}
+\begin{table*}[t]
+\centering% visual-layout-v1
+\renewcommand{\arraystretch}{1.12}\fontsize{8.5}{10}\selectfont\setlength{\tabcolsep}{4pt}
 % src: analysis/fork/out/dev_all_20261001T070326Z.md (two-sided table; W4:all pooled row); analysis/fork/out/dev_all_20261001T070326Z.json (pooled.W4:all:pooled_equal_weight.G.crossed_ci95)
-\resizebox{\columnwidth}{!}{\begin{tabular}{@{}lrrrrrll@{}}
+\begin{tabular}{@{}lrrrrrll@{}}
 \toprule
 Cell & units & div. & $r$ & $d$ & $M$ & $\Gall$ [fixed pool] & [new tasks] \\
 \midrule
@@ -27,35 +28,63 @@ q8 GPTQ-W3$^s$ & 85$\times$3 & 242 & 10.2 & 8.2 & 18.4 & $+2.0$ [$-12.5$, $+16.4
 q8 KV4-rot$^s$ & 85$\times$3 & 239 & 11.8 & 8.6 & 20.4 & $+3.1$ [$-14.5$, $+20.8$] & [$-5.9$, $+12.9$] \\
 q8 RTN-W3$^s$ & 85$\times$3 & 255 & 3.1 & 3.5 & 6.7 & $-0.4$ [$-3.8$, $+3.0$] & [$-4.7$, $+3.9$] \\
 \bottomrule
-\end{tabular}}
+\end{tabular}
 \caption{Replacing Q's first tool-structure-divergent action while Q continues, \tautwo{} retail/airline panel (pp). Denominator: the full pool of tasks $\times$ complete blocks; units without a Bank P state count as zero. div.\ = Bank P states. $\Gall=r-d$ is a local replacement effect, \emph{not} the end-to-end success difference (Appendix~\ref{app:e2e}). Fixed pool: block bootstrap ($\ge$10 blocks) or $t$ over block means; new tasks: crossed task$\times$block bootstrap. $^s$stress cell, 3 blocks.}
 \label{tab:r1}
-\end{table}
+\end{table*}
 
 \begin{table*}[t]
-\centering\scriptsize\setlength{\tabcolsep}{3pt}
+\centering% visual-layout-v1
+\renewcommand{\arraystretch}{1.12}\fontsize{8.5}{10}\selectfont\setlength{\tabcolsep}{4pt}
 % src: analysis/fork/out/ghf_20261001T211519Z.md (§1 per-cell table and pools; §2 3x3 table columns)
-\resizebox{\textwidth}{!}{\begin{tabular}{@{}lrllllllrrl@{}}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}llllll@{}}
 \toprule
-Cell & states & $G$ (this step) & $H$ (next step on) & $F$ (both) & $G-H$ & $F-G$ & $F-H$ ($=\DB$) & off-diag.\ \% & rev.\ \% & mean $I$ \\
+\multicolumn{6}{@{}l}{\textbf{A. Gains and action--continuation comparison}} \\
+\addlinespace[2pt]
+Cell & states & $G$ (this step) & $H$ (next step on) & $F$ (both) & $G-H$ \\
 \midrule
-q4 GPTQ-W4 & 1102 & $-2.9$ [$-5.7$, $-0.2$] & $+0.7$ [$-1.6$, $+3.0$] & $-2.5$ [$-5.3$, $+0.2$] & $-3.6$ [$-6.6$, $-0.6$] & $+0.5$ [$-1.2$, $+2.2$] & $-3.2$ [$-6.4$, $+0.2$] & 25.0 & 2.6 & $+0.3$ \\
-q4 AWQ-style W4  & 1439 & $-0.3$ [$-2.6$, $+1.9$] & $+0.9$ [$-1.1$, $+2.9$] & $-0.8$ [$-3.3$, $+1.6$] & $-1.3$ [$-3.0$, $+0.6$] & $-0.4$ [$-2.4$, $+1.5$] & $-1.7$ [$-3.6$, $+0.4$] & 29.3 & 3.1 & $+1.3$ \\
-q8 GPTQ-W4 & 1473 & $+3.3$ [$+1.6$, $+5.0$] & $+0.4$ [$-1.2$, $+1.9$] & $+5.4$ [$+3.5$, $+7.2$] & $+2.9$ [$+1.3$, $+4.7$] & $+2.1$ [$+0.2$, $+4.0$] & $+5.0$ [$+3.2$, $+6.8$] & 22.9 & 2.7 & $-1.7$ \\
-q8 AWQ-style W4  & 1562 & $+2.1$ [$-0.6$, $+4.7$] & $-1.3$ [$-3.5$, $+0.9$] & $+0.6$ [$-1.5$, $+2.7$] & $+3.4$ [$+1.5$, $+5.2$] & $-1.5$ [$-4.2$, $+0.8$] & $+1.9$ [$-0.1$, $+3.8$] & 30.5 & 4.2 & $+0.3$ \\
-W4 pool    & 5576 & $+0.5$ [$-0.7$, $+1.7$] & $+0.2$ [$-1.3$, $+1.6$] & $+0.7$ [$-0.6$, $+2.1$] & $+0.4$ [$-0.8$, $+1.7$] & $+0.2$ [$-1.0$, $+1.2$] & $+0.5$ [$-1.0$, $+2.1$] & 26.9 & 3.2 & $+0.0$ \\
+q4 GPTQ-W4 & 1102 & $-2.9$ [$-5.7$, $-0.2$] & $+0.7$ [$-1.6$, $+3.0$] & $-2.5$ [$-5.3$, $+0.2$] & $-3.6$ [$-6.6$, $-0.6$] \\
+q4 AWQ-style W4 & 1439 & $-0.3$ [$-2.6$, $+1.9$] & $+0.9$ [$-1.1$, $+2.9$] & $-0.8$ [$-3.3$, $+1.6$] & $-1.3$ [$-3.0$, $+0.6$] \\
+q8 GPTQ-W4 & 1473 & $+3.3$ [$+1.6$, $+5.0$] & $+0.4$ [$-1.2$, $+1.9$] & $+5.4$ [$+3.5$, $+7.2$] & $+2.9$ [$+1.3$, $+4.7$] \\
+q8 AWQ-style W4 & 1562 & $+2.1$ [$-0.6$, $+4.7$] & $-1.3$ [$-3.5$, $+0.9$] & $+0.6$ [$-1.5$, $+2.7$] & $+3.4$ [$+1.5$, $+5.2$] \\
+W4 pool & 5576 & $+0.5$ [$-0.7$, $+1.7$] & $+0.2$ [$-1.3$, $+1.6$] & $+0.7$ [$-0.6$, $+2.1$] & $+0.4$ [$-0.8$, $+1.7$] \\
 \midrule
-q4 KV8 & 593 & $-1.0$ [$-5.3$, $+3.2$] & $-2.5$ [$-4.5$, $-0.5$] & $-1.2$ [$-4.7$, $+2.3$] & $+1.5$ [$-3.1$, $+6.0$] & $-0.2$ [$-3.5$, $+3.7$] & $+1.3$ [$-2.5$, $+4.9$] & 15.7 & 1.2 & $-2.4$ \\
-q8 KV8 & 855 & $+1.3$ [$-0.9$, $+3.4$] & $-0.4$ [$-2.1$, $+1.5$] & $+2.5$ [$+0.0$, $+5.1$] & $+1.6$ [$-0.6$, $+3.9$] & $+1.2$ [$-0.5$, $+3.2$] & $+2.8$ [$+0.3$, $+5.5$] & 14.9 & 1.2 & $-1.5$ \\
-KV8 pool   & 1448 & $+0.1$ [$-2.8$, $+3.0$] & $-1.4$ [$-2.7$, $-0.1$] & $+0.6$ [$-1.8$, $+3.1$] & $+1.6$ [$-1.2$, $+4.1$] & $+0.5$ [$-1.6$, $+2.8$] & $+2.1$ [$-0.2$, $+4.2$] & 15.3 & 1.2 & $-1.9$ \\
+q4 KV8 & 593 & $-1.0$ [$-5.3$, $+3.2$] & $-2.5$ [$-4.5$, $-0.5$] & $-1.2$ [$-4.7$, $+2.3$] & $+1.5$ [$-3.1$, $+6.0$] \\
+q8 KV8 & 855 & $+1.3$ [$-0.9$, $+3.4$] & $-0.4$ [$-2.1$, $+1.5$] & $+2.5$ [$+0.0$, $+5.1$] & $+1.6$ [$-0.6$, $+3.9$] \\
+KV8 pool & 1448 & $+0.1$ [$-2.8$, $+3.0$] & $-1.4$ [$-2.7$, $-0.1$] & $+0.6$ [$-1.8$, $+3.1$] & $+1.6$ [$-1.2$, $+4.1$] \\
 \midrule
-q4 GPTQ-W3$^s$ & 232 & $-1.3$ [$-7.7$, $+5.0$] & $+4.3$ [$-10.7$, $+19.4$] & $+1.3$ [$-1.9$, $+4.4$] & $-5.6$ [$-15.0$, $+3.7$] & $+2.6$ [$-0.6$, $+5.8$] & $-3.0$ [$-15.1$, $+9.1$] & 31.5 & 3.9 & $+1.7$ \\
-q4 KV4-rot$^s$ & 233 & $+5.2$ [$-4.5$, $+14.9$] & $+9.4$ [$+5.1$, $+13.7$] & $+12.4$ [$+11.0$, $+13.9$] & $-4.3$ [$-18.3$, $+9.8$] & $+7.3$ [$-2.0$, $+16.5$] & $+3.0$ [$-1.9$, $+8.0$] & 33.0 & 1.7 & $+2.1$ \\
-q8 GPTQ-W3$^s$ & 242 & $+2.1$ [$-13.3$, $+17.2$] & $+0.4$ [$-7.4$, $+8.2$] & $+2.1$ [$-7.4$, $+11.4$] & $+1.7$ [$-9.1$, $+12.3$] & $+0.0$ [$-11.0$, $+11.1$] & $+1.7$ [$-0.1$, $+3.4$] & 23.1 & 4.5 & $+0.4$ \\
-q8 KV4-rot$^s$ & 239 & $+3.3$ [$-15.4$, $+21.9$] & $-0.8$ [$-18.2$, $+16.3$] & $+4.6$ [$-16.0$, $+25.0$] & $+4.2$ [$+2.5$, $+5.8$] & $+1.3$ [$-1.8$, $+4.3$] & $+5.4$ [$+0.8$, $+10.0$] & 31.0 & 4.6 & $-2.1$ \\
-q8 RTN-W3$^s$ & 255 & $-0.4$ [$-3.8$, $+3.0$] & $+15.3$ [$+0.7$, $+29.9$] & $+18.4$ [$+16.7$, $+20.1$] & $-15.7$ [$-27.5$, $-3.9$] & $+18.8$ [$+13.8$, $+23.9$] & $+3.1$ [$-13.0$, $+19.2$] & 29.0 & 0.4 & $-3.5$ \\
+q4 GPTQ-W3$^s$ & 232 & $-1.3$ [$-7.7$, $+5.0$] & $+4.3$ [$-10.7$, $+19.4$] & $+1.3$ [$-1.9$, $+4.4$] & $-5.6$ [$-15.0$, $+3.7$] \\
+q4 KV4-rot$^s$ & 233 & $+5.2$ [$-4.5$, $+14.9$] & $+9.4$ [$+5.1$, $+13.7$] & $+12.4$ [$+11.0$, $+13.9$] & $-4.3$ [$-18.3$, $+9.8$] \\
+q8 GPTQ-W3$^s$ & 242 & $+2.1$ [$-13.3$, $+17.2$] & $+0.4$ [$-7.4$, $+8.2$] & $+2.1$ [$-7.4$, $+11.4$] & $+1.7$ [$-9.1$, $+12.3$] \\
+q8 KV4-rot$^s$ & 239 & $+3.3$ [$-15.4$, $+21.9$] & $-0.8$ [$-18.2$, $+16.3$] & $+4.6$ [$-16.0$, $+25.0$] & $+4.2$ [$+2.5$, $+5.8$] \\
+q8 RTN-W3$^s$ & 255 & $-0.4$ [$-3.8$, $+3.0$] & $+15.3$ [$+0.7$, $+29.9$] & $+18.4$ [$+16.7$, $+20.1$] & $-15.7$ [$-27.5$, $-3.9$] \\
 \bottomrule
-\end{tabular}}
+\end{tabular*}
+\par\vspace{6pt}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}llllll@{}}
+\toprule
+\multicolumn{6}{@{}l}{\textbf{B. Joint-upgrade contrasts and outcome patterns}} \\
+\addlinespace[2pt]
+Cell & $F-G$ & $F-H$ ($=\DB$) & off-diag.\ \% & rev.\ \% & mean $I$ \\
+\midrule
+q4 GPTQ-W4 & $+0.5$ [$-1.2$, $+2.2$] & $-3.2$ [$-6.4$, $+0.2$] & 25.0 & 2.6 & $+0.3$ \\
+q4 AWQ-style W4 & $-0.4$ [$-2.4$, $+1.5$] & $-1.7$ [$-3.6$, $+0.4$] & 29.3 & 3.1 & $+1.3$ \\
+q8 GPTQ-W4 & $+2.1$ [$+0.2$, $+4.0$] & $+5.0$ [$+3.2$, $+6.8$] & 22.9 & 2.7 & $-1.7$ \\
+q8 AWQ-style W4 & $-1.5$ [$-4.2$, $+0.8$] & $+1.9$ [$-0.1$, $+3.8$] & 30.5 & 4.2 & $+0.3$ \\
+W4 pool & $+0.2$ [$-1.0$, $+1.2$] & $+0.5$ [$-1.0$, $+2.1$] & 26.9 & 3.2 & $+0.0$ \\
+\midrule
+q4 KV8 & $-0.2$ [$-3.5$, $+3.7$] & $+1.3$ [$-2.5$, $+4.9$] & 15.7 & 1.2 & $-2.4$ \\
+q8 KV8 & $+1.2$ [$-0.5$, $+3.2$] & $+2.8$ [$+0.3$, $+5.5$] & 14.9 & 1.2 & $-1.5$ \\
+KV8 pool & $+0.5$ [$-1.6$, $+2.8$] & $+2.1$ [$-0.2$, $+4.2$] & 15.3 & 1.2 & $-1.9$ \\
+\midrule
+q4 GPTQ-W3$^s$ & $+2.6$ [$-0.6$, $+5.8$] & $-3.0$ [$-15.1$, $+9.1$] & 31.5 & 3.9 & $+1.7$ \\
+q4 KV4-rot$^s$ & $+7.3$ [$-2.0$, $+16.5$] & $+3.0$ [$-1.9$, $+8.0$] & 33.0 & 1.7 & $+2.1$ \\
+q8 GPTQ-W3$^s$ & $+0.0$ [$-11.0$, $+11.1$] & $+1.7$ [$-0.1$, $+3.4$] & 23.1 & 4.5 & $+0.4$ \\
+q8 KV4-rot$^s$ & $+1.3$ [$-1.8$, $+4.3$] & $+5.4$ [$+0.8$, $+10.0$] & 31.0 & 4.6 & $-2.1$ \\
+q8 RTN-W3$^s$ & $+18.8$ [$+13.8$, $+23.9$] & $+3.1$ [$-13.0$, $+19.2$] & 29.0 & 0.4 & $-3.5$ \\
+\bottomrule
+\end{tabular*}
+\par\vspace{6pt}
 \caption{Three replacement gains and their paired differences on each cell's Bank P states (pp; same denominator in every column). $G=\YY{BQ}-\YY{QQ}$, $H=\YY{QB}-\YY{QQ}$, $F=\YY{BB}-\YY{QQ}$. Off-diag.: share of states with $\DQ\neq\DB$; rev.: strict reversals, $\DQ=-\DB\neq0$; mean $I$: mean action--continuation interaction $I=\DQ-\DB\in\{-2,\dots,+2\}$. Fixed-pool 95\% intervals (block bootstrap over 20--22 complete blocks; $t$ over 3 blocks for $^s$stress cells, which cannot be pooled). New-task intervals are in Table~\ref{tab:ghf-crossed}. Within a row, contrasts are paired and identified; between rows, descriptive.
 Intervals are not adjusted for multiplicity: the four core cells' $G-H$ form a Holm family ($m=4$; q4 GPTQ-W4 Holm $p=0.069$), their new-task intervals all cover zero, and $G-H>0$ ranks two modes, not either against QQ. % src: analysis/fork/out/ghf_multiplicity_20261001T225727Z.md (TL;DR; table)
 }
@@ -84,23 +113,43 @@ Table~\ref{tab:classes} gives the shares. The action-side gap holds in the \taut
 With fixed-pool, then new-task 95\% intervals, changing the action changes the outcome under at least one continuation in 34.9\% ([33.6, 36.0]; [28.8, 41.0]) of W4 divergent states, and changing the continuation controller does so under at least one action in 29.6\% ([28.5, 30.7]; [24.2, 35.3]). The two sets overlap in the 26.9\% ([25.7, 28.1]; [22.1, 32.0]) where the swap's effect depends on the continuation, so the shares must not be added; all four arms agree in 62.4\%. % src: analysis/fork/out/outcome_classes_20261004T143614Z.md; analysis/fork/out/ghf_20261001T211519Z.md (§2; crossed column)
 
 \begin{table*}[t]
-\centering\scriptsize
-\setlength{\tabcolsep}{3pt}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{@{}lrrrrrrrrrrr@{}}
+\centering% visual-layout-v1
+\renewcommand{\arraystretch}{1.12}\fontsize{8.5}{10}\selectfont
+\setlength{\tabcolsep}{4pt}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lllll@{}}
 \toprule
-Group & states & action changes & continuation changes & gap (pp) & unch. & act.\ only & cont.\ only & one arm & rev. & joint resc. & resc.\ undone \\
+\multicolumn{5}{@{}l}{\textbf{A. Sensitivity to the action and continuation}} \\
+\addlinespace[2pt]
+Group & states & action changes & continuation changes & gap (pp) \\
 \midrule
-\tautwo{} W4 pool (4 cells) & 5576 & 34.9 [33.6, 36.0] & 29.6 [28.5, 30.7] & $+5.2$ [$+4.4$, $+6.1$] & 62.4 & 7.9 & 2.7 & 23.8 & 3.2 & 4.0 & 4.8 \\
-\tautwo{} KV8 pool & 1448 & 26.8 [25.0, 28.6] & 17.0 [14.9, 19.1] & $+9.8$ [$+8.0$, $+11.6$] & 71.5 & 11.6 & 1.7 & 14.1 & 1.2 & 3.0 & 2.3 \\
-Telecom q8 W4 pool & 957 & 22.1 [18.2, 25.9] & 21.9 [17.8, 26.1] & $+0.1$ [$-2.1$, $+2.4$] & 74.8 & 3.2 & 3.1 & 18.1 & 0.7 & 3.2 & 4.2 \\
-Same-precision W4 (Q$'$ as B) & 784 & 33.5 [29.8, 37.1] & 28.7 [24.8, 32.2] & $+4.9$ [$+2.9$, $+6.9$] & 64.0 & 7.4 & 2.5 & 22.5 & 3.6 & 2.3 & 5.8 \\
-BF16, same blocks & 784 & 35.1 [32.6, 37.4] & 27.8 [23.8, 31.6] & $+7.3$ [$+4.9$, $+9.7$] & 62.0 & 10.2 & 2.9 & 22.4 & 2.6 & 5.0 & 3.8 \\
-q8 RTN-W3$^s$ & 255 & 29.8 [28.1, 31.5] & 37.6 [26.0, 49.3] & $-7.8$ [$-18.1$, $+2.4$] & 61.6 & 0.8 & 8.6 & 28.6 & 0.4 & 12.6 & 0.8 \\
-BFCL W4 pool$^b$ & 2296 & 18.4 [16.4, 20.5] & 11.2 [9.8, 12.6] & $+7.2$ [$+5.8$, $+8.7$] & 80.8 & 8.1 & 0.8 & 9.8 & 0.5 & 2.4 & 1.4 \\
-ALFWorld q8 W4 pool$^b$ & 234 & 44.9 [38.3, 52.4] & 41.5 [34.3, 49.4] & $+3.4$ [$-1.8$, $+8.4$] & 50.0 & 8.5 & 5.1 & 33.4 & 3.0 & 9.4 & 5.5 \\
+\tautwo{} W4 pool (4 cells) & 5576 & 34.9 [33.6, 36.0] & 29.6 [28.5, 30.7] & $+5.2$ [$+4.4$, $+6.1$] \\
+\tautwo{} KV8 pool & 1448 & 26.8 [25.0, 28.6] & 17.0 [14.9, 19.1] & $+9.8$ [$+8.0$, $+11.6$] \\
+Telecom q8 W4 pool & 957 & 22.1 [18.2, 25.9] & 21.9 [17.8, 26.1] & $+0.1$ [$-2.1$, $+2.4$] \\
+Same-precision W4 (Q$'$ as B) & 784 & 33.5 [29.8, 37.1] & 28.7 [24.8, 32.2] & $+4.9$ [$+2.9$, $+6.9$] \\
+BF16, same blocks & 784 & 35.1 [32.6, 37.4] & 27.8 [23.8, 31.6] & $+7.3$ [$+4.9$, $+9.7$] \\
+q8 RTN-W3$^s$ & 255 & 29.8 [28.1, 31.5] & 37.6 [26.0, 49.3] & $-7.8$ [$-18.1$, $+2.4$] \\
+BFCL W4 pool$^b$ & 2296 & 18.4 [16.4, 20.5] & 11.2 [9.8, 12.6] & $+7.2$ [$+5.8$, $+8.7$] \\
+ALFWorld q8 W4 pool$^b$ & 234 & 44.9 [38.3, 52.4] & 41.5 [34.3, 49.4] & $+3.4$ [$-1.8$, $+8.4$] \\
 \bottomrule
-\end{tabular}}
+\end{tabular*}
+\par\vspace{6pt}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}llllllll@{}}
+\toprule
+\multicolumn{8}{@{}l}{\textbf{B. Outcome classes and named patterns}} \\
+\addlinespace[2pt]
+Group & unch. & act.\ only & cont.\ only & one arm & rev. & joint resc. & resc.\ undone \\
+\midrule
+\tautwo{} W4 pool (4 cells) & 62.4 & 7.9 & 2.7 & 23.8 & 3.2 & 4.0 & 4.8 \\
+\tautwo{} KV8 pool & 71.5 & 11.6 & 1.7 & 14.1 & 1.2 & 3.0 & 2.3 \\
+Telecom q8 W4 pool & 74.8 & 3.2 & 3.1 & 18.1 & 0.7 & 3.2 & 4.2 \\
+Same-precision W4 (Q$'$ as B) & 64.0 & 7.4 & 2.5 & 22.5 & 3.6 & 2.3 & 5.8 \\
+BF16, same blocks & 62.0 & 10.2 & 2.9 & 22.4 & 2.6 & 5.0 & 3.8 \\
+q8 RTN-W3$^s$ & 61.6 & 0.8 & 8.6 & 28.6 & 0.4 & 12.6 & 0.8 \\
+BFCL W4 pool$^b$ & 80.8 & 8.1 & 0.8 & 9.8 & 0.5 & 2.4 & 1.4 \\
+ALFWorld q8 W4 pool$^b$ & 50.0 & 8.5 & 5.1 & 33.4 & 3.0 & 9.4 & 5.5 \\
+\bottomrule
+\end{tabular*}
+\par\vspace{6pt}
 \caption{Which intervention changes the outcome, in \% of divergent states (pools: equal weight per cell). ``Action changes'': the outcome changes with the action under at least one continuation; ``continuation changes'': with the continuation controller under at least one action; gap = action only $-$ continuation only. Fixed-pool 95\% intervals: block bootstrap for the 20- and 22-block \tautwo{} W4 and KV8 pools; $t$ over per-block ratios for the 6-block telecom and same-precision rows and the 3-block $^s$stress cell; $^b$one run per item, item bootstrap. Same-precision rows: Q$'$, a second GPTQ checkpoint of the same bit width, in the B role, and BF16 on the same blocks. New-task (crossed) intervals for the \tautwo{} W4 pool: above.} % src: analysis/fork/out/outcome_classes_20261004T143614Z.md
 \label{tab:classes}
 \end{table*}
@@ -111,24 +160,43 @@ This shows only that strict reversals are rarer than under random labelling. It 
 \paragraph{Joint rescue and rescue undone against the reference.} The same reference, applied to the two named patterns, keeps $k$ for every state and permutes the four outcome labels uniformly: \texttt{1000} then has probability $1/4$ at $k=1$, and rescue undone (\texttt{0100} or \texttt{0110}) has $1/4$ at $k=1$ plus $1/6$ at $k=2$, so the reference shares are $P(k{=}1)/4$ and $P(k{=}1)/4+P(k{=}2)/6$, computed on the same states and bootstrap draws as the observed shares (Table~\ref{tab:patternref}). In the \tautwo{} W4 pool, joint rescue exceeds the reference by $+0.47$\pp{} on the fixed task pool ([$+0.06$, $+0.87$]), but the new-task interval spans zero ([$-0.33$, $+1.37$]); rescue undone is less frequent than the reference ($-0.99$ [$-1.58$, $-0.42]$; new tasks [$-2.19$, $+0.27$]). The excess of joint rescue is concentrated in the q8 cells, and no group shows a new-task excess of rescue undone. Because the reference keeps $k$ and does not model execution, a share near it says that the arrangement is about as common as a random arrangement of the same number of successes, not that the outcomes are noise or that the continuation is irrelevant. % src: analysis/fork/out/pattern_ref_20261005T134721Z.md (TL;DR; §1; §2; Method)
 
 \begin{table*}[t]
-\centering\scriptsize\setlength{\tabcolsep}{3pt}
+\centering% visual-layout-v1
+\renewcommand{\arraystretch}{1.12}\fontsize{8.5}{10}\selectfont\setlength{\tabcolsep}{4pt}
 % src: analysis/fork/out/pattern_ref_20261005T134721Z.md (§1 fixed pool; §2 new tasks); analysis/fork/out/mistral_patterns_20261005T135040Z.md (§4, §5: A6:nonexact:pool)
-\begin{tabular}{@{}lrrrllrrll@{}}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}llllll@{}}
 \toprule
-& & \multicolumn{4}{c}{joint rescue (\texttt{1000})} & \multicolumn{4}{c}{rescue undone (\texttt{0100}, \texttt{0110})} \\
-\cmidrule(lr){3-6}\cmidrule(lr){7-10}
-Group & states & obs. & ref. & obs.$-$ref.\ [fixed pool] & [new tasks] & obs. & ref. & obs.$-$ref.\ [fixed pool] & [new tasks] \\
+\multicolumn{6}{@{}l}{\textbf{A. Joint rescue}} \\
+\addlinespace[2pt]
+Group & states & obs. & ref. & obs.$-$ref.\ [fixed pool] & [new tasks] \\
 \midrule
-\tautwo{} W4 pool & 5576 & 3.96 & 3.48 & $+0.47$ [$+0.06$, $+0.87$] & [$-0.33$, $+1.37$] & 4.80 & 5.78 & $-0.99$ [$-1.58$, $-0.42$] & [$-2.19$, $+0.27$] \\
-\quad q4 W4 cells & 2541 & 3.22 & 3.56 & $-0.34$ [$-0.83$, $+0.13$] & [$-1.46$, $+0.88$] & 4.77 & 6.01 & $-1.24$ [$-2.09$, $-0.45$] & [$-2.97$, $+0.69$] \\
-\quad q8 W4 cells & 3035 & 4.69 & 3.40 & $+1.29$ [$+0.79$, $+1.78$] & [$-0.07$, $+2.74$] & 4.82 & 5.56 & $-0.74$ [$-1.35$, $-0.07$] & [$-2.34$, $+0.98$] \\
-\tautwo{} KV8 pool & 1448 & 2.99 & 2.17 & $+0.81$ [$+0.10$, $+1.52$] & [$-0.51$, $+2.19$] & 2.31 & 4.58 & $-2.28$ [$-2.98$, $-1.58$] & [$-3.62$, $-0.98$] \\
-Telecom q8 W4 pool & 957 & 3.24 & 3.94 & $-0.70$ [$-1.46$, $+0.05$] & [$-2.47$, $+1.15$] & 4.18 & 5.13 & $-0.95$ [$-1.70$, $-0.20$] & [$-2.63$, $+0.61$] \\
-Same-precision W4 (Q$'$ as B) & 784 & 2.27 & 3.50 & $-1.23$ [$-2.47$, $-0.04$] & [$-2.88$, $+0.51$] & 5.77 & 5.75 & $+0.02$ [$-2.33$, $+2.25$] & [$-2.66$, $+2.92$] \\
-BF16, same blocks & 784 & 4.96 & 3.53 & $+1.43$ [$-0.40$, $+3.42$] & [$-0.90$, $+4.26$] & 3.82 & 6.14 & $-2.32$ [$-4.46$, $-0.19$] & [$-4.68$, $+0.17$] \\
-Mistral, own BF16 states$^m$ & 464 & 3.4 & 2.9 & $+0.5$ [$-2.4$, $+3.5$] & [$-2.0$, $+3.6$] & 4.0 & 4.7 & $-0.7$ [$-2.0$, $+0.7$] & [$-3.0$, $+1.9$] \\
+\tautwo{} W4 pool & 5576 & 3.96 & 3.48 & $+0.47$ [$+0.06$, $+0.87$] & [$-0.33$, $+1.37$] \\
+\quad q4 W4 cells & 2541 & 3.22 & 3.56 & $-0.34$ [$-0.83$, $+0.13$] & [$-1.46$, $+0.88$] \\
+\quad q8 W4 cells & 3035 & 4.69 & 3.40 & $+1.29$ [$+0.79$, $+1.78$] & [$-0.07$, $+2.74$] \\
+\tautwo{} KV8 pool & 1448 & 2.99 & 2.17 & $+0.81$ [$+0.10$, $+1.52$] & [$-0.51$, $+2.19$] \\
+Telecom q8 W4 pool & 957 & 3.24 & 3.94 & $-0.70$ [$-1.46$, $+0.05$] & [$-2.47$, $+1.15$] \\
+Same-precision W4 (Q$'$ as B) & 784 & 2.27 & 3.50 & $-1.23$ [$-2.47$, $-0.04$] & [$-2.88$, $+0.51$] \\
+BF16, same blocks & 784 & 4.96 & 3.53 & $+1.43$ [$-0.40$, $+3.42$] & [$-0.90$, $+4.26$] \\
+Mistral, own BF16 states$^m$ & 464 & 3.4 & 2.9 & $+0.5$ [$-2.4$, $+3.5$] & [$-2.0$, $+3.6$] \\
 \bottomrule
-\end{tabular}
+\end{tabular*}
+\par\vspace{6pt}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}llllll@{}}
+\toprule
+\multicolumn{6}{@{}l}{\textbf{B. Rescue undone}} \\
+\addlinespace[2pt]
+Group & states & obs. & ref. & obs.$-$ref.\ [fixed pool] & [new tasks] \\
+\midrule
+\tautwo{} W4 pool & 5576 & 4.80 & 5.78 & $-0.99$ [$-1.58$, $-0.42$] & [$-2.19$, $+0.27$] \\
+\quad q4 W4 cells & 2541 & 4.77 & 6.01 & $-1.24$ [$-2.09$, $-0.45$] & [$-2.97$, $+0.69$] \\
+\quad q8 W4 cells & 3035 & 4.82 & 5.56 & $-0.74$ [$-1.35$, $-0.07$] & [$-2.34$, $+0.98$] \\
+\tautwo{} KV8 pool & 1448 & 2.31 & 4.58 & $-2.28$ [$-2.98$, $-1.58$] & [$-3.62$, $-0.98$] \\
+Telecom q8 W4 pool & 957 & 4.18 & 5.13 & $-0.95$ [$-1.70$, $-0.20$] & [$-2.63$, $+0.61$] \\
+Same-precision W4 (Q$'$ as B) & 784 & 5.77 & 5.75 & $+0.02$ [$-2.33$, $+2.25$] & [$-2.66$, $+2.92$] \\
+BF16, same blocks & 784 & 3.82 & 6.14 & $-2.32$ [$-4.46$, $-0.19$] & [$-4.68$, $+0.17$] \\
+Mistral, own BF16 states$^m$ & 464 & 4.0 & 4.7 & $-0.7$ [$-2.0$, $+0.7$] & [$-3.0$, $+1.9$] \\
+\bottomrule
+\end{tabular*}
+\par\vspace{6pt}
 \caption{Joint rescue and rescue undone against the conditional label-permutation reference (keeps the number $k$ of successful branches per state), \% of divergent states; exploratory, post hoc. 95\% intervals: fixed pool (block bootstrap for the 20- and 22-block \tautwo{} pools, $t$ over per-block ratios for fewer than 10 blocks: 6, or 5 for Mistral), new tasks (crossed task$\times$block). Same-precision rows each fork at their own first divergence. $^m$States whose actions differ, on BF16 trajectories (BB is the BF16 original), five blocks; not comparable with Bank P rows.}
 \label{tab:patternref}
 \end{table*}
@@ -142,8 +210,9 @@ All analyses in this subsection are exploratory and post hoc.
 
 \paragraph{The consequences recur on the same tasks.} We split the 20 nonce blocks into two halves by an outcome-independent hash of the block name, ranked tasks by turnover on one half and measured the other half (Appendix Table~\ref{tab:fragility}). The 17 most fragile tasks (top 20\%) carry 41.0\% (crossed [26.6, 55.9]) and 42.3\% ([27.0, 57.5]) of the held-out turnover in the two directions, against 20\% if fragility did not persist. Their turnover is 38.7\%, while the other 68 tasks still turn over 13.7\%. Both groups have rescues and damages; neither group's net gain is resolved under the crossed interval. This replicates fragility on other nonces of the same tasks; it does not predict which new tasks are fragile. % src: analysis/fork/out/task_fragility_20261005T134836Z.md (Split-half fragility, both directions); analysis/fork/out/task_fragility_split_20261005T134815Z.json; derived: 68=85-17
 
-\begin{table}[h]
-\centering\scriptsize\setlength{\tabcolsep}{2.4pt}
+\begin{table*}[t]
+\centering% visual-layout-v1
+\renewcommand{\arraystretch}{1.12}\fontsize{8.5}{10}\selectfont\setlength{\tabcolsep}{4pt}
 % src: analysis/fork/out/task_fragility_20261005T134836Z.md (Split-half fragility: define A -> estimate B)
 \begin{tabular}{@{}llllll@{}}
 \toprule
@@ -160,7 +229,8 @@ rest & est. & 6.5 & 7.2 & 13.7 & $-0.7$ \\
 \end{tabular}
 \caption{Repeatable task fragility (exploratory, post hoc; four \tautwo{} W4 cells, equal weight). Tasks are ranked by turnover on one hash-defined half of the 20 nonce blocks and measured on the other half (pp of units; 95\% intervals, $t$ over held-out blocks and crossed task$\times$block; direction A to B shown). A replication on other nonces of the same tasks, not a prediction for new tasks. Reverse direction: text.}
 \label{tab:fragility}
-\end{table}
+\end{table*}
 
 \paragraph{Split-half fragility (Table~\ref{tab:fragility}).} The halves are assigned by an outcome-independent hash of the block name (sha256 of a fixed prefix and the block name, mod 2), written to a file before this post hoc analysis loaded outcomes; fragility is a task's mean turnover over the four W4 cells and the defining half's blocks, and ties at the top-20\% threshold are broken by a hash. In the reverse direction (rank on the second half, estimate on the first), the 17 fragile tasks turn over 39.0\% ($t$ [34.2, 43.9]) and carry 42.3\% of the held-out turnover, the other tasks 13.3\%; the fragile tasks' net gain is $+3.7$\pp{} ($t$ [$+0.6$, $+6.9$]; crossed [$-5.0$, $+12.4$]) and the rest's $+0.5$. Ranking tasks by BF16 success instead (tertiles on one half) also separates turnover: the hardest tertile turns over 6.7--10.0\% and the others 25.4--27.3\%, with no net gain resolved under the crossed interval. % src: analysis/fork/out/task_fragility_20261005T134836Z.md (Split-half B -> A; BF16 difficulty tertiles; Method); analysis/fork/out/task_fragility_split_20261005T134815Z.json
+
 
