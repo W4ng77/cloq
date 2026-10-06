@@ -10,7 +10,7 @@ Provenance: each PDF carries its source JSON paths, their sha256 and this script
 (Subject / Keywords), and figures/provenance.json lists the same. No number in a figure is typed by hand;
 derived quantities (e.g. pp = count / 1020 * 100) are computed here from JSON fields and named in the caption.
 
-Palette (10-05, one palette for every figure f1-f9 and for Figure 1(a) TikZ via definecolor in main.tex): Okabe-Ito
+Palette (10-05, one palette for every figure f1-f9 and for Figure 1(a) TikZ via definecolor in main.tex): muted Okabe-Ito-derived
 hues with FIXED semantic roles, see PAL below. Marks also differ by shape/fill so the figures read in greyscale.
 """
 import hashlib
@@ -47,17 +47,17 @@ _cache = {}
 # ACL review format, measured with tectonic: \textwidth 455.24pt = 6.30in, \columnwidth 219.09pt = 3.03in.
 # Figures are drawn at exactly these widths and included at scale 1, so the font sizes below are print sizes.
 FULL_W, COL_W = 455.24 / 72.27, 219.09 / 72.27
-# One palette, fixed roles (Okabe-Ito hues; colour-blind safe). Same hex in main.tex \definecolor (Figure 1a).
+# One palette, fixed roles (muted Okabe-Ito-derived hues, 10-06; colour-blind safe, print-friendly). Same hex in main.tex \definecolor (Figure 1a).
 PAL = {
-    "B": "#0072B2",       # BF16 / B's action or upgrade; default per-cell estimate (an upgrade to B)
-    "Q": "#CC79A7",       # quantized policy Q (only where Q itself is a mark)
-    "QP": "#E69F00",      # same-precision Q' (second W4/W3 checkpoint)
-    "RESCUE": "#009E73",  # rescue r / success
-    "DAMAGE": "#D55E00",  # damage d / harm
-    "ALT": "#56B4E9",     # secondary series: KV8 family, post-hoc KL reference
+    "B": "#3B75AF",       # BF16 / B's action or upgrade; default per-cell estimate (an upgrade to B)
+    "Q": "#A0647D",       # quantized policy Q (only where Q itself is a mark)
+    "QP": "#B08A3E",      # same-precision Q' (second W4/W3 checkpoint)
+    "RESCUE": "#4C9A7A",  # rescue r / success
+    "DAMAGE": "#C4553A",  # damage d / harm
+    "ALT": "#7FA9D4",     # secondary series: KV8 family, post-hoc KL reference
     "SHARED": "#5E5E5E",  # units affected under both substitutions
     "REF": "#8C8C8C",     # random / original simulator / shuffle null (hollow marks)
-    "INK": "#111111",     # net, pool, oracle / ceiling, text
+    "INK": "#222222",     # net, pool, oracle / ceiling, text
 }
 B, Q, QP, RESCUE, DAMAGE, ALT, SHARED, REF = (PAL[k] for k in ("B", "Q", "QP", "RESCUE", "DAMAGE", "ALT", "SHARED", "REF"))
 INK, INK2, MUTED, GRID, BAND = PAL["INK"], "#4D4D4D", REF, "#E3E3E3", "#F2F2F2"
@@ -407,8 +407,8 @@ def f3():
 
     # Two populations, two visibly separate panels; never pool the holdout with development.
     fig = plt.figure(figsize=(FULL_W, 1.95))
-    ax_a = fig.add_axes([.155, .28, .335, .57])
-    ax_b = fig.add_axes([.665, .28, .325, .57])
+    ax_a = fig.add_axes([.155, .28, .335, .54])
+    ax_b = fig.add_axes([.665, .28, .325, .54])
     for ax, rr_, title in ((ax_a, dev_rows, "(a) Development · W4"),
                            (ax_b, ho, "(b) Telecom holdout")):
         style_axis(ax, grid_axis="x")
@@ -500,7 +500,7 @@ def f4():
     assert [round(v, 2) for v in net_fr] == [0.39, 0.2, 0.49] and [round(v, 2) for v in net_or] == [3.33, 3.73, 3.73]
     assert [round(v, 2) for v in net_rd] == [p["random_net_pp"] for p in orc]  # 0.02 / 0.10 / 0.23
 
-    fig = plt.figure(figsize=(FULL_W, 2.05))
+    fig = plt.figure(figsize=(FULL_W, 1.8))
     a = fig.add_axes([.085,.23,.41,.60])
     b2 = fig.add_axes([.61,.23,.375,.45])
     gx=[0,1,2]; w=.32
@@ -520,23 +520,24 @@ def f4():
     a.set_title("(a) What the trigger selects",loc="left",fontweight="bold",pad=11)
     a.legend(handles=[Patch(facecolor=INK2,label="Trigger"),
                       Patch(facecolor=INK2,alpha=.38,hatch="///",edgecolor="white",label="Random (expected)")],
-             frameon=False,loc="upper left",fontsize=7.5,handlelength=1.1,handletextpad=.4)
+             frameon=False,loc="upper left",ncol=2,fontsize=7.5,handlelength=1.1,handletextpad=.4,columnspacing=.8,borderaxespad=0.3)
     style_axis(b2)
     kw=dict(lw=1.3,ms=4.5)
     b2.plot(gx,net_fr,color=B,marker="o",label="Trigger",**kw)
     b2.plot(gx,net_rd,color=REF,marker="s",mfc="white",label="Random",**kw)
     b2.axhline(0,color=INK2,lw=LW_ZERO)
     for x,f,v in zip(gx,fr,net_fr):
-        b2.text(x,v+.045,f"+{f['net_gain']} outcomes",ha="center",fontsize=7.5,color=B)
+        lo=v<max(net_fr)-.15  # the low middle point is labelled to its right, clear of the random line
+        b2.text(x+.09 if lo else x,v+.02 if lo else v+.045,f"+{f['net_gain']} outcomes",ha="left" if lo else "center",va="bottom",fontsize=7.5,color=B)
     b2.set_ylim(-.05,.65); b2.set_yticks([0,.2,.4,.6]); b2.set_ylabel("Net gain (pp)",fontsize=8)
-    b2.legend(loc="upper left",frameon=False,ncol=2,fontsize=7.5,handlelength=1.1,columnspacing=.7)
+    b2.legend(loc="center left",bbox_to_anchor=(0.0,0.36),frameon=False,ncol=1,fontsize=7.5,handlelength=1.1,borderaxespad=0.1,labelspacing=0.2)
     fig.text(.61,.887,"(b) Net value and hindsight headroom",fontweight="bold",fontsize=FS)
     # Oracle values are an aligned numerical strip, not bars compressing the trigger's scale.
     fig.text(.61,.803,"Matched oracle (hindsight; pp):",fontsize=7.5,color=INK2)
     for x,v in zip(gx,net_or):
         px=.61+.375*(x+.48)/2.96
         fig.text(px,.728,f"{v:.2f}",ha="center",fontsize=8,color=INK,
-                 bbox=dict(boxstyle="round,pad=.22",fc="#FFF5E0",ec=QP,lw=.55))
+                 bbox=dict(boxstyle="round,pad=.22",fc="#F4F4F4",ec=REF,lw=.55))
     for ax in (a,b2):
         ax.set_xlim(-.48,2.48); ax.set_xticks(gx)
         ax.set_xticklabels([f"{x}%\n{f['n_escalated']} states" for x,f in zip(xs,fr)],fontsize=8)
