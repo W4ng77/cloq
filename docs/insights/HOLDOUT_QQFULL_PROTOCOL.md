@@ -42,3 +42,11 @@ the original episode) AND `fork_driver.budget_check`. A state matches iff all ar
 - `analysis/fork/holdout_qqfull_audit.py --split holdout` (split_guard first) writes counts, categories, booleans, the
   precondition checks, input sha256, git head and script sha256. No outcome value and no outcome-derived count is written.
   Mismatches are listed by state_id prefix and failing check names only.
+
+## Amendment 1 (2026-10-05 19:05 PDT, GPT 10-05 follow-up; no QQ-full outcome read)
+- §3 preconditions are checked per task as soon as its servers are up, from `logs/tasks/<id>.servers.json`:
+  `scripts/a6000/qqfull_precheck.py` compares the Q server's ckpt_sha256, effective_config_sha and numerics canary with
+  the original fork_hold_* task's. Any mismatch pauses that configuration (its not-yet-started tasks move from todo/ to
+  deferred/) before any replay of it is interpreted. First run: q8_awq_w4 g01, g02 all three equal; others not started.
+- `analysis/fork/out/holdout_qqfull_audit_MIRROR_*` is a script self-check (it re-reads the original 135 sampled QQ
+  records); it is not QQ-full evidence and is never cited as such. The paper reports the coverage actually completed.
