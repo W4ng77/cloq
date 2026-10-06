@@ -500,50 +500,107 @@ def f4():
     assert [round(v, 2) for v in net_fr] == [0.39, 0.2, 0.49] and [round(v, 2) for v in net_or] == [3.33, 3.73, 3.73]
     assert [round(v, 2) for v in net_rd] == [p["random_net_pp"] for p in orc]  # 0.02 / 0.10 / 0.23
 
-    fig = plt.figure(figsize=(FULL_W, 1.8))
-    a = fig.add_axes([.085,.23,.41,.60])
-    b2 = fig.add_axes([.61,.23,.375,.45])
-    gx=[0,1,2]; w=.32
+    assert [round(f["p_turnover_ge_random"], 4) for f in fr] == [0.0182, 0.0613, 0.0002]
+    assert min(f["p_net_ge_random"] for f in fr) * 3 > 0.05  # Holm over 3 rates: the smallest p fails, none survives
+
+    assert [p["net"] for p in orc] == [34, 38, 38]  # oracle net in outcomes (R3: plotted, not boxed)
+    sig_net = [f["p_net_ge_random"] < 0.05 for f in fr]  # nominal only; none survives Holm (asserted above)
+
+    # R3 review: (b) in outcomes (net count) on a broken axis so the oracle is plotted; hollow trigger markers where
+    # the net p is not < .05; p scope stated per panel (Holm applies to the net p-values of (b) only).
+    H4 = 2.40
+    FT4, FL4, FSUB4 = 8.0, 7.5, 7.0
+    fig = plt.figure(figsize=(FULL_W, H4))
+    xa_, wa_, xb_, wb_ = 0.46, 2.10, 3.30, 1.74
+    top_, bot_ = 0.60, 0.55
+    hh = H4 - top_ - bot_
+    a = fig.add_axes([xa_ / FULL_W, bot_ / H4, wa_ / FULL_W, hh / H4])
+    hu, gap = 0.30, 0.06  # upper (oracle) axis height and break gap, in
+    b2 = fig.add_axes([xb_ / FULL_W, bot_ / H4, wb_ / FULL_W, (hh - hu - gap) / H4])
+    bu = fig.add_axes([xb_ / FULL_W, (bot_ + hh - hu) / H4, wb_ / FULL_W, hu / H4], sharex=b2)
+
+    def head(x_in, title, subs):
+        fig.text(x_in / FULL_W, 1 - 0.05 / H4, title, fontsize=FT4, fontweight="bold", va="top", ha="left", color=INK)
+        for k_, s_ in enumerate(subs):
+            fig.text(x_in / FULL_W, 1 - (0.21 + 0.115 * k_) / H4, s_, fontsize=FSUB4, va="top", ha="left", color=INK2)
+    head(0.0, "(a) What the trigger selects", ["ordinary Q-sourced states · 2 later blocks · 6 configs · 1020 states",
+                                               "p: capture of outcome-changing decisions vs random"])
+    head(xb_ - 0.40, "(b) Net value and hindsight headroom", ["net gain, outcomes (rescues − damages)",
+                                                               "p: net vs random; none survives Holm"])
+    gx = [0, 1, 2]
+    w = .32
     style_axis(a)
-    rnd_kw=dict(alpha=.38,hatch="///",edgecolor="white",lw=.3)
-    a.bar([x-w/2 for x in gx],rd_r,w,color=RESCUE,zorder=2,**rnd_kw)
-    a.bar([x-w/2 for x in gx],[-v for v in rd_d],w,color=DAMAGE,zorder=2,**rnd_kw)
-    a.bar([x+w/2 for x in gx],[f["rescued"] for f in fr],w,color=RESCUE,lw=0,zorder=2)
-    a.bar([x+w/2 for x in gx],[-f["damaged"] for f in fr],w,color=DAMAGE,lw=0,zorder=2)
-    for x,f in zip(gx,fr):
-        a.text(x+w/2,f["rescued"]+.5,str(f["rescued"]),ha="center",va="bottom",fontsize=8)
-        a.text(x+w/2,-f["damaged"]-.5,str(f["damaged"]),ha="center",va="top",fontsize=8)
-    a.axhline(0,color=INK2,lw=LW_ZERO)
-    a.set_ylim(-15,20); a.set_yticks([-10,0,10,20])
-    a.set_yticklabels(["10","0","10","20"])
-    a.set_ylabel("Damages ↓   Outcomes   ↑ Rescues",fontsize=8)
-    a.set_title("(a) What the trigger selects",loc="left",fontweight="bold",pad=11)
-    a.legend(handles=[Patch(facecolor=INK2,label="Trigger"),
-                      Patch(facecolor=INK2,alpha=.38,hatch="///",edgecolor="white",label="Random (expected)")],
-             frameon=False,loc="upper left",ncol=2,fontsize=7.5,handlelength=1.1,handletextpad=.4,columnspacing=.8,borderaxespad=0.3)
+    rnd_kw = dict(alpha=.38, hatch="///", edgecolor="white", lw=.3)
+    a.bar([x - w / 2 for x in gx], rd_r, w, color=RESCUE, zorder=2, **rnd_kw)
+    a.bar([x - w / 2 for x in gx], [-v for v in rd_d], w, color=DAMAGE, zorder=2, **rnd_kw)
+    a.bar([x + w / 2 for x in gx], [f["rescued"] for f in fr], w, color=RESCUE, lw=0, zorder=2)
+    a.bar([x + w / 2 for x in gx], [-f["damaged"] for f in fr], w, color=DAMAGE, lw=0, zorder=2)
+    for x, f in zip(gx, fr):
+        a.text(x + w / 2, f["rescued"] + .5, str(f["rescued"]), ha="center", va="bottom", fontsize=FL4)
+        a.text(x + w / 2, -f["damaged"] - .5, str(f["damaged"]), ha="center", va="top", fontsize=FL4)
+    a.axhline(0, color=INK2, lw=LW_ZERO)
+    a.set_ylim(-15, 21)
+    a.set_yticks([-10, 0, 10, 20])
+    a.set_yticklabels(["10", "0", "10", "20"])
+    a.set_ylabel("states (damages ↓ / rescues ↑)", fontsize=FSUB4, labelpad=1)
+    a.legend(handles=[Patch(facecolor="#8C8C8C", label="trigger"),
+                      Patch(facecolor="#8C8C8C", alpha=.38, hatch="///", edgecolor="white", label="random (expected)")],
+             frameon=False, loc="upper left", ncol=2, fontsize=FSUB4, handlelength=1.1, handletextpad=.4,
+             columnspacing=.8, borderaxespad=0.2)
+
+    # (b) lower axis: trigger and random; upper axis: matched hindsight oracle (break between 6 and 30 outcomes)
     style_axis(b2)
-    kw=dict(lw=1.3,ms=4.5)
-    b2.plot(gx,net_fr,color=B,marker="o",label="Trigger",**kw)
-    b2.plot(gx,net_rd,color=REF,marker="s",mfc="white",label="Random",**kw)
-    b2.axhline(0,color=INK2,lw=LW_ZERO)
-    for x,f,v in zip(gx,fr,net_fr):
-        lo=v<max(net_fr)-.15  # the low middle point is labelled to its right, clear of the random line
-        b2.text(x+.09 if lo else x,v+.02 if lo else v+.045,f"+{f['net_gain']} outcomes",ha="left" if lo else "center",va="bottom",fontsize=7.5,color=B)
-    b2.set_ylim(-.05,.65); b2.set_yticks([0,.2,.4,.6]); b2.set_ylabel("Net gain (pp)",fontsize=8)
-    b2.legend(loc="center left",bbox_to_anchor=(0.0,0.36),frameon=False,ncol=1,fontsize=7.5,handlelength=1.1,borderaxespad=0.1,labelspacing=0.2)
-    fig.text(.61,.887,"(b) Net value and hindsight headroom",fontweight="bold",fontsize=FS)
-    # Oracle values are an aligned numerical strip, not bars compressing the trigger's scale.
-    fig.text(.61,.803,"Matched oracle (hindsight; pp):",fontsize=7.5,color=INK2)
-    for x,v in zip(gx,net_or):
-        px=.61+.375*(x+.48)/2.96
-        fig.text(px,.728,f"{v:.2f}",ha="center",fontsize=8,color=INK,
-                 bbox=dict(boxstyle="round,pad=.22",fc="#F4F4F4",ec=REF,lw=.55))
-    for ax in (a,b2):
-        ax.set_xlim(-.48,2.48); ax.set_xticks(gx)
-        ax.set_xticklabels([f"{x}%\n{f['n_escalated']} states" for x,f in zip(xs,fr)],fontsize=8)
-    fig.text(.52,.018,"Nominal escalation rate; realized selection count below",ha="center",fontsize=7.5,color=INK2)
+    style_axis(bu)
+    kw = dict(lw=1.2, ms=4.5)
+    nets = [f["net_gain"] for f in fr]
+    rnds = [f["random_expected_net"] for f in fr]
+    b2.plot(gx, rnds, color=REF, marker="s", mfc="white", mew=1.0, **kw, zorder=3)
+    b2.plot(gx, nets, color=INK, lw=1.2, zorder=3)
+    for x, v, sg in zip(gx, nets, sig_net):
+        b2.plot([x], [v], marker="o", ms=4.8, color=INK, mfc=INK if sg else "white", mew=1.0, ls="none", zorder=4)
+    for x, v, (dx, dy, ha, va) in zip(gx, nets, ((.09, .25, "left", "bottom"), (-.12, -.15, "right", "top"),
+                                                  (-.09, .25, "right", "bottom"))):
+        b2.text(x + dx, v + dy, f"+{v}", ha=ha, va=va, fontsize=FSUB4, color=INK)  # clear of both lines
+    for x, v in zip(gx, rnds):
+        b2.text(x + .09, v - .25, f"+{v:.2f}", ha="left", va="top", fontsize=FSUB4, color=INK2)
+    b2.axhline(0, color=INK2, lw=LW_ZERO)
+    b2.set_ylim(-0.9, 6.2)
+    b2.set_yticks([0, 2, 4, 6])
+    bu.plot(gx, [p["net"] for p in orc], color=INK, marker="^", ms=4.5, lw=1.0, ls=(0, (2, 1.2)), zorder=3)
+    for x, p in zip(gx, orc):
+        bu.text(x + .09, p["net"] - .4, f"+{p['net']}", ha="left", va="top", fontsize=FSUB4, color=INK)
+    bu.set_ylim(30, 42)
+    bu.set_yticks([30, 40])
+    bu.spines["bottom"].set_visible(False)
+    bu.tick_params(axis="x", bottom=False, labelbottom=False)
+    for ax_, yy in ((bu, 0.0), (b2, 1.0)):  # break marks on the left spine
+        ax_.plot([-0.015, 0.015], [yy - 0.06 if ax_ is bu else yy - 0.03, yy + 0.06 if ax_ is bu else yy + 0.03],
+                 transform=ax_.transAxes, color=INK2, lw=0.6, clip_on=False)
+    b2.spines["top"].set_visible(False)
+    b2.legend(handles=[Line2D([], [], color=INK, marker="o", ms=4.5, lw=1.2, label="trigger, p < .05"),
+                       Line2D([], [], color=INK, marker="o", mfc="white", ms=4.5, lw=1.2, label="trigger, p ≥ .05"),
+                       Line2D([], [], color=REF, marker="s", mfc="white", ms=4.5, lw=1.2, label="random (exp.)"),
+                       Line2D([], [], color=INK, marker="^", ms=4.5, lw=1.0, ls=(0, (2, 1.2)),
+                              label="matched oracle\n(rescues only)")],
+              loc="upper left", bbox_to_anchor=(1.03, 1.0 + (hu + gap) / (hh - hu - gap)), frameon=False,
+              fontsize=FSUB4, handlelength=1.8, borderaxespad=0.0, labelspacing=0.5)
+    pf = lambda v: f"{v:.4f}".lstrip("0") if v < 0.1 else f"{v:.3f}".lstrip("0")  # noqa: E731  .0182 / .417
+    for ax, key in ((a, "p_turnover_ge_random"), (b2, "p_net_ge_random")):
+        ax.set_xlim(-.48, 2.48)
+        ax.set_xticks(gx)
+        ax.set_xticklabels([f"{x}%\n{f['n_escalated']} states" for x, f in zip(xs, fr)], fontsize=FL4,
+                           linespacing=1.0)
+        ax.tick_params(axis="y", labelsize=FL4, pad=1.5)
+        ax.tick_params(axis="x", pad=1.5)
+        hax = hh if ax is a else (hh - hu - gap)
+        for x, f in zip(gx, fr):
+            ax.text(x, -0.29 / hax, f"p = {pf(f[key])}", transform=ax.get_xaxis_transform(),
+                    ha="center", va="top", fontsize=FSUB4, color=INK2)
+    bu.tick_params(axis="y", labelsize=FL4, pad=1.5)
+    PROV_EXTRA["f4_oracle_net_outcomes"] = {"src": "oracle_trigger action_oracle[b].pooled.net", "net": [34, 38, 38]}
     save(fig,"f4_trigger_oracle",["oracle","tok"],
-         "trigger/random selected rescues and damages; net gain; count-matched oracle in an aligned numerical strip")
+         "trigger/random selected rescues and damages; net gain in outcomes on a broken axis with the count-matched "
+         "oracle plotted (+34/+38/+38); hollow trigger markers where net p >= .05; p per panel")
 
 
 # ---------------------------------------------------------------------------------------------------------------
