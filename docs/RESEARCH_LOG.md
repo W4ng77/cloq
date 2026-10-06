@@ -10,6 +10,14 @@ Newest first.
 
 ---
 
+## W100ax - Holdout full QQ no-op replay: all 1202 divergent states reproduce the original episode (2026-10-05 23:15 PDT)
+
+**TL;DR** Under HOLDOUT_QQFULL_PROTOCOL.md (frozen before any task ran; Amendment 1: per-task precheck at server start), QQ was re-run on every one of the 1202 analysed holdout divergent states (18 tasks, 0 failed). All 1202 pass every no-op check (trajectory/prompts, termination, official reward, db_match, env hash init/replay/final vs strict replay of the original, history prefix, budget); 0 fail, 0 missing, 0 error; the original 135 sampled states match again. Preconditions hold for all 18 tasks (Q ckpt_sha256, effective_config_sha, numerics canary equal to the original fork's). The shared Y_QQ baseline of every holdout contrast is therefore not a replay artifact; this does not explain the only-QQ pattern or the negative estimate. No correction to the pre-registered result is needed. The paper's 135/1202 coverage statements (Result 1, Limitations, App. C, App. A) now report the full replay.
+
+- Evidence: `analysis/fork/out/holdout_qqfull_audit_20261006T061033Z.{md,json}`; independent re-run by the completion watcher `analysis/fork/out/holdout_qqfull_audit_20261006T061136Z.{md,json}` (same inputs digest and state_id digest, 3717 inputs; same counts).
+- Precheck log: `/data/ziyangs/cloq_work/logs/qqfull_precheck.log` (0 mismatches over the run). The MIRROR file remains a script self-check only.
+- Outputs: `analysis/fork/holdout_qqfull/<cell>/gNN/branches/` (QQ only; nothing under `analysis/fork/holdout/` written).
+
 ## W100aw - Paper readability pass per GPT-6.1 PI ruling 2026-10-05 (Table 1 slimmed, abstract 199 words, appendix slimmed; display only, no analysis or reading changed) (2026-10-05)
 
 **TL;DR** Display-only edits on top of 3744cc3. Table 1 keeps per group the state source and denominator, turnover, rescues/damages, net and one core paired difference with its main interval (common states: the protocol-designated two-look reading); all other values move to the new appendix table `tab:refsfull`. Appendix blocks the main text no longer relies on, including the former Appendix G (label transfer, takeover duration), were moved verbatim, with their src comments, to an archive file. No estimate, interval or reading changed; check_numbers PASS.
