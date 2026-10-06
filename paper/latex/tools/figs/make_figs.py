@@ -360,6 +360,7 @@ def f2():
 # F3: redistribution - rescue vs damage per cell (dev W4/KV8 + holdout) and the small net G_all
 # ---------------------------------------------------------------------------------------------------------------
 def f3():
+    """Figure 2 (fig:rd): (a) dev W4 cells + pool, fixed-pool and new-task 95%; (b) telecom holdout, crossed 90%."""
     dev, hc = load("dev"), load("hconf")
     rows = []  # (label, r, d, net, thick, thin, group)
     for k, lab in CELL4 + KV8:
@@ -377,68 +378,77 @@ def f3():
     assert [r1(r[3]) for r in w4] == [-1.9, -0.3, 2.9, 1.9]
     pool = [r for r in rows if r[6] == "devpool"][0]
     assert (r1(pool[1]), r1(pool[2]), r1(pool[3])) == (9.6, 9.0, 0.7) and [r1(v) for v in pool[4]] == [-0.3, 1.6]
+    assert [r1(v) for v in pool[5]] == [-2.1, 3.4]  # dev_all crossed; the text quotes this same interval
     assert r1(dev["pooled"]["W4:all:pooled_equal_weight"]["M"]["est"]) == 18.6
     kv = [r for r in rows if r[6] == "dev"][4:]
     assert [(r1(r[1]), r1(r[2]), r1(r[3])) for r in kv] == [(3.1, 3.4, -0.3), (4.3, 3.7, 0.6)]
+    # fixed-pool 95% excludes zero for q4 GPTQ-W4 (negative) and q8 GPTQ-W4 (positive) only; no new-task 95% does
+    assert [(r[4][0] > 0) - (r[4][1] < 0) for r in w4] == [-1, 0, 1, 0]
+    assert all(r[5][0] < 0 < r[5][1] for r in w4 + [pool])
+    dev_rows = w4 + [pool]  # KV8 rows: asserted above, not plotted (text and Table r1)
 
+    ho = []
     for k, lab in [("q4:gptq_w4_d1", "q4 GPTQ-W4"), ("q8:gptq_w4_d1", "q8 GPTQ-W4"), ("q8:awq_w4", "q8 AWQ-style W4")]:
         c = hc["per_cell_descriptive"][k]
-        rows.append((lab, c["rescue"]["crossed"]["est"], c["damage"]["crossed"]["est"], c["G"]["crossed"]["est"],
-                     c["G"]["block_t"]["ci90"], c["G"]["crossed"]["ci90"], "ho"))
+        ho.append((lab, c["rescue"]["crossed"]["est"], c["damage"]["crossed"]["est"], c["G"]["crossed"]["est"],
+                   c["G"]["block_t"]["ci90"], c["G"]["crossed"]["ci90"], "ho"))
     pg, s1 = hc["primary_G_all"], hc["S1_two_sided_consequences"]
-    rows.append(("weighted", s1["rescue"]["crossed_decisional"]["est"], s1["damage"]["crossed_decisional"]["est"],
-                 pg["crossed_decisional"]["est"], pg["block_t_alongside"]["ci90"], pg["crossed_decisional"]["ci90"],
-                 "hopool"))
+    ho.append(("weighted (primary)", s1["rescue"]["crossed_decisional"]["est"],
+               s1["damage"]["crossed_decisional"]["est"], pg["crossed_decisional"]["est"],
+               pg["block_t_alongside"]["ci90"], pg["crossed_decisional"]["ci90"], "hopool"))
     assert round(pg["crossed_decisional"]["est"], 2) == -4.57
     assert [round(v, 2) for v in pg["crossed_decisional"]["ci90"]] == [-7.17, -1.96]
-    assert [round(v, 2) for v in pg["block_t_alongside"]["ci90"]] == [-6.08, -3.05]
+    assert [round(v, 2) for v in pg["block_t_alongside"]["ci90"]] == [-6.08, -3.05]  # asserted, not plotted
     assert round(s1["rescue"]["crossed_decisional"]["est"], 2) == 5.21
     assert round(s1["damage"]["crossed_decisional"]["est"], 2) == 9.77
-    assert [round(r[3], 2) for r in rows if r[6] == "ho"] == [-3.03, -5.64, -6.57]
-    assert [round(r[1], 2) for r in rows if r[6] == "ho"] == [5.05, 4.41, 6.31]
-    assert [round(r[2], 2) for r in rows if r[6] == "ho"] == [8.08, 10.05, 12.88]
+    assert [round(r[3], 2) for r in ho if r[6] == "ho"] == [-3.03, -5.64, -6.57]
+    assert [round(r[1], 2) for r in ho if r[6] == "ho"] == [5.05, 4.41, 6.31]
+    assert [round(r[2], 2) for r in ho if r[6] == "ho"] == [8.08, 10.05, 12.88]
 
-    fig, ax = plt.subplots(figsize=(COL_W, 1.72), layout="constrained")
-    style_axis(ax, grid_axis="x")
-    ypos, y, prev = [], 0.0, None
-    for r in rows:
-        if prev is not None and r[6] == "ho" and prev != "ho":
-            y -= 0.9
-        if prev == "devpool":
-            y -= 0.35
-        ypos.append(y)
-        y -= 1.0
-        prev = r[6]
+    fig, (ax_a, ax_b) = plt.subplots(2, 1, sharex=True, figsize=(COL_W, 2.35),
+                                     gridspec_kw={"height_ratios": [5, 4]}, layout="constrained")
     h = 0.62
-    for r, yy in zip(rows, ypos):
-        lab, rr, dd, net, thick, thin, g = r
-        ax.barh(yy, rr, height=h, color=RESCUE, lw=0, zorder=2)
-        ax.barh(yy, -dd, height=h, color=DAMAGE, lw=0, zorder=2)
-        interval(ax, yy, net, thick, thin, NET, marker="D", ms=3.2, horizontal=True, z=4)
-    ax.axvline(0, color=INK2, lw=LW_ZERO, zorder=3)
-    ax.set_yticks(ypos)
-    ax.set_yticklabels([r[0] for r in rows])
-    for t, r in zip(ax.get_yticklabels(), rows):
-        if r[6] in ("devpool", "hopool"):
-            t.set_fontweight("bold")
-    ax.tick_params(axis="y", length=0)
-    ax.set_ylim(ypos[-1] - 0.6, ypos[0] + 0.6)
-    ax.set_xlim(-14, 14)
-    ax.set_xticks([-12, -8, -4, 0, 4, 8, 12])
-    ax.set_xticklabels(["12", "8", "4", "0", "4", "8", "12"])
-    ax.set_xlabel("% of units (net: pp)")
-    ax.text(-13.6, ypos[0] + 0.9, r"$\leftarrow$ damage $d$", ha="left", va="bottom", fontsize=FS, color=DAMAGE)
-    ax.text(13.6, ypos[0] + 0.9, r"rescue $r$ $\rightarrow$", ha="right", va="bottom", fontsize=FS, color=RESCUE)
-    iho = [i for i, r in enumerate(rows) if r[6] == "ho"][0]
-    ax.text(13.9, ypos[iho] + 0.95, "telecom holdout (pre-reg., 90%)", ha="right", va="center", fontsize=FS_S,
-            color=INK2, style="italic")
-    ax.text(13.6, ypos[0] + 0.0, r"$\tau^2$ dev", ha="right", va="center", fontsize=FS_S, color=INK2, style="italic")
-    # no legend: bars are labelled at the top (damage d / rescue r); the diamond is net G_all (caption)
-    save(fig, "f3_rescue_damage", ["dev", "hconf"], "rescue and damage rates per cell with net G_all and intervals")
+    for ax, rr_, title in ((ax_a, dev_rows, r"(a) $\tau^2$ development (85 tasks $\times$ 20 blocks)"),
+                           (ax_b, ho, r"(b) pre-reg. telecom holdout (34 tasks $\times$ 12 blocks)")):
+        style_axis(ax, grid_axis="x")
+        ypos = [-i - (0.35 if r[6] in ("devpool", "hopool") else 0.0) for i, r in enumerate(rr_)]
+        if ax is ax_b:  # pre-registered small-effect region: -3 pp < L and U < +3 pp
+            ax.axvspan(-3, 3, color=INK, alpha=0.12, lw=0, zorder=0)
+        for r, yy in zip(rr_, ypos):
+            lab, res, dam, net, thick, thin, g = r
+            ax.barh(yy, res, height=h, color=RESCUE, lw=0, zorder=2)
+            ax.barh(yy, -dam, height=h, color=DAMAGE, lw=0, zorder=2)
+            if g in ("ho", "hopool"):  # ONE interval: crossed 90% (decisional for the weighted row)
+                interval(ax, yy, net, thin, None, NET, marker="D", ms=3.2, horizontal=True, z=4)
+            else:
+                interval(ax, yy, net, thick, thin, NET, marker="D", ms=3.2, horizontal=True, z=4)
+        ax.axvline(0, color=INK2, lw=LW_ZERO, zorder=3)
+        ax.set_yticks(ypos)
+        ax.set_yticklabels([r[0] for r in rr_])
+        for t, r in zip(ax.get_yticklabels(), rr_):
+            if r[6] in ("devpool", "hopool"):
+                t.set_fontweight("bold")
+        ax.tick_params(axis="y", length=0)
+        ax.set_ylim(ypos[-1] - 0.55, ypos[0] + 0.55)
+        ax.set_title(title, pad=2, fontsize=FS, loc="left")
+    ax_a.set_ylim(ax_a.get_ylim()[0], 1.15)
+    ax_a.text(-13.8, 0.72, r"$\leftarrow$ damage", ha="left", va="center", fontsize=FS_S, color=DAMAGE)
+    ax_a.text(13.8, 0.72, r"rescue $\rightarrow$", ha="right", va="center", fontsize=FS_S, color=RESCUE)
+    ax_b.text(0, -4.6, "pre-reg. small-effect region", ha="center", va="center", fontsize=FS_S, color=INK2,
+              style="italic")
+    ylo, yhi = ax_b.get_ylim()
+    ax_b.set_ylim(-4.9, yhi)
+    ax_b.set_xlim(-14, 14)
+    ax_b.set_xticks([-12, -8, -4, 0, 4, 8, 12])
+    ax_b.set_xticklabels(["12", "8", "4", "0", "4", "8", "12"])
+    ax_b.set_xlabel("% of units (net: pp)")
+    save(fig, "f3_rescue_damage", ["dev", "hconf"],
+         "rescue/damage/net: (a) dev W4 cells + pool, fixed-pool and new-task 95%; "
+         "(b) telecom holdout crossed 90% with ±3 pp region")
 
 
 # ---------------------------------------------------------------------------------------------------------------
-# F4: frozen trigger vs matched oracle vs random by budget, KL reference faint
+# F4: frozen trigger vs matched-count random selection; matched oracle on its own axis (does not compress (a)/(b))
 # ---------------------------------------------------------------------------------------------------------------
 def f4():
     o, tok = load("oracle"), load("tok")
@@ -470,46 +480,95 @@ def f4():
     assert [k["net_gain"] for k in kl] == [1, 1, 6] and [k["turnover_captured"] for k in kl] == [7, 15, 32]
     vv = o["kl"]["val_f02f03"]["KLu_max"]  # own-count row of Table tab:oracle (not plotted; asserted)
     assert [vv[b]["pooled"]["turnover_captured"] for b in budgets] == [11, 15, 33]
+    assert [f["rescued"] for f in fr] == [6, 7, 16] and [f["damaged"] for f in fr] == [2, 5, 11]
+    assert [p["rescues"] for p in orc] == [34, 38, 38] and [p["damages"] for p in orc] == [0, 0, 0]
+    assert [round(f["p_net_ge_random"], 4) for f in fr] == [0.0345, 0.4169, 0.2617]
+    # random expected rescues / damages (derived, not stored): sum_c m_c * R_c / N_c and sum_c m_c * D_c / N_c
+    rd_r = [sum(c["n_escalated"] * c["R"] / c["N"] for c in o["frozen"][b]["per_cell"].values()) for b in budgets]
+    rd_d = [sum(c["n_escalated"] * c["D"] / c["N"] for c in o["frozen"][b]["per_cell"].values()) for b in budgets]
+    for f, r_, d_ in zip(fr, rd_r, rd_d):
+        near(r_ - d_, f["random_expected_net"], 0.01)
+        near(r_ + d_, f["random_expected_turnover"], 0.01)
+    PROV_EXTRA["f4_random_expected_rd"] = {
+        "derived": "random expected rescues = sum_c n_escalated_c*R_c/N_c; damages = sum_c n_escalated_c*D_c/N_c "
+                   "(oracle_trigger frozen[b].per_cell); budgets 5/10/20%",
+        "rescues": [round(v, 3) for v in rd_r], "damages": [round(v, 3) for v in rd_d]}
 
     pp = lambda v: 100.0 * v / N  # noqa: E731  derived: pp = count / 1020 * 100
     net_fr = [pp(f["net_gain"]) for f in fr]
     net_rd = [pp(f["random_expected_net"]) for f in fr]
     net_or = [pp(p["net"]) for p in orc]
-    net_kl = [pp(k["net_gain"]) for k in kl]
     assert [round(v, 2) for v in net_fr] == [0.39, 0.2, 0.49] and [round(v, 2) for v in net_or] == [3.33, 3.73, 3.73]
-    # turnover ceiling at the frozen rule's per-cell counts: sum_c min(m_c, R_c + D_c) (derived from JSON fields)
-    ceil_t = [sum(min(c["n_escalated"], c["R"] + c["D"]) for c in o["frozen"][b]["per_cell"].values())
-              for b in budgets]
-    tv = lambda v: 100.0 * v / 69  # noqa: E731  derived: % of the 69 turnover states
-    fig, axs = plt.subplots(1, 2, figsize=(COL_W, 1.95), layout="constrained")
-    a, b2 = axs
-    for ax in axs:
-        style_axis(ax)
-        ax.set_xticks(xs)
-        ax.set_xticklabels(["5", "10", "20"])
-        ax.set_xlim(3, 22)
-        ax.set_xlabel("escalation budget (%)")
+    assert [round(v, 2) for v in net_rd] == [p["random_net_pp"] for p in orc]  # 0.02 / 0.10 / 0.23
+
+    fig = plt.figure(figsize=(COL_W, 2.55), layout="constrained")
+    gs = fig.add_gridspec(2, 2, height_ratios=[1.15, 1.0], width_ratios=[1.25, 1.0])
+    a, b2, c3 = fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[0, 1]), fig.add_subplot(gs[1, :])
+    gx = [0, 1, 2]
+    w = 0.36
+    # (a) selected rescues (up) and damages (down): random expected vs frozen trigger; oracle in (c)
+    style_axis(a)
+    rnd_kw = dict(alpha=0.45, hatch="//////", edgecolor="white", lw=0)
+    a.bar([x - w / 2 for x in gx], rd_r, w, color=RESCUE, zorder=2, **rnd_kw)
+    a.bar([x - w / 2 for x in gx], [-v for v in rd_d], w, color=DAMAGE, zorder=2, **rnd_kw)
+    a.bar([x + w / 2 for x in gx], [f["rescued"] for f in fr], w, color=RESCUE, lw=0, zorder=2)
+    a.bar([x + w / 2 for x in gx], [-f["damaged"] for f in fr], w, color=DAMAGE, lw=0, zorder=2)
+    for x, f in zip(gx, fr):
+        a.text(x + w / 2, f["rescued"] + 0.5, str(f["rescued"]), ha="center", va="bottom", fontsize=FS_S, color=INK)
+        a.text(x + w / 2, -f["damaged"] - 0.5, str(f["damaged"]), ha="center", va="top", fontsize=FS_S, color=INK)
+    a.axhline(0, color=INK2, lw=LW_ZERO, zorder=3)
+    a.set_ylim(-16.5, 19.5)
+    a.set_yticks([-10, -5, 0, 5, 10, 15])
+    a.set_yticklabels(["10", "5", "0", "5", "10", "15"])
+    a.set_ylabel("rescues (up) / damages (down)")
+    a.set_title("(a) selected rescues, damages", pad=2, loc="left")
+    # (b) net gain, trigger vs random only
+    style_axis(b2)
     kw = dict(lw=1.2, ms=3.4)
-    a.plot(xs, net_or, color=ORACLE, marker="^", label="matched oracle (a); max. capturable (b)", **kw)
-    a.plot(xs, net_fr, color=B, marker="o", label="frozen Q-only trigger", **kw)
-    a.plot(xs, net_rd, color=REF, marker="s", mfc="white", label="random (expected)", **kw)
-    a.plot(xs, net_kl, color=ALT, marker="x", lw=0.8, ms=3.4, alpha=0.6, label="KL ref. (post hoc)")
-    a.axhline(0, color=INK2, lw=LW_ZERO, zorder=1)
-    a.set_ylim(-0.3, 4.2)
-    a.set_ylabel("net gain (pp)")
-    a.set_title("(a) net gain", pad=2)
-    b2.plot(xs, [tv(v) for v in ceil_t], color=ORACLE, marker="^", **kw)
-    b2.plot(xs, [tv(f["turnover_captured"]) for f in fr], color=B, marker="o", **kw)
-    b2.plot(xs, [tv(f["random_expected_turnover"]) for f in fr], color=REF, marker="s", mfc="white", **kw)
-    b2.plot(xs, [tv(k["turnover_captured"]) for k in kl], color=ALT, marker="x", lw=0.8, ms=3.4, alpha=0.6)
-    b2.set_ylim(0, 105)
-    b2.set_ylabel("turnover captured (% of 69)")
-    b2.set_title("(b) turnover captured", pad=2)
-    fig.legend(loc="outside lower center", ncol=2, frameon=False, fontsize=FS,
-               handletextpad=0.4, columnspacing=1.0)
-    PROV_EXTRA["f4_turnover_ceiling"] = ceil_t
+    b2.plot(gx, net_fr, color=B, marker="o", **kw)
+    b2.plot(gx, net_rd, color=REF, marker="s", mfc="white", **kw)
+    b2.axhline(0, color=INK2, lw=LW_ZERO, zorder=1)
+    for x, f, v in zip(gx, fr, net_fr):  # label trigger nets in outcomes too (text quotes outcomes)
+        below = x == 1  # the 10% point is a local minimum of the line: label it underneath
+        b2.text(x, v - 0.035 if below else v + 0.035, f"+{f['net_gain']}", ha="center",
+                va="top" if below else "bottom", fontsize=FS_S, color=B)
+    b2.set_ylim(-0.05, 0.65)
+    b2.set_yticks([0, 0.2, 0.4, 0.6])
+    b2.set_ylabel("net gain (pp)")
+    b2.set_title("(b) net gain", pad=2, loc="left")
+    for ax in (a, b2):
+        ax.set_xticks(gx)
+        ax.set_xticklabels(["5%", "10%", "20%"])
+        ax.set_xlim(-0.65, 2.65)
+    # (c) hindsight oracle with the same per-configuration counts, own axis (headroom; rescues only by construction)
+    style_axis(c3, grid_axis="x")
+    yy = {"random": 2, "trigger": 1, "oracle": 0}
+    hb = 0.26
+    for i, (x, lab) in enumerate(zip(xs, ["5%", "10%", "20%"])):
+        off = (1 - i) * hb * 1.05
+        c3.barh(yy["oracle"] + off, net_or[i], hb, color=ORACLE, lw=0, zorder=2)
+        c3.barh(yy["trigger"] + off, net_fr[i], hb, color=B, lw=0, zorder=2)
+        c3.barh(yy["random"] + off, net_rd[i], hb, color=REF, zorder=2, **{**rnd_kw, "alpha": 0.6})
+        c3.text(net_or[i] + 0.05, yy["oracle"] + off, lab, ha="left", va="center", fontsize=FS_S - 0.5,
+                color=INK2)
+    c3.axvline(0, color=INK2, lw=LW_ZERO, zorder=3)
+    c3.set_yticks([2, 1, 0])
+    c3.set_yticklabels(["random (expected)", "frozen Q-only trigger", "matched oracle (hindsight)"])
+    c3.tick_params(axis="y", length=0)
+    c3.set_xlim(0, 4.3)
+    c3.set_ylim(-0.5, 2.5)
+    c3.set_xlabel("net gain (pp); bars from top: 5, 10, 20% escalation")
+    c3.set_title("(c) against the matched oracle (own axis)", pad=2, loc="left")
+    handles = [Patch(facecolor=INK2, alpha=0.45, hatch="//////", edgecolor="white", lw=0, label="random (exp.)"),
+               Patch(facecolor=INK2, lw=0, label="trigger"),
+               Line2D([], [], color=B, marker="o", **kw, label="trigger"),
+               Line2D([], [], color=REF, marker="s", mfc="white", **kw, label="random")]
+    a.legend(handles=handles[:2], loc="upper left", frameon=False, fontsize=FS_S, handlelength=1.2,
+             borderaxespad=0.1, handletextpad=0.3)
+    b2.legend(handles=handles[2:], loc="upper left", frameon=False, fontsize=FS_S, handlelength=1.6,
+              borderaxespad=0.1, handletextpad=0.3)
     save(fig, "f4_trigger_oracle", ["oracle", "tok"],
-         "net gain and turnover captured by budget: frozen trigger, matched oracle/ceiling, random, KL reference")
+         "trigger vs random vs oracle: (a) selected rescues/damages, (b) net pp, (c) net pp with matched oracle")
 
 
 # ---------------------------------------------------------------------------------------------------------------
