@@ -34,6 +34,19 @@ Budget & sel. & oracle r/d/net (pp) & frozen r/d/net (pp) & net ratio \\
 \bottomrule
 \end{tabular*}
 \par\vspace{6pt}
+% src: analysis/fork/out/oracle_trigger_20261002T024423Z.md (§2 validation table, frozen S_mm rows); analysis/fork/out/token_mech_20261002T003130Z.md (§3 Validation, U1 S_mm PRIMARY)
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lllll@{}}
+\toprule
+\multicolumn{5}{@{}l}{\textbf{A$'$. Frozen trigger against matched-count random selection (Figure~\ref{fig:trigger})}} \\
+\addlinespace[2pt]
+Budget & sel. & net vs.\ random ($p$; Holm) & r/d & turnover vs.\ random ($p$) \\
+\midrule
+5\% & 50 & $+4$ vs.\ $+0.21$ (.0345; .1035) & 6/2 & 8 vs.\ 3.48 (.0182) \\
+10\% & 114 & $+2$ vs.\ $+0.98$ (.4169; .5234) & 7/5 & 12 vs.\ 7.52 (.0613) \\
+20\% & 222 & $+5$ vs.\ $+2.38$ (.2617; .5234) & 16/11 & 27 vs.\ 14.30 (.0002) \\
+\bottomrule
+\end{tabular*}
+\par\vspace{6pt}
 \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lllll@{}}
 \toprule
 \multicolumn{5}{@{}l}{\textbf{B. Post hoc KL reference (requires BF16)}} \\
@@ -46,7 +59,7 @@ Budget & sel. & net vs.\ random ($p$; Holm) & r/d & turnover vs.\ random ($p$) \
 \bottomrule
 \end{tabular*}
 \par\vspace{6pt}
-\caption{Frozen Q-only trigger against a matched action-replacement oracle (hindsight; same per-cell selection counts) and a post-hoc KL reference row, on f02/f03 U1 (1020 rows). Net ratio: frozen net over oracle net (not a share of rescues; the frozen rule selects 6, 7 and 16 of the oracle's rescues). Random: matched-count per-cell random-trigger expectation; $p$: exact one-sided hypergeometric, Holm over the three budgets.}
+\caption{Frozen Q-only trigger against a matched action-replacement oracle (hindsight; same per-cell selection counts) and a post-hoc KL reference row, on f02/f03 U1 (1020 rows). Net ratio: frozen net over oracle net (not a share of rescues; the frozen rule selects 6, 7 and 16 of the oracle's rescues). Random: matched-count per-cell random-trigger expectation; $p$: exact one-sided hypergeometric; Holm over the three budgets is applied to the net $p$-values only.}
 \label{tab:oracle}
 \end{table*}
 
