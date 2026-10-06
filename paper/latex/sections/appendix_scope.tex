@@ -6,8 +6,6 @@ This appendix supports Table~\ref{tab:scope}: it reports each scope check in ful
 \subsection{Ordinary states and the user simulator}
 \label{app:ordinary}
 
-\paragraph{Ordinary states and the user simulator.} At ordinary (Bank U) states, turnover is lower (W4 configurations, U1 and U2B: 4.7--9.0\%) and the net gain covers zero. Most outcome changes there come from differences in text. We could not confirm their labels under a second user simulator (one control exposed replies to sibling arms; see below), so we do not report them as a property of the action. % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§2); analysis/fork/out/simctrl_20261001T212742Z.md
-
 \paragraph{Ordinary states turn over less, mostly through text under our simulator.} At ordinary states, replacing Q's action changes the outcome less often than at first tool-structure divergences (a descriptive comparison of different state populations, with no interval on the difference). Over blocks f01--f03 (task-equal; $t$ intervals over block means), $M$ per sub-bank is 7.8--9.0\% for the q4 W4 cells in U1 and U2B, 4.7--9.0\% for the q8 W4 cells and at most 4.7\% for KV8. The net gain lies within $\pm$2.8\pp{} (U1, U2B) and $\pm$5.0\pp{} (U2Q), and every interval covers zero (Appendix~\ref{app:banku}). % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§2)
 Identical actions never change the outcome, as determinism implies. Reused arms rest on canonical equality. All 4{,}114 such reuses were rendered with each model's chat template; 4{,}113 are token-identical. The remaining pair differs only in JSON key order, and its two cross arms, measured separately, gave the reused outcomes. % src: analysis/fork/reuse_audit/REUSE_AUDIT.md (TL;DR); analysis/fork/reuse_audit/REUSE_FIX_RESULT.md (TL;DR)
 After deduplication, 150 of the 208 outcome-changing cell$\times$state rows ($\approx$72.1\%) are class (ii), the same tool structure with different text; 26 involve a different tool name, call count or argument (Table~\ref{tab:taxonomy}). % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§3); derived: 150=45+28+44+25+10+6-5-3; 208=99+99+18-5-3; 72.1=100*(45+28+44+25+10+6-5-3)/(99+99+18-5-3); 26=1+11+4+9+0+1
@@ -24,8 +22,6 @@ Judged by the sign of the replicate mean, only 7 of the 39 flips keep their dire
 Before running, we sampled 80 Bank P states without outcome information (20 per W4 cell, stratified by domain and block) and re-ran all four arms five times each with Sonnet 5.5 as the user, one isolated single-request call per user turn (7896 calls; all integrity checks passed). % src: analysis/fork/out/simctrl_p_20261002T015200Z.md; manifests/fork/simctrl_p_v1.json
 Per-state arm outcomes track the original single runs (correlation 0.63--0.68). Pooled over cells, $G=-3.0$ [$-10.2$, $+4.8$], $H=+5.5$ [$+0.0$, $+11.2$] and $G-H=-8.5$ [$-14.8$, $-2.8$]\pp{} under Sonnet, against $G-H=-2.5$ [$-11.2$, $+6.2$] on the same states under the original simulator (change $-6.0$ [$-16.2$, $+4.2$]). % src: analysis/fork/out/simctrl_p_20261002T015200Z.md (pool, all batches)
 With 20 states per cell, this control cannot resolve the few-pp contrasts of Table~\ref{tab:ghf} (on this sample even the original simulator gives $G-H=0.0$ in both q8 W4 cells), so it neither confirms nor reverses the within-cell orderings. % src: analysis/fork/out/simctrl_p_20261002T015200Z.md (q8 cells)
-
-\paragraph{Bank P and Bank U measure different quantities.} Bank P skips text-only differences by design, yet these make up 150 of the 208 outcome-changing rows at ordinary states, and their labels did not reproduce under a second simulator (Appendix~\ref{app:banku}; \S\ref{sec:scope}). Including text actions requires a simulator control before their consequences are reported as a property of the action. % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§3); analysis/fork/out/simctrl_20261001T212742Z.md; derived: 150=45+28+44+25+10+6-5-3; 208=99+99+18-5-3
 
 \subsection{Bank U per Sub-Bank}
 \label{app:banku}
@@ -69,14 +65,10 @@ q8:U2Q & 129: 0 & 33: 6 (.182)$^\ast$ & 11: 1 (.091) & 7: 0 \\
 unique rows & 1943: 0 & 1045: 150 (.144) & 143: 26 (.182) & 169: 32 (.189) \\ % derived: 1045=309+202+277+199+63+33-24-14; 150=45+28+44+25+10+6-5-3; 143=19+47+24+40+5+11-1-2; 26=1+11+4+9+0+1; 169=38+33+34+56+4+7-1-2; 32=10+4+3+14+1+0; .144=150/1045; .182=26/143; .189=32/169
 \bottomrule
 \end{tabular}
-\caption{Which kind of action difference changes the outcome at ordinary states (Bank U, blocks f01--f03). Entries: ``state rows: outcome-changing rows (flip rate)'', pooled over the three cells of a model within a sub-bank. The last row counts each (cell, state) once: q4/q8 GPTQ-W4's U2Q states repeat their U1 states ($^\ast$ includes 5 and 3 repeated class-(ii) flips), so 216 flipping rows become 208. In block f01 alone the corresponding counts were 39 of 56 flips in class (ii), with rates .126/.109/.200 for (ii)/(iii)/(iv); the 58 f01 flips scored in Appendix~\ref{app:token} include the two duplicated U2Q rows. % src: analysis/fork/out/token_mech_20261001T185031Z.md (flips: 58); analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§3); analysis/fork/out/bank_u_f01_20261001T134456Z.md; docs/REPORT_GPT61_20261001_0915.md (correction 1: 39/56 after deduplication); derived: 216=99+99+18; 208=99+99+18-5-3
+\caption{Which kind of action difference changes the outcome at ordinary states (Bank U, blocks f01--f03). Entries: ``state rows: outcome-changing rows (flip rate)'', pooled over the three cells of a model within a sub-bank. The last row counts each (cell, state) once: q4/q8 GPTQ-W4's U2Q states repeat their U1 states ($^\ast$ includes 5 and 3 repeated class-(ii) flips), so 216 flipping rows become 208. The 58 f01 flips scored in Appendix~\ref{app:token} include the two duplicated U2Q rows. % src: analysis/fork/out/token_mech_20261001T185031Z.md (flips: 58); analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§3); analysis/fork/out/bank_u_f01_20261001T134456Z.md; derived: 216=99+99+18; 208=99+99+18-5-3
 }
 \label{tab:taxonomy}
 \end{table}
-
-\subsection{Summary of the environment and family checks}
-
-\paragraph{Other environments and a second family.} On BFCL multi-turn and ALFWorld (no simulated user, one run per item; post hoc), the replacement turns over 5.2--24.6\% of items in both directions (Appendix~\ref{app:extr2}); on Mistral-Small-3.2-24B's own ordinary BF16-sourced states, B's action in GPTQ-W4 rescues $r=4.6$ and damages $d=5.4$\pp{}, and no mode's net value is resolved (Appendix~\ref{app:mistral}). % src: analysis/fork/out/ext_20261001T135106Z.md; analysis/fork/out/ext_r2_20261002T024433Z.md (§3, §6); analysis/fork/out/newmethod_m24_20261004T024453Z.md; analysis/fork/out/newmethod_m24_20261004T024453Z.json (tau2.cells.*.all_states_pp; tau2.contrasts.M1); docs/insights/NEWMETHOD_PANEL_PROTOCOL.md (A3, A6, A6.E1)
 
 \subsection{Models compared on their own ordinary states}
 \label{app:mistral}
@@ -142,8 +134,6 @@ ALFWorld q8 KV4$^s$ & 134 & 0.0 & 0.0 & 0.0 & $+0.0$ [$+0.0$, $+0.0$] & 134 & $+
 
 \subsection{Quantization methods on shared ordinary states}
 \label{app:panels}
-
-On the q8 U2B panel, $G$ is resolved in no configuration, while fixed-pool $H$ or $F$ exceeds zero in several (Appendix~\ref{app:panels}). % src: analysis/fork/out/newmethod_q8_20261004T051538Z.md (τ² U2B all states: G, H, F with crossed columns)
 
 These tests ask whether numerical error locates changed actions, consequential changes and beneficial changes. Methods share ordinary BF16-sourced states (U2B); the separate Mistral population is specified in Appendix~\ref{app:mistral}.
 

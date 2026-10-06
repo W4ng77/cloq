@@ -1,0 +1,24 @@
+% Full version of main-text Table tab:refs (moved from results_r2.tex; display only, values unchanged).
+\begin{table*}[t]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+% src: analysis/fork/out/sameprec_20261004T070601Z.md (TL;DR; Full pool, pool q4+q8 rows; Paired differences, pool row; analysis set K = 6); analysis/fork/out/sameprec_20261004T070601Z.json (pooled.paired.dG.crossed_ci95); analysis/fork/out/commonstate_q8ext_20261003T231159Z.md (TL;DR; Contrasts table: bf16 − d1 and d2 − d1 rows, columns Δ, r, d, M; Key estimand table t95, boot95, t90; Two-look reading table t97, boot97, t94); docs/insights/COMMONSTATE_SOURCES_PROTOCOL.md (§5 reading rules; D2.2); analysis/fork/out/keyorder_20261005T204349Z.md (table, cond columns); analysis/fork/keyorder/eligibility_v1.md; docs/insights/KEYORDER_PERTURB_PROTOCOL.md
+\begin{tabular}{@{}p{2.1cm}p{2.9cm}p{1.8cm}rrrp{5.7cm}@{}}
+\toprule
+\raggedright Reference (status) & \raggedright States (denominator) & \raggedright Action replacing Q's (continuation) & \begin{tabular}[b]{@{}r@{}}Turn-\\over\end{tabular} & \begin{tabular}[b]{@{}r@{}}Rescues /\\damages\end{tabular} & Net & \raggedright Paired comparison [interval; 95\% unless marked]; reading \tabularnewline
+\midrule
+\raggedright Q$'$: second W4 checkpoint (frozen before outcomes) & \raggedright each design's own first divergent states; q4, q8 GPTQ-W4; 85 tasks $\times$ 6 blocks, 1020 units (\% of units) & \raggedright B (Q) & 16.8 & 8.0 / 8.7 & $-0.7$ & \raggedright turnover, B minus Q$'$ (primary): $-1.0$; fixed pool [$-3.9$, $+1.9$], new tasks [$-4.5$, $+2.7$]; not resolved, equivalence not shown; net: $-1.6$ [$-6.2$, $+3.0$], [$-6.5$, $+3.6$]; the state sets differ \tabularnewline % derived: 1020=510+510
+ & & \raggedright Q$'$ (Q) & 17.7 & 9.3 / 8.4 & $+0.9$ & \tabularnewline
+\midrule
+\raggedright Common states (pre-registered at three blocks; extended by amendment) & \raggedright 510 ordinary q8 GPTQ-W4 states, 85 tasks $\times$ 6 blocks, shared by all arms (\% of states) & \raggedright B (Q) & 7.1 & 4.1 / 2.9 & $+1.2$ & \raggedright B's action beyond Q$'$'s, Q continues: $+1.0$; two-look 97\% $t$ [$-4.2$, $+6.2$], bootstrap [$-1.4$, $+3.5$]; unadjusted $t$ [$-3.5$, $+5.4$], bootstrap [$-1.2$, $+3.1$]; not resolved \tabularnewline % derived: 510=85*6
+ & & \raggedright Q$'$ (Q) & 8.0 & 4.1 / 3.9 & $+0.2$ & \tabularnewline
+\addlinespace
+ & & \raggedright B (B; vs.\ QB) & 9.0 & 5.3 / 3.7 & $+1.6$ & \raggedright B's action beyond Q$'$'s, B continues: $+0.8$; two-look 97\% [$-2.2$, $+3.8$], [$-2.0$, $+3.7$]; unadjusted $t$ and bootstrap [$-1.8$, $+3.3$]; not resolved; equivalence: unadjusted 90\% $t$ [$-1.2$, $+2.8$] inside $\pm$3, two-look 94\% $t$ [$-1.6$, $+3.2$] not; no equivalence claimed \tabularnewline
+ & & \raggedright Q$'$ (B; vs.\ QB) & 8.6 & 4.7 / 3.9 & $+0.8$ & \tabularnewline
+\midrule
+\raggedright Key order (exploratory; code frozen before outcomes) & \raggedright 300 q8 GPTQ-W4 first divergent states whose action is one tool call with at least two argument keys, 41 tasks (\% of states) & \raggedright B (Q) & 9.0 & 3.3 / 5.7 & $-2.3$ & \raggedright turnover, reversed keys minus B: $-2.3$ [$-8.4$, $+2.9$]; not resolved; no equivalence margin \tabularnewline
+ & & \raggedright Q, keys reversed (Q) & 6.7 & 3.3 / 3.3 & $0.0$ & \tabularnewline
+\bottomrule
+\end{tabular}
+\caption{Reference experiments with all registered intervals (full version of Table~\ref{tab:refs}). Each row group has its own state source and denominator; comparisons are paired only within a group, and the references are never subtracted from B's turnover. Turnover, rescues, damages and net compare the replacing action with Q's action under the same continuation: against QQ when Q continues, and against Q's action followed by B (QB) when B continues. Intervals are those each protocol registers: Q$'$, fixed pool ($t$ over 6 block means) and new tasks (crossed); common states, $t$ over block means and task-cluster bootstrap, a reading needs both, under the two-look (Pocock) reading that the protocol designates confirmatory and, unadjusted, at the frozen levels (Appendix~\ref{app:commonstate}); key order, the wider of block and crossed bootstrap.}
+\label{tab:refsfull}
+\end{table*}
