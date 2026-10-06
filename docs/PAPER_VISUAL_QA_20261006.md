@@ -27,3 +27,10 @@ Base: `573afc26e663e7a1d13ae90fb6de2943a30ed16c`. This revision changes presenta
 - `check_numbers.py` was run on both the base sections and revised sections against the same available sources. Base: 3675 occurrences; revision: 3669 occurrences. Both have the same eight unverified metadata values and the same 31 unavailable source paths, with zero uncited/missing required sources. There are no new numeric-check failures.
 - This environment cannot honestly claim a full `check_numbers` PASS: uncommitted cluster quantization/calibration metadata and adjacent `cloq_work` files are unavailable. Run the existing checker in the complete cluster checkout before submission. The checker and source data were not altered to suppress these failures.
 - The pending full-QQ holdout replay is not replaced by this presentation revision; its new evidence must be incorporated only after the registered audit completes.
+
+## Cluster build check (lead, 2026-10-05 PDT, on top of 2addfca)
+
+- With the submission toolchain (tectonic on the cluster), 2addfca as pushed builds to 37 pages and the Conclusion runs about 16 lines onto page 9 (Limitations on page 10); the 8-page / 32-page figures above came from a different build environment. Fixed by: Figure 3 height 2.05 -> 1.8 in; one redundant oracle-count clause (the counts are in Figure 3 and Appendix Table 15) and one duplicated simulator sentence (in Limitations) removed; the fixed-stack sentence in Discussion shortened; three scope-table rows tightened. Result: 36 pages, main text ends on page 8, Limitations on page 9.
+- Full `check_numbers.py` on the cluster checkout: PASS (no unverified values, no missing sources).
+- Palette: same semantic roles, muted hues (B #3B75AF, rescue #4C9A7A, damage #C4553A, Q #A0647D, Q' #B08A3E, KV8/KL #7FA9D4) in make_figs.py and main.tex \definecolor; oracle strip boxes neutral grey. Label overlaps fixed in Figure 3 (legends, +2 label) and the clipped panel titles of Figure 2.
+- Scope table: the RTN-W3 row now says it is one of five stress configurations (exploratory), and its interval type (crossed 95%) is stated in the caption.
