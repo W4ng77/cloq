@@ -25,7 +25,7 @@ from make_figs import (B, CELL4, DAMAGE, FULL_W, INK, INK2, LW_ZERO, REF, RESCUE
 
 NAME = "f10_r1_quad"
 FT, FL, FSUB = 8.0, 7.5, 7.0  # panel title (bold), ticks/labels, grey subtitle
-H = 2.70                      # figure height, in (interval key in the caption; enlarged again, R3 review)
+H = 3.40                      # figure height, in (interval key in the caption; 2.70 -> 3.40 in, print-legibility pass)
 SHORT = {"q4 GPTQ-W4": "q4 GPTQ", "q4 AWQ-style W4": "q4 AWQ", "q8 GPTQ-W4": "q8 GPTQ", "q8 AWQ-style W4": "q8 AWQ"}
 
 
@@ -270,8 +270,8 @@ def f10():
 
     # ---------- (d) joint rescue / rescue undone vs reference ----------
     ax = axes(fig, xd + Ld, wd)
-    header(fig, xd, "(d) Patterns vs reference", ["W4 divergent states, pp", "exploratory, post hoc",
-                                                     "reading: new-task 95%"])
+    # two grey lines max; "exploratory, post hoc" is stated in the caption for (c) and (d)
+    header(fig, xd, "(d) Patterns vs reference", ["W4 divergent states, pp", "reading: new-task 95%"])
     style_axis(ax, grid_axis="x")
     ax.axvline(0, color=INK2, lw=LW_ZERO, zorder=1)
     ys, lab, heads, y = [], [], [], 0.0
@@ -290,10 +290,10 @@ def f10():
         ax.text(1.0 + 0.05 / wd, yy, f"{o:.2f} / {rf:.2f}", transform=ax.get_yaxis_transform(), fontsize=FSUB,
                 color=INK2, ha="left", va="center")
     for yy, t in heads:  # group headings inside the axes (clear of the spine), opaque over the zero line
-        ax.text(0.03, yy, t, transform=ax.get_yaxis_transform(), fontsize=FSUB, color=INK, ha="left",
+        ax.text(0.05, yy, t, transform=ax.get_yaxis_transform(), fontsize=FSUB, color=INK, ha="left",
                 va="center", style="italic", zorder=6,
                 bbox=dict(boxstyle="square,pad=0.05", fc="white", ec="none"))
-    ax.text(1.0 + 0.05 / wd, heads[0][0] - 0.1, "obs / ref, %", transform=ax.get_yaxis_transform(), fontsize=FSUB,
+    ax.text(1.0 + 0.02 / wd, heads[0][0] - 0.1, "obs / ref, %", transform=ax.get_yaxis_transform(), fontsize=FSUB,
             color=INK2, ha="left", va="bottom")
     ax.set_xlim(-3.3, 3.0)
     ax.set_xticks([-2, 0, 2])

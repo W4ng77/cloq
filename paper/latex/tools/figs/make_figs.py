@@ -508,14 +508,14 @@ def f4():
 
     # R3 review: (b) in outcomes (net count) on a broken axis so the oracle is plotted; hollow trigger markers where
     # the net p is not < .05; p scope stated per panel (Holm applies to the net p-values of (b) only).
-    H4 = 2.40
+    H4 = 2.70  # 2.40 -> 2.70 in (print-legibility pass)
     FT4, FL4, FSUB4 = 8.0, 7.5, 7.0
     fig = plt.figure(figsize=(FULL_W, H4))
     xa_, wa_, xb_, wb_ = 0.46, 2.10, 3.30, 1.74
     top_, bot_ = 0.60, 0.55
     hh = H4 - top_ - bot_
     a = fig.add_axes([xa_ / FULL_W, bot_ / H4, wa_ / FULL_W, hh / H4])
-    hu, gap = 0.30, 0.06  # upper (oracle) axis height and break gap, in
+    hu, gap = 0.40, 0.06  # upper (oracle) axis height and break gap, in
     b2 = fig.add_axes([xb_ / FULL_W, bot_ / H4, wb_ / FULL_W, (hh - hu - gap) / H4])
     bu = fig.add_axes([xb_ / FULL_W, (bot_ + hh - hu) / H4, wb_ / FULL_W, hu / H4], sharex=b2)
 
@@ -542,7 +542,10 @@ def f4():
     a.set_ylim(-15, 21)
     a.set_yticks([-10, 0, 10, 20])
     a.set_yticklabels(["10", "0", "10", "20"])
-    a.set_ylabel("states (damages ↓ / rescues ↑)", fontsize=FSUB4, labelpad=1)
+    a.set_ylabel("states", fontsize=FL4, labelpad=1)
+    # direction labels inside the axes, in the empty space left of the 5% group (clear of legend and bars)
+    a.text(-0.44, 12.0, "rescues", ha="left", va="center", fontsize=FSUB4, color=RESCUE, style="italic")
+    a.text(-0.44, -7.0, "damages", ha="left", va="center", fontsize=FSUB4, color=DAMAGE, style="italic")
     a.legend(handles=[Patch(facecolor="#8C8C8C", label="trigger"),
                       Patch(facecolor="#8C8C8C", alpha=.38, hatch="///", edgecolor="white", label="random (expected)")],
              frameon=False, loc="upper left", ncol=2, fontsize=FSUB4, handlelength=1.1, handletextpad=.4,
@@ -562,13 +565,13 @@ def f4():
                                                   (-.09, .25, "right", "bottom"))):
         b2.text(x + dx, v + dy, f"+{v}", ha=ha, va=va, fontsize=FSUB4, color=INK)  # clear of both lines
     for x, v in zip(gx, rnds):
-        b2.text(x + .09, v - .25, f"+{v:.2f}", ha="left", va="top", fontsize=FSUB4, color=INK2)
+        b2.text(x + .09, v - .35, f"+{v:.2f}", ha="left", va="top", fontsize=FSUB4, color=INK2)
     b2.axhline(0, color=INK2, lw=LW_ZERO)
     b2.set_ylim(-0.9, 6.2)
     b2.set_yticks([0, 2, 4, 6])
     bu.plot(gx, [p["net"] for p in orc], color=INK, marker="^", ms=4.5, lw=1.0, ls=(0, (2, 1.2)), zorder=3)
     for x, p in zip(gx, orc):
-        bu.text(x + .09, p["net"] - .4, f"+{p['net']}", ha="left", va="top", fontsize=FSUB4, color=INK)
+        bu.text(x + .09, p["net"] - 1.3, f"+{p['net']}", ha="left", va="top", fontsize=FSUB4, color=INK)
     bu.set_ylim(30, 42)
     bu.set_yticks([30, 40])
     bu.spines["bottom"].set_visible(False)

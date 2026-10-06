@@ -29,8 +29,8 @@ from make_figs import B, FULL_W, INK, INK2, LW_ZERO, Q, QP, Line2D, plt, r1, sty
 
 NAME = "f11_refs_quad"
 FT, FL, FSUB = 8.0, 7.5, 7.0
-H = 2.70
-TOP = 0.60   # one bold title line + at most three grey subtitle lines per panel (R3 review)
+H = 3.40     # 2.70 -> 3.40 in (print-legibility pass)
+TOP = 0.52   # one bold title line + at most two grey subtitle lines per panel
 MINUS = "−"
 
 
@@ -46,7 +46,7 @@ def header(fig, x_in, titles, sub, sub0=0.21):
         fig.text(x_in / FULL_W, 1 - (sub0 + 0.108 * i) / H, s, fontsize=FSUB, va="top", ha="left", color=INK2)
 
 
-def axes(fig, x_in, w_in, top_in=TOP, bot_in=0.55):
+def axes(fig, x_in, w_in, top_in=TOP, bot_in=0.42):
     return fig.add_axes([x_in / FULL_W, bot_in / H, w_in / FULL_W, (H - top_in - bot_in) / H])
 
 
@@ -143,6 +143,18 @@ def ivv(ax, pos, est, thick, thin, color, marker="o", ms=3.4, dx=0.11, z=3):
     ax.plot([pos], [est], marker=marker, ms=ms, color=color, mew=0.8, zorder=z + 1, ls="none")
 
 
+def ivh(ax, pos, est, thick, thin, color, marker="o", ms=3.4, dy=-0.11, z=3):
+    """Horizontal ivv: a nested thin interval is drawn as its own 0.6-lw line just below the thick one."""
+    nested = thin[0] >= thick[0] and thin[1] <= thick[1]
+    yt = pos + dy if nested else pos
+    ax.plot(thin, [yt, yt], color=color, lw=0.6, solid_capstyle="butt", zorder=z)
+    if nested:
+        for v in thin:
+            ax.plot([v, v], [yt - 0.06, yt + 0.06], color=color, lw=0.6, zorder=z)
+    ax.plot(thick, [pos, pos], color=color, lw=1.8, solid_capstyle="butt", zorder=z)
+    ax.plot([est], [pos], marker=marker, ms=ms, color=color, mew=0.8, zorder=z + 1, ls="none")
+
+
 def f11():
     MF.SRC["same"] = "analysis/fork/out/sameprec_20261004T070601Z.json"
     MF.SRC["w3"] = "analysis/fork/out/sameprec_w3_20261004T070607Z.json"
@@ -152,89 +164,98 @@ def f11():
     pr, sa, pw, sw, dM, dG, dW, K, margin, cp = data()
 
     fig = plt.figure(figsize=(FULL_W, H))
-    # R3 review: (c) gets a right-margin value column; widths rebalanced so (b)'s one-line title and subtitles fit
+    # print-legibility pass: (a) and (d) are horizontal rows (full-word labels, no rotated ticks); (b) tightened;
+    # (c) row labels on two lines; every text >= 7 pt; at most two grey subtitle lines per panel
     GAP = 0.12
-    La, wa = 0.33, 1.32
+    La, wa = 0.55, 1.21
     Lb, wb = 0.29, 0.80
-    Lc, wc, wrc = 0.58, 0.74, 0.50
-    Ld, wd = 0.41, 0.95
+    Lc, wc, wrc = 0.54, 0.70, 0.50
+    Ld, wd = 0.47, 0.86
     xa = 0.0
     xb = xa + La + wa + GAP
     xc = xb + Lb + wb + GAP
     xd = xc + Lc + wc + wrc + GAP
     assert xd + Ld + wd <= FULL_W + 1e-6, xd + Ld + wd
-    OFF = 0.17
+    OFF = 0.17   # vertical (b): B / Q' x offset
+    HOFF = 0.20  # horizontal (a, d): B above, reference below the row centre
     LIGHT = 0.55  # alpha of thin (new-task / unadjusted) intervals drawn beside or below a thick one
 
-    def tag(ax, x, y, s="not\nresolved", va="bottom"):
-        ax.text(x, y, s, fontsize=6.5, color=INK2, ha="center", va=va, style="italic", linespacing=0.95)
+    def tag(ax, x, y, s="not resolved", ha="left", va="center", box=False):
+        ax.text(x, y, s, fontsize=FSUB, color=INK2, ha=ha, va=va, style="italic", linespacing=0.95, zorder=6,
+                bbox=dict(boxstyle="square,pad=0.08", fc="white", ec="none") if box else None)
 
-    def xcat(ax, labels):
-        ax.set_xticklabels(labels, fontsize=FSUB, rotation=28, ha="right", rotation_mode="anchor")
-        ax.tick_params(axis="x", length=0, pad=2)
+    def rowlabels(ax, ys, labels, bold=None, fs=FL):
+        ax.set_yticks(ys)
+        ax.set_yticklabels(labels, fontsize=fs, linespacing=0.95)
+        if bold is not None:
+            for t, b_ in zip(ax.get_yticklabels(), bold):
+                t.set_fontweight("bold" if b_ else "normal")
+        ax.tick_params(axis="y", length=0, pad=2)
+        ax.tick_params(axis="x", labelsize=FL, pad=1.5)
 
-    # ---------- (a) Steps 1-2: Q' vs B. x order follows the argument: Step 1 block | Step 2 block ----------
+    def heading(ax, L, w, y, s):
+        ax.text(-L / w, y, s, transform=ax.get_yaxis_transform(), fontsize=FSUB, color=INK, ha="left",
+                va="center", fontweight="bold")
+
+    # ---------- (a) Steps 1-2: Q' vs B. Rows follow the argument: Step 1 block, then Step 2 block ----------
     ax = axes(fig, xa + La, wa)
     header(fig, xa, ["(a) Steps 1–2: Q′ vs B"],
-           ["own first divergent states · % of units", "W4: q4+q8 GPTQ-W4, 85 × 6 bl. (1020)",
-            "W3: q4+q8 GPTQ-W3, 85 × 3 bl. (510)"])
-    style_axis(ax, grid_axis="y")
-    XG = [0, 1, 2]
-    for i, k in zip(XG, ("rescue", "damage", "M")):
-        ivv(ax, i - OFF, pr[k]["est"], pr[k]["ci95"], pr[k]["crossed_ci95"], B, marker="o")
-        ivv(ax, i + OFF, sa[k]["est"], sa[k]["ci95"], sa[k]["crossed_ci95"], QP, marker="s")
-    xw = 3.0  # W3 stress turnover (Step 1 content, a separate 3-block panel)
-    ivv(ax, xw - OFF, pw["M"]["est"], pw["M"]["ci95"], pw["M"]["crossed_ci95"], B, marker="o")
-    ivv(ax, xw + OFF, sw["M"]["est"], sw["M"]["ci95"], sw["M"]["crossed_ci95"], QP, marker="s")
-    tag(ax, 2.55, 6.6, "W3: 3 blocks,\nfixed-pool $t$ wider", va="top")
-    xsep = 3.62
-    ax.axvline(xsep, color=INK2, lw=0.5, ls=(0, (1.5, 1.5)), zorder=1)
-    xD = [4.15, 4.95]  # paired differences B - Q': turnover (primary) and net; +-3 pp behind these only
-    ax.add_patch(plt.Rectangle((xD[0] - 0.38, -margin), xD[1] - xD[0] + 0.76, 2 * margin, color=INK, alpha=.07,
+           ["q4+q8 GPTQ, own first divergent states", "W4: 85 × 6 bl. (1020) · W3: 85 × 3 bl. (510)"])
+    style_axis(ax, grid_axis="x")
+    yS1 = 0.0
+    yr = [yS1 - 0.9, yS1 - 1.9, yS1 - 2.9, yS1 - 3.9]  # rescues, damages, turnover, W3 turnover
+    for y, k in zip(yr[:3], ("rescue", "damage", "M")):
+        ivh(ax, y + HOFF, pr[k]["est"], pr[k]["ci95"], pr[k]["crossed_ci95"], B, marker="o")
+        ivh(ax, y - HOFF, sa[k]["est"], sa[k]["ci95"], sa[k]["crossed_ci95"], QP, marker="s")
+    ivh(ax, yr[3] + HOFF, pw["M"]["est"], pw["M"]["ci95"], pw["M"]["crossed_ci95"], B, marker="o")
+    ivh(ax, yr[3] - HOFF, sw["M"]["est"], sw["M"]["ci95"], sw["M"]["crossed_ci95"], QP, marker="s")
+    tag(ax, 29.5, yr[3] - 0.85, "W3 (a, b): 3 blocks,\nfixed-pool $t$ wider", ha="right")
+    ysep = yr[3] - 1.35
+    ax.axhline(ysep, color=INK2, lw=0.5, ls=(0, (1.5, 1.5)), zorder=1)
+    yS2 = ysep - 0.5
+    yD = [yS2 - 0.85, yS2 - 1.75]  # paired differences B - Q': turnover (primary) and net; +-3 pp behind these only
+    ax.add_patch(plt.Rectangle((-margin, yD[1] - 0.45), 2 * margin, yD[0] - yD[1] + 0.9, color=INK, alpha=.07,
                                lw=0, zorder=0))
-    for x, dd in zip(xD, (dM, dG)):
-        ivv(ax, x, dd["est"], dd["ci95"], dd["crossed_ci95"], INK, marker="D")
-    tag(ax, np.mean(xD), max(dM["crossed_ci95"][1], dG["crossed_ci95"][1]) + 0.8, "both not\nresolved")
-    for x0, t in ((-0.4, "Step 1"), (xsep + 0.1, "Step 2")):
-        ax.text(x0, 37.5, t, fontsize=FSUB, color=INK, ha="left", va="top", fontweight="bold")
-    ax.axhline(0, color=INK2, lw=LW_ZERO, zorder=1)
-    ax.set_xlim(-0.45, 5.4)
-    ax.set_xticks(XG + [xw] + xD)
-    xcat(ax, ["rescues", "damages", "turnover", "W3 turnover", "Δ turnover", "Δ net"])
-    ax.tick_params(axis="y", labelsize=FL, pad=1.5)
-    ax.set_ylim(-8, 38)
-    ax.set_yticks([0, 10, 20, 30])
-    ax.set_ylabel("% of units (Δ: pp)", fontsize=FL, labelpad=1)
+    for y, dd in zip(yD, (dM, dG)):
+        ivh(ax, y, dd["est"], dd["ci95"], dd["crossed_ci95"], INK, marker="D")
+    tag(ax, max(dM["crossed_ci95"][1], dG["crossed_ci95"][1]) + 1.5, np.mean(yD), "both not\nresolved")
+    heading(ax, La, wa, yS1, "Step 1")
+    heading(ax, La, wa, yS2, "Step 2")
+    ax.axvline(0, color=INK2, lw=LW_ZERO, zorder=1)
+    ax.set_xlim(-8, 30)
+    ax.set_xticks([0, 10, 20, 30])
+    ax.set_xlabel("% of units (Δ: pp)", fontsize=FL, labelpad=1)
+    rowlabels(ax, yr + yD, ["rescues", "damages", "turnover", "W3 turnover", "Δ turnover", "Δ net"], fs=FSUB)
+    ax.set_ylim(yD[1] - 0.6, yS1 + 0.45)
     ax.legend(handles=[Line2D([], [], color=B, marker="o", lw=0, ms=3.4, label="B"),
                        Line2D([], [], color=QP, marker="s", lw=0, ms=3.4, label="Q′"),
                        Line2D([], [], color=INK, marker="D", lw=0, ms=3.4, label=f"B {MINUS} Q′")],
-              loc="upper left", bbox_to_anchor=(0.0, 0.88), ncol=1, frameon=False, fontsize=FSUB,
-              handletextpad=0.05, borderaxespad=0.0, handlelength=1.0, labelspacing=0.15)
+              loc="center right", bbox_to_anchor=(1.0, 1 - 0.45 / (yS1 + 0.45 - yD[1] + 0.6)), ncol=3,
+              frameon=False, fontsize=FSUB, handletextpad=0.05, borderaxespad=0.0, handlelength=1.0,
+              columnspacing=0.6)
 
     # ---------- (b) Step 1: continuation dependence ----------
     ax = axes(fig, xb + Lb, wb)
-    header(fig, xb, ["(b) Step 1: continuation"],
-           ["descriptive · % of own", "divergent states",
-            f"n: {pr['n_states']}/{sa['n_states']} W4; {pw['n_states']}/{sw['n_states']} W3"])
+    header(fig, xb, ["(b) Step 1: continuation"], ["descriptive · % of own", "divergent states · n: B / Q′"])
     style_axis(ax, grid_axis="y")
     for i, (P, S) in enumerate(((pr, sa), (pw, sw))):
         ivv(ax, i - OFF, P["cond_offdiag"]["est"], P["cond_offdiag"]["ci95"], P["cond_offdiag"]["crossed_ci95"], B,
             marker="o")
         ivv(ax, i + OFF, S["cond_offdiag"]["est"], S["cond_offdiag"]["ci95"], S["cond_offdiag"]["crossed_ci95"], QP,
             marker="s")
-    tag(ax, 0.72, 9.8, "W3: 3 blocks,\nfixed-pool $t$\nwider", va="top")
     ax.set_xlim(-0.5, 1.5)
     ax.set_xticks([0, 1])
-    xcat(ax, ["W4", "W3 stress"])
+    ax.set_xticklabels([f"W4\n{pr['n_states']}/{sa['n_states']}", f"W3 stress\n{pw['n_states']}/{sw['n_states']}"],
+                       fontsize=FSUB, linespacing=1.0)
+    ax.tick_params(axis="x", length=0, pad=2)
     ax.tick_params(axis="y", labelsize=FL, pad=1.5)
-    ax.set_ylim(0, 46)
-    ax.set_yticks([0, 20, 40])
+    ax.set_ylim(8, 46)
+    ax.set_yticks([10, 20, 30, 40])
 
     # ---------- (c) Step 3: common states, K under each continuation ----------
     ax = axes(fig, xc + Lc, wc)
     header(fig, xc, ["(c) Step 3: common states"],
-           ["510 q8 states (85 × 6), all arms · pp", "K = B's action value beyond Q′'s",
-            "thick: two-look 97% (reading) · thin: 95%"])
+           ["510 q8 states (85 × 6), all arms", "thick: two-look 97% (reading) · thin: 95%"])
     style_axis(ax, grid_axis="x")
     sg = lambda v: (f"+{v:.1f}" if v >= 0 else f"{MINUS}{-v:.1f}")  # noqa: E731
     ys, labs, heads, y = [], [], [], 0.0
@@ -245,12 +266,13 @@ def f11():
         heads.append(y)
         ax.text(-Lc / wc, y, title, transform=ax.get_yaxis_transform(), fontsize=FSUB, color=INK, ha="left",
                 va="center", style="italic")
+        tag(ax, 7.7, y, ha="right", box=True)  # both readings not resolved (asserted in data())
         t97 = [pp(v) for v in k["t97"]]
-        ax.text(XR, y - 0.8, f"{sg(pp(k['point']))}\n[{sg(t97[0])}, {sg(t97[1])}]",
+        ax.text(XR, y - 0.9, f"{sg(pp(k['point']))}\n[{sg(t97[0])}, {sg(t97[1])}]",
                 transform=ax.get_yaxis_transform(), fontsize=FSUB, color=INK, ha="left", va="center",
                 linespacing=1.0)
-        y -= 0.8
-        for nm, thick, thin, mk in (("t (blocks)", "t97", "t95", "o"), ("task bootstrap", "boot97", "boot95", "s")):
+        y -= 0.9
+        for nm, thick, thin, mk in (("t (blocks)", "t97", "t95", "o"), ("task\nbootstrap", "boot97", "boot95", "s")):
             th = [pp(v) for v in k[thick]]
             tn = [pp(v) for v in k[thin]]
             ax.plot(th, [y, y], color=INK, lw=1.8, solid_capstyle="butt", zorder=3)
@@ -260,57 +282,55 @@ def f11():
                 ax.plot([v, v], [y - SUB - 0.1, y - SUB + 0.1], color=INK, lw=0.7, zorder=3, alpha=LIGHT)
             ys.append(y)
             labs.append(nm)
-            y -= 0.85
-        y -= 0.15
+            y -= 1.0
+        y -= 0.1
     ax.text(XR, heads[0], "t, 97%", transform=ax.get_yaxis_transform(), fontsize=FSUB, color=INK2,
             ha="left", va="center")
-    tag(ax, 6.6, ys[-1] - 0.45, "not\nresolved", va="center")
     ax.set_xlim(-6, 8)
     ax.set_xticks([-3, 0, 3, 6])
     ax.set_xticklabels([f"{MINUS}3", "0", "3", "6"])
-    ax.set_xlabel("pp", fontsize=FL, labelpad=1.0)
-    ax.set_yticks(ys)
-    ax.set_yticklabels(labs, fontsize=FSUB)
-    ax.tick_params(axis="y", length=0, pad=2)
-    ax.tick_params(axis="x", labelsize=FL, pad=1.5)
-    lo, hi = y + 0.3, heads[0] + 0.5
+    ax.set_xlabel("K: B's action value beyond Q′'s, pp", fontsize=FL, labelpad=1.0)
+    rowlabels(ax, ys, labs)
+    for t in ax.get_yticklabels():
+        t.set_fontsize(FSUB)
+    lo, hi = y + 0.45, heads[0] + 0.5
     ax.set_ylim(lo, hi)
     ax.axvspan(-margin, margin, color=INK, alpha=.07, lw=0, zorder=0)
     ax.axvline(0, color=INK2, lw=LW_ZERO, zorder=1)
     ax.grid(False)
-    ax.text(-Lc / wc, -0.30 / (H - TOP - 0.55), "pre-registered; 3-block first look unresolved;\n6-block extension and two-look rule "
-            "fixed after it", transform=ax.transAxes, fontsize=6.5, color=INK2, ha="left", va="top",
-            linespacing=1.0, clip_on=False)
 
     # ---------- (d) Step 4: key order ----------
     ax = axes(fig, xd + Ld, wd)
-    header(fig, xd, ["(d) Step 4: key order"], ["exploratory · 300 q8 GPTQ-W4", "states, 41 tasks · % of states",
-                                                "bar: wider of block/crossed 95%"])
-    style_axis(ax, grid_axis="y")
+    header(fig, xd, ["(d) Step 4: key order"], ["exploratory · 300 q8 GPTQ-W4", "states, 41 tasks · % of states"])
+    style_axis(ax, grid_axis="x")
 
-    def bar(x, s, col, mk):
-        ax.plot([x, x], s["widest"], color=col, lw=1.0, solid_capstyle="butt", zorder=3)
-        ax.plot([x], [s["est"]], marker=mk, ms=3.4, color=col, ls="none", zorder=4)
-    XG = [0, 1, 2]
-    for i, k in zip(XG, ("rescue", "damage", "M")):
-        bar(i - OFF, cp[f"{k}_B"], B, "o")
-        bar(i + OFF, cp[f"{k}_K"], Q, "^")
-    bar(3.0, cp["M_KmB"], INK, "D")
-    tag(ax, 3.05, cp["M_KmB"]["widest"][1] + 0.8)
-    ax.axhline(0, color=INK2, lw=LW_ZERO, zorder=1)
-    ax.set_xlim(-0.45, 3.6)
-    ax.set_xticks(XG + [3.0])
-    xcat(ax, ["rescues", "damages", "turnover", "Δ turnover"])
-    ax.tick_params(axis="y", labelsize=FL, pad=1.5)
-    ax.set_ylim(-10, 30)
-    ax.set_yticks([-5, 0, 5, 10, 15, 20])
-    ax.set_yticklabels([f"{MINUS}5", "0", "5", "10", "15", "20"])
-    ax.set_ylabel("% of states (Δ: pp)", fontsize=FL, labelpad=1)
+    def bar(y, s, col, mk):
+        ax.plot(s["widest"], [y, y], color=col, lw=1.0, solid_capstyle="butt", zorder=3)
+        ax.plot([s["est"]], [y], marker=mk, ms=3.4, color=col, ls="none", zorder=4)
+    YG = [-1.0, -2.0, -3.0]
+    for y, k in zip(YG, ("rescue", "damage", "M")):
+        bar(y + HOFF, cp[f"{k}_B"], B, "o")
+        bar(y - HOFF, cp[f"{k}_K"], Q, "^")
+    yk = -4.15
+    bar(yk, cp["M_KmB"], INK, "D")
+    tag(ax, cp["M_KmB"]["widest"][1] + 1.5, yk, "not\nresolved")
+    ftop = (-0.45 - (yk - 0.6)) / (0.45 - (yk - 0.6))  # zero line and grid stop at the spine top (legend above)
+    ax.grid(False)
+    for v in (-5, 5, 10, 15):
+        ax.axvline(v, ymax=ftop, color=MF.GRID, lw=0.4, zorder=0)
+    ax.axvline(0, ymax=ftop, color=INK2, lw=LW_ZERO, zorder=1)
+    ax.set_xlim(-10, 20)
+    ax.set_xticks([-5, 0, 5, 10, 15])
+    ax.set_xlabel("% of states (Δ: pp)", fontsize=FL, labelpad=1)
+    rowlabels(ax, YG + [yk], ["rescues", "damages", "turnover", "Δ turnover"])
+    ax.set_xticklabels([f"{MINUS}5", "0", "5", "10", "15"], fontsize=FSUB)
+    ax.set_ylim(yk - 0.6, 0.45)
+    ax.spines["left"].set_bounds(yk - 0.6, -0.45)  # the legend sits above the spine
     ax.legend(handles=[Line2D([], [], color=B, marker="o", lw=0, ms=3.4, label="B's action"),
-                       Line2D([], [], color=Q, marker="^", lw=0, ms=3.4, label="Q, keys reversed"),
-                       Line2D([], [], color=INK, marker="D", lw=0, ms=3.4, label=f"keys {MINUS} B")],
-              loc="upper left", bbox_to_anchor=(0.0, 1.0), ncol=1, frameon=False, fontsize=FSUB,
-              handletextpad=0.05, borderaxespad=0.0, handlelength=1.0, labelspacing=0.15)
+                       Line2D([], [], color=INK, marker="D", lw=0, ms=3.4, label=f"keys {MINUS} B"),
+                       Line2D([], [], color=Q, marker="^", lw=0, ms=3.4, label="Q, keys reversed")],
+              loc="upper left", bbox_to_anchor=(-Ld / wd, 1.0), ncol=2, frameon=False, fontsize=FSUB,
+              handletextpad=0.05, borderaxespad=0.0, handlelength=1.0, labelspacing=0.15, columnspacing=0.4)
 
     MF.save(fig, NAME, ["same", "w3", "cs", "ko"],
             "(a) B vs Q' r/d/turnover (W4, K = 6) + paired dM and dG (Step 2 net) with +-3 pp band + W3 stress "
