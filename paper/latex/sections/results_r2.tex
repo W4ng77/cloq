@@ -1,4 +1,4 @@
-\section{Result 2: Flips Alone Do Not Diagnose a Need for More Bits} % nocheck: section number
+\section{Interpreting Outcome Changes} % nocheck: section number
 \label{sec:sameprec}
 \label{sec:refs}
 
@@ -9,13 +9,13 @@
 \label{fig:refs}
 \end{figure*}
 
- A flip shows that an outcome is sensitive to substitution. To ask whether it indicates a need for higher precision, we compare BF16 with two reference interventions (Figure~\ref{fig:refs}). Their populations and comparison targets differ, so each reference answers a distinct question. % nocheck: step labels
+ A flip shows that an outcome is sensitive to substitution. To ask whether it indicates a need for higher precision, we compare BF16 with two reference interventions (Figure~\ref{fig:refs}). Each reference answers a different question on its own state population. % nocheck: step labels
 
 \paragraph{A same-precision checkpoint also changes outcomes.} Q$'$ replaces the current action without increasing bit width. On the matched W4 task--block panel it produces 17.7\% turnover, compared with 16.8\% for BF16, with rescues and damages in both directions (Figure~\ref{fig:refs}a). Changing the W3 checkpoint produces the same qualitative pattern. These are observed turnover estimates; equivalence within $\pm$3\pp{} is not established. % src: analysis/fork/out/sameprec_20261004T070601Z.md; docs/insights/SAMEPREC_PROTOCOL.md
 
-\paragraph{An identical tool operation can lead to a different outcome.} At 300 eligible q8 states, we reverse only the order of Q's tool-argument keys. Every perturbed call parses to the same arguments and produces the same environment effects; the agent subsequently reads a different token sequence. Outcomes change on 6.7\% of these states, versus 9.0\% when replacing the action with BF16's (Figure~\ref{fig:refs}b). The paired turnover difference is $-2.3$\pp{} [$-8.4$, $+2.9$], leaving the difference unresolved. This exploratory reference covers one representation change on 41 tasks, rather than a general perturbation distribution (Appendix~\ref{app:keyorder}). % src: analysis/fork/out/keyorder_20261005T204349Z.md; docs/insights/KEYORDER_PERTURB_PROTOCOL.md
+\paragraph{An identical tool operation can lead to a different outcome.} At 300 eligible q8 states, we reverse Q's tool-argument key order. The call still parses to the same arguments and produces the same environment effects. Only the token sequence read by the agent changes. Outcomes change on 6.7\% of these states, versus 9.0\% when replacing the action with BF16's (Figure~\ref{fig:refs}b). The paired turnover difference is $-2.3$\pp{} [$-8.4$, $+2.9$], leaving the difference unresolved. This exploratory reference covers one representation change on 41 tasks, rather than a general perturbation distribution (Appendix~\ref{app:keyorder}). % src: analysis/fork/out/keyorder_20261005T204349Z.md; docs/insights/KEYORDER_PERTURB_PROTOCOL.md
 
-\paragraph{Shared states isolate the additional value of BF16.} The preceding design selects each substitute's own first divergence. It compares two selection-and-replacement protocols, rather than two actions at the same decision. We therefore compare B and Q$'$ directly at 510 shared ordinary q8 states. BF16's extra action value is $+1.0$\pp{} under Q's continuation (two-look 97\% block-$t$ interval [$-4.2$, $+6.2$]) and $+0.8$\pp{} under B's ([$-2.2$, $+3.8$]; Figure~\ref{fig:refs}c). Both comparisons remain unresolved and neither establishes equivalence. The six-block extension and two-look rule were fixed after the unresolved first look; the timeline, bootstrap intervals and sensitivity excluding earlier studied states are in Appendix~\ref{app:commonstate}. % src: analysis/fork/out/commonstate_q8ext_20261003T231159Z.md; docs/insights/COMMONSTATE_SOURCES_PROTOCOL.md
+\paragraph{Shared states isolate the additional value of BF16.} The preceding design selects each substitute's own first divergence. It compares two selection-and-replacement protocols, rather than two actions at the same decision. We therefore compare B and Q$'$ directly at 510 shared ordinary q8 states. Under Q's continuation, BF16 adds $+1.0$\pp{} over Q$'$ (97\% interval [$-4.2$, $+6.2$]). Under B's continuation, it adds $+0.8$\pp{} ([$-2.2$, $+3.8$]; Figure~\ref{fig:refs}c). Both remain unresolved, and equivalence is not established. The intervals use the two-look block-$t$ adjustment adopted after the first, unresolved look. Appendix~\ref{app:commonstate} gives that timeline, its statistical limitations, the bootstrap intervals and checks excluding previously studied states. % src: analysis/fork/out/commonstate_q8ext_20261003T231159Z.md; docs/insights/COMMONSTATE_SOURCES_PROTOCOL.md
 
 Together, the references establish a limit on interpreting flips: a changed outcome does not identify a decision that needs higher precision. The additional task value of BF16 requires a direct paired comparison of actions under the continuation that will run.
 
@@ -24,6 +24,8 @@ Together, the references establish a limit on interpreting flips: a changed outc
 % src: analysis/fork/out/sameprec_split_20261002T145148Z.md (TL;DR; §3); analysis/fork/out/sameprec_20261004T070601Z.json (pooled.paired.dG.crossed_ci95); analysis/fork/out/sameprec_20261004T070601Z.md (Paired differences, pool row)
 % src: docs/insights/COMMONSTATE_SOURCES_PROTOCOL.md (§2, §5, §6; A1.1, A1.3; D2.1; D2.2; D2.7); analysis/fork/out/commonstate_q8ext_20261003T231159Z.md (TL;DR; Key estimand table, t95 and t90; Two-look reading table, t97 and t94; Sensitivity without the D2.1 states); analysis/fork/out/commonstate_q4_20261004T001159Z.md (TL;DR, q4 K)
 % src: analysis/fork/out/keyorder_20261005T204349Z.md; analysis/fork/keyorder/eligibility_v1.md; docs/insights/KEYORDER_PERTURB_PROTOCOL.md (intervals: widest of block and crossed bootstrap on the pooled ratio)
+
+
 
 % Declare the selection figure before the scope float so it stays close to Result 3.
 \begin{figure*}[t]
@@ -34,41 +36,3 @@ Together, the references establish a limit on interpreting flips: a changed outc
 \label{fig:oracle}
 \end{figure*}
 
-\begin{table*}[!b]
-% src: analysis/fork/out/ghf_20261001T211519Z.md; analysis/fork/out/dev_all_20261001T070326Z.md; analysis/fork/out/ext_20261001T135106Z.md; analysis/fork/out/newmethod_m24_20261004T024453Z.md; analysis/fork/out/newmethod_m24_20261004T024453Z.json; docs/insights/NEWMETHOD_PANEL_PROTOCOL.md; analysis/fork/out/newmethod_q8_20261004T051538Z.md; analysis/fork/out/newmethod_q8_20261004T051538Z.json
-\centering\small
-\setlength{\tabcolsep}{8pt}\renewcommand{\arraystretch}{1.12} % nocheck: layout
-\begin{tabular}{@{}P{4.65cm}P{10.35cm}@{}} % nocheck: layout
-\toprule
-\textbf{Coverage} & \textbf{Evidence beyond the main W4 panel} \\
-\midrule
-\multicolumn{2}{@{}l}{\textcolor{palB}{\textbf{Other environments}}} \\
-\addlinespace[3pt] % nocheck: layout
-\textbf{BFCL multi-turn}\newline \textcolor{black!65}{q4/q8 W4; no simulated user}
-& Turnover 5.2--15.2\%; pooled net $+0.1$ [$-1.0$, $+1.2$].\newline The q4 AWQ-style net is $-3.8$ [$-6.5$, $-1.3$]. \\
-\addlinespace[5pt] % nocheck: layout
-\textbf{ALFWorld}\newline \textcolor{black!65}{q8 W4; 134 games; no simulated user}
-& Turnover 21.6--24.6\%; pooled net $-3.7$ [$-9.7$, $+1.9$]. \\
-\addlinespace[4pt] % nocheck: layout
-\midrule
-\multicolumn{2}{@{}l}{\textcolor{palB}{\textbf{A second model family}}} \\
-\addlinespace[3pt] % nocheck: layout
-\textbf{Mistral-Small-3.2-24B}\newline \textcolor{black!65}{GPTQ/RTN-W4; 83 tasks; ordinary BF16-sourced states}
-& GPTQ rescues 4.6 and damages 5.4\pp{}.\newline Net value remains unresolved for every upgrade mode. \\
-\addlinespace[4pt] % nocheck: layout
-\midrule
-\multicolumn{2}{@{}l}{\textcolor{palB}{\textbf{Other precision settings}}} \\
-\addlinespace[3pt] % nocheck: layout
-\textbf{Lower-bit stress}\newline \textcolor{black!65}{q8 RTN-W3; 255 first divergences; 3 blocks}
-& Action-only $\Gall=-0.4$ [$-3.8$, $+3.0$]; new-task [$-4.7$, $+3.9$].\newline On divergent states, $H=+15.3$ and $F=+18.4$ [9.4, 28.2]\pp{}.\newline \textcolor{black!65}{Selected from five stress configurations; exploratory.} \\
-\addlinespace[5pt] % nocheck: layout
-\textbf{QuaRot / SpinQuant}\newline \textcolor{black!65}{q8 W4A4; ordinary BF16-sourced states; 3 blocks}
-& KL 0.165 vs 0.199; task-value contrast $+1.2$ [$-4.7$, $+7.1$].\newline The value ordering remains unresolved despite lower KL. \\
-\addlinespace[5pt] % nocheck: layout
-\textbf{KV-cache precision}\newline \textcolor{black!65}{KV8 first divergences; KIVI ordinary states}
-& KV8 turnover 6.5--8.1\%; KIVI-2/4 versus KV8 value contrasts remain unresolved. \\
-\bottomrule
-\end{tabular}
-\caption{Scope checks on separate populations (Appendix~\ref{app:scope}). BFCL and ALFWorld use post hoc item-bootstrap 95\% intervals. QuaRot/SpinQuant and RTN-W3 $F$ use crossed 95\%; RTN-W3 action-only net gives fixed-pool and new-task 95\%. None of these panels supplies a Q$'$ reference: the separate W3 reference is GPTQ-W3 (Appendix~\ref{app:qprime}), rather than RTN-W3.}
-\label{tab:scope}
-\end{table*}

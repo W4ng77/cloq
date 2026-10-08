@@ -1,0 +1,39 @@
+% Full numerical scope overview retained from the previous main text.
+\begin{table*}[t]
+% src: analysis/fork/out/ghf_20261001T211519Z.md; analysis/fork/out/dev_all_20261001T070326Z.md; analysis/fork/out/ext_20261001T135106Z.md; analysis/fork/out/newmethod_m24_20261004T024453Z.md; analysis/fork/out/newmethod_m24_20261004T024453Z.json; docs/insights/NEWMETHOD_PANEL_PROTOCOL.md; analysis/fork/out/newmethod_q8_20261004T051538Z.md; analysis/fork/out/newmethod_q8_20261004T051538Z.json
+\centering\small
+\setlength{\tabcolsep}{8pt}\renewcommand{\arraystretch}{1.12} % nocheck: layout
+\begin{tabular}{@{}P{4.65cm}P{10.35cm}@{}} % nocheck: layout
+\toprule
+\textbf{Coverage} & \textbf{Evidence beyond the main W4 panel} \\
+\midrule
+\multicolumn{2}{@{}l}{\textcolor{palB}{\textbf{Other environments}}} \\
+\addlinespace[3pt] % nocheck: layout
+\textbf{BFCL multi-turn}\newline \textcolor{black!65}{q4/q8 W4; no simulated user}
+& Turnover 5.2--15.2\%; pooled net $+0.1$ [$-1.0$, $+1.2$].\newline The q4 AWQ-style net is $-3.8$ [$-6.5$, $-1.3$]. \\
+\addlinespace[5pt] % nocheck: layout
+\textbf{ALFWorld}\newline \textcolor{black!65}{q8 W4; 134 games; no simulated user}
+& Turnover 21.6--24.6\%; pooled net $-3.7$ [$-9.7$, $+1.9$]. \\
+\addlinespace[4pt] % nocheck: layout
+\midrule
+\multicolumn{2}{@{}l}{\textcolor{palB}{\textbf{A second model family}}} \\
+\addlinespace[3pt] % nocheck: layout
+\textbf{Mistral-Small-3.2-24B}\newline \textcolor{black!65}{GPTQ/RTN-W4; 83 tasks; ordinary BF16-sourced states}
+& GPTQ rescues 4.6 and damages 5.4\pp{}.\newline Net value remains unresolved for every upgrade mode. \\
+\addlinespace[4pt] % nocheck: layout
+\midrule
+\multicolumn{2}{@{}l}{\textcolor{palB}{\textbf{Other precision settings}}} \\
+\addlinespace[3pt] % nocheck: layout
+\textbf{Lower-bit stress}\newline \textcolor{black!65}{q8 RTN-W3; 255 first divergences; 3 blocks}
+& Action-only $\Gall=-0.4$ [$-3.8$, $+3.0$]; new-task [$-4.7$, $+3.9$].\newline On divergent states, $H=+15.3$ and $F=+18.4$ [9.4, 28.2]\pp{}.\newline \textcolor{black!65}{Selected from five stress configurations; exploratory.} \\
+\addlinespace[5pt] % nocheck: layout
+\textbf{QuaRot / SpinQuant}\newline \textcolor{black!65}{q8 W4A4; ordinary BF16-sourced states; 3 blocks}
+& KL 0.165 vs 0.199; task-value contrast $+1.2$ [$-4.7$, $+7.1$].\newline The value ordering remains unresolved despite lower KL. \\
+\addlinespace[5pt] % nocheck: layout
+\textbf{KV-cache precision}\newline \textcolor{black!65}{KV8 first divergences; KIVI ordinary states}
+& KV8 turnover 6.5--8.1\%; KIVI-2/4 versus KV8 value contrasts remain unresolved. \\
+\bottomrule
+\end{tabular}
+\caption{Complete scope results on separate populations (Appendix~\ref{app:scope}). BFCL and ALFWorld use post hoc item-bootstrap 95\% intervals. QuaRot/SpinQuant and RTN-W3 $F$ use crossed 95\%; RTN-W3 action-only net gives fixed-pool and new-task 95\%. None of these panels supplies a Q$'$ reference: the separate W3 reference is GPTQ-W3 (Appendix~\ref{app:qprime}), rather than RTN-W3.}
+\label{tab:scopefull}
+\end{table*}

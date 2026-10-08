@@ -1,17 +1,44 @@
 \section{Discussion}
 \label{sec:discussion}
 
-\paragraph{Sensitivity and value answer different questions.} The two reference interventions are central to interpreting an upgrade. Q$'$ shows that higher precision is not necessary for two-sided outcome changes. Key-order reversal shows that some changes arise even when the executed tool operation stays identical. Neither reference establishes that precision is irrelevant, and neither is a noise floor to subtract from BF16's turnover. The common-state experiment asks the direct value question, but its intervals still permit a useful BF16 advantage. An unresolved comparison therefore warrants neither automatic escalation nor a claim that escalation cannot help.
+\begin{table}[!b]
+% src: analysis/fork/out/ghf_20261001T211519Z.md; analysis/fork/out/dev_all_20261001T070326Z.md; analysis/fork/out/ext_20261001T135106Z.md; analysis/fork/out/newmethod_m24_20261004T024453Z.md; analysis/fork/out/newmethod_m24_20261004T024453Z.json; docs/insights/NEWMETHOD_PANEL_PROTOCOL.md; analysis/fork/out/newmethod_q8_20261004T051538Z.md; analysis/fork/out/newmethod_q8_20261004T051538Z.json
+\centering\small
+\renewcommand{\arraystretch}{1.08} % nocheck: layout
+\begin{tabular}{@{}P{\columnwidth}@{}}
+\toprule
+\textbf{How far do the findings extend?} \\
+\midrule
+\textcolor{palB}{\textbf{Other environments: BFCL and ALFWorld}}\\
+Both show rescues and damages without an LLM user. Their pooled net estimates remain uncertain.\\
+\addlinespace[5pt] % nocheck: layout
+\textcolor{palB}{\textbf{Another family: Mistral-Small-3.2-24B}}\\
+On ordinary sampled states, replacements change outcomes in both directions. No upgrade mode shows a reliable net gain.\\
+\addlinespace[5pt] % nocheck: layout
+\textcolor{palB}{\textbf{Stronger degradation: RTN-W3}}\\
+Full takeover gains $+18.4$ [9.4, 28.2]\pp{} in the selected 8B stress setting. This is an exploratory example.\\
+\addlinespace[5pt] % nocheck: layout
+\textcolor{palB}{\textbf{Weight and activation quantization}}\\
+SpinQuant has lower KL than QuaRot. Their task-value difference remains uncertain.\\
+\addlinespace[5pt] % nocheck: layout
+\textcolor{palB}{\textbf{Cache quantization: KV8 and KIVI}}\\
+Outcome changes also occur with cache quantization. The paired KIVI value contrasts remain uncertain.\\
+\bottomrule
+\end{tabular}
+\caption{Scope checks on separate populations. These rows are not a ranking. Full settings, samples and intervals appear in Appendix~\ref{app:scope}, Table~\ref{tab:scopefull}.}
+\label{tab:scope}
+\end{table}
 
-\paragraph{What a selector needs to predict.} A sensitivity score can find disagreements or outcome changes while selecting rescues and damages together. Our frozen margin rule demonstrates this distinction on later nonce blocks of the same tasks. Selection labels should match the intervention a deployment will execute. An action-only rule and a continuation router therefore need different outcome targets. Learned selection and cost-aware routing are natural extensions: evaluation would compare signed task benefit at a shared BF16 compute budget, adding deployment costs to the task-value measurements made here.
 
-\newpage % Start the remaining argument in the final right column.
-\paragraph{Task value across execution conditions.} Each rescue or damage is a paired, realised consequence under the specified greedy stack. Exact replay establishes the consistency of that comparison. Key-order reversal demonstrates that a label can change with the representation the agent reads, even when the tool operation is identical. For an expected value over a deployment distribution, specify the prompt and user conditions, repeat paired branches across them, and average the success differences. A selector's target is this signed average benefit; the stability of individual rescue and damage labels is a separate property. Our experiments measure conditional task consequences and provide a protocol for making those deployment-distribution comparisons.
 
-\paragraph{Recommendations for evaluation.} Report the rescues, damages and net gain of the actual upgrade mode on paired states. Include reference substitutions to test whether sensitivity alone supports the intended precision claim. Distinguish the fixed task pool from a new-task target, and evaluate a selection rule by net benefit at matched counts. Table~\ref{tab:scope} summarises the present coverage; detailed inference and protocol amendments are in the appendix.
+\paragraph{What the references establish.} Outcome changes alone do not identify a need for more bits. Q$'$ changes outcomes without increasing precision. Key-order reversal changes some outcomes without changing the tool operation. These are interpretation checks, not a noise floor to subtract. BF16's additional benefit requires a direct comparison on shared states; our intervals still allow useful gains.
+
+\paragraph{What a deployment should measure.} Evaluate the upgrade that will actually run: replace an action, take over the continuation, or both. Report rescues, damages and their net gain on paired states. A selector should predict that signed benefit, rather than disagreement or turnover. The frozen margin rule illustrates the gap: it finds outcome changes without reliable net benefit on later blocks of the same tasks. Learned routing and comparisons at a shared BF16 compute budget remain open questions.
+
+\paragraph{From a realised consequence to expected value.} Exact replay audits a consequence under fixed execution conditions. Deployment value requires averaging paired success differences over specified prompt and user conditions. Average benefit and individual label stability are separate questions. Table~\ref{tab:scope} summarises coverage; detailed results and inference rules appear in the appendix.
 \label{sec:scope}
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-Precision upgrades have an intervention-specific task value. Our audited forks separate replacing an action from taking over the continuation, while reference substitutions show why outcome changes alone cannot establish a need for more bits. On the main W4 panel, rescues and damages largely cancel; the common-state comparison leaves BF16's additional value unresolved. One frozen uncertainty rule enriches outcome changes without reliable net benefit. Together, these results motivate evaluating fallback decisions through paired task consequences, reference interventions and the net gain of the policy actually executed.
+Our audited forks separate three precision upgrades. On the main W4 panel, rescues and damages largely cancel. Reference substitutions show why turnover alone cannot establish a need for more bits. A frozen uncertainty rule finds changes without reliable net benefit. Fallback evaluation should measure paired task consequences and validate the net benefit of the upgrade actually executed.
