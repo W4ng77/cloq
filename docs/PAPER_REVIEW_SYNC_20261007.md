@@ -17,3 +17,7 @@ Base: cloq c919dcc / cloq-paper 6db12c2. This is an editorial follow-up to the r
 - Figure generation executes the existing source-value assertions. No data or analysis output changed.
 
 The checked-in PDF is the local XeLaTeX preview for the changed source. Rebuild with production Tectonic and refresh the anonymous submission copy before submission. GitHub synchronization does not itself synchronize an Overleaf project.
+
+## Table 1 visual follow-up
+
+Replaced the dense three-column scope table with a two-column evidence overview, grouped by environments, model family and precision settings. Removed the redundant interpretation column, gave evidence more horizontal space, and separated configuration names from population metadata through font weight and neutral grey. All scientific numbers, intervals, sampling populations and the selected-stress disclosure are preserved. The main text still ends on page 8 and Limitations starts on page 9 (36 pages total). Revised pages 7 and 8 were rendered and inspected; there are no overfull boxes or undefined references. This remains a local XeLaTeX preview pending the production rebuild.
