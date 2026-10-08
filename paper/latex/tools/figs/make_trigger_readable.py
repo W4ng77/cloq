@@ -41,14 +41,14 @@ def main():
     a.legend(handles=[Patch(facecolor=REF,label="Trigger"),Patch(facecolor=REF,alpha=.38,hatch="///",label="Random (expected)")],
              frameon=False,loc="upper left",bbox_to_anchor=(0,1.13),ncol=2,fontsize=8.5,handlelength=1.1,columnspacing=.9)
     vals=[f["net_gain"] for f in fr];rv=[f["random_expected_net"] for f in fr]
-    b.plot([0,1,2],vals,"o-",color=INK,mfc="white",ms=5,lw=1.3)
-    b.plot([0,1,2],rv,"s--",color=REF,mfc="white",ms=4.5,lw=1.1)
+    b.plot([0,1,2],vals,"o",color=INK,mfc="white",ms=5,lw=1.3)
+    b.plot([0,1,2],rv,"s",color=REF,mfc="white",ms=4.5,lw=1.1)
     for i,(v,r) in enumerate(zip(vals,rv)):
         b.annotate(f"+{v}",(i,v),xytext=(0,7),textcoords="offset points",ha="center",fontsize=9)
         b.annotate(f"+{r:.2f}",(i,r),xytext=(0,-11),textcoords="offset points",ha="center",fontsize=8.5,color=INK2)
     b.set_ylim(-.8,6.5); b.set_yticks([0,2,4,6]);b.set_ylabel("Net additional successes",fontsize=9)
-    b.legend(handles=[Line2D([],[],color=INK,marker="o",mfc="white",label="Trigger"),
-                      Line2D([],[],color=REF,marker="s",mfc="white",ls="--",label="Random (expected)")],
+    b.legend(handles=[Line2D([],[],color=INK,marker="o",mfc="white",ls="none",label="Trigger"),
+                      Line2D([],[],color=REF,marker="s",mfc="white",ls="none",label="Random (expected)")],
              frameon=False,fontsize=8.5,loc="upper left",bbox_to_anchor=(0,1.24),ncol=2,columnspacing=.9,handlelength=1.3)
     fig.text(.61,.84,"Matched hindsight oracle (rescues only)",fontsize=8.5,color=INK2)
     for i,v in enumerate(oracle):
@@ -60,7 +60,7 @@ def main():
             ax.text(i,-.39,f"p = {pf(f[key])}",transform=ax.get_xaxis_transform(),ha="center",fontsize=8.5,color=INK2)
     fig.text(.02,.02,"1020 states: 38 rescues, 31 damages · nominal rates; random and oracle match actual per-configuration counts",fontsize=8)
     M.save(fig,"f4_trigger_oracle",["oracle","tok"],
-           "Same trigger, random, oracle and exact p-values; oracle in a numeric strip, no broken axis; all net markers neutral")
+           "Same trigger, random, oracle and exact p-values; oracle in a numeric strip, no broken axis; all net markers neutral; discrete budgets shown without connecting lines")
     p=os.path.join(M.OUT,"provenance.json");old=json.load(open(p))
     v=M.PROV["f4_trigger_oracle"]
     v.update(script="paper/latex/tools/figs/make_trigger_readable.py",script_sha256=M.script_sha())
