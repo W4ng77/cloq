@@ -6,6 +6,26 @@ This is a self-review, not a review by an independent human or a panel of four r
 
 ## Overall judgment
 
+### Story-first reassessment after the author's clarification
+
+The paper should persuade through its scientific argument. Audit details establish that the comparisons can be trusted; they are not the reason a reader should care. The earlier review overemphasized compliance relative to motivation and contribution.
+
+The intended reader is choosing where to spend high-precision inference in a closed-loop agent. The central claim is: **evaluate fallback by the signed task value of the intervention that will actually run.** The evidence chain has three parts:
+
+1. **Specify the intervention.** Replacing an action, taking over the continuation and replacing both can reach different successes from the same state. The factorial measurement makes these distinct deployment choices visible. This is not a claim to invent factorial design.
+2. **Interpret the change.** A different outcome does not identify a precision requirement. The same-bit-width substitute and the operation-preserving representation control are the decisive evidence. Common states provide the direct additional-value comparison, whose precision limits are stated alongside it.
+3. **Evaluate the selector's target.** The frozen trigger captures more changed outcomes while rescues and damages cancel much of its benefit. This is a concrete demonstration that enrichment and utility are different selection objectives, rather than a blanket verdict on learned routing.
+
+The strongest framing is therefore a measurement contribution with a useful change of evaluation target. Avoid selling it as a catalogue of null results, a failed router project, a universal chaos theory, or a report of engineering discipline. The same-precision and semantic references deserve the most visual and narrative emphasis.
+
+The main results should be ordered around **what is executed → what outcome changes mean → what the selection rule must optimize**. Full protocol chronology belongs in the relevant appendix. The holdout is an important boundary case, not the opening hook. Its negative estimate should remain visible, with the omitted decision category explained briefly where inference is described. Scope checks should answer whether the central distinction survives other settings; they should not be narrated as a sequence of completed configurations.
+
+For the opening, a concrete deployment decision is more compelling than a list of metrics: a W4 agent reaches a decision, BF16 is available, and the designer can request one action or transfer control. A signal that marks disagreement has not yet valued either choice. Figure 1 defines the choices, Figure 2 measures their consequences, Figure 3 prevents attributing every consequence to bit width, and Figure 4 tests whether a sensitivity signal selects benefit. This is the argument the reader should remember.
+
+The main packaging risk is that the draft calls itself a study of task value but presents too many findings as “unresolved.” Give each section a positive takeaway supported by its strongest evidence, and state precision limits locally. In particular, the reference interventions establish that flips are insufficient evidence of a need for more bits even though the direct BF16-versus-Q′ advantage remains unresolved. Do not require an equivalence claim to communicate that established result.
+
+Final priorities are the contribution sentence, paragraph topic sentences, and the interpretation attached to each figure. Venue corrections and numerical checks are submission hygiene; they should not displace this scientific work. This reassessment changes the review's emphasis, not the underlying estimates or its assessment of their scope.
+
 I would support this as a carefully scoped measurement paper for Findings. For the main conference, I am borderline: the reference-intervention argument is useful, but the paper does not establish a broadly predictive signal, a profitable upgrade policy, or a precise estimate of BF16's additional value. This is a contribution-strength judgment, rather than evidence of an invalid core experiment. Acceptance cannot be inferred reliably from a self-review score.
 
 | Dimension | My assessment, out of 5 |
