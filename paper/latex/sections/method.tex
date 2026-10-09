@@ -1,7 +1,7 @@
 \section{Measuring the Task Value of an Upgrade}
 \label{sec:method}
 
-The measurement target is the success gained or lost by executing a specified upgrade from the same state. We separate the action from the continuation so that this target matches the fallback that will actually run. Reference interventions then test what an observed change can be attributed to.
+We measure what happens to a task after a specified fallback at a specified decision. All comparisons start from the same recorded history and environment.
 
 \subsection{Setting}
 \label{sec:setting}
@@ -22,9 +22,9 @@ B and Q run on vLLM \citep{kwon2023vllm} with batch-invariant kernels \citep{he2
 \paragraph{Four branches.} Let $\YY{XY}\in\{0,1\}$ denote task success when X supplies the current action and Y continues, with X, Y $\in\{\mathrm{B},\mathrm{Q}\}$. All branches start with the same remaining budget. Each upgrade is compared with QQ: replace this step ($G$), take over from the next step ($H$), or do both ($F$). Figure~\ref{fig:case} defines these contrasts. % nocheck: notation {0,1}
 A \emph{rescue} occurs when the upgrade succeeds and QQ fails; a \emph{damage} is the reverse. Their sum is \emph{turnover}, and their difference is \emph{net gain}. These quantities measure task consequences. Additional notation appears in Appendix~\ref{app:names}.
 
-\paragraph{The action being replaced.} The intervention replaces a complete assistant turn, including its language and structured tool calls. The chosen message and tool results enter the subsequent history; the continuing model makes every later decision. The continuation is part of the intervention: it determines how the substituted action enters the rest of the task.
+\paragraph{The action being replaced.} An action is a complete assistant turn, including its language and structured tool calls. Its message and tool results enter the subsequent history. The continuing model then makes every later decision. Thus BQ asks whether borrowing B's action helps Q finish; QB asks whether B can improve the trajectory after Q's action; BB asks whether changing both helps. The four branches are complete task executions, not scores assigned to the isolated action.
 
-\paragraph{Reference interventions.} A large turnover alone cannot distinguish a need for precision from sensitivity to model substitution. We rerun the design with Q$'$ in place of B. Q$'$ is another GPTQ-W4 checkpoint of the same model, built by resampling states and activation rows from the same calibration trajectories. The Q episodes, tasks and prompt blocks stay fixed. This reference covers q4 and q8 GPTQ-W4, plus GPTQ-W3 as a stress check. Its protocol was fixed before outcomes were read. Section~\ref{sec:sameprec} adds a direct comparison on shared states and a key-order change of Q's own action.
+\paragraph{Reference interventions.} We repeat the design with Q$'$ in place of B. Q$'$ is another GPTQ-W4 checkpoint of the same model, built by resampling states and activation rows from the same calibration trajectories. The Q episodes, tasks and prompt blocks stay fixed. This reference tests how much change can occur at fixed bit width. It covers Qwen3-4B and Qwen3-8B GPTQ-W4, with GPTQ-W3 as a stress check. Its protocol was fixed before outcomes were read. Section~\ref{sec:sameprec} also compares the action sources at shared states and changes the key order of Q's own tool call.
 
 % Method schematic (R2 review): states and denominators, interval conventions, replay acceptance.
 % The numbers are set as macros on their own lines so that each carries its "% src:" (TikZ layout lines are nocheck).
@@ -38,7 +38,7 @@ A \emph{rescue} occurs when the upgrade succeeds and QQ fails; a \emph{damage} i
 \subsection{Making the counterfactuals auditable}
 \label{sec:replay}
 
-The branches differ in the intended intervention, with history, environment and remaining budgets restored before execution. Outcome-independent no-op audits check that restoring a state preserves its original result: all 924 sampled development states and all 1202 holdout divergent states matched. The holdout protocol was fixed before its tasks ran. These checks make the paired comparisons trustworthy under the tested greedy, dense-BF16 serving stack; Appendix~\ref{app:setup} gives the acceptance rules and Appendix~\ref{app:prereg} the holdout protocol.
+The branches differ in the intended intervention, with history, environment and remaining budgets restored before execution. Outcome-independent no-op audits check that restoring a state preserves its original result: all 924 sampled development states and all 1202 holdout divergent states matched. These checks make the paired comparisons trustworthy under the tested greedy, dense-BF16 serving stack; Appendix~\ref{app:setup} gives the acceptance rules and Appendix~\ref{app:prereg} the holdout protocol.
 % src: analysis/fork/out/dev_all_20261001T070326Z.md; analysis/fork/out/holdout_qqfull_audit_20261006T061033Z.md; docs/insights/PREREG_FORK_CONFIRM.md
 
 \subsection{Sampling and inference}
