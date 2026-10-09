@@ -4,7 +4,7 @@
 A low-precision LLM agent (Q) can retain its BF16 reference (B) as a fallback \citep{li2026dynamicmp}. Deciding when to use that fallback requires knowing the task benefit of a specific upgrade: B may \textbf{replace the current action, take over from the next step, or do both}. These choices intervene at different points in a closed-loop interaction. Average success rates compare complete agents, while KL and action disagreement describe local drift; neither directly measures what a particular fallback decision gains or loses.
 
 
-Figure~\ref{fig:case} shows a decision from an airline task. Q looks up a reservation id that does not exist; B looks up the user's profile. We execute both actions and continue each with either model. Only BB succeeds. In this case, B's action helps only when B also continues. Evaluating the action alone misses that rescue. % src: analysis/fork/out/ghf_20261001T211519Z.md (§4 Case 5)
+Figure~\ref{fig:case}a shows a decision from an airline task. Q looks up a reservation id that does not exist; B looks up the user's profile. We execute both actions and continue each with either model. Only BB succeeds. In this case, B's action helps only when B also continues. Evaluating the action alone misses that rescue. % src: analysis/fork/out/ghf_20261001T211519Z.md (§4 Case 5)
 
 A model that takes over a forked trajectory writes both the next action and the continuation \citep{gonuguntla2026replay}. Their contributions are coupled in that evaluation. We separate them by crossing the action source with the continuing model at an audited, restored state (\S\ref{sec:replay}). Two reference interventions help interpret the outcome changes: substituting another W4 checkpoint (Q$'$), and reordering argument keys while preserving the tool operation. We study Qwen3-4B and Qwen3-8B \citep{yang2025qwen3} under simulated weight and KV-cache quantization in \tautwo{} \citep{yao2024tau,barres2025tau2}. Scope checks cover BFCL multi-turn \citep{patil2025bfcl}, ALFWorld \citep{shridhar2021alfworld}, and ordinary sampled states from Mistral-Small-3.2-24B \citep{mistral2025small32} (Table~\ref{tab:scope}). % nocheck: model sizes
 
@@ -21,8 +21,11 @@ The experiments answer three questions:
 % src: analysis/fork/out/sameprec_20261004T070601Z.md (Amendment A1; TL;DR; Full pool, pool rows); analysis/fork/out/commonstate_q8ext_20261003T231159Z.md; analysis/fork/out/keyorder_20261005T204349Z.md
 % src: analysis/fork/out/token_mech_20261002T003130Z.md (§3); analysis/fork/out/oracle_trigger_20261002T024423Z.md (§1a)
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
+\begin{minipage}[t]{.49\textwidth}
+\centering
+\textbf{(a) What to replace}\par\smallskip
 \begin{tikzpicture}[ % nocheck: TikZ layout coordinates
   font=\footnotesize, % nocheck: TikZ layout
   box/.style={draw=black!30,rounded corners=2pt,align=center,inner sep=4pt}, % nocheck: TikZ layout
@@ -43,9 +46,16 @@ The experiments answer three questions:
 \node[box,text width=7.05cm,fill=palRescue!5,anchor=north] at (0,-3.3) % nocheck: TikZ layout
   {\textbf{Upgrade options, each a paired contrast with QQ}\\[1pt]{\scriptsize\setlength{\tabcolsep}{1pt}\begin{tabular}{@{}*{3}{>{\centering\arraybackslash}p{2.3cm}}@{}}$G=\YY{BQ}-\YY{QQ}$ & $H=\YY{QB}-\YY{QQ}$ & $F=\YY{BB}-\YY{QQ}$\\ this step only & from next step & both\\ \textbf{here} $G=0$ & \textbf{here} $H=0$ & \textbf{here} $F=+1$\end{tabular}}\\[1pt]\textbf{Joint rescue: only BB succeeds}}; % src: analysis/fork/out/ghf_20261001T211519Z.md (§4 Case 5)
 \end{tikzpicture}
-\caption{Four branches at one restored state (Qwen3-4B, AWQ-style W4; airline task 31, decision 1 of 12). Only the joint replacement succeeds; action-only and continuation-only evaluations miss this rescue. The case illustrates the measurement distinction, not a mechanism.} % src: analysis/fork/out/ghf_20261001T211519Z.md (§4 Case 5)
+\end{minipage}\hfill
+\begin{minipage}[t]{.48\textwidth}
+\centering
+\textbf{(b) Where to measure it}\par\smallskip
+\input{sections/figure_state_sampling}
+\end{minipage}
+\caption{An upgrade has both an intervention and a state population. (a) Cross the current action with the continuing model, then compare each upgrade with QQ. In this airline example (Qwen3-4B, AWQ-style W4; task 31, decision 1 of 12), only joint replacement succeeds. (b) First-divergence states measure consequences at disagreements; ordinary sampling also includes agreements. Comparing multiple action sources on the same sampled history isolates their additional task value. The sampling diagrams are schematic.} % src: analysis/fork/out/ghf_20261001T211519Z.md (§4 Case 5)
 \label{fig:case}
 \label{fig:fork}
-\end{figure}
+\label{fig:method}
+\end{figure*}
 
 

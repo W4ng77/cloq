@@ -65,3 +65,13 @@ This revision follows the author's storyline → figures → tables review. It c
 Validation: all figure-source assertions pass; no overfull boxes, undefined references/citations or duplicate labels in the final local XeLaTeX build. Rendered and inspected revised main figures, relevant main pages and supplementary tables/figures. Numeric audit: 3688 occurrences; the same eight pre-existing metadata values remain locally unverified, with 31 absent source paths and no missing required citations. There are no added unverified values. The complete metadata-dependent check still requires the cluster.
 
 After pulling, rebuild with production Tectonic, run the complete numeric check and regenerate the anonymous submission copy. The source/PDF mirror is synchronized to GitHub; this is not a direct Overleaf update.
+
+## 2026-10-09: combined overview and final opinion audit
+
+Figure 1 and the former Figure 2 are now one full-width figure: the left panel retains the action-by-continuation matrix and verified airline example; the right panel condenses first-divergence, ordinary sampling, and common-state comparisons. The independent sampling float was removed and all figure references renumber automatically. The state-selection source remains as an input to Figure 1.
+
+Reviewed every main figure at rendered page size. Retained the previous revision's G/H/F main-text panel, distinct full-pool and divergent-state denominators, prominent holdout 90% label, consistent BF16-minus-reference contrasts, separate difference rows, and a single displayed two-look interval. The trigger retains two parallel panels because capture and net value are different quantities; no random reference interval was invented from p-values. Oracle counts remain separate from the net-gain axis. No experimental estimate, test or inference rule changed.
+
+Readability edits remove repeated qualifications in Discussion and clarify that the own-first-divergence selection limitation belongs to the same-precision panel, not to the adjacent key-order experiment. Essential scope and adaptive-analysis disclosures are retained.
+
+Local XeLaTeX preview: main text ends on page 8; Limitations begins on page 9. Rendered overview, all main results figures and final main page checked for overlap and clipping. No overfull boxes or undefined references. The production Tectonic build must still be run on the submission environment. Numeric audit is compared with the existing missing-metadata baseline; this workspace cannot certify the cluster-only metadata.
