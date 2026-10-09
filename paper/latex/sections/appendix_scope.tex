@@ -1,7 +1,7 @@
 \section{Scope Across States, Environments and Models}
 \label{app:scope}
 
-This appendix answers the scope questions behind Table~\ref{tab:scope}: does the turnover--value distinction extend to ordinary states, environments without an LLM user, another model family and other quantization settings? The simulator controls also delimit the fixed-execution interpretation in \S\ref{sec:discussion}.
+The evidence behind Table~\ref{tab:scope} covers ordinary states, environments without an LLM user, a second model family and additional quantization settings. Simulator controls test the sensitivity of the realised outcomes discussed in \S\ref{sec:discussion}.
 
 
 
@@ -9,11 +9,11 @@ This appendix answers the scope questions behind Table~\ref{tab:scope}: does the
 \label{app:ordinary}
 
 \paragraph{Ordinary states include agreements.} At ordinary states, replacing Q's action changes the outcome less often than at first tool-structure divergences (a descriptive comparison of different state populations, with no interval on the difference). Over blocks f01--f03 (task-equal; $t$ intervals over block means), $M$ per sub-bank is 7.8--9.0\% for the q4 W4 cells in U1 and U2B, 4.7--9.0\% for the q8 W4 cells and at most 4.7\% for KV8. The net gain lies within $\pm$2.8\pp{} (U1, U2B) and $\pm$5.0\pp{} (U2Q), and every interval covers zero (Appendix~\ref{app:banku}). % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§2)
-Identical actions never change the outcome, as determinism implies. Reused arms rest on canonical equality. All 4{,}114 such reuses were rendered with each model's chat template; 4{,}113 are token-identical. The remaining pair differs only in JSON key order, and its two cross arms, measured separately, gave the reused outcomes. % src: analysis/fork/reuse_audit/REUSE_AUDIT.md (TL;DR); analysis/fork/reuse_audit/REUSE_FIX_RESULT.md (TL;DR)
+Token-identical actions preserve the outcome under deterministic serving. Reused arms were initially selected by canonical equality and then checked with each model's chat template: 4{,}113 of 4{,}114 reuses are token-identical. The remaining pair differs only in JSON key order; its two cross arms were measured separately and reproduced the reused outcomes. % src: analysis/fork/reuse_audit/REUSE_AUDIT.md (TL;DR); analysis/fork/reuse_audit/REUSE_FIX_RESULT.md (TL;DR)
 \paragraph{Sensitivity to the user simulator.} Text actions act through the user simulator, and changing the simulator moves $\tau$-bench outcomes by 9--15 points \citep{seshadri2026lost,jain2026userproxybench}. % src: outputs/.drafts/storyline-v7-lit.md (rows 23-24)
 We froze a control before running it: the 39 deduplicated text-difference flips with the same tool structure of block f01 and 39 matched non-flip states. Their BQ and QQ branches were each re-run three times with a different user simulator, Sonnet 5.5, answering through a file relay from Claude Code subagents (reproducibility limits in the Limitations). % src: docs/RESEARCH_LOG.md W90, W91 (manifests/fork/simctrl_v3.json); analysis/fork/out/bank_u_f01_20261001T134456Z.md (§3: original f01 selection frame)
 Judged by the sign of the replicate mean, only 7 of the 39 flips keep their direction (95\% CI 0.075--0.335). Six reverse, and 26 vanish (15 both succeed, 2 both fail, 9 ties). Among the matched non-flip states, 11 of 39 become flips (0.15--0.45). Replicates of the same arm disagree in 41\% of flip arms and in 21--26\% of control arms. % src: analysis/fork/out/simctrl_20261001T212742Z.md
-\textbf{The Bank U text-difference outcome labels did not reproduce reliably under this alternative relay setting.} The control changes three things at once (simulator model, sampling, relay interface), so it cannot say which of them changed the labels.
+The text-difference labels did not reproduce reliably under the alternative relay setting. Simulator model, sampling and relay interface changed together, so their separate effects are not identified.
 
 \paragraph{Sensitivity of the four-branch results.}
 \label{app:simctrlpmain}
@@ -72,11 +72,11 @@ RTN-W4 & 5 & 415 & $+0.7$ [$-2.7$, $+4.2$] & $+1.9$ [$-3.8$, $+7.7$] & $+2.4$ [$
 \label{tab:mistral-modes}
 \end{table*}
 
-\subsection{Replacement and four-branch estimands on BFCL and ALFWorld (supplementary)}
+\subsection{Upgrade effects on BFCL and ALFWorld}
 \label{app:extr2}
 
-Table~\ref{tab:extr2} gives the replacement quantities of \S\ref{sec:value} ($r$, $d$, $M$ and $\Gall$ over all items, non-divergent items counting as zero) and applies the four-branch analysis to the external benchmarks, from the raw four-arm outcomes on divergent items (one run per item; item bootstrap within benchmark category). The four-branch columns are post hoc and not part of any pre-registered analysis. In the KV4 cells $\YY{QQ}=0$ on every state, so $\DQ$ is almost constant and their off-diagonal mass is $H$. In BFCL q4 GPTQ-W3, the base category was dropped whole by the QQ no-op rule, leaving 591 items and 540 states. % src: analysis/fork/out/ext_r2_20261002T024433Z.md (§1, TL;DR)
-Off-diagonal shares are 4.7--17.1\% in BFCL W4 cells (pool 10.3\%) and 32.8--40.0\% in q8 ALFWorld W4 (pool 36.4\%). The ALFWorld GPTQ-W3 stress cell has $H=+38.5$ and $G-H=-34.6$ [$-43.5$, $-25.4$]\pp{}; KV4 cells reduce to $H$. % src: analysis/fork/out/ext_r2_20261002T024433Z.md (§2, §3, §6)
+Table~\ref{tab:extr2} gives the replacement quantities of \S\ref{sec:value} ($r$, $d$, $M$ and $\Gall$ over all items, non-divergent items counting as zero) and applies the four-branch analysis to the external benchmarks, from the raw four-arm outcomes on divergent items (one run per item; item bootstrap within benchmark category). The four-branch columns are post hoc and not part of any pre-registered analysis. In the unrotated KV4 configurations, $\YY{QQ}=0$ on every state: all positive upgrades are rescues. Action-only replacement remains near zero, whereas continuation and joint upgrades can help. In BFCL q4 GPTQ-W3, the base category was dropped whole by the QQ no-op rule, leaving 591 items and 540 states. % src: analysis/fork/out/ext_r2_20261002T024433Z.md (§1, TL;DR)
+Off-diagonal shares are 4.7--17.1\% in BFCL W4 cells (pool 10.3\%) and 32.8--40.0\% in q8 ALFWorld W4 (pool 36.4\%). The ALFWorld GPTQ-W3 stress cell has $H=+38.5$ and $G-H=-34.6$ [$-43.5$, $-25.4$]\pp{}; the unrotated KV4 rows also distinguish continuation takeover from joint replacement. % src: analysis/fork/out/ext_r2_20261002T024433Z.md (§2, §3, §6)
 
 \begin{table*}[t]
 \centering% visual-layout-v1
@@ -131,7 +131,7 @@ ALFWorld q8 KV4$^s$ & 134 & \shortstack[l]{$+0.0$\\{}[$+0.0$, $+0.0$]} & \shorts
 \bottomrule
 \end{tabular*}
 \par\vspace{6pt}
-\caption{Replacement and four-branch estimands on BFCL multi-turn and ALFWorld (no LLM user simulator; one run per item; 95\% item-bootstrap intervals). All items: rescue $r$, damage $d$, turnover $M$ (\% of all items) and net $\Gall$ (pp), non-divergent items counting as zero. Divergent items (supplementary, exploratory, post hoc; pp, divergent items): Off-diag.: share with $\DQ\neq\DB$. Pools: equal weight per cell. $^s$Stress and unrotated KV4 cells; in KV4 $\YY{QQ}=0$ on every state, so the table reduces to $H$.}
+\caption{Replacement and four-branch estimands on BFCL multi-turn and ALFWorld (no LLM user simulator; one run per item; 95\% item-bootstrap intervals). All items: rescue $r$, damage $d$, turnover $M$ (\% of all items) and net $\Gall$ (pp), non-divergent items counting as zero. Divergent items (supplementary, exploratory, post hoc; pp, divergent items): Off-diag.: share with $\DQ\neq\DB$. Pools: equal weight per cell. $^s$Stress and unrotated KV4 cells; in unrotated KV4, $\YY{QQ}=0$ on every state, so positive gains are rescues; $G$, $H$ and $F$ remain distinct.}
 \label{tab:extr2}
 \end{table*}
 

@@ -1,7 +1,7 @@
 \section{Precision References and Common-State Comparisons}
 \label{app:sameprec}
 
-This appendix supports \S\ref{sec:sameprec}: two-sided flips and continuation dependence also appear without more bits; at common states B's extra action value over Q$'$ is not resolved and equivalence is not shown; and on the eligible states one key-order change that keeps the tool operation identical also changes outcomes (exploratory).
+The comparisons in \S\ref{sec:sameprec} distinguish turnover from extra action value. The results below give the same-precision reference, the direct common-state comparison and the operation-preserving key-order control, with their intervals and analysis timelines.
 
 \input{sections/appendix_refs_full}
 
@@ -43,7 +43,7 @@ Under Q's continuation, B's action flips $M=7.1$\% of outcomes (rescue 4.1, dama
 \emph{q4, a separate prospective analysis.} The same design on Qwen3-4B planned three blocks. The frozen quarantine rule removed f01 (below), leaving 170 states. $K=-1.2$\pp{} under Q's continuation (bootstrap 95\% [$-5.9$, $+3.5$]) and $-2.4$\pp{} under B's ([$-6.5$, $+1.2$]), both not resolved. With two blocks the $t$ interval has one degree of freedom. Under Q's continuation the two block means happen to coincide, so it collapses to a point. That is a coincidence of two values, not a precise measurement or zero variance, and the reading rests on the bootstrap. % src: analysis/fork/out/commonstate_q4_20261004T001159Z.md (TL;DR; Key estimand table)
 \emph{Identity checks.} Across both models, 1{,}238 of 1{,}240 reference and implicit identity checks passed. Both failures are one q4 state. There the substituted action was semantically identical to the original after parsing, but its token sequence differed in the order of keys inside a tool-call argument. The canonical comparison treats such actions as equal, but the chat template renders the order, so the next prompt differed and the continuation could not be a replay. Every check with a token-identical action passed (869/869). As the frozen rule requires, the block was removed. % src: analysis/fork/commonstate_replay_check/Q4_F01_IDENTITY.md (TL;DR; acceptance table); docs/insights/COMMONSTATE_ERRATA.md (E-2)
 
-\paragraph{Common states, BF16 against Q$'$, by component.} At the same states and continuation, BF16's extra rescues over Q$'$ on q8 are $+0.3$\pp{} and its extra damages $-0.6$\pp{}, with the net $K=+0.9$ unresolved; each component lies within $\pm$3\pp{} under a 90\% two one-sided test (exploratory, post hoc; the margin is wide relative to rescue rates of 3--5\%). q4 is unresolved. % src: analysis/fork/out/commonstate_rd_20261005T185153Z.md
+\paragraph{Common states, BF16 against Q$'$, by component.} Averaging the paired comparisons equally over B and Q continuations, BF16's extra rescues over Q$'$ on q8 are $+0.3$\pp{} and its extra damages $-0.6$\pp{}, giving an unresolved mean net difference of $+0.9$\pp{}. This mean differs from the two continuation-specific values of $K(c)$ above. Each component lies within $\pm$3\pp{} under a 90\% two one-sided test (exploratory, post hoc; the margin is wide relative to rescue rates of 3--5\%). q4 is unresolved. % src: analysis/fork/out/commonstate_rd_20261005T185153Z.md
 
 \subsection{Key-order control}
 \label{app:keyorder}

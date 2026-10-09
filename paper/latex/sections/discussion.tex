@@ -3,20 +3,24 @@
 
 \begin{table}[t]
 \centering\small
-\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.17} % nocheck: layout
+\setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{1.12} % nocheck: layout
 % src: analysis/fork/out/ext_20261001T135106Z.md; analysis/fork/out/ghf_20261001T211519Z.md; analysis/fork/out/newmethod_m24_20261004T024453Z.md; analysis/fork/out/newmethod_q8_20261004T051538Z.md; analysis/fork/out/dev_all_20261001T070326Z.md
-\begin{tabular}{@{}P{1.6cm}P{1.35cm}P{1.3cm}P{2.6cm}@{}} % nocheck: layout
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}P{1.82cm}rP{3.50cm}@{}} % nocheck: layout
 \toprule
-\textbf{Setting} & \textbf{States} & \textbf{Flip \%} & \textbf{Task-value reading} \\
+\textbf{Setting} & \shortstack[r]{\textbf{Action-only}\\\textbf{turnover (\%)}} & \textbf{Task benefit} \\
 \midrule
-BFCL & Divergent & 5.2--15.2 & Pooled net $+0.1$; unresolved \\
-ALFWorld & Divergent & 21.6--24.6 & Pooled net $-3.7$; unresolved \\
-Mistral 24B & Sampled B & 10.0--10.4 & All modes unresolved \\
+\multicolumn{3}{@{}l}{\textit{Scope checks}} \\
 \addlinespace[2pt] % nocheck: layout
-RTN-W3 & Divergent & 6.7 & Joint $F=+18.4$ [9.4, 28.2]\pp{} \\
+BFCL & 5.2--15.2 & Pooled net $+0.1$\pp{}$^a$ \\
+ALFWorld & 21.6--24.6 & Pooled net $-3.7$\pp{}$^a$ \\
+Mistral 24B & 10.0--10.4 & All three modes unresolved \\
+\addlinespace[4pt] % nocheck: layout
+\multicolumn{3}{@{}l}{\textit{Selected degraded configuration}} \\
+\addlinespace[2pt] % nocheck: layout
+\shortstack[l]{Qwen3-8B\\RTN-W3$^b$} & 6.7 & \shortstack[l]{Joint $F=+18.4$\pp{}\\{}[9.4, 28.2]} \\
 \bottomrule
-\end{tabular}
-\caption{Scope checks on separate populations. Divergent states are first tool-structure disagreements; sampled states use BF16 histories. Flip rates are action-only. RTN-W3 is an exploratory 8B example selected from five stress configurations; its interval is crossed 95\%. Full populations and intervals: Appendix~\ref{app:scope}.}
+\end{tabular*}
+\caption{Task consequences beyond the core W4 panel. Turnover: full task pool (BFCL, ALFWorld, RTN-W3); ordinary BF16 histories (Mistral). $^a$Pooled action-only gains are unresolved. $^b$Exploratory example selected from five stress configurations; $F$ uses divergent states, crossed 95\% interval. Separate populations; full results: Appendix~\ref{app:scope}.}
 \label{tab:scope}
 \end{table}
 
@@ -36,7 +40,7 @@ Turnover gives a rescue and a damage the same positive weight; net benefit gives
 
 \paragraph{A concrete evaluation target.} A router trained to predict disagreement can succeed on that target while failing to save tasks. Our trigger experiment evaluates both quantities on the same selected states, so enrichment cannot substitute for the benefit test. For an action-only router, the desired target is the task success difference after Q handles the substituted action. For a takeover router, it is the difference after B handles the continuation. A task-saving policy must avoid damaging successes that Q would have retained, so evaluation must count both directions.
 
-\paragraph{Coverage and practical use.} Outcome changes and signed benefit are also measured without an LLM user and in a second model family (Table~\ref{tab:scope}). BFCL and ALFWorld remove the user simulator; Mistral changes the model family. The RTN-W3 example shows that a degraded agent can benefit from takeover even when action-only replacement is unhelpful. The shared lesson is to measure the executed upgrade's signed benefit on its intended state population. Appendix~\ref{app:scope} reports the paired estimates and controls.
+\paragraph{Coverage and practical use.} Table~\ref{tab:scope} extends the measurement to BFCL and ALFWorld, which have no LLM user, and to Mistral, a second model family. The selected RTN-W3 example shows that a degraded agent can benefit from takeover even when action-only replacement is unhelpful. Each upgrade needs a signed-benefit test on its intended states. Appendix~\ref{app:scope} gives the paired estimates and controls.
 \label{sec:scope}
 
 \section{Conclusion}
