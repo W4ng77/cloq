@@ -40,8 +40,17 @@ No experimental estimate, interval endpoint, scoring rule, or statistical interp
 - Numerical-token differences were compared against the pre-edit source. Changes concern repetitions of BF16 and expansion of model aliases, not experimental quantities.
 - The local numerical checker scans 3196 occurrences, with 7 unverified pre-existing metadata quantities and 28 missing source paths. Those paths refer to cluster checkpoint, queue, calibration and simulator metadata not present in this snapshot. It reports zero missing required source annotations. This is not a full numerical-check PASS; the full check still requires the cluster metadata.
 
-Final PDF SHA256: `05109924d01c2a1f287d946d96283e10f1dc49afa0ddf1561f866bb107091024`.
+Final PDF SHA256: `92ef8dff19ad2c7f451d9e810d9ea4a1fe6e72f8bf18be6e453913939a6e0e63`.
 
 ## Publication scope
 
 Update the source and compiled PDF in CLOQ and its GitHub paper mirror. The mirror PDF is named `main_local_build.pdf`. Direct Overleaf pull/compile is not performed in this environment.
+
+## Follow-up: fill page 8 and remove orphans
+
+- Page 8 now finishes near the bottom in both columns: left text bottom 763.1 pt; right text bottom 766.0 pt (A4 page coordinates). The columns differ by approximately 3 pt.
+- Added an explanation of the key-order control: an executable operation and the history presented to the continuing model are distinct parts of a closed-loop intervention. No new empirical result or mechanism claim is introduced.
+- Shortened the reference-result title and several sentences to avoid one-word paragraph endings, lone citation fragments and awkward title wraps.
+- Added strict widow, club and broken-word penalties, without changing type size, margins or paragraph spacing.
+- All eight main pages were rendered and visually checked again. No body paragraph is left as a single continuation line at a column/page boundary; no single-word body paragraph ending remains in the inspected main pages.
+- Fresh build: 32 total pages, Conclusion on page 8, Limitations on page 9; no overfull boxes or undefined/multiply-defined references.

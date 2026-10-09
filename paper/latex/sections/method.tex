@@ -17,7 +17,7 @@ B and Q run on vLLM \citep{kwon2023vllm} with batch-invariant kernels \citep{he2
 \subsection{Four branches on one state}
 \label{sec:estimands}
 
-\paragraph{Frozen state.} Before Q's decision $t$, we restore state $s_t$. It contains the full message history, the user simulator's visible conversation, and the used step and error budgets. Replaying the recorded tool calls rebuilds the environment and user-device databases. We save the state before running any branch. B and Q then act from identical prompt token ids.
+\paragraph{Frozen state.} Before Q's decision $t$, we restore state $s_t$. It contains the full message history, the user simulator's visible conversation, and the used step and error budgets. Replaying the recorded tool calls rebuilds the environment and user-device databases. We save the state before running any branch. Their prompt tokens are identical.
 
 \paragraph{Four branches.} Let $\YY{XY}\in\{0,1\}$ denote task success when X supplies the current action and Y continues, with X, Y $\in\{\mathrm{B},\mathrm{Q}\}$. All branches start with the same remaining budget. Each upgrade is compared with QQ: replace this step ($G$), take over from the next step ($H$), or do both ($F$). Figure~\ref{fig:case} defines these contrasts. % nocheck: notation {0,1}
 A \emph{rescue} occurs when the upgrade succeeds and QQ fails; a \emph{damage} is the reverse. Their sum is \emph{turnover}, and their difference is \emph{net gain}. These quantities measure task consequences. Additional notation appears in Appendix~\ref{app:names}.

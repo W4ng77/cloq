@@ -1,4 +1,4 @@
-\section{Flips Alone Do Not Identify Precision Needs} % nocheck: section number
+\section{Flips Alone Do Not Justify More Bits} % nocheck: section number
 \label{sec:sameprec}
 \label{sec:refs}
 
@@ -9,7 +9,7 @@
 \label{fig:refs}
 \end{figure*}
 
-Both reference interventions change outcomes without increasing bit width (Figure~\ref{fig:refs}). One changes the checkpoint; the other leaves the tool operation unchanged. They test whether observing a flip is enough to attribute the consequence to a precision deficit. % nocheck: step labels
+Both reference interventions change outcomes without increasing bit width (Figure~\ref{fig:refs}). One changes the checkpoint; the other leaves the tool operation unchanged. They test the inference from a flip to a need for more bits. % nocheck: step labels
 
 \paragraph{Changing the checkpoint is enough to produce flips.} On the matched W4 task--block panel, substituting Q$'$ produces 17.7\% turnover, compared with 16.8\% for BF16 (Figure~\ref{fig:refs}a). Both substitutions rescue and damage tasks. Thus large outcome changes also occur when bit width stays fixed. The estimates do not establish equivalence within $\pm$3\pp{}. The W3 stress comparison also changes outcomes in both directions (Appendix~\ref{app:qprime}). % src: analysis/fork/out/sameprec_20261004T070601Z.md; docs/insights/SAMEPREC_PROTOCOL.md
 
@@ -17,7 +17,7 @@ Both reference interventions change outcomes without increasing bit width (Figur
 
 \paragraph{Extra precision needs a direct value comparison.} The first experiment chooses each substitute's own first divergence. It therefore does not compare B and Q$'$ at identical decisions. We make that comparison at 510 shared ordinary states from Qwen3-8B BF16 histories, keeping the continuation fixed. BF16's extra action value is $+1.0$\pp{} with Q continuing and $+0.8$\pp{} with B continuing. The adjusted intervals leave both effects unresolved and do not establish equivalence. A useful BF16 advantage remains possible. Appendix~\ref{app:commonstate} gives the intervals and the expansion and reading rules adopted after the first look. % src: analysis/fork/out/commonstate_q8ext_20261003T231159Z.md; docs/insights/COMMONSTATE_SOURCES_PROTOCOL.md
 
-The references support a specific conclusion: outcome sensitivity alone cannot identify a need for higher precision. They expose changes that require neither additional bits nor a different tool operation. They are not a noise floor to subtract from BF16's turnover. To establish the value of more bits, compare the signed task benefit of the alternatives on the same states and under the same continuation.
+The references support a specific conclusion: outcome sensitivity alone cannot identify a need for higher precision. They expose changes that require neither additional bits nor a different tool operation. They are not a noise floor to subtract from BF16's turnover. Establishing the value of more bits requires a paired benefit comparison on shared states with the same model continuing.
 
 % src: docs/insights/SAMEPREC_PROTOCOL.md (A1.3, 95% lower bound); analysis/fork/out/sameprec_20261004T070601Z.md (TL;DR; Full pool; On divergent states; analysis set K = 6); analysis/fork/out/sameprec_20261004T070601Z.json (pooled.same.rescue/damage.crossed_ci95)
 % src: analysis/fork/out/sameprec_w3_20261004T070607Z.md (TL;DR; Full pool, pool rows); analysis/fork/out/sameprec_20261004T070601Z.md (Amendment A1 table)
