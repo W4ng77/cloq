@@ -1,21 +1,17 @@
-\section{Scope Checks: Ordinary States, Other Environments, a Second Family and Other Configurations (supports \texorpdfstring{Table~\ref{tab:scope}}{the scope table})}
+\section{Scope Across States, Environments and Models}
 \label{app:scope}
 
-The following sections give the populations, intervals and detailed results behind Table~\ref{tab:scope}.
+This appendix answers the scope questions behind Table~\ref{tab:scope}: does the turnover--value distinction extend to ordinary states, environments without an LLM user, another model family and other quantization settings? The simulator controls also delimit the fixed-execution interpretation in \S\ref{sec:discussion}.
 
 
 
 \subsection{Ordinary states and the user simulator}
 \label{app:ordinary}
 
-\paragraph{Ordinary states turn over less, mostly through text under our simulator.} At ordinary states, replacing Q's action changes the outcome less often than at first tool-structure divergences (a descriptive comparison of different state populations, with no interval on the difference). Over blocks f01--f03 (task-equal; $t$ intervals over block means), $M$ per sub-bank is 7.8--9.0\% for the q4 W4 cells in U1 and U2B, 4.7--9.0\% for the q8 W4 cells and at most 4.7\% for KV8. The net gain lies within $\pm$2.8\pp{} (U1, U2B) and $\pm$5.0\pp{} (U2Q), and every interval covers zero (Appendix~\ref{app:banku}). % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§2)
+\paragraph{Ordinary states include agreements.} At ordinary states, replacing Q's action changes the outcome less often than at first tool-structure divergences (a descriptive comparison of different state populations, with no interval on the difference). Over blocks f01--f03 (task-equal; $t$ intervals over block means), $M$ per sub-bank is 7.8--9.0\% for the q4 W4 cells in U1 and U2B, 4.7--9.0\% for the q8 W4 cells and at most 4.7\% for KV8. The net gain lies within $\pm$2.8\pp{} (U1, U2B) and $\pm$5.0\pp{} (U2Q), and every interval covers zero (Appendix~\ref{app:banku}). % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§2)
 Identical actions never change the outcome, as determinism implies. Reused arms rest on canonical equality. All 4{,}114 such reuses were rendered with each model's chat template; 4{,}113 are token-identical. The remaining pair differs only in JSON key order, and its two cross arms, measured separately, gave the reused outcomes. % src: analysis/fork/reuse_audit/REUSE_AUDIT.md (TL;DR); analysis/fork/reuse_audit/REUSE_FIX_RESULT.md (TL;DR)
-After deduplication, 150 of the 208 outcome-changing cell$\times$state rows ($\approx$72.1\%) are class (ii), the same tool structure with different text; 26 involve a different tool name, call count or argument (Table~\ref{tab:taxonomy}). % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§3); derived: 150=45+28+44+25+10+6-5-3; 208=99+99+18-5-3; 72.1=100*(45+28+44+25+10+6-5-3)/(99+99+18-5-3); 26=1+11+4+9+0+1
-The rows are not independent states: the three blocks repeat the same tasks, and each U2B/U2Q state appears once per cell of a model.
-This is a \emph{composition share}: per instance, text, tool/argument and act/talk differences flip the outcome in 14.4\%, 18.2\% and 18.9\% of rows. Text dominates because it is common (1045 of 1357 differing rows), not because each text difference matters more. % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§3); derived: 14.4=100*(45+28+44+25+10+6-5-3)/(309+202+277+199+63+33-24-14); 1045=309+202+277+199+63+33-24-14; 18.2=100*(1+11+4+9+0+1)/(19+47+24+40+5+11-1-2); 18.9=100*(10+4+3+14+1+0)/(38+33+34+56+4+7-1-2); 1357=309+202+277+199+63+33-24-14+19+47+24+40+5+11-1-2+38+33+34+56+4+7-1-2
-
 \paragraph{Sensitivity to the user simulator.} Text actions act through the user simulator, and changing the simulator moves $\tau$-bench outcomes by 9--15 points \citep{seshadri2026lost,jain2026userproxybench}. % src: outputs/.drafts/storyline-v7-lit.md (rows 23-24)
-We froze a control before running it: the 39 deduplicated class-(ii) flips of block f01 and 39 matched non-flip states. Their BQ and QQ branches were each re-run three times with a different user simulator, Sonnet 5.5, answering through a file relay from Claude Code subagents (reproducibility limits in the Limitations). % src: docs/RESEARCH_LOG.md W90, W91 (manifests/fork/simctrl_v3.json)
+We froze a control before running it: the 39 deduplicated text-difference flips with the same tool structure of block f01 and 39 matched non-flip states. Their BQ and QQ branches were each re-run three times with a different user simulator, Sonnet 5.5, answering through a file relay from Claude Code subagents (reproducibility limits in the Limitations). % src: docs/RESEARCH_LOG.md W90, W91 (manifests/fork/simctrl_v3.json); analysis/fork/out/bank_u_f01_20261001T134456Z.md (§3: original f01 selection frame)
 Judged by the sign of the replicate mean, only 7 of the 39 flips keep their direction (95\% CI 0.075--0.335). Six reverse, and 26 vanish (15 both succeed, 2 both fail, 9 ties). Among the matched non-flip states, 11 of 39 become flips (0.15--0.45). Replicates of the same arm disagree in 41\% of flip arms and in 21--26\% of control arms. % src: analysis/fork/out/simctrl_20261001T212742Z.md
 \textbf{The Bank U text-difference outcome labels did not reproduce reliably under this alternative relay setting.} The control changes three things at once (simulator model, sampling, relay interface), so it cannot say which of them changed the labels.
 
@@ -25,7 +21,7 @@ Before running, we sampled 80 Bank P states without outcome information (20 per 
 Per-state arm outcomes track the original single runs (correlation 0.63--0.68). Pooled over cells, $G=-3.0$ [$-10.2$, $+4.8$], $H=+5.5$ [$+0.0$, $+11.2$] and $G-H=-8.5$ [$-14.8$, $-2.8$]\pp{} under Sonnet, against $G-H=-2.5$ [$-11.2$, $+6.2$] on the same states under the original simulator (change $-6.0$ [$-16.2$, $+4.2$]). % src: analysis/fork/out/simctrl_p_20261002T015200Z.md (pool, all batches)
 With 20 states per cell, this control cannot resolve the few-pp contrasts of Table~\ref{tab:ghf} (on this sample even the original simulator gives $G-H=0.0$ in both q8 W4 cells), so it neither confirms nor reverses the within-cell orderings. % src: analysis/fork/out/simctrl_p_20261002T015200Z.md (q8 cells)
 
-\subsection{Bank U per Sub-Bank}
+\subsection{Ordinary-state estimates by history source}
 \label{app:banku}
 
 Table~\ref{tab:banku} gives the per-state turnover behind Appendix~\ref{app:ordinary}, over blocks f01--f03. Exact action agreement is 0.43--0.83 per cell and sub-bank. % src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (column "exact")
@@ -48,30 +44,6 @@ q8 KV8     & .035 (5/4) & .031 (6/2) & 0 (0/0) \\
 \end{tabular}
 \caption{Bank U, blocks f01--f03: per-state turnover $M$ (rescues/damages), task-equal (one state per task and block; 85/85/20 states per block). $G$ lies within $\pm0.028$ in U1 and U2B and within $\pm0.050$ in U2Q, and every interval includes 0. Intervals are $t$ intervals over the three block means and are wide (e.g.\ q4 GPTQ-W4 U1: .090 [.029, .151]). $^\ast$GPTQ-W4's U2Q states are its own U1 states, with concordant outcomes on 20/20 duplicates per block; they are counted once in cross-sub-bank totals.}
 \label{tab:banku}
-\end{table*}
-
-\begin{table*}[t]
-\centering% visual-layout-v1
-\renewcommand{\arraystretch}{1.12}\fontsize{8.5}{10}\selectfont\setlength{\tabcolsep}{4pt}
-% src: analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§3 class composition and consequence per sub-bank; per cell; comparator block, unique states)
-\begin{tabular}{@{}lllll@{}}
-\toprule
-& (i) identical & (ii) same tool & (iii) different & (iv) act vs.\ \\
-Model:sub & & structure, text & tool or args & talk \\
-\midrule
-q4:U1  & 399: 0 & 309: 45 (.146) & 19: 1 (.053) & 38: 10 (.263) \\
-q8:U1  & 483: 0 & 202: 28 (.139) & 47: 11 (.234) & 33: 4 (.121) \\
-q4:U2B & 430: 0 & 277: 44 (.159) & 24: 4 (.167) & 34: 3 (.088) \\
-q8:U2B & 470: 0 & 199: 25 (.126) & 40: 9 (.225) & 56: 14 (.250) \\
-q4:U2Q & 108: 0 & 63: 10 (.159)$^\ast$ & 5: 0 & 4: 1 (.250) \\
-q8:U2Q & 129: 0 & 33: 6 (.182)$^\ast$ & 11: 1 (.091) & 7: 0 \\
-\midrule
-unique rows & 1943: 0 & 1045: 150 (.144) & 143: 26 (.182) & 169: 32 (.189) \\ % derived: 1045=309+202+277+199+63+33-24-14; 150=45+28+44+25+10+6-5-3; 143=19+47+24+40+5+11-1-2; 26=1+11+4+9+0+1; 169=38+33+34+56+4+7-1-2; 32=10+4+3+14+1+0; .144=150/1045; .182=26/143; .189=32/169
-\bottomrule
-\end{tabular}
-\caption{Which kind of action difference changes the outcome at ordinary states (Bank U, blocks f01--f03). Entries: ``state rows: outcome-changing rows (flip rate)'', pooled over the three cells of a model within a sub-bank. The last row counts each (cell, state) once: q4/q8 GPTQ-W4's U2Q states repeat their U1 states ($^\ast$ includes 5 and 3 repeated class-(ii) flips), so 216 flipping rows become 208. The 58 f01 flips scored in Appendix~\ref{app:token} include the two duplicated U2Q rows. % src: analysis/fork/out/token_mech_20261001T185031Z.md (flips: 58); analysis/fork/out/bank_u_f01_f02_f03_20261002T003037Z.md (§3); analysis/fork/out/bank_u_f01_20261001T134456Z.md; derived: 216=99+99+18; 208=99+99+18-5-3
-}
-\label{tab:taxonomy}
 \end{table*}
 
 \subsection{Models compared on their own ordinary states}

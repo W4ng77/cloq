@@ -1,7 +1,10 @@
-\section{Setup, Replay Acceptance and Notation (supports \texorpdfstring{\S\ref{sec:method}}{the method})}
+\section{Measurement Setup and Replay Checks}
 \label{app:setup}
 
-This appendix supports \S\ref{sec:method}: it gives the splits, how a state is restored and forked, which replay checks passed on this serving stack, and the internal name behind each main-text term.
+This appendix supports \S\ref{sec:method}: it gives the splits, state restoration, replay checks and notation needed to reproduce the contrasts.
+\paragraph{Evidence provenance.}\label{app:figsrc} Reported values map to committed analysis outputs and frozen manifests. The supplement retains the complete primary comparisons, acceptance checks and protocol amendments needed to assess the paper's claims.
+
+\paragraph{Guide to the supplementary evidence.} Appendix~\ref{app:setup} specifies the measurement and its replay checks. Appendix~\ref{app:tables} expands the three upgrade modes, their outcome patterns and repeatable task fragility. Appendix~\ref{app:prereg} documents the independent holdout and full baseline replay. Appendix~\ref{app:sameprec} supplies the precision-reference comparisons and adaptive-analysis timeline. Appendix~\ref{app:r3} supports the selection and fidelity diagnostics. Appendix~\ref{app:scope} tests the scope stated in Table~\ref{tab:scope}. Each section gives the checks needed to interpret its corresponding main-text claim.
 
 \paragraph{Splits.} The development split has 58 retail, 27 airline and 80 telecom tasks. The holdout has 34 telecom tasks, and its pre-registration hash is recorded in the split file. % src: manifests/fork/splits_v1.json
 The telecom split was fixed from \tautwo{}'s 114-task base split by a stratified, salted hash before any run. % src: manifests/telecom/dev_v1.json
@@ -60,7 +63,7 @@ pool, all four & & $+1.5$ [$-2.7$, $+5.6$] & pass & fail \\
 \subsection{Coverage Matrix}
 \label{app:coverage}
 
-Table~\ref{tab:coverage} lists the completed crossed-intervention coverage behind every Qwen3 Bank P and Bank U result; the coverage of the U2B panels (\S\ref{sec:r4}, \S\ref{sec:scope}) is in Appendix~\ref{app:panels}. It counts tasks, states and complete blocks after the strict admission rule. Four of the five stress cells turn over 18.4--20.4\% of units with three blocks; we keep them separate from W4, and no W2 crossed-intervention panel is reported. % src: analysis/fork/out/dev_all_20261001T070326Z.md
+Table~\ref{tab:coverage} lists the completed crossed-intervention coverage behind every Qwen3 Bank P and Bank U result; the coverage of the U2B panels (\S\ref{sec:r4}, \S\ref{sec:scope}) is in Appendix~\ref{app:panels}. It counts tasks, states and complete blocks after the strict admission rule. Stress settings are reported separately from the main W4 population. % src: analysis/fork/out/dev_all_20261001T070326Z.md
 
 \begin{table*}[t]
 \centering% visual-layout-v1
@@ -88,7 +91,7 @@ q14 GPTQ-W4 & -- & -- & -- & -- & 788 $\cdot$ 471 st / -- % src: analysis/fork/o
  \\
 \bottomrule
 \end{tabular}
-\caption{Completed crossed-intervention coverage (t = tasks, st = states, b = complete/found blocks; BFCL and ALFWorld: items $\cdot$ states, one run). Bank U: blocks completed and state rows per domain; blocks f01--f03 are analysed (Appendix~\ref{app:banku}). ``holdout'': the cell is in the telecom holdout (Appendix~\ref{app:prereg}). Qwen3-32B has end-to-end runs only; Llama-3.1-8B stopped at its fork gate (Limitations); the q14 (Qwen3-14B) BFCL row is a within-family scale check. q4 RTN-W3 has no complete Bank P block and is omitted. The telecom development results (Appendix~\ref{app:holdoutdev}) use the 6 blocks listed. $^\dagger$The BFCL base category of q4 GPTQ-W3 was dropped by the QQ no-op rule (Appendix~\ref{app:extr2}). The end-to-end q4 AWQ-W3 run is incomplete (two airline episodes hit 600\,s serving timeouts), and so are the q4 RTN-W2 stress runs (context-window overflows of the degenerate model and a truncated result file); neither is reported. % src: analysis/fork/ext_l8_gate/GATE.md; ../cloq_work/queue/deferred/a6k2_w2p_q4_rtn_w2_q3.json; ../cloq_work/queue/deferred/a6k2_q4_awq_w3_qx.json; runs/a6k2_q4_awq_w3_q5/airline/infra_causes.json
+\caption{Completed crossed-intervention coverage (t = tasks, st = states, b = complete/found blocks; BFCL and ALFWorld: items $\cdot$ states, one run). Bank U: blocks completed and state rows per domain; blocks f01--f03 are analysed (Appendix~\ref{app:banku}). ``holdout'': the cell is in the telecom holdout (Appendix~\ref{app:prereg}). Qwen3-32B has end-to-end runs only; Llama-3.1-8B stopped at its fork gate (Limitations); the q14 (Qwen3-14B) BFCL row is a within-family scale check. q4 RTN-W3 has no complete Bank P block and is omitted. The telecom development results (Appendix~\ref{app:holdoutdev}) use the 6 blocks listed. $^\dagger$The BFCL base category of q4 GPTQ-W3 was dropped by the QQ no-op rule (Appendix~\ref{app:extr2}). Only completed, admitted panels are counted.
 }
 \label{tab:coverage}
 \end{table*}
