@@ -1,0 +1,46 @@
+% A schematic of the sampling rules, not measured trajectories.
+\begin{tikzpicture}[x=1cm,y=1.13cm,font=\small, % nocheck: schematic layout
+  state/.style={circle,draw=black!40,fill=white,minimum size=5.5mm,inner sep=0pt}, % nocheck: schematic layout
+  selected/.style={state,draw=palB,line width=1.1pt,fill=palB!12}, % nocheck: schematic layout
+  action/.style={rounded corners=2pt,draw=black!25,minimum width=12mm,minimum height=6mm,inner sep=3pt,font=\small}, % nocheck: schematic layout
+  flow/.style={-{Latex[length=2mm]},draw=black!45,line width=.7pt}, % nocheck: schematic layout
+  note/.style={align=left,text width=5.3cm,font=\small}, % nocheck: schematic layout
+  title/.style={anchor=west,font=\small\bfseries}]
+\useasboundingbox (-.45,-7.45) rectangle (14.5,.5); % nocheck: schematic layout
+% First disagreement: same trajectory until the selected decision.
+\fill[palB!4,rounded corners=3pt] (-.4,.4) rectangle (14.4,-2.1); % nocheck: schematic layout
+\node[title] at (0,.05) {(a) First disagreement}; % nocheck: schematic layout
+\node[anchor=west,font=\footnotesize,text=black!65] at (0,-.38) {Follow Q's recorded history}; % nocheck: schematic layout
+\foreach \x/\id in {.4/a1,1.65/a2,2.9/a3} {\node[state] (\id) at (\x,-1.02) {};} % nocheck: schematic layout
+\node[selected] (a4) at (4.15,-1.02) {}; % nocheck: schematic layout
+\draw[flow] (a1)--(a2);\draw[flow] (a2)--(a3);\draw[flow] (a3)--(a4); % nocheck: schematic layout
+\node[action,draw=palB,fill=palB!10] (ab) at (6,-.7) {B action}; % nocheck: schematic layout
+\node[action,draw=palQ,fill=palQ!10] (aq) at (6,-1.35) {Q action}; % nocheck: schematic layout
+\draw[flow,draw=palB] (a4.east) -- (ab.west); % nocheck: schematic layout
+\draw[flow,draw=palQ] (a4.east) -- (aq.west); % nocheck: schematic layout
+\node[font=\footnotesize,text=black!65,anchor=west] at (0,-1.90) {Earlier tool structures agree; the first mismatch is here.}; % nocheck: schematic layout
+\node[note,anchor=north west] at (8.3,-.42) {\textbf{What follows from a disagreement?}\\Measure the consequences of replacing the action, the continuation, or both.}; % nocheck: schematic layout
+% Ordinary sampling: a fixed rule, not a disagreement filter.
+\fill[black!3,rounded corners=3pt] (-.4,-2.3) rectangle (14.4,-4.8); % nocheck: schematic layout
+\node[title] at (0,-2.66) {(b) Ordinary sampled decision}; % nocheck: schematic layout
+\node[anchor=west,font=\footnotesize,text=black!65] at (0,-3.09) {Choose an index by a fixed hash}; % nocheck: schematic layout
+\node[state] (b1) at (.4,-3.72) {}; % nocheck: schematic layout
+\node[selected] (b2) at (1.65,-3.72) {}; % nocheck: schematic layout
+\node[state] (b3) at (2.9,-3.72) {}; % nocheck: schematic layout
+\node[state] (b4) at (4.15,-3.72) {}; % nocheck: schematic layout
+\node[state] (b5) at (5.4,-3.72) {}; % nocheck: schematic layout
+\draw[flow] (b1)--(b2);\draw[flow] (b2)--(b3);\draw[flow] (b3)--(b4);\draw[flow] (b4)--(b5); % nocheck: schematic layout
+\node[anchor=west,font=\footnotesize,text=black!65] at (0,-4.47) {One decision per task and block; no outcome-based selection.}; % nocheck: schematic layout
+\node[note,anchor=north west] at (8.3,-3.08) {\textbf{Do upgrades help here?}\\Include states where the models agree as well as states where they differ.}; % nocheck: schematic layout
+% Common histories compare sources, not separate selection protocols.
+\fill[palQP!6,rounded corners=3pt] (-.4,-5) rectangle (14.4,-7.4); % nocheck: schematic layout
+\node[title] at (0,-5.37) {(c) Common history comparison}; % nocheck: schematic layout
+\node[align=center,draw=black!25,rounded corners=2pt,fill=white,text width=2.25cm,minimum height=1.12cm] (history) at (1.32,-6.39) {Same saved\\sampled history}; % nocheck: schematic layout
+\node[action,draw=palB,fill=palB!10] (cb) at (4.15,-5.92) {B}; % nocheck: schematic layout
+\node[action,draw=palQ,fill=palQ!10] (cq) at (4.15,-6.55) {Q}; % nocheck: schematic layout
+\node[action,draw=palQP,fill=palQP!13] (cp) at (6.0,-6.55) {Q$'$}; % nocheck: schematic layout
+\draw[flow,draw=palB] (history.east) -- (cb.west);
+\draw[flow,draw=palQ] (history.east) -- (cq.west);
+\draw[flow,draw=palQP] (history.south east) -- (3.1,-7.03) -- (5.15,-7.03) -- (cp.south); % nocheck: schematic layout
+\node[note,anchor=north west] at (8.3,-5.79) {\textbf{Does BF16 add value over Q$'$?}\\Compare actions on the same history. Hold the continuing model fixed at Q or B.}; % nocheck: schematic layout
+\end{tikzpicture}

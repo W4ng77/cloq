@@ -33,3 +33,17 @@ Replaced the dense three-column scope table with a two-column evidence overview,
 - Numeric audit: 3622 occurrences, the same eight unverified metadata values and 31 absent source paths as the previous local snapshot, zero new unverified values and zero missing required citations. The full metadata-dependent check still needs the cluster files.
 
 The PDF is a local XeLaTeX preview. Rebuild with the production Tectonic toolchain and refresh the anonymous submission copy. GitHub updates do not directly update Overleaf.
+
+## Eight-page main text and graphical Figure 2 — 2026-10-08
+
+At the author's request, the main text uses the full eight-page allowance; Limitations begins on page 9. The new preview totals 37 pages.
+
+- Replaced Figure 2's three text boxes with a full-width native TikZ schematic: Q-history until the first tool-structure mismatch, hash sampling without selecting disagreement, and three action sources on one saved sampled history. Each row connects the selection rule to the question it measures. Earlier agreement refers to tool structure, not exact wording. The illustrated paths are schematic, not new experimental trajectories.
+- Kept exact sampling definitions in the method: action kind, tools and normalized arguments define first divergence; wording alone does not qualify. Ordinary indices use a fixed hash before action generation.
+- Table 1 stays single-column and now uses the body font size. Full numerical scope details remain in the appendix.
+- Expanded Discussion with short explanatory paragraphs on turnover versus net gain, the role of reference interventions, intervention-matched selector targets, oracle interpretation, deployment-distribution value and the purpose of the scope checks. This uses the additional page for interpretation, without restoring the experimental-list format or changing statistical claims.
+- Conclusion stays in the main text. No margins or body font sizes were reduced to fit. No data, estimates, intervals, analysis rules or experiment status changed.
+- Local XeLaTeX build is clean: no overfull boxes, undefined references/citations or duplicate labels. The final Figure 2 and pages 3, 4, 7, 8 and 9 were rendered and visually inspected; the full main-text preview was rendered.
+- Numeric audit: 3622 occurrences, the same eight metadata values unverified due to absent local run files and the same 31 missing source paths. No new unverified values or missing required citations. The cluster is still needed for the full metadata-dependent check.
+
+Rebuild with production Tectonic and regenerate the anonymous submission copy after pulling. This is a GitHub source/PDF synchronization, not a direct Overleaf update.

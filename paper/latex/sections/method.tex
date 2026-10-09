@@ -31,16 +31,12 @@ A \emph{rescue} occurs when the upgrade succeeds and QQ fails; a \emph{damage} i
 \newcommand{\noopdev}{924/924}% src: analysis/fork/out/dev_all_20261001T070326Z.md (TL;DR: No-op sample 924/924)
 \newcommand{\noopfrac}{10\%}% src: docs/insights/FORK_PROTOCOL.md §9 (QQ no-op on a 10% hash sample; stop rule)
 \newcommand{\minblk}{10}% nocheck: interval rule as in archived method L39 (block bootstrap with at least 10 blocks)
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\begin{tikzpicture}[font=\footnotesize,box/.style={draw=black!25,rounded corners=2pt,align=left,inner sep=5pt,text width=6.85cm}] % nocheck: layout
-\node[box,fill=palB!6] (first) at (0,0) {\textbf{First divergent state}\\First decision where B and Q differ in action kind, tool calls or normalised arguments. Wording alone does not qualify.}; % nocheck: layout
-\node[box,fill=gray!6,below=5pt of first] (ordinary) {\textbf{Ordinary sampled state}\\One decision per task--block unit, selected by a fixed hash before generation. Sampling does not depend on disagreement or outcome.}; % nocheck: layout
-\node[box,fill=palQP!9,below=5pt of ordinary] (common) {\textbf{Common state}\\An ordinary sampled state where B, Q and Q$'$ all act on exactly the same history.}; % nocheck: layout
-\end{tikzpicture}
-\caption{State selection defines the question. First divergences measure the consequences of a disagreement; ordinary states measure interventions without selecting disagreements. Common states compare action sources directly.}
+\input{sections/figure_state_sampling}
+\caption{Three ways to choose the decision being evaluated. (a) Follow Q's history and stop at the first tool-structure disagreement. (b) Sample a decision without using disagreement or outcome. (c) Give the same sampled history to every action source, then compare their actions under a fixed continuation. This last design tests BF16's additional value over Q$'$ directly. Circles denote decision states; diagrams are schematic.}
 \label{fig:method}
-\end{figure}
+\end{figure*}
 
 \subsection{Making the counterfactuals auditable}
 \label{sec:replay}
@@ -51,7 +47,7 @@ This guarantee applies to the tested stack: greedy decoding, vLLM 0.29.0, batch-
 \subsection{Sampling and inference}
 \label{sec:states}
 
-\paragraph{State sources.} A \emph{common state} is an ordinary sampled state at which several action sources are compared; Figure~\ref{fig:method} distinguishes the state sources. Full-pool rates include every task--block unit, counting no divergence as zero effect; mode and pattern analyses condition on divergent states. % src: docs/insights/FORK_PROTOCOL.md §15 amendment 1
+\paragraph{State sources.} A first divergent state is the earliest Q-history decision where B and Q differ in action kind, tool calls or normalised arguments. Wording alone does not qualify. Ordinary states are selected by a fixed hash before action generation, one per task and block. A \emph{common state} is an ordinary sampled state at which several action sources are compared; Figure~\ref{fig:method} distinguishes the state sources. Full-pool rates include every task--block unit, counting no divergence as zero effect; mode and pattern analyses condition on divergent states. % src: docs/insights/FORK_PROTOCOL.md §15 amendment 1
 Contrasts are paired within a configuration and descriptive across configurations, which select their own divergences; only complete blocks enter. % nocheck: interval rule as in archived method L39
 
 

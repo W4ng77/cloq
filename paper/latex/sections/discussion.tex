@@ -3,7 +3,7 @@
 
 \begin{table}[!b]
 % src: analysis/fork/out/ghf_20261001T211519Z.md; analysis/fork/out/dev_all_20261001T070326Z.md; analysis/fork/out/ext_20261001T135106Z.md; analysis/fork/out/newmethod_m24_20261004T024453Z.md; analysis/fork/out/newmethod_m24_20261004T024453Z.json; docs/insights/NEWMETHOD_PANEL_PROTOCOL.md; analysis/fork/out/newmethod_q8_20261004T051538Z.md; analysis/fork/out/newmethod_q8_20261004T051538Z.json
-\centering\small
+\centering\normalsize
 \renewcommand{\arraystretch}{1.08} % nocheck: layout
 \begin{tabular}{@{}P{\columnwidth}@{}}
 \toprule
@@ -31,14 +31,20 @@ Outcome changes also occur with cache quantization. The paired KIVI value contra
 
 
 
-\paragraph{What the references establish.} Outcome changes alone do not identify a need for more bits. Q$'$ changes outcomes without increasing precision. Key-order reversal changes some outcomes without changing the tool operation. These are interpretation checks, not a noise floor to subtract. BF16's additional benefit requires a direct comparison on shared states; our intervals still allow useful gains.
+\paragraph{Sensitivity and task benefit.} A substitution can produce many rescues and damages while their average nearly cancels. Turnover counts outcome changes. Net gain asks whether it improves success. Both quantities matter: an average near zero can hide substantial changes for individual tasks, while a high turnover can include as many harms as improvements. Our main W4 results exhibit this distinction. The negative telecom estimate reinforces the need to evaluate new tasks directly.
 
-\paragraph{What a deployment should measure.} Evaluate the upgrade that will actually run: replace an action, take over the continuation, or both. Report rescues, damages and their net gain on paired states. A selector should predict that signed benefit, rather than disagreement or turnover. The frozen margin rule illustrates the gap: it finds outcome changes without reliable net benefit on later blocks of the same tasks. Learned routing and comparisons at a shared BF16 compute budget remain open questions.
+\paragraph{Why the reference matters.} Q$'$ changes outcomes without increasing bit width. Key-order reversal changes some outcomes without changing the executed tool operation. These references challenge an attribution from flips alone to insufficient precision. They are not a noise floor to subtract: each substitution changes a particular history and can affect different units. The direct common-state comparison answers the extra-value question. Its intervals still allow useful BF16 gains, so the evidence leaves that benefit open.
 
-\paragraph{From a realised consequence to expected value.} Exact replay audits a consequence under fixed execution conditions. Deployment value requires averaging paired success differences over specified prompt and user conditions. Average benefit and individual label stability are separate questions. Table~\ref{tab:scope} summarises coverage; detailed results and inference rules appear in the appendix.
+\paragraph{Choosing the intervention before choosing the states.} The three upgrade modes spend BF16 computation at different points. Replacing one action lets Q handle its consequences. Taking over the continuation preserves Q's current action. Joint replacement changes both. A selector's outcome target should match the mode it will execute. A label for joint takeover can count a success that action replacement cannot obtain. Conversely, a success under Q's continuation can disappear under B's. These patterns explain the need for separate measurements, without requiring them to be unusually frequent.
+
+\paragraph{What a selector needs to predict.} Our frozen margin rule finds outcome changes on later blocks of the same tasks. It captures rescues and damages together, giving no reliable net benefit over matched random selection. This is a test of one rule, rather than a result about all routers. The hindsight oracle identifies available gains after outcomes are known; it does not establish that Q-visible features can predict them. Learned routing should be evaluated on held-out decisions by signed task benefit. Cost-aware comparisons should also match BF16 computation, because continuation takeover can use more decisions than a single-action replacement.
+
+\paragraph{From realised consequences to deployment value.} Exact replay makes a comparison auditable under fixed execution conditions. It does not make that setting representative of deployment. Key-order reversal demonstrates that individual labels can depend on the representation the agent reads. To estimate expected benefit, specify a distribution of prompts and user conditions, repeat paired branches across it, and average the success differences. Average benefit and individual label stability are separate questions. Our task-level intervals address task sampling; they do not cover every change to the user model or serving stack.
+
+\paragraph{Coverage and practical use.} The scope checks ask whether the distinction between outcome changes and benefit also matters beyond the main panel (Table~\ref{tab:scope}). BFCL and ALFWorld remove the LLM user. Mistral changes the model family. Lower-bit, activation and cache settings change the source and severity of degradation. Their state populations differ, so they provide scope checks rather than a ranking of methods. For a fallback evaluation, choose the intended upgrade mode, measure its rescues and damages on paired states, interpret them with reference substitutions, and validate the selection policy's net benefit. The appendix contains full results and inference details.
 \label{sec:scope}
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-Our audited forks separate three precision upgrades. On the main W4 panel, rescues and damages largely cancel. Reference substitutions show why turnover alone cannot establish a need for more bits. A frozen uncertainty rule finds changes without reliable net benefit. Fallback evaluation should measure paired task consequences and validate the net benefit of the upgrade actually executed.
+Our audited forks measure three distinct precision upgrades. On the main W4 panel, rescues and damages largely cancel. Same-precision and representation references show why turnover alone cannot establish a need for more bits. The common-state comparison leaves BF16's additional benefit unresolved. One frozen uncertainty rule finds changes without reliable net benefit. Together, the results give an evaluation protocol for fallback decisions: measure paired task consequences, include references that test the precision attribution, and validate the net benefit of the upgrade actually executed.
