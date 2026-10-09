@@ -31,41 +31,55 @@ def clean(ax):
 
 def result_one():
     A, H, _, _ = R1.data()
-    fig = plt.figure(figsize=(FULL_W, 3.10))
+    ghf = M.load("ghf")
+    fig = plt.figure(figsize=(FULL_W, 4.65))
     for n, (rows, x, title, sub) in enumerate([
-        (A, .16, "(a) Development · W4", "85 tasks × 20 blocks · 95% intervals"),
-        (H, .685, "(b) Telecom holdout", "34 tasks × 12 blocks · crossed 90%")]):
-        ax = fig.add_axes([x, .24, .285, .58])
-        clean(ax)
+        (A, .16, "(a) Development · W4", "Full task pool · 95% intervals"),
+        (H, .66, "(b) Telecom holdout · 90%", "Full task pool · crossed intervals")]):
+        ax = fig.add_axes([x, .49, .25, .36]); clean(ax)
         yy = [-i - (.25 if r[-1] else 0) for i, r in enumerate(rows)]
         for r, y in zip(rows, yy):
             lab, res, dam, net = r[:4]
-            ax.barh(y, -dam, height=.55, color=DAMAGE, zorder=2)
+            ax.barh(y, -dam, height=.55, color=DAMAGE, hatch="///", edgecolor="white", lw=.2, zorder=2)
             ax.barh(y, res, height=.55, color=RESCUE, zorder=2)
             if n == 0:
                 R2.ivh(ax, y, net, r[4], r[5], INK, marker="D", ms=4.5, dy=-.20)
-                ax.text(1.06, y, f"{r[6]:.1f}", transform=ax.get_yaxis_transform(), fontsize=9,
-                        va="center", fontweight="bold" if r[-1] else "normal")
+                turnover = r[6]
             else:
                 ax.plot(r[4], [y, y], color=INK, lw=1.4, zorder=4)
-                ax.plot(net, y, "D", color=INK, mfc=INK if r[-1] else "white", ms=4.5, zorder=5)
+                ax.plot(net, y, "D", color=INK, ms=6 if r[-1] else 4.5, zorder=5)
+                turnover = res + dam
+            ax.text(1.065, y, f"{turnover:.1f}", transform=ax.get_yaxis_transform(), fontsize=9,
+                    va="center", fontweight="bold" if r[-1] else "normal")
         labs = [r[0].replace("q4", "4B").replace("q8", "8B").replace("AWQ", "AWQ-style") for r in rows]
         ax.set_yticks(yy, labs)
-        for t, r in zip(ax.get_yticklabels(), rows):
-            t.set_fontweight("bold" if r[-1] else "normal")
-        ax.set_ylim(yy[-1]-.65, .7)
-        ax.set_xlim(-14, 14); ax.set_xticks([-12, -6, 0, 6, 12])
+        for label, r in zip(ax.get_yticklabels(), rows):
+            label.set_fontweight("bold" if r[-1] else "normal")
+        ax.set_ylim(yy[-1]-.65, .7); ax.set_xlim(-14, 14); ax.set_xticks([-12,-6,0,6,12])
         ax.set_xlabel("Damages ←   % of units   → Rescues", fontsize=9, labelpad=5)
-        fig.text(x-.14, .975, title, va="top", fontsize=10, fontweight="bold")
-        fig.text(x-.14, .89, sub, va="top", fontsize=8.5, color=INK2)
-        if n == 0:
-            ax.text(1.04, 1.035, "Turnover\n%", transform=ax.transAxes, fontsize=8, va="bottom")
-        else:
-            ax.axvspan(-3, 3, color=INK, alpha=.06, lw=0, zorder=0)
-    fig.text(.02, .045, "◆ Net gain (pp)   ·   thick: fixed pool; thin: new tasks", fontsize=8.5)
-    fig.text(.545, .045, "Holdout shading: frozen ±3 pp region", fontsize=8.5, color=INK2)
-    M.save(fig, "f12_main_consequences", ["dev", "hconf", "ghf", "pref", "oc"],
-           "Original f10 panels a/b enlarged; c/d retained in the supplementary figure; all estimates and intervals unchanged")
+        fig.text(x-.14, .98, title, va="top", fontsize=10, fontweight="bold")
+        fig.text(x-.14, .918, sub, va="top", fontsize=8.5, color=INK2)
+        ax.text(1.04, 1.035, "Turnover\n%", transform=ax.transAxes, fontsize=8, va="bottom")
+        if n: ax.axvspan(-3,3,color=INK,alpha=.06,lw=0,zorder=0)
+    fig.text(.02,.395,"◆ Full-pool net gain · thick: fixed pool; thin: new tasks",fontsize=8.5)
+    fig.text(.55,.395,"Holdout shading: frozen ±3 pp region",fontsize=8.5,color=INK2)
+    fig.text(.02,.34,"(c) All three modes on divergent states",fontsize=10,fontweight="bold")
+    fig.text(.02,.301,"Separate denominator · equal-weight pools · new-task 95% intervals",fontsize=8.5,color=INK2)
+    for x,pool,name,nstates in ((.20,"W4:all","W4",5576),(.69,"KV8:all","KV8",1448)):
+        if pool not in ghf["pools"]:
+            pool = "KV8:all" if "KV8:all" in ghf["pools"] else "KV8"
+        ax=fig.add_axes([x,.110,.22,.125]); clean(ax)
+        stats=ghf["pools"][pool]["stats"]
+        for y,mode in zip([2,1,0],"GHF"):
+            q=stats[mode]; ci=q["crossed_ci95"]
+            ax.plot(ci,[y,y],color=B,lw=1.4); ax.plot(q["est"],y,"o",color=B,ms=4.5)
+            ax.text(1.06,y,f"{q['est']:+.1f}",transform=ax.get_yaxis_transform(),fontsize=9,va="center")
+        ax.set_yticks([2,1,0],["G · action","H · continuation","F · both"])
+        ax.set_xlim(-6,6);ax.set_xticks([-6,-3,0,3,6]);ax.set_ylim(-.5,2.5)
+        ax.set_xlabel("Net gain on divergent states (pp)",fontsize=8.5,labelpad=3)
+        ax.text(.5,1.12,f"{name} pool · {nstates:,} states",transform=ax.transAxes,ha="center",fontsize=9,fontweight="bold")
+    M.save(fig,"f12_main_consequences",["dev","hconf","ghf","pref","oc"],
+           "Full-pool action-only rates and divergent-state G/H/F shown separately; unchanged outputs, new-task 95% for the promoted mode panel")
 
 def references():
     pr, sa, pw, sw, dm, dg, dw, ks, margin, cp = R2.data()
@@ -87,13 +101,16 @@ def references():
             p=cp[k+"_"+typ];c.plot(p["widest"],[y+off]*2,color=col,lw=1.3)
             c.plot(p["est"],y+off,mk,color=col,ms=4.5)
     R2.ivh(a,0,dm["est"],dm["ci95"],dm["crossed_ci95"],INK,marker="D",ms=4.5)
-    p=cp["M_KmB"];c.plot(p["widest"],[0,0],color=INK,lw=1.3);c.plot(p["est"],0,"D",color=INK,ms=4.5)
+    p=cp["M_KmB"];ci=[-p["widest"][1],-p["widest"][0]]
+    assert [round(v,1) for v in ci] == [-2.9,8.4]
+    c.plot(ci,[0,0],color=INK,lw=1.3);c.plot(-p["est"],0,"D",color=INK,ms=4.5)
     for ax in (a,c):
+        ax.axhline(.5,color=INK2,lw=.6,ls="--",alpha=.6)
         ax.set_yticks([3,2,1,0],["Rescues","Damages","Turnover","Δ turnover"])
         ax.set_ylim(-.5,3.6);ax.set_xlim(-10,24);ax.set_xticks([-5,0,5,10,15,20])
     a.axvspan(-margin,margin,ymax=.23,color=INK,alpha=.06,lw=0)
     a.set_xlabel("% of units · Δ: BF16 − Q′, pp",fontsize=9)
-    c.set_xlabel("% of states · Δ: keys − BF16, pp",fontsize=9)
+    c.set_xlabel("% of states · Δ: BF16 − keys, pp",fontsize=9)
     handles=[Line2D([],[],color=B,marker="o",lw=1.2,label="BF16 action"),
              Line2D([],[],color=QP,marker="s",lw=1.2,label="Second checkpoint Q′"),
              Line2D([],[],color=Q,marker="^",lw=1.2,label="Key-order reversal")]
@@ -103,16 +120,13 @@ def references():
             "510 ordinary BF16-sourced q8 states · two-look 97% intervals")
     for y,cnt in ((1,"d1"),(0,"bf16")):
         k=ks[cnt]
-        for off,key,mk,ls in ((.13,"t97","o","-"),(-.13,"boot97","s","--")):
-            b.plot([100*v for v in k[key]],[y+off]*2,color=INK,lw=1.4,ls=ls)
-            b.plot(100*k["point"],y+off,mk,color=INK,mfc=INK if mk=="o" else "white",ms=4.5)
+        b.plot([100*v for v in k["t97"]],[y]*2,color=INK,lw=1.5)
+        b.plot(100*k["point"],y,"o",color=INK,ms=5)
         b.text(1.035,y,f"+{100*k['point']:.1f} pp",transform=b.get_yaxis_transform(),fontsize=9,va="center")
     b.set_yticks([1,0],["Q continues","B continues"]);b.set_ylim(-.5,1.5)
     b.axvspan(-margin,margin,color=INK,alpha=.06,lw=0);b.set_xlim(-6,8);b.set_xticks([-6,-3,0,3,6])
     b.set_xlabel("BF16 action − Q′ action, pp",fontsize=9)
-    b.legend(handles=[Line2D([],[],color=INK,marker="o",lw=1.3,label="Block t"),
-                      Line2D([],[],color=INK,marker="s",mfc="white",ls="--",lw=1.3,label="Task bootstrap")],
-             frameon=False,fontsize=8.5,loc="center",bbox_to_anchor=(.52,-.50),ncol=2)
+    fig.text(.18,.015,"Two-look block-t intervals; companion task-bootstrap intervals in the appendix",fontsize=8.5,color=INK2)
     M.save(fig,"f13_main_references",["same","w3","cs","ko"],
            "Main reference chain: same-precision turnover, common-state extra value (two-look 97%), semantic key-order reference; complete original f11 retained in appendix")
 

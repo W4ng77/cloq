@@ -34,7 +34,7 @@ def main():
             a.bar(i+off,-d,w,color=DAMAGE,alpha=alpha,hatch=hatch,edgecolor="white",lw=.25,zorder=2)
         for v,dy in ((f["rescued"],.7),(-f["damaged"],-.7)):
             a.text(i+w/2,v+dy,str(abs(v)),ha="center",va="bottom" if v>0 else "top",fontsize=9)
-    a.set_ylim(-15,21);a.set_yticks([-10,0,10,20],["10","0","10","20"])
+    a.set_ylim(-15,21);a.set_yticks([-10,0,10,20],["−10","0","10","20"])
     a.set_ylabel("Selected states",fontsize=9)
     a.text(-.44,13,"rescues",color=RESCUE,fontsize=8.5)
     a.text(-.44,-7,"damages",color=DAMAGE,fontsize=8.5)

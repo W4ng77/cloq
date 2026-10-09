@@ -1,45 +1,34 @@
 \section{Discussion}
 \label{sec:discussion}
 
-\begin{table}[!b]
-% src: analysis/fork/out/ghf_20261001T211519Z.md; analysis/fork/out/dev_all_20261001T070326Z.md; analysis/fork/out/ext_20261001T135106Z.md; analysis/fork/out/newmethod_m24_20261004T024453Z.md; analysis/fork/out/newmethod_m24_20261004T024453Z.json; docs/insights/NEWMETHOD_PANEL_PROTOCOL.md; analysis/fork/out/newmethod_q8_20261004T051538Z.md; analysis/fork/out/newmethod_q8_20261004T051538Z.json
-\centering\normalsize
-\renewcommand{\arraystretch}{1.08} % nocheck: layout
-\begin{tabular}{@{}P{\columnwidth}@{}}
+\begin{table}[t]
+\centering\small
+\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.17} % nocheck: layout
+% src: analysis/fork/out/ext_20261001T135106Z.md; analysis/fork/out/ghf_20261001T211519Z.md; analysis/fork/out/newmethod_m24_20261004T024453Z.md; analysis/fork/out/newmethod_q8_20261004T051538Z.md; analysis/fork/out/dev_all_20261001T070326Z.md
+\begin{tabular}{@{}P{1.6cm}P{1.35cm}P{1.3cm}P{2.6cm}@{}} % nocheck: layout
 \toprule
-\textbf{How far do the findings extend?} \\
+\textbf{Setting} & \textbf{States} & \textbf{Flip \%} & \textbf{Task-value reading} \\
 \midrule
-\textcolor{palB}{\textbf{Other environments: BFCL and ALFWorld}}\\
-Both show rescues and damages without an LLM user. Their pooled net estimates remain uncertain.\\
-\addlinespace[5pt] % nocheck: layout
-\textcolor{palB}{\textbf{Another family: Mistral-Small-3.2-24B}}\\
-On ordinary sampled states, replacements change outcomes in both directions. No upgrade mode shows a reliable net gain.\\
-\addlinespace[5pt] % nocheck: layout
-\textcolor{palB}{\textbf{Stronger degradation: RTN-W3}}\\
-Full takeover gains $+18.4$ [9.4, 28.2]\pp{} in the selected 8B stress setting. This is an exploratory example.\\
-\addlinespace[5pt] % nocheck: layout
-\textcolor{palB}{\textbf{Weight and activation quantization}}\\
-SpinQuant has lower KL than QuaRot. Their task-value difference remains uncertain.\\
-\addlinespace[5pt] % nocheck: layout
-\textcolor{palB}{\textbf{Cache quantization: KV8 and KIVI}}\\
-Outcome changes also occur with cache quantization. The paired KIVI value contrasts remain uncertain.\\
+BFCL & Divergent & 5.2--15.2 & Pooled net $+0.1$; unresolved \\
+ALFWorld & Divergent & 21.6--24.6 & Pooled net $-3.7$; unresolved \\
+Mistral 24B & Sampled B & 10.0--10.4 & All modes unresolved \\
+\addlinespace[2pt] % nocheck: layout
+RTN-W3 & Divergent & 6.7 & Joint $F=+18.4$ [9.4, 28.2]\pp{} \\
+QuaRot / SpinQuant & Sampled B & --- & Paired value unresolved \\
+KV8 / KIVI & Div. / B & 6.5--8.1 & KIVI contrasts unresolved \\
 \bottomrule
 \end{tabular}
-\caption{Scope checks on separate populations. These rows are not a ranking. Full settings, samples and intervals appear in Appendix~\ref{app:scope}, Table~\ref{tab:scopefull}.}
+\caption{Scope checks on separate populations. Divergent states are first tool-structure disagreements; sampled states use BF16 histories. Flip rates are action-only; the cache rate is for KV8. RTN-W3 is an exploratory 8B example selected from five stress configurations; its interval is crossed 95\%. Full populations and intervals: Appendix~\ref{app:scope}.}
 \label{tab:scope}
 \end{table}
 
+\paragraph{Match the label to the executed mode.} The three upgrade modes spend BF16 computation at different points. Replacing one action lets Q handle its consequences. Taking over the continuation preserves Q's current action. Joint replacement changes both. A selector's outcome target should match the mode it will execute. A label for joint takeover can count a success that action replacement cannot obtain. Conversely, a success under Q's continuation can disappear under B's. These patterns explain the need for separate measurements, without requiring them to be unusually frequent. Nor is B automatically a better policy: q4 GPTQ-W4 achieves 40.0\% end-to-end DB success versus BF16's 35.8\% (Appendix~\ref{app:e2e}).
+% src: analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md
 
-
-\paragraph{Sensitivity and task benefit.} A substitution can produce many rescues and damages while their average nearly cancels. Turnover counts outcome changes. Net gain asks whether it improves success. Both quantities matter: an average near zero can hide substantial changes for individual tasks, while a high turnover can include as many harms as improvements. Our main W4 results exhibit this distinction. The negative telecom estimate reinforces the need to evaluate new tasks directly.
-
-\paragraph{Why the reference matters.} Q$'$ changes outcomes without increasing bit width. Key-order reversal changes some outcomes without changing the executed tool operation. These references challenge an attribution from flips alone to insufficient precision. They are not a noise floor to subtract: each substitution changes a particular history and can affect different units. The direct common-state comparison answers the extra-value question. Its intervals still allow useful BF16 gains, so the evidence leaves that benefit open.
-
-\paragraph{Choosing the intervention before choosing the states.} The three upgrade modes spend BF16 computation at different points. Replacing one action lets Q handle its consequences. Taking over the continuation preserves Q's current action. Joint replacement changes both. A selector's outcome target should match the mode it will execute. A label for joint takeover can count a success that action replacement cannot obtain. Conversely, a success under Q's continuation can disappear under B's. These patterns explain the need for separate measurements, without requiring them to be unusually frequent.
 
 \paragraph{What a selector needs to predict.} Our frozen margin rule finds outcome changes on later blocks of the same tasks. It captures rescues and damages together, giving no reliable net benefit over matched random selection. This is a test of one rule, rather than a result about all routers. The hindsight oracle identifies available gains after outcomes are known; it does not establish that Q-visible features can predict them. Learned routing should be evaluated on held-out decisions by signed task benefit. Cost-aware comparisons should also match BF16 computation, because continuation takeover can use more decisions than a single-action replacement.
 
-\paragraph{From realised consequences to deployment value.} Exact replay makes a comparison auditable under fixed execution conditions. It does not make that setting representative of deployment. Key-order reversal demonstrates that individual labels can depend on the representation the agent reads. To estimate expected benefit, specify a distribution of prompts and user conditions, repeat paired branches across it, and average the success differences. Average benefit and individual label stability are separate questions. Our task-level intervals address task sampling; they do not cover every change to the user model or serving stack.
+\paragraph{From realised consequences to deployment value.} Exact replay makes a comparison auditable under fixed execution conditions. It does not make that setting representative of deployment. Key-order reversal demonstrates that individual labels can depend on the representation the agent reads. To estimate expected benefit, specify a distribution of prompts and user conditions, repeat paired branches across it, and average the success differences. Average benefit and individual label stability are separate questions. Our task-level intervals address task sampling; they do not cover every change to the user model or serving stack. On the telecom holdout, the action-only estimate indicates a net loss in the tested setting, although the frozen protocol has no category for it. Because domain and tasks change together, these data do not identify the cause or establish a general domain-transfer effect.
 
 \paragraph{Coverage and practical use.} The scope checks ask whether the distinction between outcome changes and benefit also matters beyond the main panel (Table~\ref{tab:scope}). BFCL and ALFWorld remove the LLM user. Mistral changes the model family. Lower-bit, activation and cache settings change the source and severity of degradation. Their state populations differ, so they provide scope checks rather than a ranking of methods. For a fallback evaluation, choose the intended upgrade mode, measure its rescues and damages on paired states, interpret them with reference substitutions, and validate the selection policy's net benefit. The appendix contains full results and inference details.
 \label{sec:scope}

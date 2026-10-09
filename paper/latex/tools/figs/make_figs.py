@@ -52,8 +52,8 @@ PAL = {
     "B": "#3B75AF",       # BF16 / B's action or upgrade; default per-cell estimate (an upgrade to B)
     "Q": "#A0647D",       # quantized policy Q (only where Q itself is a mark)
     "QP": "#B08A3E",      # same-precision Q' (second W4/W3 checkpoint)
-    "RESCUE": "#4C9A7A",  # rescue r / success
-    "DAMAGE": "#C4553A",  # damage d / harm
+    "RESCUE": "#3B75AF",  # rescue r / success
+    "DAMAGE": "#C4783B",  # damage d / harm
     "ALT": "#7FA9D4",     # secondary series: KV8 family, post-hoc KL reference
     "SHARED": "#5E5E5E",  # units affected under both substitutions
     "REF": "#8C8C8C",     # random / original simulator / shuffle null (hollow marks)
@@ -758,4 +758,5 @@ if __name__ == "__main__":
         old.setdefault("_derived", {}).update(PROV_EXTRA)
     json.dump(old, open(pj, "w"), indent=1, sort_keys=True)
     print("asserts passed; provenance ->", os.path.relpath(pj, ROOT))
+
 

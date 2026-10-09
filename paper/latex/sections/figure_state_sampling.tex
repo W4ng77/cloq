@@ -1,5 +1,5 @@
 % A schematic of the sampling rules, not measured trajectories.
-\begin{tikzpicture}[x=1cm,y=1.13cm,font=\small, % nocheck: schematic layout
+\begin{tikzpicture}[x=1cm,y=.87cm,font=\small, % nocheck: schematic layout
   state/.style={circle,draw=black!40,fill=white,minimum size=5.5mm,inner sep=0pt}, % nocheck: schematic layout
   selected/.style={state,draw=palB,line width=1.1pt,fill=palB!12}, % nocheck: schematic layout
   action/.style={rounded corners=2pt,draw=black!25,minimum width=12mm,minimum height=6mm,inner sep=3pt,font=\small}, % nocheck: schematic layout
@@ -10,6 +10,8 @@
 % First disagreement: same trajectory until the selected decision.
 \fill[palB!4,rounded corners=3pt] (-.4,.4) rectangle (14.4,-2.1); % nocheck: schematic layout
 \node[title] at (0,.05) {(a) First disagreement}; % nocheck: schematic layout
+\node[anchor=east,font=\footnotesize,text=black!65] at (14.1,.05) {\S\ref{sec:value}, \S\ref{sec:sameprec}}; % nocheck: section pointers
+
 \node[anchor=west,font=\footnotesize,text=black!65] at (0,-.38) {Follow Q's recorded history}; % nocheck: schematic layout
 \foreach \x/\id in {.4/a1,1.65/a2,2.9/a3} {\node[state] (\id) at (\x,-1.02) {};} % nocheck: schematic layout
 \node[selected] (a4) at (4.15,-1.02) {}; % nocheck: schematic layout
@@ -23,6 +25,8 @@
 % Ordinary sampling: a fixed rule, not a disagreement filter.
 \fill[black!3,rounded corners=3pt] (-.4,-2.3) rectangle (14.4,-4.8); % nocheck: schematic layout
 \node[title] at (0,-2.66) {(b) Ordinary sampled decision}; % nocheck: schematic layout
+\node[anchor=east,font=\footnotesize,text=black!65] at (14.1,-2.66) {\S\ref{sec:trigger}, Appendix~\ref{app:ordinary}}; % nocheck: section pointers
+
 \node[anchor=west,font=\footnotesize,text=black!65] at (0,-3.09) {Choose an index by a fixed hash}; % nocheck: schematic layout
 \node[state] (b1) at (.4,-3.72) {}; % nocheck: schematic layout
 \node[selected] (b2) at (1.65,-3.72) {}; % nocheck: schematic layout
@@ -35,6 +39,8 @@
 % Common histories compare sources, not separate selection protocols.
 \fill[palQP!6,rounded corners=3pt] (-.4,-5) rectangle (14.4,-7.4); % nocheck: schematic layout
 \node[title] at (0,-5.37) {(c) Common history comparison}; % nocheck: schematic layout
+\node[anchor=east,font=\footnotesize,text=black!65] at (14.1,-5.37) {\S\ref{sec:sameprec}}; % nocheck: section pointers
+
 \node[align=center,draw=black!25,rounded corners=2pt,fill=white,text width=2.25cm,minimum height=1.12cm] (history) at (1.32,-6.39) {Same saved\\sampled history}; % nocheck: schematic layout
 \node[action,draw=palB,fill=palB!10] (cb) at (4.15,-5.92) {B}; % nocheck: schematic layout
 \node[action,draw=palQ,fill=palQ!10] (cq) at (4.15,-6.55) {Q}; % nocheck: schematic layout
@@ -42,5 +48,5 @@
 \draw[flow,draw=palB] (history.east) -- (cb.west);
 \draw[flow,draw=palQ] (history.east) -- (cq.west);
 \draw[flow,draw=palQP] (history.south east) -- (3.1,-7.03) -- (5.15,-7.03) -- (cp.south); % nocheck: schematic layout
-\node[note,anchor=north west] at (8.3,-5.79) {\textbf{Does BF16 add value over Q$'$?}\\Compare actions on the same history. Hold the continuing model fixed at Q or B.}; % nocheck: schematic layout
+\node[note,anchor=north west] at (8.3,-5.79) {\textbf{Does BF16 add value over Q$'$?}\\Compare actions on one history; let Q or B continue.}; % nocheck: schematic layout
 \end{tikzpicture}
