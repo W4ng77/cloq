@@ -1,4 +1,4 @@
-\section{Task Consequences, Outcome Patterns and Fragility}
+\section{Complete Upgrade Effects and Their Interpretation}
 \label{app:tables}
 
 This appendix supports \S\ref{sec:value}: replacing a W4 agent's action produces both rescues and damages, and a gain measured for one upgrade mode cannot be reused as the gain of another.
@@ -45,64 +45,12 @@ q8 RTN-W3$^s$ & 85$\times$3 & 255 & 3.1 & 3.5 & 6.7 & $-0.4$ [$-3.8$, $+3.0$] & 
 
 \label{app:r2main}
 
-\subsection{Outcome Classes and a Label-Permutation Reference} % nocheck: heading
+\subsection{The Two Illustrative Rescue Patterns} % nocheck: heading
 \label{app:offdiag}
 
 Everything in this section is exploratory and post hoc. It uses the four outcomes of each divergent state in the order BB, BQ, QB, QQ; $k$ is the number of successful arms.
 
-\paragraph{Five classes.} The 16 patterns fall into five classes: unchanged (\texttt{0000}, \texttt{1111}); action only (\texttt{1100}, \texttt{0011}: the outcome follows the action under both continuations); continuation only (\texttt{1010}, \texttt{0101}); one arm differs from the other three ($k$ odd); strict reversal (\texttt{1001}, \texttt{0110}). % nocheck: pattern labels
-Changing the action changes the outcome under at least one continuation exactly in the action-only, one-arm and reversal classes, and changing the continuation exactly in the continuation-only, one-arm and reversal classes. Both change it exactly on the off-diagonal states, so the two shares overlap and must not be added, and their gap equals action only minus continuation only: it comes from $k=2$ states alone and restates the $k=2$ arrangement below on all divergent states. Two named patterns follow the upgrade modes: joint rescue (\texttt{1000}: only the joint upgrade succeeds) and rescue undone ($\YY{BQ}=1$, $\YY{QQ}=0$, $\YY{BB}=0$: B's action rescues under Q's continuation and B's takeover of the continuation undoes it). % nocheck: definitions
-Table~\ref{tab:classes} gives the shares. The action-side gap holds in the \tautwo{} retail/airline W4 and KV8 pools, in the W4 same-precision fork and in the BFCL W4 pool. It is near zero on the telecom development tasks ($+0.1$ [$-2.1$, $+2.4$]\pp{}, 6-block $t$) and in the q4 GPTQ-W3 and KV4-rot stress cells, and it is not resolved in the ALFWorld W4 pool ($+3.4$ [$-1.8$, $+8.4$]) or the W3 same-precision pair ($+1.9$ [$-2.9$, $+6.7$]). Its point estimate is negative in the q8 RTN-W3 stress cell ($-7.8$; 3-block $t$ [$-18.1$, $+2.4$], new-task [$-15.3$, $-1.2$]) and, not shown, in ALFWorld q8 GPTQ-W3 ($-19.2$ [$-27.3$, $-10.8$]). In the ALFWorld and BFCL KV4 cells (not shown) Q almost never succeeds, so continuation-only states dominate there mechanically. % src: analysis/fork/out/outcome_classes_20261004T143614Z.md
-
-\paragraph{W4 pool details.} In the \tautwo{} W4 pool, the gap between the action and continuation shares is $+5.2$\pp{} (new-task [$+3.1$, $+7.7$]): action effects are somewhat more common, and the continuation changes the outcome mostly where the action matters too. Of the 26.9\% off-diagonal states, 23.8\% have one arm differing from the other three and 3.2\% are strict reversals; states where the swap helps more under Q ($I>0$, 13.6\%) and under B ($I<0$, 13.4\%) are about equally frequent, so the mean interaction is $+0.0$ [$-1.9$, $+2.0$]\pp{}. % src: analysis/fork/out/outcome_classes_20261004T143614Z.md (TL;DR); analysis/fork/out/ghf_20261001T211519Z.md (TL;DR; §2, pool W4:all)
-With fixed-pool, then new-task 95\% intervals, changing the action changes the outcome under at least one continuation in 34.9\% ([33.6, 36.0]; [28.8, 41.0]) of W4 divergent states, and changing the continuation controller does so under at least one action in 29.6\% ([28.5, 30.7]; [24.2, 35.3]). The two sets overlap in the 26.9\% ([25.7, 28.1]; [22.1, 32.0]) where the swap's effect depends on the continuation, so the shares must not be added; all four arms agree in 62.4\%. % src: analysis/fork/out/outcome_classes_20261004T143614Z.md; analysis/fork/out/ghf_20261001T211519Z.md (§2; crossed column)
-
-\begin{table*}[t]
-\centering% visual-layout-v1
-\renewcommand{\arraystretch}{1.12}\fontsize{8.5}{10}\selectfont
-\setlength{\tabcolsep}{4pt}
-\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lllll@{}}
-\toprule
-\multicolumn{5}{@{}l}{\textbf{A. Sensitivity to the action and continuation}} \\
-\addlinespace[2pt]
-Group & states & action changes & continuation changes & gap (pp) \\
-\midrule
-\tautwo{} W4 pool (4 cells) & 5576 & 34.9 [33.6, 36.0] & 29.6 [28.5, 30.7] & $+5.2$ [$+4.4$, $+6.1$] \\
-\tautwo{} KV8 pool & 1448 & 26.8 [25.0, 28.6] & 17.0 [14.9, 19.1] & $+9.8$ [$+8.0$, $+11.6$] \\
-Telecom q8 W4 pool & 957 & 22.1 [18.2, 25.9] & 21.9 [17.8, 26.1] & $+0.1$ [$-2.1$, $+2.4$] \\
-Same-precision W4 (Q$'$ as B) & 784 & 33.5 [29.8, 37.1] & 28.7 [24.8, 32.2] & $+4.9$ [$+2.9$, $+6.9$] \\
-BF16, same blocks & 784 & 35.1 [32.6, 37.4] & 27.8 [23.8, 31.6] & $+7.3$ [$+4.9$, $+9.7$] \\
-q8 RTN-W3$^s$ & 255 & 29.8 [28.1, 31.5] & 37.6 [26.0, 49.3] & $-7.8$ [$-18.1$, $+2.4$] \\
-BFCL W4 pool$^b$ & 2296 & 18.4 [16.4, 20.5] & 11.2 [9.8, 12.6] & $+7.2$ [$+5.8$, $+8.7$] \\
-ALFWorld q8 W4 pool$^b$ & 234 & 44.9 [38.3, 52.4] & 41.5 [34.3, 49.4] & $+3.4$ [$-1.8$, $+8.4$] \\
-\bottomrule
-\end{tabular*}
-\par\vspace{6pt}
-\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}llllllll@{}}
-\toprule
-\multicolumn{8}{@{}l}{\textbf{B. Outcome classes and named patterns}} \\
-\addlinespace[2pt]
-Group & unch. & act.\ only & cont.\ only & one arm & rev. & joint resc. & resc.\ undone \\
-\midrule
-\tautwo{} W4 pool (4 cells) & 62.4 & 7.9 & 2.7 & 23.8 & 3.2 & 4.0 & 4.8 \\
-\tautwo{} KV8 pool & 71.5 & 11.6 & 1.7 & 14.1 & 1.2 & 3.0 & 2.3 \\
-Telecom q8 W4 pool & 74.8 & 3.2 & 3.1 & 18.1 & 0.7 & 3.2 & 4.2 \\
-Same-precision W4 (Q$'$ as B) & 64.0 & 7.4 & 2.5 & 22.5 & 3.6 & 2.3 & 5.8 \\
-BF16, same blocks & 62.0 & 10.2 & 2.9 & 22.4 & 2.6 & 5.0 & 3.8 \\
-q8 RTN-W3$^s$ & 61.6 & 0.8 & 8.6 & 28.6 & 0.4 & 12.6 & 0.8 \\
-BFCL W4 pool$^b$ & 80.8 & 8.1 & 0.8 & 9.8 & 0.5 & 2.4 & 1.4 \\
-ALFWorld q8 W4 pool$^b$ & 50.0 & 8.5 & 5.1 & 33.4 & 3.0 & 9.4 & 5.5 \\
-\bottomrule
-\end{tabular*}
-\par\vspace{6pt}
-\caption{Which intervention changes the outcome, in \% of divergent states (pools: equal weight per cell). ``Action changes'': the outcome changes with the action under at least one continuation; ``continuation changes'': with the continuation controller under at least one action; gap = action only $-$ continuation only. Fixed-pool 95\% intervals: block bootstrap for the 20- and 22-block \tautwo{} W4 and KV8 pools; $t$ over per-block ratios for the 6-block telecom and same-precision rows and the 3-block $^s$stress cell; $^b$one run per item, item bootstrap. Same-precision rows: Q$'$, a second GPTQ checkpoint of the same bit width, in the B role, and BF16 on the same blocks. New-task (crossed) intervals for the \tautwo{} W4 pool: above.} % src: analysis/fork/out/outcome_classes_20261004T143614Z.md
-\label{tab:classes}
-\end{table*}
-
-\paragraph{A label-permutation reference.} Given $k$, assigning the four outcomes to the four arms uniformly at random gives the off-diagonal share $E_0=P(k\ \mathrm{odd})+P(k=2)/3$. In every cell the observed share minus $E_0$ equals $P(k=2)\,[P(\mathrm{reversal}\mid k=2)-1/3]$, so it can depart from $E_0$ only through strict reversals. In the W4 pool the share is 26.9\% against $E_0=28.4\%$ ($-1.4$ [$-1.8$, $-1.0$]\pp{}, fixed pool, block bootstrap over 20 blocks; KV8: 15.3 against 18.9\%), because reversals are 23.6\% [19.2, 28.3] (task bootstrap) of $k=2$ states instead of one third. % src: analysis/fork/out/offdiag_null_20261004T030949Z.md
-This shows only that strict reversals are rarer than under random labelling. It does not show that the continuation controller is irrelevant, which would require $\YY{BB}=\YY{BQ}$ and $\YY{QB}=\YY{QQ}$, or that the interaction is zero: the reference itself allows $I\neq0$ in most arrangements. Conversely, an off-diagonal state does not show a distinct interaction mechanism: if an arm succeeds when an action score plus a continuation score exceeds a threshold, exactly additive scores can make only BB succeed (\texttt{1000}), although they never produce a strict reversal. % nocheck: argument
-
-\paragraph{Joint rescue and rescue undone against the reference.} The same reference, applied to the two named patterns, keeps $k$ for every state and permutes the four outcome labels uniformly: \texttt{1000} then has probability $1/4$ at $k=1$, and rescue undone (\texttt{0100} or \texttt{0110}) has $1/4$ at $k=1$ plus $1/6$ at $k=2$, so the reference shares are $P(k{=}1)/4$ and $P(k{=}1)/4+P(k{=}2)/6$, computed on the same states and bootstrap draws as the observed shares (Table~\ref{tab:patternref}). In the \tautwo{} W4 pool, joint rescue exceeds the reference by $+0.47$\pp{} on the fixed task pool ([$+0.06$, $+0.87$]), but the new-task interval spans zero ([$-0.33$, $+1.37$]); rescue undone is less frequent than the reference ($-0.99$ [$-1.58$, $-0.42]$; new tasks [$-2.19$, $+0.27$]). The excess of joint rescue is concentrated in the q8 cells, and no group shows a new-task excess of rescue undone. Because the reference keeps $k$ and does not model execution, a share near it says that the arrangement is about as common as a random arrangement of the same number of successes, not that the outcomes are noise or that the continuation is irrelevant. % src: analysis/fork/out/pattern_ref_20261005T134721Z.md (TL;DR; §1; §2; Method)
+\paragraph{Joint rescue and rescue undone against the reference.} A label-permutation reference for the two named patterns keeps $k$ for every state and permutes the four outcome labels uniformly: \texttt{1000} then has probability $1/4$ at $k=1$, and rescue undone (\texttt{0100} or \texttt{0110}) has $1/4$ at $k=1$ plus $1/6$ at $k=2$, so the reference shares are $P(k{=}1)/4$ and $P(k{=}1)/4+P(k{=}2)/6$, computed on the same states and bootstrap draws as the observed shares (Table~\ref{tab:patternref}). In the \tautwo{} W4 pool, joint rescue exceeds the reference by $+0.47$\pp{} on the fixed task pool ([$+0.06$, $+0.87$]), but the new-task interval spans zero ([$-0.33$, $+1.37$]); rescue undone is less frequent than the reference ($-0.99$ [$-1.58$, $-0.42]$; new tasks [$-2.19$, $+0.27$]). The excess of joint rescue is concentrated in the q8 cells, and no group shows a new-task excess of rescue undone. Because the reference keeps $k$ and does not model execution, a share near it says that the arrangement is about as common as a random arrangement of the same number of successes, not that the outcomes are noise or that the continuation is irrelevant. % src: analysis/fork/out/pattern_ref_20261005T134721Z.md (TL;DR; §1; §2; Method)
 The observed shares in the W4 pool, with both intervals, are 4.0\% for joint rescue (fixed pool [3.5, 4.5]; new tasks [2.7, 5.3]) and 4.8\% for rescue undone ([4.1, 5.4]; [3.2, 6.5]). % src: analysis/fork/out/outcome_classes_20261004T143614Z.md (TL;DR; pool W4:all rows)
 
 \begin{table*}[t]
@@ -146,8 +94,6 @@ Mistral, own BF16 states$^m$ & 464 & 4.0 & 4.7 & $-0.7$ [$-2.0$, $+0.7$] & [$-3.
 \caption{Joint rescue and rescue undone against the conditional label-permutation reference (keeps the number $k$ of successful branches per state), \% of divergent states; exploratory, post hoc. 95\% intervals: fixed pool (block bootstrap for the 20- and 22-block \tautwo{} pools, $t$ over per-block ratios for fewer than 10 blocks: 6, or 5 for Mistral), new tasks (crossed task$\times$block). Same-precision rows each fork at their own first divergence. $^m$States whose actions differ, on BF16 trajectories (BB is the BF16 original), five blocks; not comparable with Bank P rows.}
 \label{tab:patternref}
 \end{table*}
-
-\paragraph{The $k=2$ arrangement.} At $k=2$ the two successes share the action in 56.4\% of W4 states and 80.3\% of KV8 states, against one third under random labelling. A statement that outcomes are mainly determined by the action holds only within this subset, which is 13.8\% (W4) and 14.5\% (KV8) of divergent states. % src: analysis/fork/out/offdiag_null_20261004T030949Z.json (groups.pool W4:all, pool KV8:all: P(act|k=2)); analysis/fork/out/outcome_classes_20261004T143614Z.md
 
 \subsection{Task fragility}
 \label{app:concentration}

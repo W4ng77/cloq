@@ -1,15 +1,17 @@
 \section{Measuring the Task Value of an Upgrade}
 \label{sec:method}
 
+The measurement target is the success gained or lost by executing a specified upgrade from the same state. We separate the action from the continuation so that this target matches the fallback that will actually run. Reference interventions then test what an observed change can be attributed to.
+
 \subsection{Setting}
 \label{sec:setting}
 
 \paragraph{Tasks and agents.} We use \tautwo{} in text mode. The main development panel has 58 retail and 27 airline tasks. We also evaluate 80 telecom development tasks and a holdout of 34 telecom tasks. The holdout protocol was fixed before any agent ran those tasks. % src: manifests/fork/splits_v1.json
-The agents are Qwen3-4B-Instruct (q4) and Qwen3-8B with thinking disabled (q8); a second family, Mistral-Small-3.2-24B, is a scope check (Table~\ref{tab:scope}). % nocheck: model name
+The agents are Qwen3-4B-Instruct and Qwen3-8B with thinking disabled; a second family, Mistral-Small-3.2-24B, is a scope check (Appendix~\ref{app:scope}). % nocheck: model name
 One greedy Qwen3-30B-A3B-Instruct user simulator serves all agents. % src: ../cloq_work/sims/*.json (hf_id); docs/FINAL_EXPERIMENTS.md
 Retail and airline success requires a final-database match and normal termination. It excludes some official communication checks. Telecom uses the official task-basis success. BFCL multi-turn and ALFWorld have no LLM user; each item is evaluated once (Appendix~\ref{app:setup}).
 
-\paragraph{Quantization and serving.} Q is a simulated (fake-quantized) checkpoint served with BF16 compute on the same path as B. The main W4 settings use GPTQ \citep{frantar2023gptq} or AWQ-style scaling \citep{lin2024awq}, with group size 128 and a BF16 KV cache. Calibration uses BF16 agent trajectories from 57 retail and airline tasks, disjoint from the development panel. Separate KV8 configurations quantize the cache to INT8 while retaining BF16 weights. Stress configurations (GPTQ-W3, RTN-W3, rotated KV4) and QuaRot, SpinQuant and KIVI \citep{ashkboos2024quarot,liu2025spinquant,liu2024kivi} are scope checks (Table~\ref{tab:scope}; Appendix Table~\ref{tab:qconfig}). % src: runs/a6k2_q4_gptq_w4_d1_f01/quantization.json; runs/a6k2_q8_awq_w4_f01/quantization.json; runs/a6k2_q8_kvq_int8_f01/quantization.json; manifests/a6k2/q4/calib_fp_traj_c1.json
+\paragraph{Quantization and serving.} Q is a simulated (fake-quantized) checkpoint served with BF16 compute on the same path as B. The main W4 settings use GPTQ \citep{frantar2023gptq} or AWQ-style scaling \citep{lin2024awq}, with group size 128 and a BF16 KV cache. Calibration uses BF16 agent trajectories from 57 retail and airline tasks, disjoint from the development panel. Separate KV8 configurations quantize the cache to INT8 while retaining BF16 weights. Additional quantization settings test the range of upgrade values (Appendix Table~\ref{tab:qconfig}). % src: runs/a6k2_q4_gptq_w4_d1_f01/quantization.json; runs/a6k2_q8_awq_w4_f01/quantization.json; runs/a6k2_q8_kvq_int8_f01/quantization.json; manifests/a6k2/q4/calib_fp_traj_c1.json
 B and Q run on vLLM \citep{kwon2023vllm} with batch-invariant kernels \citep{he2025defeating} and deterministic compilation in separate server processes (no shared prefix cache). A configuration is a model with a quantization setting. Each replicate, called a \emph{block}, runs Q over the task pool with a fresh session-identifier line in the system prompt. A \emph{unit} is one task in one block.
 
 \subsection{Four branches on one state}
@@ -18,9 +20,9 @@ B and Q run on vLLM \citep{kwon2023vllm} with batch-invariant kernels \citep{he2
 \paragraph{Frozen state.} Before Q's decision $t$, we restore state $s_t$. It contains the full message history, the user simulator's visible conversation, and the used step and error budgets. Replaying the recorded tool calls rebuilds the environment and user-device databases. We save the state before running any branch. B and Q then act from identical prompt token ids.
 
 \paragraph{Four branches.} Let $\YY{XY}\in\{0,1\}$ denote task success when X supplies the current action and Y continues, with X, Y $\in\{\mathrm{B},\mathrm{Q}\}$. All branches start with the same remaining budget. Each upgrade is compared with QQ: replace this step ($G$), take over from the next step ($H$), or do both ($F$). Figure~\ref{fig:case} defines these contrasts. % nocheck: notation {0,1}
-A \emph{rescue} occurs when the upgrade succeeds and QQ fails; a \emph{damage} is the reverse. Their sum is \emph{turnover}, and their difference is \emph{net gain}. These quantities measure task consequences. They do not label an action as intrinsically correct. Additional notation appears in Appendix~\ref{app:names}.
+A \emph{rescue} occurs when the upgrade succeeds and QQ fails; a \emph{damage} is the reverse. Their sum is \emph{turnover}, and their difference is \emph{net gain}. These quantities measure task consequences. Additional notation appears in Appendix~\ref{app:names}.
 
-\paragraph{The action being replaced.} The intervention replaces a complete assistant turn, including its language and structured tool calls. The chosen message and tool results enter the subsequent history; the continuing model makes every later decision. The contrast therefore measures the task consequence of changing execution at that state, rather than an intrinsic correctness label for the action.
+\paragraph{The action being replaced.} The intervention replaces a complete assistant turn, including its language and structured tool calls. The chosen message and tool results enter the subsequent history; the continuing model makes every later decision. The continuation is part of the intervention: it determines how the substituted action enters the rest of the task.
 
 \paragraph{Reference interventions.} A large turnover alone cannot distinguish a need for precision from sensitivity to model substitution. We rerun the design with Q$'$ in place of B. Q$'$ is another GPTQ-W4 checkpoint of the same model, built by resampling states and activation rows from the same calibration trajectories. The Q episodes, tasks and prompt blocks stay fixed. This reference covers q4 and q8 GPTQ-W4, plus GPTQ-W3 as a stress check. Its protocol was fixed before outcomes were read. Section~\ref{sec:sameprec} adds a direct comparison on shared states and a key-order change of Q's own action.
 
@@ -36,8 +38,8 @@ A \emph{rescue} occurs when the upgrade succeeds and QQ fails; a \emph{damage} i
 \subsection{Making the counterfactuals auditable}
 \label{sec:replay}
 
-\paragraph{Replay acceptance.} We first verified exact no-op replay on real divergent states. During evaluation, each fork task repeated QQ on a hash-selected sample of states, chosen without outcomes. All sampled checks passed, including those in the same-precision experiment. Initial checks passed \gateQQ{} Q-to-Q and \gateBB{} B-to-B replays; the development audit passed \noopdev{} states (Appendix~\ref{app:setup}). % src: docs/insights/FORK_PROTOCOL.md §8, §9; analysis/fork/out/dev_all_20261001T070326Z.md
-This guarantee applies to the tested stack: greedy decoding, vLLM 0.29.0, batch-invariant kernels and dense BF16 computation. Other serving conditions can behave differently \citep{yuan2025nondeterminism}. Appendix~\ref{app:setup} reports the determinism tests and their scope. % src: analysis/status/gpu_fill_20261003/rerun_premise_det.json; docs/RESEARCH_LOG.md (W100w determinism-premise table); analysis/fork/commonstate_replay_check/REPLAY_8of9.md (TL;DR; serving context)
+The branches differ in the intended intervention, with history, environment and remaining budgets restored before execution. Outcome-independent no-op audits check that restoring a state preserves its original result: all 924 sampled development states and all 1202 holdout divergent states matched. The holdout protocol was fixed before its tasks ran. These checks make the paired comparisons trustworthy under the tested greedy, dense-BF16 serving stack; Appendix~\ref{app:setup} gives the acceptance rules and Appendix~\ref{app:prereg} the holdout protocol.
+% src: analysis/fork/out/dev_all_20261001T070326Z.md; analysis/fork/out/holdout_qqfull_audit_20261006T061033Z.md; docs/insights/PREREG_FORK_CONFIRM.md
 
 \subsection{Sampling and inference}
 \label{sec:states}
@@ -46,4 +48,4 @@ This guarantee applies to the tested stack: greedy decoding, vLLM 0.29.0, batch-
 Contrasts are paired within a configuration and descriptive across configurations, which select their own divergences; only complete blocks enter. % nocheck: interval rule as in archived method L39
 
 
-\paragraph{Intervals and interpretation.} We report uncertainty for two targets. Fixed-pool intervals vary the prompt blocks while holding tasks fixed. New-task intervals also resample tasks, using a crossed task--block bootstrap. An interval containing zero leaves the effect unresolved; equivalence requires a separate test. Figure captions identify the displayed intervals, and the appendix gives the full rules. Each branch measures one realised outcome under the specified greedy stack.
+\paragraph{Intervals and interpretation.} The main figures use new-task intervals, which resample both tasks and prompt blocks, and the holdout uses its registered confidence level. Fixed-pool intervals and the adjusted common-state reading appear in the appendix. An interval containing zero leaves the effect unresolved; equivalence requires a separate test. Captions specify the confidence levels. Each branch measures one realised outcome under the specified greedy stack.

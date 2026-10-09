@@ -43,7 +43,8 @@ def result_one():
             ax.barh(y, -dam, height=.55, color=DAMAGE, hatch="///", edgecolor="white", lw=.2, zorder=2)
             ax.barh(y, res, height=.55, color=RESCUE, zorder=2)
             if n == 0:
-                R2.ivh(ax, y, net, r[4], r[5], INK, marker="D", ms=4.5, dy=-.20)
+                ax.plot(r[5], [y, y], color=INK, lw=1.4, zorder=4)
+                ax.plot(net, y, "D", color=INK, ms=6 if r[-1] else 4.5, zorder=5)
                 turnover = r[6]
             else:
                 ax.plot(r[4], [y, y], color=INK, lw=1.4, zorder=4)
@@ -61,7 +62,7 @@ def result_one():
         fig.text(x-.14, .918, sub, va="top", fontsize=8.5, color=INK2)
         ax.text(1.04, 1.035, "Turnover\n%", transform=ax.transAxes, fontsize=8, va="bottom")
         if n: ax.axvspan(-3,3,color=INK,alpha=.06,lw=0,zorder=0)
-    fig.text(.02,.395,"◆ Full-pool net gain · thick: fixed pool; thin: new tasks",fontsize=8.5)
+    fig.text(.02,.395,"◆ Full-pool net gain · new-task 95% intervals",fontsize=8.5)
     fig.text(.55,.395,"Holdout shading: frozen ±3 pp region",fontsize=8.5,color=INK2)
     fig.text(.02,.34,"(c) All three modes on divergent states",fontsize=10,fontweight="bold")
     fig.text(.02,.301,"Separate denominator · equal-weight pools · new-task 95% intervals",fontsize=8.5,color=INK2)
@@ -83,24 +84,26 @@ def result_one():
 
 def references():
     pr, sa, pw, sw, dm, dg, dw, ks, margin, cp = R2.data()
-    fig = plt.figure(figsize=(FULL_W, 4.65))
+    fig = plt.figure(figsize=(FULL_W, 3.0))
     def panel(pos,title,subtitle):
         ax=fig.add_axes(pos); clean(ax)
         x,y,w,h=pos
         fig.text(x-.11,y+h+.115,title,fontsize=10,fontweight="bold",va="top")
         fig.text(x-.11,y+h+.066,subtitle,fontsize=8.5,color=INK2,va="top")
         return ax
-    a=panel((.13,.59,.35,.27),"(a) Same precision, different checkpoint",
+    a=panel((.13,.26,.35,.49),"(a) Same precision, different checkpoint",
             "Own first divergences · W4 · 1020 units")
-    c=panel((.66,.59,.32,.27),"(b) Same operation, different tokens",
+    c=panel((.66,.26,.32,.49),"(b) Same operation, different tokens",
             "300 eligible q8 states · 41 tasks · exploratory")
     for y,k in zip([3,2,1],("rescue","damage","M")):
         for d,col,mk,off in ((pr,B,"o",.16),(sa,QP,"s",-.16)):
-            R2.ivh(a,y+off,d[k]["est"],d[k]["ci95"],d[k]["crossed_ci95"],col,marker=mk,ms=4.5)
+            a.plot(d[k]["crossed_ci95"], [y+off]*2, color=col, lw=1.3)
+            a.plot(d[k]["est"],y+off,mk,color=col,ms=4.5)
         for typ,col,mk,off in (("B",B,"o",.16),("K",Q,"^",-.16)):
             p=cp[k+"_"+typ];c.plot(p["widest"],[y+off]*2,color=col,lw=1.3)
             c.plot(p["est"],y+off,mk,color=col,ms=4.5)
-    R2.ivh(a,0,dm["est"],dm["ci95"],dm["crossed_ci95"],INK,marker="D",ms=4.5)
+    a.plot(dm["crossed_ci95"], [0,0], color=INK, lw=1.3)
+    a.plot(dm["est"],0,"D",color=INK,ms=4.5)
     p=cp["M_KmB"];ci=[-p["widest"][1],-p["widest"][0]]
     assert [round(v,1) for v in ci] == [-2.9,8.4]
     c.plot(ci,[0,0],color=INK,lw=1.3);c.plot(-p["est"],0,"D",color=INK,ms=4.5)
@@ -114,21 +117,11 @@ def references():
     handles=[Line2D([],[],color=B,marker="o",lw=1.2,label="BF16 action"),
              Line2D([],[],color=QP,marker="s",lw=1.2,label="Second checkpoint Q′"),
              Line2D([],[],color=Q,marker="^",lw=1.2,label="Key-order reversal")]
-    fig.legend(handles=handles,loc="center",bbox_to_anchor=(.53,.48),ncol=3,frameon=False,fontsize=8.5,
+    fig.legend(handles=handles,loc="center",bbox_to_anchor=(.53,.055),ncol=3,frameon=False,fontsize=8.5,
                columnspacing=1.6,handlelength=1.3)
-    b=panel((.18,.13,.64,.19),"(c) Extra BF16 action value at common states",
-            "510 ordinary BF16-sourced q8 states · two-look 97% intervals")
-    for y,cnt in ((1,"d1"),(0,"bf16")):
-        k=ks[cnt]
-        b.plot([100*v for v in k["t97"]],[y]*2,color=INK,lw=1.5)
-        b.plot(100*k["point"],y,"o",color=INK,ms=5)
-        b.text(1.035,y,f"+{100*k['point']:.1f} pp",transform=b.get_yaxis_transform(),fontsize=9,va="center")
-    b.set_yticks([1,0],["Q continues","B continues"]);b.set_ylim(-.5,1.5)
-    b.axvspan(-margin,margin,color=INK,alpha=.06,lw=0);b.set_xlim(-6,8);b.set_xticks([-6,-3,0,3,6])
-    b.set_xlabel("BF16 action − Q′ action, pp",fontsize=9)
-    fig.text(.18,.015,"Two-look block-t intervals; companion task-bootstrap intervals in the appendix",fontsize=8.5,color=INK2)
+
     M.save(fig,"f13_main_references",["same","w3","cs","ko"],
-           "Main reference chain: same-precision turnover, common-state extra value (two-look 97%), semantic key-order reference; complete original f11 retained in appendix")
+           "Main references: same-precision and semantic key-order turnover; new-task 95% only for same-precision. Full adjusted common-state values retained in appendix")
 
 if __name__ == "__main__":
     result_one(); references(); commit_provenance()

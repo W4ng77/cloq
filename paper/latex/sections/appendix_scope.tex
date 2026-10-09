@@ -138,33 +138,9 @@ ALFWorld q8 KV4$^s$ & 134 & \shortstack[l]{$+0.0$\\{}[$+0.0$, $+0.0$]} & \shorts
 \subsection{Quantization methods on shared ordinary states}
 \label{app:panels}
 
-These tests ask whether numerical error locates changed actions, consequential changes and beneficial changes. Methods share ordinary BF16-sourced states (U2B); the separate Mistral population is specified in Appendix~\ref{app:mistral}.
+These scope checks ask how the three upgrade values change across quantization settings. Methods share ordinary BF16-sourced states (U2B); the separate Mistral population is specified in Appendix~\ref{app:mistral}.
 
-\paragraph{Contrasts.} Methods are compared on shared states by $D_{cc}=\YY{QB}-\YY{BB}$ ($=-\DB$): Q's action against B's under the common BF16 continuation. Because BB is the shared BF16 original, two methods differ on the same states only through $\YY{QB}$. One pre-registered Holm family holds three contrasts on $D_{cc}$, with $t$ intervals over block-mean differences: P1, QuaRot-W4 $-$ GPTQ-W4; P2, SpinQuant-W4A4 $-$ QuaRot-W4A4; P3, KIVI-2 $-$ KV8. Unless marked crossed, intervals for these panels in \S\ref{sec:r4} and \S\ref{sec:scope} are fixed-pool 95\% ($t$ over block means, as fewer than 10 blocks are complete); other new-task (crossed) intervals are in the analysis outputs. % src: docs/insights/NEWMETHOD_PANEL_PROTOCOL.md (§4 Estimands; A1.2 Primary Holm family); analysis/fork/out/newmethod_m24_20261004T024453Z.md
-
-\paragraph{Numerical quality.} QuaRot-W4 against GPTQ-W4 is $-0.4$ [$-10.7$, $+9.9$]\pp{} (P1). The matched SpinQuant-W4A4 contrast is P2 (complete family: Table~\ref{tab:primary-methods}; paired diagnostic components: Table~\ref{tab:fidelity-components}). Its third block rests on a one-time re-run of arms lost to a user-simulator overload; on the two blocks without it the contrast is $+2.4$\pp{} (strict view). % src: analysis/fork/out/newmethod_q8_20261004T051538Z.md; analysis/fork/out/newmethod_q8_20261004T051538Z.json (tau2.cells.*.all_states_pp; tau2.contrasts; fidelity.cells.*.KLu_mean; fidelity.across_cells_spearman_KLu_mean_vs_M_cc); docs/insights/NEWMETHOD_PANEL_PROTOCOL.md (A1.2, A4.4, A7, A7.E1, A7.E2)
-
-\paragraph{Upgrade modes on the q8 panel.} On the q8 ordinary-state panel, B's action alone ($G$) is resolved in no cell. Fixed-pool intervals for B's takeover $H$ or full substitution $F$ exclude zero in weight-only (AWQ-style W4, QuaRot-W4), W4A4 and KV8 cells, and new-task intervals still do in both W4A4 cells and KV8 (unadjusted), so resolved value is not confined to quantized activations. It is largest in SpinQuant-W4A4 ($H=+11.8$ [6.7, 16.8], $F=+13.7$ [9.3, 18.2]\pp{}). % src: analysis/fork/out/newmethod_q8_20261004T051538Z.md (τ² U2B all states: G, H, F with crossed columns)
-
-\paragraph{KIVI.} KIVI \citep{liu2024kivi} quantizes keys per channel and values per token. KIVI-2 against KV8 is not resolved ($-0.6$ [$-38.0$, $+36.8$]\pp{}), nor is KIVI-4 against KV8 ($+1.6$ [$-2.9$, $+6.0$]\pp{}). Our implementation is a replay-compatible variant: at every decode step it reconstructs the quantized view that official KIVI's token-by-token decode would hold at that position from the full-precision cache, rather than persisting a compressed cache across turns, so every token, prompt or generated, attends with that view. The KIVI-2 contrast (P3) rests on two blocks: the third lost one arm to a server timeout that recurred on a single-request re-run, and both admitted blocks depend on the re-run of arms lost to server failures (strict rule: not estimable). Net of the kernel path, the quantization effect is $+0.6$ [$-51.7$, $+52.9$] (KIVI-2) and $+2.4$ [$-5.4$, $+10.1$]\pp{} (KIVI-4), and the unquantized kernel path itself has $D_{cc}=-1.2$ [$-6.2$, $+3.9$]. % src: analysis/fork/out/newmethod_q8_20261004T051538Z.md; analysis/fork/out/newmethod_q8_20261004T051538Z.json (tau2.cells.*.all_states_pp; tau2.contrasts; fidelity.cells.*.KLu_mean; fidelity.across_cells_spearman_KLu_mean_vs_M_cc); docs/insights/NEWMETHOD_PANEL_PROTOCOL.md (A1.2, A4.4, A7, A7.E1, A7.E2); analysis/fork/kivi_gate/GATE.md (§6)
-
-\begin{table*}[t]
-\centering% visual-layout-v1
-\renewcommand{\arraystretch}{1.12}\fontsize{8.5}{10}\selectfont\setlength{\tabcolsep}{4pt}
-% src: analysis/fork/out/newmethod_q8_20261004T051538Z.md (τ² contrasts P1--P3); docs/insights/NEWMETHOD_PANEL_PROTOCOL.md
-\begin{tabular}{@{}lclll@{}}
-\toprule
-Contrast & blocks & $\Delta D_{cc}$ [fixed pool] & [new tasks] & Holm $p$ \\
-\midrule
-P1: QuaRot $-$ GPTQ W4 & 3 & $-0.4$ [$-10.7$, $+9.9$] & [$-5.9$, $+5.5$] & 1.0 \\
-P2: SpinQuant $-$ QuaRot W4A4 & 3 & $+1.2$ [$-3.9$, $+6.2$] & [$-4.7$, $+7.1$] & 1.0 \\
-P3: KIVI-2 $-$ KV8 & 2 & $-0.6$ [$-38.0$, $+36.8$] & [$-7.1$, $+7.1$] & 1.0 \\
-\bottomrule
-\end{tabular}
-\caption{Complete primary method-comparison family on shared states, pp; fixed-pool and new-task 95\% intervals. All three comparisons remain unresolved. Admission and re-run dependencies are described in the text.}
-\label{tab:primary-methods}
-\end{table*}
-
+\paragraph{Interpretation.} The rows below test the range of action-only, continuation-only and joint upgrade values. They report every admitted configuration, including the unquantized path controls. They are descriptive scope checks, not a ranking of quantization algorithms. The configurations differ in calibration pipelines as well as numerical transformations. KIVI is a replay-compatible variant: each decoding step reconstructs a quantized view from the full-precision cache rather than retaining a compressed cache across turns. Admission and one-time infrastructure re-run rules are recorded in the supplementary panel protocol.
 \paragraph{All admitted ordinary-state upgrade effects.} Table~\ref{tab:ordinary-modes} reports all three upgrade modes for every admitted configuration, with both fixed-pool and new-task intervals.
 \begin{table*}[t]
 \centering% visual-layout-v1
@@ -199,7 +175,7 @@ SpinQuant-W4A4 & 3 & 255 & $+3.1$ [$-2.9$, $+9.2$] & $+11.8$ [$+6.7$, $+16.8$] &
 
 \bottomrule
 \end{tabular}
-\caption{All q8 ordinary BF16-sourced states admitted by the panel rules, including unquantized path controls. Effects in pp; each cell: estimate with fixed-pool 95\% $t$ interval, then crossed task$\times$block 95\% interval. All three modes use the same admitted states within a row. These descriptive intervals are unadjusted; the primary method family is P1--P3. KIVI-2 admits only two blocks after one-time infrastructure re-runs; it is not estimable under the original strict rule. Other cells admit three blocks. No action-only interval excludes zero; several takeover or joint-upgrade intervals do.}
+\caption{All q8 ordinary BF16-sourced states admitted by the panel rules, including unquantized path controls. Effects in pp; each cell: estimate with fixed-pool 95\% $t$ interval, then crossed task$\times$block 95\% interval. All three modes use the same admitted states within a row. These descriptive mode intervals are unadjusted. KIVI-2 admits only two blocks after one-time infrastructure re-runs; it is not estimable under the original strict rule. Other cells admit three blocks. No action-only interval excludes zero; several takeover or joint-upgrade intervals do.}
 \label{tab:ordinary-modes}
 \end{table*}
 
