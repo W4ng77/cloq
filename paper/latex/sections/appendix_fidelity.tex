@@ -45,7 +45,15 @@ Budget & sel. & net vs.\ random ($p$; Holm) & r/d & turnover vs.\ random ($p$) \
 \bottomrule
 \end{tabular*}
 \par\vspace{6pt}
-\caption{Frozen Q-only trigger against a matched action-replacement oracle (hindsight; same per-cell selection counts), on f02/f03 U1 (1020 rows). Net ratio: frozen net over oracle net (not a share of rescues; the frozen rule selects 6, 7 and 16 of the oracle's rescues). Random: matched-count per-cell random-trigger expectation; $p$: exact one-sided hypergeometric; Holm over the three budgets is applied to the net $p$-values only.}
+\caption{Frozen Q-only trigger against a matched action-replacement oracle (hindsight; same per-cell selection counts), on f02/f03 U1 (1020 rows). Net ratio: frozen net over oracle net (not a share of rescues; the frozen rule selects 6, 7 and 16 of the oracle's rescues). Random: matched-count per-cell random-trigger expectation; $p$: the exact random-selection tail defined below. Holm correction across the three budgets applies to the net tests only.}
 \label{tab:oracle}
 \end{table*}
 
+
+
+\paragraph{Exact random-selection test.} In configuration $c$, condition on its $N_c$ states, containing $R_c$ rescues, $D_c$ damages and $Z_c=N_c-R_c-D_c$ unchanged outcomes. Draw $m_c$ states uniformly without replacement, matching the trigger's actual count. The random rescue and damage counts have joint mass
+\[
+ P_c(r,d)=\frac{\binom{R_c}{r}\binom{D_c}{d}\binom{Z_c}{m_c-r-d}}{\binom{N_c}{m_c}}.
+\]
+We convolve these distributions across configurations. The net statistic is $T=\sum_c(r_c-d_c)$, and its one-sided $p$-value is $P(T\ge T_{\rm trigger})$. The capture statistic instead uses $\sum_c(r_c+d_c)$. This accounts jointly for rescues and damages; it is a conditional comparison with random selection on the observed validation rows, not a population-level test for new tasks.
+% src: analysis/fork/out/token_mech_20261002T003130Z.md (random trigger method: exact multivariate hypergeometric convolved over cells)

@@ -3,47 +3,43 @@
 
 \begin{table}[t]
 \centering\small
-\setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{1.12} % nocheck: layout
-% src: analysis/fork/out/ext_20261001T135106Z.md; analysis/fork/out/ghf_20261001T211519Z.md; analysis/fork/out/newmethod_m24_20261004T024453Z.md; analysis/fork/out/newmethod_q8_20261004T051538Z.md; analysis/fork/out/dev_all_20261001T070326Z.md
-\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}P{1.82cm}rP{3.50cm}@{}} % nocheck: layout
+\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.12} % nocheck: layout
+% src: analysis/fork/out/ghf_20261001T211519Z.md; analysis/fork/out/ghf_20261001T211519Z.json (stress configurations; G, H, F, crossed_ci95)
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrr@{}}
 \toprule
-\textbf{Setting} & \shortstack[r]{\textbf{Action-only}\\\textbf{turnover (\%)}} & \textbf{Task benefit} \\
+\textbf{Stress setting} & \textbf{$G$} & \textbf{$H$} & \textbf{$F$ [95\% CI]} \\
 \midrule
-\multicolumn{3}{@{}l}{\textit{Scope checks}} \\
+4B GPTQ-W3 & $-1.3$ & $+4.3$ & \shortstack[r]{$+1.3$\\{}[$-6.8$, $+9.4$]} \\
+4B KV4-rot & $+5.2$ & $+9.4$ & \shortstack[r]{\textbf{$+12.4$}\\{}[$+3.0$, $+21.6$]} \\
 \addlinespace[2pt] % nocheck: layout
-BFCL & 5.2--15.2 & Pooled net $+0.1$\pp{}$^a$ \\
-ALFWorld & 21.6--24.6 & Pooled net $-3.7$\pp{}$^a$ \\
-Mistral 24B & 10.0--10.4 & All three modes unresolved \\
-\addlinespace[4pt] % nocheck: layout
-\multicolumn{3}{@{}l}{\textit{Selected degraded configuration}} \\
-\addlinespace[2pt] % nocheck: layout
-\shortstack[l]{Qwen3-8B\\RTN-W3$^b$} & 6.7 & \shortstack[l]{Joint $F=+18.4$\pp{}\\{}[9.4, 28.2]} \\
+8B GPTQ-W3 & $+2.1$ & $+0.4$ & \shortstack[r]{$+2.1$\\{}[$-6.6$, $+11.8$]} \\
+8B KV4-rot & $+3.3$ & $-0.8$ & \shortstack[r]{$+4.6$\\{}[$-6.6$, $+15.9$]} \\
+8B RTN-W3 & $-0.4$ & $+15.3$ & \shortstack[r]{\textbf{$+18.4$}\\{}[$+9.4$, $+28.2$]} \\
 \bottomrule
 \end{tabular*}
-\caption{Task consequences beyond the core W4 panel. Turnover: full task pool (BFCL, ALFWorld, RTN-W3); ordinary BF16 histories (Mistral). $^a$Pooled action-only gains are unresolved. $^b$Exploratory example selected from five stress configurations; $F$ uses divergent states, crossed 95\% interval. Separate populations; full results: Appendix~\ref{app:scope}.}
+\caption{All five exploratory stress settings, Qwen3 on retail/airline, three blocks each. Gains use divergent states (pp): action $G$, continuation $H$, joint $F$. Bold $F$ estimates have unadjusted new-task 95\% intervals above zero. Full intervals: Table~\ref{tab:ghf}.}
 \label{tab:scope}
 \end{table}
 
-The study changes how a fallback result should be interpreted. A disagreement identifies a place where models behave differently. A flip identifies a place where substitution changes the task. Neither determines whether higher precision improves that task. Our references distinguish sensitivity from the signed benefit of precision.
+A disagreement locates different behaviour; a flip locates a changed task outcome. To evaluate a fallback, measure whether the specific intervention improves success and whether the evidence identifies a precision deficit.
 
 \paragraph{A reference model is not an oracle.} BF16 is the full-precision version of the tested model, not a guaranteed better policy. Qwen3-4B GPTQ-W4 reaches 40.0\% end-to-end DB success versus BF16's 35.8\% (Appendix~\ref{app:e2e}). Even a model with a better overall score can have unhelpful actions at particular histories. Inserting those actions also creates trajectories neither model would have generated alone. This explains why a complete-model comparison cannot determine the value of a local fallback; it does not explain the cause of the negative telecom estimate.
 % src: analysis/insights/iter_4/out/success_ni_ALIGNED_20260930T213009Z.md
 
-The selected RTN-W3 example gives the complementary case (Table~\ref{tab:scope}). A degraded agent has a positive takeover estimate even though replacing only the current action is unhelpful. The protocol can therefore measure substantial task benefit where it appears. This exploratory example was chosen from five stress settings; it does not establish a general bit-width threshold for useful fallback. BFCL and ALFWorld extend the measurements to environments without an LLM user, and Mistral adds a second model family. Their populations and paired estimates are given in Appendix~\ref{app:scope}.
+Across the five stress configurations, the protocol measures substantial takeover gains in two settings (Table~\ref{tab:scope}). The three modes have different estimates; lower bit width alone does not identify which mode will help. BFCL and ALFWorld extend the comparison to environments without an LLM user; Mistral adds a second model family. These scope checks use separate state populations (Appendix~\ref{app:scope}).
 
-\paragraph{Target the executed upgrade.} Borrowing one action asks Q to use it. Handing over the task asks B to handle later decisions. A selector trained on joint-takeover outcomes can therefore rank states differently from one targeting action-only replacement. Figure~\ref{fig:rd}c shows why similar average estimates do not make the labels interchangeable: a rescue under one mode may fail under another.
+\paragraph{Target the executed upgrade.} Borrowing one action asks Q to use it. Handing over the task asks B to handle later decisions. A selector's training target should be the gain of the mode it will execute. Figure~\ref{fig:rd}c shows why similar average estimates do not make the labels interchangeable: a rescue under one mode may fail under another.
+
+Evaluate selection in two stages. Use disagreement or uncertainty to nominate decisions, then test their signed benefit under the intended fallback. Our margin rule passes the capture test without establishing useful allocation. Reporting both makes that distinction explicit.
 
 The selection objective must also retain the sign of the consequence. Turnover gives a rescue and a damage the same positive weight; task benefit gives them opposite signs. Our margin rule illustrates the difference on the same selected decisions. The hindsight oracle establishes an upper bound available after observing the labels, not the ability of Q-visible features to predict them. A learned selector should be tested on held-out decisions against a baseline spending the same fallback budget. For comparisons across modes, that budget should match BF16 computation, because a takeover may use many more decisions than a single borrowed action. We do not measure costs.
 
 \paragraph{From a controlled comparison to expected benefit.} Our paired branches measure realised task consequences under fixed execution conditions. Exact replay verifies that the baseline is preserved; it does not make individual rescue and damage labels invariant to other conditions. Key reordering shows that the representation subsequently read by an agent can matter even when the tool operation is unchanged. The shared-state comparison is a separate test of BF16's additional value, and its intervals still allow a useful advantage.
 
-The key-order control separates the operation from the history that represents it. Checking the parsed tool call verifies what is executed in the environment. Following the continuation measures how the agent uses the resulting history to finish the task. Here the operation is held fixed, yet the final result can differ. A valid call is therefore insufficient as a proxy for task benefit. Our intervention follows the complete assistant turn through execution, rather than scoring only its parsed arguments.
-% src: analysis/fork/out/keyorder_20261005T204349Z.md; docs/insights/KEYORDER_PERTURB_PROTOCOL.md
-
-For an expected deployment benefit, the next step is to specify the prompt and user conditions over which the policy should work. Repeat paired branches across that distribution, then average their success differences. This addresses expected gain; repeated labels can separately assess whether the same decisions remain rescues or damages. Our intervals account for task and prompt-block sampling, while the current branches use one greedy user simulator and a dense-BF16 serving path. They do not cover changes to the user model or serving kernel. The telecom holdout already shows why new tasks need a direct test: action-only fallback has a negative estimate there. Domain and tasks changed together, so the cause remains unidentified.
+For an expected deployment benefit, the next step is to specify the prompt and user conditions over which the policy should work. Repeat paired branches across that distribution and average their success differences. For stochastic serving, pair the branches under matched nuisance draws. Report average gain separately from how often individual decisions remain rescues or damages. Our intervals account for task and prompt-block sampling, while the current branches use one greedy user simulator and a dense-BF16 serving path. They do not cover changes to the user model or serving kernel. The telecom holdout already shows why new tasks need a direct test: action-only fallback has a negative estimate there. Domain and tasks changed together, so the cause remains unidentified.
 \label{sec:scope}
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-A precision fallback is valuable when it saves more tasks than it spoils. Our paired branches measure that benefit separately for action replacement, continuation takeover and joint replacement. The W4 panel shows large changes in both directions and little pooled net gain; the telecom holdout has a negative action-only estimate. Same-precision and unchanged-operation references show why a flip alone cannot diagnose a precision deficit. The frozen selector further demonstrates that locating outcome changes does not establish useful selection. Evaluate each fallback by its signed task benefit under the intended continuation.
+A precision fallback is valuable when it saves more tasks than it spoils. Our paired branches measure that benefit separately for action replacement, continuation takeover and joint replacement. The W4 panel shows large changes in both directions and little pooled net gain; the telecom holdout has a negative action-only estimate. The exploratory stress panel also shows substantial gains from takeover. Same-precision and unchanged-operation references show why a flip alone cannot diagnose a precision deficit. The frozen selector further demonstrates that locating outcome changes does not establish useful selection. Evaluate each fallback by its signed task benefit under the intended continuation.

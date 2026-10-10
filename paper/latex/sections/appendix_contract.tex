@@ -4,7 +4,7 @@
 The splits, state restoration and replay checks below specify the measurement in \S\ref{sec:method}.
 \paragraph{Evidence provenance.}\label{app:figsrc} Reported values map to committed analysis outputs and frozen manifests. The supplement retains the complete primary comparisons, acceptance checks and protocol amendments needed to assess the paper's claims.
 
-\paragraph{Guide to the supplementary evidence.} Appendix~\ref{app:setup} specifies the measurement and its replay checks. Appendix~\ref{app:tables} expands the three upgrade modes, the illustrative rescue patterns and repeatable task fragility. Appendix~\ref{app:prereg} documents the independent holdout and full baseline replay. Appendix~\ref{app:sameprec} supplies the precision-reference comparisons and adaptive-analysis timeline. Appendix~\ref{app:r3} supports the frozen selection rule. Appendix~\ref{app:scope} tests the scope stated in Table~\ref{tab:scope}. Each section gives the checks needed to interpret its corresponding main-text claim.
+\paragraph{Guide to the supplementary evidence.} Appendix~\ref{app:setup} specifies the measurement and its replay checks. Appendix~\ref{app:tables} expands the three upgrade modes, the illustrative rescue patterns and repeatable task fragility. Appendix~\ref{app:prereg} documents the independent holdout and full baseline replay. Appendix~\ref{app:sameprec} supplies the precision-reference comparisons and adaptive-analysis timeline. Appendix~\ref{app:r3} supports the frozen selection rule. Appendix~\ref{app:scope} supplies the environment, model and quantization scope checks discussed in \S\ref{sec:discussion}. Each section gives the checks needed to interpret its corresponding main-text claim.
 
 \paragraph{Splits.} The development split has 58 retail, 27 airline and 80 telecom tasks. The holdout has 34 telecom tasks, and its pre-registration hash is recorded in the split file. % src: manifests/fork/splits_v1.json
 The telecom split was fixed from \tautwo{}'s 114-task base split by a stratified, salted hash before any run. % src: manifests/telecom/dev_v1.json
@@ -33,6 +33,33 @@ Nonce blocks carry ids such as fNN (development) and qN (stress and W3 panels); 
 \paragraph{Which states.} \emph{Bank P}: for each task, block and cell, the first decision at which $a_{\mathrm{B}}$ and $a_{\mathrm{Q}}$ differ in kind (tool call, text, stop), tool name, call count or order, or normalised arguments; differences in text only are skipped. \emph{Bank U}: one ordinary decision per task, drawn by a hash fixed before generation, in three nonce blocks (six in the extended q8 common-state design, Appendix~\ref{app:commonstate}), from Q's own trajectories (U1) or from trajectories shared by all cells of a model (U2B: BF16; U2Q: Q). % src: docs/insights/FORK_PROTOCOL.md §15 amendment 1
 
 \paragraph{Denominators and inference.} We keep three denominators separate. (1)~\emph{Full pool}: every task$\times$block unit, units without a Bank P state counting as zero; $r$, $d$, $M$ and $\Gall=r-d$ use it. (2)~\emph{Divergent states}: the Bank P states of a cell; $G$, $H$, $F$ and the off-diagonal share use it. (3)~\emph{Bank U}: one state per task. Within a cell all branches share each state and all tasks of a block share its nonce, so within-cell contrasts are paired and identified; cross-cell comparisons are descriptive, because each cell selects its own divergences. With $n_{\mathrm{blk}}$ complete blocks (only complete blocks enter), the primary \emph{fixed-pool} interval treats the task pool as fixed (block bootstrap if $n_{\mathrm{blk}}\ge10$, else block-$t$, a $t$ interval over block means); the \emph{new-task} interval is a crossed task$\times$block bootstrap (``crossed''). We call a contrast \emph{resolved} under an interval when that interval excludes zero and name the interval; ``not resolved'' means the reported interval or intervals include zero. Where a frozen protocol sets its own reading rule, we state it with the result. % nocheck: list labels (1)-(3)
+
+
+\subsection{Analysis design and amendments}
+\label{app:timeline}
+
+Table~\ref{tab:timeline} gathers the timing information relevant to the main claims. Fixing an analysis before new outcomes are read does not erase information already obtained from earlier outcomes. The result sections retain the corresponding interpretation; no amendment below supplies a new confirmation of the W4 benefit estimates.
+
+\begin{table*}[t]
+\centering\small
+\setlength{\tabcolsep}{5pt}\renewcommand{\arraystretch}{1.12} % nocheck: layout
+% src: docs/insights/FORK_PROTOCOL.md; docs/insights/PREREG_FORK_CONFIRM.md; docs/insights/SAMEPREC_PROTOCOL.md; docs/insights/COMMONSTATE_SOURCES_PROTOCOL.md; docs/insights/KEYORDER_PERTURB_PROTOCOL.md; manifests/fork/token_trigger_rule_v1.json; docs/insights/NEWMETHOD_PANEL_PROTOCOL.md
+\begin{tabular}{@{}P{2.7cm}P{5.6cm}P{6.6cm}@{}} % nocheck: layout
+\toprule
+Comparison & What was fixed before the relevant runs & Outcome-informed steps and interpretation \\
+\midrule
+Core W4 forks & State-restoration, branching and acceptance protocol & Main consequence and pattern summaries are exploratory. \\
+Telecom holdout & Tasks, configurations, weights, blocks, estimator and readings & Primary reading unchanged; both registered secondary checks pass. Full QQ replay is a later audit. \\
+Same-precision reference & Checkpoint construction and paired design & After an interim look, the ``similar'' reading was replaced by stricter equivalence tests; estimates were unchanged. \\
+Shared ordinary states & Initial three-block design & Extension and two-look rule fixed after the first look; some state outcomes were already known. Both final comparisons remain unresolved. \\
+Key-order reference & Eligibility and analysis frozen before key-order outcomes were read & Exploratory control; the original QQ and BF16 branch outcomes were reused. \\
+Frozen margin rule & Rule and thresholds frozen before validation blocks & Rule selected on one development block; validation uses later blocks of the same tasks. \\
+Mistral scope check & Conditional task mask and phase-extension criteria & Failure-scoring amendment followed phase 1; scope estimates retain that qualification. \\
+\bottomrule
+\end{tabular}
+\caption{Timing of designs and readings supporting the main text. Detailed amendments appear with their corresponding results.}
+\label{tab:timeline}
+\end{table*}
 
 \subsection{Separating local value from end-to-end success}
 \label{app:e2e}

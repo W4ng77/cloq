@@ -1,7 +1,7 @@
-\section{Measuring the Task Value of an Upgrade}
+\section{Measuring Fallback Value}
 \label{sec:method}
 
-We measure what happens to a task after a specified fallback at a specified decision. All comparisons start from the same recorded history and environment.
+We evaluate a specified fallback at a recorded decision. Every comparison starts from the same history and environment.
 
 \subsection{Setting}
 \label{sec:setting}
@@ -22,7 +22,7 @@ B and Q run on vLLM \citep{kwon2023vllm} with batch-invariant kernels \citep{he2
 \paragraph{Four branches.} Let $\YY{XY}\in\{0,1\}$ denote task success when X supplies the current action and Y continues, with X, Y $\in\{\mathrm{B},\mathrm{Q}\}$. All branches start with the same remaining budget. Each upgrade is compared with QQ: replace this step ($G$), take over from the next step ($H$), or do both ($F$). Figure~\ref{fig:case} defines these contrasts. % nocheck: notation {0,1}
 A \emph{rescue} occurs when the upgrade succeeds and QQ fails; a \emph{damage} is the reverse. Their sum is \emph{turnover}, and their difference is \emph{net gain}. These quantities measure task consequences. Additional notation appears in Appendix~\ref{app:names}.
 
-\paragraph{The action being replaced.} An action is a complete assistant turn, including its language and structured tool calls. Its message and tool results enter the subsequent history. The continuing model then makes every later decision. Thus BQ asks whether borrowing B's action helps Q finish; QB asks whether B can improve the trajectory after Q's action; BB asks whether changing both helps. The four branches are complete task executions, not scores assigned to the isolated action.
+\paragraph{The action being replaced.} An action is a complete assistant turn, including its language and structured tool calls. Its message and tool results enter the subsequent history. The continuing model then makes every later decision. Thus BQ asks whether borrowing B's action helps Q finish; QB asks whether B can improve the trajectory after Q's action; BB asks whether changing both helps. The four branches are complete task executions. Each task--block unit receives one intervention. A router that can trigger repeatedly has a different policy value, requiring an end-to-end evaluation.
 
 \paragraph{Reference interventions.} We repeat the design with Q$'$ in place of B. Q$'$ is another GPTQ-W4 checkpoint of the same model, built by resampling states and activation rows from the same calibration trajectories. The Q episodes, tasks and prompt blocks stay fixed. This reference tests how much change can occur at fixed bit width. It covers Qwen3-4B and Qwen3-8B GPTQ-W4, with GPTQ-W3 as a stress check. Its protocol was fixed before outcomes were read. Section~\ref{sec:sameprec} also compares the action sources at shared states and changes the key order of Q's own tool call.
 
@@ -45,7 +45,7 @@ The branches differ in the intended intervention, with history, environment and 
 \label{sec:states}
 
 \paragraph{State sources.} A first divergent state is the earliest Q-history decision where B and Q differ in action kind, tool calls or normalised arguments. Wording alone does not qualify. Ordinary states are selected by a fixed hash before action generation, one per task and block. A \emph{common state} is an ordinary sampled state at which several action sources are compared; Figure~\ref{fig:method}b distinguishes the state sources. Full-pool rates include every task--block unit, counting no divergence as zero effect; mode and pattern analyses condition on divergent states. We write $\Gall$ for the full-pool action-only net gain, and $G$ for its average on divergent states. % src: docs/insights/FORK_PROTOCOL.md §15 amendment 1
-Contrasts are paired within a configuration and descriptive across configurations, which select their own divergences; only complete blocks enter. % nocheck: interval rule as in archived method L39
+Contrasts are paired within a configuration. The W4 pool averages four configuration-specific effects equally on the fixed development task set; each configuration supplies its own first divergences. It is not a comparison of configurations at identical decisions. Only complete blocks enter. % nocheck: interval rule as in archived method L39
 
 
-\paragraph{Intervals and interpretation.} The main figures use new-task intervals, which resample both tasks and prompt blocks, and the holdout uses its registered confidence level. Fixed-pool intervals and the adjusted common-state reading appear in the appendix. An interval containing zero leaves the effect unresolved; equivalence requires a separate test. Captions specify the confidence levels. Each branch measures one realised outcome under the specified greedy stack.
+\paragraph{Intervals and interpretation.} The main figures use new-task intervals, which resample both tasks and prompt blocks, and the holdout uses its registered confidence level. Fixed-pool intervals and the adjusted common-state reading appear in the appendix. An interval containing zero leaves the effect unresolved; equivalence requires a separate test. Captions specify the confidence levels. Each branch measures one realised outcome under the specified greedy stack. A rescue or damage labels that paired execution; its stability across different user or prompt conditions is a separate quantity.
