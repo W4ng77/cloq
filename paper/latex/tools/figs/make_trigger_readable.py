@@ -25,8 +25,8 @@ def main():
         ax.axhline(0,color=INK2,lw=.7)
     fig.text(.02,.975,"(a) Capture: rescues and damages",fontsize=10,fontweight="bold",va="top")
     fig.text(.545,.975,"(b) Value: rescues minus damages",fontsize=10,fontweight="bold",va="top")
-    fig.text(.02,.90,"Ordinary Q-sourced states · later nonce blocks",fontsize=8.5,color=INK2)
-    fig.text(.545,.90,"No net-gain test survives Holm correction",fontsize=8.5,color=INK2)
+    fig.text(.02,.90,"States from Q's histories · two later prompt blocks",fontsize=8.5,color=INK2)
+    fig.text(.545,.90,"Net gain of the selected decisions",fontsize=8.5,color=INK2)
     w=.32
     for i,f in enumerate(fr):
         for off,r,d,alpha,hatch in ((-w/2,rr[i],rd[i],.38,"///"),(w/2,f["rescued"],f["damaged"],1,None)):
