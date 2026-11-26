@@ -21,7 +21,23 @@ if [[ "$phase" == prepare ]]; then
   fi
   [[ "$(git -C "$tau2" rev-parse HEAD)" == "$tau2_rev" ]]
   if [[ -z "${CLOQ_PYTHON:-}" && ! -x "$python_path" ]]; then
-    "${CLOQ_BOOTSTRAP_PYTHON:-python3.12}" -m venv "$work/venv"
+    bootstrap=${CLOQ_BOOTSTRAP_PYTHON:-}
+    if [[ -z "$bootstrap" ]]; then
+      for candidate in python3.12 python python3; do
+        if command -v "$candidate" >/dev/null 2>&1 &&
+           "$candidate" -c 'import sys; sys.exit(sys.version_info[:2] != (3, 12))'; then
+          bootstrap=$(command -v "$candidate")
+          break
+        fi
+      done
+    fi
+    if [[ -z "$bootstrap" ]] || ! command -v "$bootstrap" >/dev/null 2>&1 ||
+       ! "$bootstrap" -c 'import sys; sys.exit(sys.version_info[:2] != (3, 12))'; then
+      echo "Python 3.12 is required. Run: module spider python/3.12, then load the listed module." >&2
+      echo "You can also set CLOQ_BOOTSTRAP_PYTHON to a Python 3.12 executable." >&2
+      exit 1
+    fi
+    "$bootstrap" -m venv "$work/venv"
   fi
   "$python_path" -m pip install 'vllm==0.29.0' 'transformers==5.17.0' 'litellm==1.82.6' -e "$tau2" scipy safetensors accelerate
   HF_HUB_OFFLINE=0 TRANSFORMERS_OFFLINE=0 "$python_path" -u "$runner" prepare --work "$work"
