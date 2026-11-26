@@ -39,7 +39,14 @@ if [[ "$phase" == prepare ]]; then
     fi
     "$bootstrap" -m venv "$work/venv"
   fi
-  "$python_path" -m pip install 'vllm==0.29.0' 'transformers==5.17.0' 'litellm==1.82.6' -e "$tau2" scipy safetensors accelerate
+  # Use the upstream CUDA 12.9 binary and matching PyTorch wheels on Narval.
+  vllm_wheel="https://github.com/vllm-project/vllm/releases/download/v0.29.0/vllm-0.29.0%2Bcu129-cp38-abi3-manylinux_2_28_x86_64.whl"
+  vllm_wheel+="#sha256=22e8d8fec755986b3ad964004a1f8c65a55626ec948354bdbe95993e6b0289fe"
+  "$python_path" -m pip install --only-binary=vllm,torch,torchvision,torchaudio \
+    --extra-index-url https://download.pytorch.org/whl/cu129 \
+    --extra-index-url https://flashinfer.ai/whl/ \
+    "$vllm_wheel" 'torch==2.13.0+cu129' 'torchvision==0.28.0+cu129' 'torchaudio==2.11.0+cu129' \
+    'transformers==5.17.0' 'litellm==1.82.6' -e "$tau2" scipy safetensors accelerate
   HF_HUB_OFFLINE=0 TRANSFORMERS_OFFLINE=0 "$python_path" -u "$runner" prepare --work "$work"
   exit
 fi
