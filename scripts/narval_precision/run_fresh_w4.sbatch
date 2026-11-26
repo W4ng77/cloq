@@ -5,6 +5,7 @@ mode=$1
 work=$2
 python_path=$3
 runner=$4
+image=${5:-}
 index=${SLURM_ARRAY_TASK_ID:-0}
 case "$mode" in
   build) lock=build ;;
@@ -27,4 +28,8 @@ if [[ "$mode" == eval && -s "$work/blocks/$(printf '%02d' "$index").json" ]]; th
   exit 0
 fi
 
-"$python_path" -u "$runner" "$mode" --work "$work" --attempt "$attempt" --block "$index"
+command=("$python_path" -u "$runner" "$mode" --work "$work" --attempt "$attempt" --block "$index")
+if [[ -n "$image" ]]; then
+  exec bash "$(dirname "$runner")/container_fresh_w4.sh" "$image" gpu "$(dirname "$runner")" "$work" "${command[@]}"
+fi
+exec "${command[@]}"

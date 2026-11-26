@@ -86,6 +86,12 @@ def snapshots(work):
     return models, out
 
 
+def git_revision(path, env_key):
+    return os.environ.get(env_key) or subprocess.check_output(
+        ["git", "-C", str(path), "rev-parse", "HEAD"], text=True
+    ).strip()
+
+
 def workspace(root, work, models):
     root.mkdir(parents=True)
     for key in ("cloq", "configs", "scripts", "manifests"):
@@ -93,7 +99,7 @@ def workspace(root, work, models):
     tau2 = work / "tau2-bench"
     (root / "third_party").mkdir()
     (root / "third_party" / "tau2-bench").symlink_to(tau2, target_is_directory=True)
-    current = subprocess.check_output(["git", "-C", str(tau2), "rev-parse", "HEAD"], text=True).strip()
+    current = git_revision(tau2, "CLOQ_TAU2_REV")
     if current != TAU2_REV:
         raise ValueError(f"Unexpected tau2 commit {current}")
     base = models[AGENT]
@@ -188,7 +194,7 @@ def serve(stack, path, devices, name, label, maxlen, attempt):
     log = stack.enter_context((attempt / f"{label}.vllm.log").open("w"))
     env = dict(os.environ, CUDA_VISIBLE_DEVICES=",".join(devices),
                VLLM_CACHE_ROOT=str(Path(os.environ["TMPDIR"]) / f"vllm-{label}"))
-    cmd = [str(Path(sys.executable).with_name("vllm")), "serve", str(path),
+    cmd = [sys.executable, "-m", "vllm.entrypoints.cli.main", "serve", str(path),
            "--host", "127.0.0.1", "--port", str(port), "--served-model-name", name,
            "--dtype", "bfloat16", "--max-model-len", str(maxlen), "--gpu-memory-utilization", "0.90",
            "--tensor-parallel-size", str(len(devices)), "--generation-config", "vllm", "--seed", "0",
@@ -286,7 +292,7 @@ def evaluate(work, attempt, index, concurrency, quant_sha):
         b, b_cmd = serve(stack, paths[AGENT], ids[1:2], "agent", "bf16", 33792, attempt)
         bases = {"Q": q, "B": b}
         provenance = {
-            "cloq_commit": subprocess.check_output(["git", "-C", str(REPO), "rev-parse", "HEAD"], text=True).strip(),
+            "cloq_commit": git_revision(REPO, "CLOQ_CHECKOUT_REV"),
             "tau2_commit": TAU2_REV, "checkpoint_sha": quant_sha, "models": {k: models[k] for k in (AGENT, SIM)},
             "host": socket.gethostname(), "torch": torch.__version__, "vllm": vllm.__version__,
             "visible_gpu_models": [torch.cuda.get_device_name(i) for i in range(4)],

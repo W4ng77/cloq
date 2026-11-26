@@ -28,6 +28,15 @@ bash "$RUNNER" full-report "$WORK"   # After all 20 production blocks finish
 
 The tasks and prompt nonces of the 20 production blocks are fixed in advance. Smoke is excluded from all reports. Keep all 20 production blocks on the same code, model, GPU and runtime configuration. The final report includes blocks 1–3, so use the pilot as an operational check without changing the design based on the observed scores.
 
+## Apptainer on Narval
+
+If pip rejects the host wheel tag, run prepare and all follow-up commands with `CLOQ_RUNTIME=apptainer` exported. Load the site Apptainer or Singularity module if the executable is unavailable. Prepare pulls the official vLLM 0.29.0 CUDA 12.9 image into the work directory and creates a separate container virtual environment. The host virtual environment and τ²-bench checkout remain available. The build and evaluation jobs run the same image with GPU passthrough.
+
+```bash
+export CLOQ_RUNTIME=apptainer
+bash "$RUNNER" prepare "$WORK" && bash "$RUNNER" smoke "$WORK"
+```
+
 ## Endpoints and outputs
 
 Each branch is generated once. The same transcripts are scored under the DB endpoint and the official task reward basis. Airline includes the deterministic COMMUNICATE checks. Retail includes NL_ASSERTION when listed by the task. The runner uses the pinned local Qwen3-30B-A3B simulator as the NL judge with the repository's τ² judge prompt. This is the official reward basis with a local judge. It may differ from scores obtained with a different judge model. Judging happens on the saved trajectories. A malformed judgment fails the block visibly. For an episode that already fails another criterion, the overall score is zero regardless of its NL judgment.

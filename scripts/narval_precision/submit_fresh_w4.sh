@@ -13,6 +13,13 @@ runner="$here/fresh_w4.py"
 tau2="$work/tau2-bench"
 tau2_rev=2174a603f6d014ef94473ffa95957f6ce27100db
 python_path=${CLOQ_PYTHON:-"$work/venv/bin/python"}
+image=
+runtime() { "$@"; }
+if [[ "${CLOQ_RUNTIME:-venv}" == apptainer ]]; then
+  image="$work/vllm-v0.29.0-cu129.sif"
+  python_path="$work/container-venv/bin/python"
+  runtime() { bash "$here/container_fresh_w4.sh" "$image" cpu "$here" "$work" "$@"; }
+fi
 
 if [[ "$phase" == prepare ]]; then
   if [[ ! -d "$tau2/.git" ]]; then
@@ -20,6 +27,24 @@ if [[ "$phase" == prepare ]]; then
     git -C "$tau2" checkout --detach "$tau2_rev"
   fi
   [[ "$(git -C "$tau2" rev-parse HEAD)" == "$tau2_rev" ]]
+  if [[ -n "$image" ]]; then
+    if [[ ! -s "$image" ]]; then
+      container_engine=$(command -v apptainer || command -v singularity) || {
+        echo "Load Apptainer or Singularity before preparing the container." >&2
+        exit 1
+      }
+      mkdir -p "$work/apptainer-cache" "$work/apptainer-tmp"
+      APPTAINER_CACHEDIR="$work/apptainer-cache" APPTAINER_TMPDIR="$work/apptainer-tmp" \
+        "$container_engine" pull "$image" docker://vllm/vllm-openai:v0.29.0-cu129
+    fi
+    if [[ ! -x "$python_path" ]]; then
+      runtime python3 -m venv --copies --system-site-packages "$work/container-venv"
+    fi
+    runtime "$python_path" -m pip install 'transformers==5.17.0' 'litellm==1.82.6' -e "$tau2" scipy safetensors accelerate
+    runtime "$python_path" -c 'import importlib.metadata as m; assert m.version("vllm").partition("+")[0] == "0.29.0"; import torch; assert torch.version.cuda == "12.9", torch.version.cuda'
+    runtime "$python_path" -u "$runner" prepare --work "$work"
+    exit
+  fi
   if [[ -z "${CLOQ_PYTHON:-}" && ! -x "$python_path" ]]; then
     bootstrap=${CLOQ_BOOTSTRAP_PYTHON:-}
     if [[ -z "$bootstrap" ]]; then
@@ -51,12 +76,13 @@ if [[ "$phase" == prepare ]]; then
   exit
 fi
 
-[[ -x "$python_path" && -d "$tau2/data" ]] || {
+[[ -x "$python_path" && -d "$tau2/data" && ( -z "$image" || -s "$image" ) ]] || {
   echo "Run prepare first. Missing runtime or tau2 data under $work" >&2
   exit 1
 }
 if [[ "$phase" == pilot-report || "$phase" == full-report ]]; then
-  exec "$python_path" "$runner" "$phase" --work "$work"
+  runtime "$python_path" "$runner" "$phase" --work "$work"
+  exit
 fi
 
 account=${SLURM_ACCOUNT:?Set SLURM_ACCOUNT to your Narval allocation}
@@ -74,7 +100,7 @@ case "$phase" in
       build=$(sbatch "${common[@]}" --job-name=cloq-w4-build --gpus="$gpu:1" \
         --cpus-per-task=8 --mem=100G --time=08:00:00 \
         --output="$work/logs/%x-%j.out" --error="$work/logs/%x-%j.err" \
-        "$here/run_fresh_w4.sbatch" build "$work" "$python_path" "$runner")
+        "$here/run_fresh_w4.sbatch" build "$work" "$python_path" "$runner" "$image")
       echo "GPTQ-W4 build job: ${build%%;*}"
       dependency=(--dependency="afterok:${build%%;*}" --kill-on-invalid-dep=yes)
     fi
@@ -92,6 +118,6 @@ esac
 
 job=$(sbatch "${common[@]}" "${eval_args[@]}" "${dependency[@]}" \
   --job-name="cloq-w4-$phase" --array="$array" --time="$limit" \
-  "$here/run_fresh_w4.sbatch" eval "$work" "$python_path" "$runner")
+  "$here/run_fresh_w4.sbatch" eval "$work" "$python_path" "$runner" "$image")
 echo "W4 $phase job: ${job%%;*}"
 echo "Logs: $work/logs"
